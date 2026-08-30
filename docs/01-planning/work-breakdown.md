@@ -8,7 +8,7 @@ tags: [wbs, planning]
 # İş kırılımı
 
 - Donanım: sürücü ölçümü; kart/pin; DAC+amfi; batarya/BMS/şarj; EMI/termal.
-- Firmware: AirPlay prototipi; DSP/limiter; provisioning; UI; NVS; OTA/recovery.
+- Firmware: AirPlay prototipi; DSP/limiter; provisioning; UI; NVS; GitHub Actions release hattı; imzalı A/B OTA; canary/stable dağıtım; rollback/recovery.
 - Mekanik/akustik: kabin, batarya bölmesi, sürücü/pasif radyatör ve ölçüm iterasyonu.
 - Süreç: BOM, ADR, günlük, handoff ve test kanıtları.
 

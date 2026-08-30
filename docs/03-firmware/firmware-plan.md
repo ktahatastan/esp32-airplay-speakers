@@ -12,7 +12,7 @@ tags: [firmware, plan]
 - `ui`: buton state machine ve LED animator.
 - `storage`: `factory_calibration` / `user_settings` ayrımı.
 - `power`: batarya/NTC/gerilim ve güvenli kapanış.
-- `update`: imzalı/A-B OTA, rollback ve recovery.
+- `update`: SemVer/GitHub Releases tabanlı imzalı A/B OTA, sağlık kontrolü, rollback, canary/stable dağıtım ve recovery; ayrıntı [[ota-and-release-plan]].
 - `diagnostics`: parolasız, kişisel veri içermeyen loglar.
 
 Audio görevleri LED/web görevlerinden yüksek öncelikte ve bloklanmayan yolda çalışır. Task/core yerleşimi ölçümle belirlenir.

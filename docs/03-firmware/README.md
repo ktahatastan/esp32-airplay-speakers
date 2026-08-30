@@ -9,5 +9,6 @@ tags: [firmware, moc]
 
 - [[firmware-plan|Firmware modülleri]]
 - [[security-and-recovery|Güvenlik, OTA ve recovery]]
+- [[ota-and-release-plan|OTA ve sürüm yönetimi]]
 - [[../controls-and-provisioning-plan|Kontroller ve provisioning]]
 - [[../01-architecture/audio-network-feasibility|AirPlay fizibilitesi]]

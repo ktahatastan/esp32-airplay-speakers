@@ -16,3 +16,4 @@ Durumlar: `proposed`, `accepted`, `superseded`, `rejected`.
 - [[ADR-0005-dual-provisioning|ADR-0005 — BLE + SoftAP provisioning]]
 - [[ADR-0006-single-orchestrator|ADR-0006 — Tek orkestratör]]
 - [[ADR-0007-airplay-stack|ADR-0007 — AirPlay yığını ve senkron]]
+- [[ADR-0008-github-releases-ota|ADR-0008 — Otomatik OTA ve GitHub Releases]]

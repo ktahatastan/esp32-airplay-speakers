@@ -68,7 +68,12 @@
 
 - [ ] `factory_calibration` ile `user_settings` NVS şemasını ve migration testlerini yaz.
 - [ ] Cihaz başına benzersiz PoP/QR üretim, seri eşleme ve güvenli yedekleme prosedürünü tanımla.
-- [ ] A/B OTA, rollback, düşük batarya kilidi ve güç kesintisi G6 testlerini tamamla.
+- [ ] ESP-IDF sürümünü kilitle; `esp_ghota` uyumluluk/kaynak kullanımı spike'ını tamamla.
+- [ ] `otadata`, `ota_0`, `ota_1` ve kalibrasyon/NVS alanlarını içeren partition CSV ve size budget oluştur.
+- [ ] SemVer `v*.*.*` tag ile test/build/sign/checksum/GitHub Release üreten GitHub Actions hattını kur.
+- [ ] Release manifest target/donanım/sürüm/hash doğrulamasını ve stable update state machine'ini geliştir.
+- [ ] Idle audio, batarya, NTC ve Wi-Fi koşullarına bağlı OTA erteleme kapılarını uygula.
+- [ ] İlk-boot health check, A/B rollback, canary/stable dağıtım ve güç kesintisi G6 testlerini tamamla.
 - [ ] Wi-Fi parolası/PoP/anahtarların loglarda görünmediğini otomatik taramayla doğrula.
 - [ ] USB/UART recovery ve boot prosedürünü saha servis dokümanına ekle.
 

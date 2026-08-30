@@ -11,3 +11,4 @@ Günlükler yapılan işi, nedenini, doğrulamayı ve açık riskleri kalıcı t
 
 - [[2026-08-30-foundation|2026-08-30 — Proje/Obsidian/agentic temel]]
 - [[2026-08-30-circuit-wiring-plan|2026-08-30 — Devre ve bağlantı planı]]
+- [[2026-08-30-ota-release-plan|2026-08-30 — OTA ve release planı]]

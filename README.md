@@ -39,6 +39,7 @@ Depo kökü bir Obsidian kasasıdır. Obsidian ile bu klasörü açın ve [docs/
 - [Sistem mimarisi](docs/01-architecture/system-architecture.md)
 - [Güç ve batarya planı](docs/power-and-battery-plan.md)
 - [Kontroller ve provisioning](docs/controls-and-provisioning-plan.md)
+- [OTA ve sürüm yönetimi](docs/03-firmware/ota-and-release-plan.md)
 - [Satın alma listesi](docs/05-procurement/bom.md)
 - [Test ve kabul kapıları](docs/06-testing/test-strategy.md)
 - [Karar kayıtları](docs/07-decisions/README.md)
