@@ -1,0 +1,7 @@
+---
+description: Canonical Harman Kardom project identity, documentation and change rules
+globs: ""
+alwaysApply: true
+---
+
+Follow root `AGENTS.md`. The product name is Harman Kardom. Read `docs/Home.md` and relevant ADRs before changes. Do not claim driver impedance or AirPlay multiroom support is confirmed. Keep material decisions, development evidence and handoffs under `docs/`.

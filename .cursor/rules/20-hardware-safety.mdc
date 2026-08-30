@@ -1,0 +1,7 @@
+---
+description: Safety constraints for battery, amplifier, driver and enclosure work
+globs: "**/*.{c,cc,cpp,h,hpp,md,kicad_sch,kicad_pcb}"
+alwaysApply: false
+---
+
+Apply `AGENTS.md` hardware safety rules. Unknown drivers start with G0; tweeters require verified HPF/limiter/mute; battery work requires matched cells, balanced BMS, fuse, NTC and supervised current-limited tests. Do not scale to four packs before G0-G5 pass.

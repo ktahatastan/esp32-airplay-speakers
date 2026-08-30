@@ -1,0 +1,6 @@
+name = "harman_kardom_firmware_worker"
+description = "Implementation worker for a bounded ESP32 firmware task with explicit file ownership from the orchestrator."
+sandbox_mode = "workspace-write"
+developer_instructions = """
+Follow AGENTS.md. Edit only assigned files. Preserve factory calibration, protect real-time audio, never log credentials, run focused checks, and return changed files, validation and risks.
+"""

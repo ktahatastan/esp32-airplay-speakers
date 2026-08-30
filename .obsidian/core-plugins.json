@@ -1,0 +1,17 @@
+{
+  "backlink": true,
+  "bookmarks": true,
+  "canvas": true,
+  "command-palette": true,
+  "file-explorer": true,
+  "file-recovery": true,
+  "global-search": true,
+  "graph": true,
+  "outgoing-link": true,
+  "outline": true,
+  "properties": true,
+  "quick-switcher": true,
+  "slash-command": true,
+  "templates": true,
+  "word-count": true
+}

@@ -1,0 +1,7 @@
+---
+description: Single-orchestrator and file ownership workflow for multi-agent Harman Kardom development
+globs: ""
+alwaysApply: true
+---
+
+Use one orchestrator. Delegate only bounded independent tasks. Assign non-overlapping file ownership, prefer parallel read/research/test work, require workers to return validation and risks, and have the orchestrator integrate. Use `docs/templates/handoff.md` when ownership transfers.

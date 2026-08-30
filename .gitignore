@@ -1,0 +1,22 @@
+# Build and tool output
+build/
+dist/
+.pio/
+.cache/
+.tmp/
+*.log
+
+# OS/editor noise
+Thumbs.db
+.DS_Store
+*.swp
+.claude/settings.local.json
+
+# Local secrets; commit only documented examples
+.env
+.env.*
+!.env.example
+
+# Obsidian is intentionally versioned for the shared project vault.
+!.obsidian/
+!.obsidian/**

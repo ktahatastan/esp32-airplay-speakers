@@ -1,0 +1,12 @@
+{
+  "main": {"id": "harman-kardom-main", "type": "split", "children": []},
+  "left": {"id": "harman-kardom-left", "type": "split", "children": [], "width": 300},
+  "right": {"id": "harman-kardom-right", "type": "split", "children": [], "width": 300},
+  "active": "harman-kardom-main",
+  "lastOpenFiles": [
+    "docs/Home.md",
+    "docs/01-planning/roadmap.md",
+    "docs/05-procurement/bom.md",
+    "docs/08-development-log/README.md"
+  ]
+}
