@@ -1,0 +1,8 @@
+generated/*.erc.rpt
+generated/*.pdf
+generated/*.svg
+generated/*.kicad_prl
+generated/*.sch
+generated/*-preview.png
+generated/*-backups/
+__pycache__/

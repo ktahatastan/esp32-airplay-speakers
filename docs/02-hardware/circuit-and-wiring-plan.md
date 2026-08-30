@@ -25,6 +25,10 @@ Bu belge **tek Harman Kardom hoparlör** için modül-temelli prototip bağlant�
 
 Bu alternatif pafta; referans görseldeki gibi koordinatlı çerçeve, fonksiyon başlıkları, devre sembolleri, net adları, referans/değer renkleri, test noktası indeksi ve antet kullanır. [SVG kaynağı](assets/harman-kardom-engineering-schematic.svg) veya [2000×1400 PNG önizlemesi](assets/harman-kardom-engineering-schematic.png) açılabilir.
 
+### Düzenlenebilir KiCad paftası
+
+Şemanın KiCad 10 ile açılabilen, Python scriptinden tekrar üretilebilen sürümü [[kicad-schematic|KiCad şeması ve üretim scripti]] belgesinde açıklanır. Script ve üretilen `.kicad_pro/.kicad_sch` kaynakları `hardware/kicad/` altında Git'e alınır.
+
 ## 1. Sistem bağlantı özeti
 
 ```mermaid

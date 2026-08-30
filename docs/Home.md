@@ -16,7 +16,7 @@ Bu sayfa ortak Obsidian kasasının ana haritasıdır.
 - [[01-planning/work-breakdown|İş kırılımı]]
 - [[01-planning/risk-register|Risk kaydı]]
 - [[06-testing/test-strategy|Test stratejisi ve kabul kapıları]]
-- [[08-development-log/2026-08-30-ota-release-plan|Son geliştirme günlüğü]]
+- [[08-development-log/2026-08-30-kicad-generator|Son geliştirme günlüğü]]
 
 ## Ürün ve mimari
 
@@ -26,6 +26,7 @@ Bu sayfa ortak Obsidian kasasının ana haritasıdır.
 - [[01-architecture/audio-network-feasibility|AirPlay senkron fizibilitesi]]
 - [[02-hardware/audio-signal-chain|Ses sinyal zinciri]]
 - [[02-hardware/circuit-and-wiring-plan|Devre ve bağlantı şemaları]]
+- [[02-hardware/kicad-schematic|KiCad şeması ve üretim scripti]]
 - [[power-and-battery-plan|Güç ve batarya]]
 - [[controls-and-provisioning-plan|Kontroller ve provisioning]]
 

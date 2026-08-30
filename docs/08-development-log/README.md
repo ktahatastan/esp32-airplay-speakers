@@ -8,6 +8,7 @@ tags: [development-log, moc]
 # Geliştirme günlüğü
 
 - [[2026-08-30-turkey-procurement-costing|Türkiye tedarik ve maliyet araştırması]]
+- [[2026-08-30-kicad-generator|KiCad şema üreticisi]]
 
 Günlükler yapılan işi, nedenini, doğrulamayı ve açık riskleri kalıcı tutar. Yeni kayıt için [[../templates/development-log|şablonu]] kullanın.
 
