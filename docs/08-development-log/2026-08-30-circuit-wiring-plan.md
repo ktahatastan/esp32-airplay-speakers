@@ -22,6 +22,7 @@ Tek Harman Kardom hoparlör için güç, batarya/BMS, I2S/DAC, bi-amp sürücül
 - TP0-TP27 test noktaları, beklenen gerilim/dalga biçimleri ve ölçüm referansları eklendi.
 - Class-D BTL çıkışları için diferansiyel prob veya iki kanal `CH1-CH2` yöntemi tanımlandı.
 - Besleme ripple, I2S saatleri, DAC seviyesi, dummy-load ve power-sequence ölçüm planı eklendi.
+- Batarya, BMS, güç, ESP32-S3, PCM5102A, XH-A232, sürücüler, kullanıcı kontrolleri ve TP0-TP27 noktalarını tek paftada gösteren SVG/PNG görsel şema eklendi.
 - Belge donanım ve ana Obsidian MOC sayfalarına bağlandı.
 
 ## Kararlar
@@ -30,7 +31,7 @@ Kabul edilmiş güç ve V1 şarj politikası değiştirilmedi. Kesin BMS, GPIO, 
 
 ## Doğrulama
 
-Tüm Obsidian wikilink hedefleri, Mermaid çit çiftleri, YAML frontmatter, satır sonu boşlukları ve `git diff --check` doğrulandı. Yerel Mermaid CLI bulunmadığından otomatik render testi yapılmadı. Fiziksel bağlantı veya elektriksel gate testi yapılmadı.
+Tüm Obsidian wikilink hedefleri, Mermaid çit çiftleri, YAML frontmatter, satır sonu boşlukları ve `git diff --check` doğrulandı. SVG XML olarak ayrıştırıldı; Chrome ile 1800×1200 PNG render alınıp görsel olarak incelendi. Yerel Mermaid CLI bulunmadığından Mermaid otomatik render testi yapılmadı. Fiziksel bağlantı veya elektriksel gate testi yapılmadı.
 
 ## Sonraki adım
 

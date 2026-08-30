@@ -13,6 +13,12 @@ Bu belge **tek Harman Kardom hoparlör** için modül-temelli prototip bağlant�
 > [!danger] Enerji verme yasağı
 > Nova woofer/tweeter değerleri G0 ile ölçülmeden gerçek sürücülere tam güç uygulanmaz. XH-A232 önce akım sınırlı laboratuvar kaynağı ve dummy-load ile G1 testinden geçer. Tweeter, `C_SAFE` seri koruma kondansatörü ile DSP HPF/limiter doğrulanmadan bağlanmaz.
 
+## Görsel prototip şeması
+
+![Harman Kardom tek hoparlör prototip devre şeması](assets/harman-kardom-prototype-schematic.svg)
+
+Şema ölçeklenebilir SVG'dir; sabit çözünürlüklü önizleme için [PNG sürümünü](assets/harman-kardom-prototype-schematic.png) açabilirsiniz. Test noktası numaraları aşağıdaki ayrıntılı tabloyla aynıdır. Bu çizim modül-temelli prototip içindir ve üretim PCB şeması yerine geçmez.
+
 ## 1. Sistem bağlantı özeti
 
 ```mermaid
