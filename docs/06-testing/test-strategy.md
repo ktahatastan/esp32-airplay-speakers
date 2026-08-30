@@ -22,3 +22,5 @@ Her kayıt; seri no, firmware/PCB sürümü, ölçüm cihazı, ortam, önkoşul,
 | G8 | Dayanıklılık | 24 saat soak ve düşük batarya kapanışı geçti |
 
 G0-G5 geçmeden dört batarya paketine çoğaltma yoktur. Manuel dinleme/ürün kabulü kullanıcıya aittir; agent ölçüm ve otomatik test kanıtını raporlar.
+
+Elektriksel bring-up sırasında kullanılacak `TP0-TP27` test noktaları, beklenen gerilim/dalga şekilleri, BTL çıkış ölçüm yöntemi ve osiloskop kanal planı [[../02-hardware/circuit-and-wiring-plan#7. Test noktaları ve osiloskop planı|devre ve bağlantı planında]] tanımlıdır.

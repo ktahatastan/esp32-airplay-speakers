@@ -25,6 +25,7 @@ Bu sayfa ortak Obsidian kasasının ana haritasıdır.
 - [[01-architecture/system-architecture|Sistem mimarisi]]
 - [[01-architecture/audio-network-feasibility|AirPlay senkron fizibilitesi]]
 - [[02-hardware/audio-signal-chain|Ses sinyal zinciri]]
+- [[02-hardware/circuit-and-wiring-plan|Devre ve bağlantı şemaları]]
 - [[power-and-battery-plan|Güç ve batarya]]
 - [[controls-and-provisioning-plan|Kontroller ve provisioning]]
 
