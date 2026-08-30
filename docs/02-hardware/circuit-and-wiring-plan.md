@@ -82,8 +82,11 @@ flowchart LR
 
     BP --> F1[F1 5 A başlangıç adayı]
     F1 --> TP7[TP7: sigorta sonrası]
-    TP7 --> S1[S1 24 VDC / 5 A anahtar]
+    TP7 --> S1[S1 KM103 / DC-132A kontakları; 16.8 VDC / 5 A doğrulanacak]
     S1 --> VBUS[TP8: VBAT_SW 12.0-16.8 V]
+    VBUS -.-> DSW[KM103 dahili 12 V LED]
+    DSW -.-> RSW[R_SW_LED TBD / ilk prototipte DNP]
+    RSW -.-> PM
     PM --> GND[POWER_GND]
 ```
 
@@ -123,6 +126,8 @@ flowchart TB
 - ESP32 USB ile programlanırken `JP1` açılır. Geliştirme kartının USB ile harici `5 V` hattını güvenle OR'ladığı kanıtlanmadıkça iki kaynak aynı anda bağlanmaz.
 - XH-A232 girişinde kart üzerinde yeterli bulk kapasitör yoksa amfiye yakın `470-1000 µF / 25 V` düşük-ESR kondansatör adayı denenir. Değer G1/G3 ölçümüyle kesinleşir.
 - `F1=5 A` yalnız başlangıç test adayıdır; kablo kesiti, anahtar DC kesme değeri ve ölçülen tepe akımıyla yeniden boyutlandırılır.
+- `S1` için seçilen KM103 / DC-132A parçasının fiziksel üç pin sırası süreklilik ve diyot moduyla bulunacaktır; çizimdeki pin işlevleri mantıksaldır. Kontak değeri belgelenmeden ana batarya hattı enerjilenmez.
+- Anahtarın dahili ışığı yalnız 12 V DC sınıfındadır. İlk prototipte LED dönüş pini açık bırakılır. Işık kullanılacaksa 12 V'taki akım ölçülür, 16,8 V tam dolu durumda aynı akımı aşmayacak `R_SW_LED` en az 1/4 W seri dirençle LED dönüş hattına eklenir.
 
 ## 3. ESP32-S3 -> PCM5102A -> XH-A232 ses zinciri
 

@@ -30,4 +30,4 @@ Modül konektörleri mantıksal pin sırasını gösterir. Fiziksel modül pin s
 
 ## Güvenlik durumu
 
-Şema `candidate` seviyesindedir. Nova sürücü empedansları, `C_SAFE`, BMS balans parametreleri, güç anahtarının 16,8 V DC kesme kapasitesi ve XH-A232 `SD/MUTE` erişimi ölçülmeden üretim tasarımı kabul edilmez. BTL çıkışlarının hiçbir eksi ucu GND değildir. V1'de şarj sırasında çalma yasaktır.
+Şema `candidate` seviyesindedir. Nova sürücü empedansları, `C_SAFE`, BMS balans parametreleri, KM103 / DC-132A güç anahtarının 16,8 V DC kesme kapasitesi, 12 V dahili LED pin dizilimi/akımı ve XH-A232 `SD/MUTE` erişimi ölçülmeden üretim tasarımı kabul edilmez. `R_SW_LED` bu ölçüme kadar `DNP` kalır. BTL çıkışlarının hiçbir eksi ucu GND değildir. V1'de şarj sırasında çalma yasaktır.

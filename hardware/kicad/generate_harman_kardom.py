@@ -94,12 +94,18 @@ def add_series_battery(schematic) -> None:
 
 def add_power_path(schematic) -> None:
     schematic.components.add("Device:Fuse", reference="F1", value="5 A STARTING CANDIDATE", position=(292, 47), rotation=90)
-    schematic.components.add("Switch:SW_SPST", reference="S1", value="HARD POWER / VERIFY 16.8 VDC RATING", position=(333, 47), rotation=90)
+    schematic.components.add("Switch:SW_SPST", reference="S1", value="KM103 / DC-132A CONTACTS / VERIFY 16.8 VDC 5 A", position=(333, 47), rotation=90)
     for reference, pin, net in (
         ("F1", "1", "PACK_POS"), ("F1", "2", "FUSED_POS"),
         ("S1", "1", "FUSED_POS"), ("S1", "2", "VBAT_SW"),
     ):
         schematic.add_label(net, pin=(reference, pin), size=1.0)
+    schematic.components.add("Device:LED", reference="D2", value="KM103 INTERNAL 12 V LED", position=(333, 59), rotation=90)
+    schematic.add_label("VBAT_SW", pin=("D2", "2"), size=1.0)
+    schematic.add_label("SW_LED_RETURN_TBD", pin=("D2", "1"), size=1.0)
+    schematic.components.add("Device:R", reference="R2", value="R_SW_LED TBD / DNP", position=(350, 59), rotation=90)
+    schematic.add_label("SW_LED_RETURN_TBD", pin=("R2", "1"), size=1.0)
+    schematic.add_label("POWER_GND", pin=("R2", "2"), size=1.0)
     schematic.components.add("Device:C_Polarized", reference="C1", value="1000 uF / 25 V LOW-ESR", position=(34, 106))
     schematic.add_label("VBAT_SW", pin=("C1", "1"), size=1.0)
     schematic.add_label("POWER_GND", pin=("C1", "2"), size=1.0)
@@ -122,7 +128,7 @@ def build_schematic():
     schematic.set_paper_size("A3")
     schematic.set_title_block(
         title="Harman Kardom - Module-Level Prototype", date="2026-08-30",
-        rev="0.4-candidate", company="Harman Kardom",
+        rev="0.5-candidate", company="Harman Kardom",
         comments={1: "4S Li-ion / USB-C PD / ESP32-S3 / PCM5102A / XH-A232",
                   2: "DO NOT ENERGIZE DRIVERS BEFORE G0-G2 MEASUREMENTS",
                   3: "BTL OUTPUT NEGATIVES ARE NOT GND",
@@ -142,7 +148,7 @@ def build_schematic():
     add_note(schematic, "Set PD trigger to 20 V without the battery connected.", (90, 66))
     add_note(schematic, "Calibrate XL4015 to 16.80 V / 2.00 A on a dummy load. V1: CHARGE WHILE PLAYING DISABLED.", (90, 70), bold=True)
     add_note(schematic, "BMS pin order is logical only. Verify actual silkscreen, balance threshold/current and NTC behavior.", (268, 67))
-    add_note(schematic, "Verify S1 breaking capacity at 16.8 VDC.", (318, 72), bold=True)
+    add_note(schematic, "S1 contact rating is undocumented: verify 16.8 VDC / 5 A. D2 is 12 V only; keep R2 DNP until LED current is measured.", (318, 72), size=1.05, bold=True)
     add_note(schematic, "Adjust U4 to 5.10 V before connecting ESP32/DAC. Keep JP1 open until USB backfeed safety is proven.", (88, 130))
     add_note(schematic, "GPIO candidates: BCLK=4, LRCLK=5, DATA=6, BTN=7, RGB=8/9/10, I2C=11/12.", (266, 129))
     add_note(schematic, "Avoid strapping GPIO0/3/45/46 and native USB GPIO19/20.", (266, 133))

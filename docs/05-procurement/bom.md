@@ -34,7 +34,7 @@ updated: 2026-08-30
 | 5 V buck regülatör | 4S giriş, sürekli akım ve termal marj; ESP32 + DAC beslemesi | 1 | 1 | 4 | [Robotistan MP1584EN 3 A](https://www.robotistan.com/3a-mini-ayarlanabilir-voltaj-dusurucu-regulator-karti-step-down) aday; yük/ısınma ve ses gürültüsü ölçülecek. |
 | Çok işlevli anlık buton | NO, panel tipi veya PCB tipi; 3.3 V GPIO için | 1 | 1 | 4 | [Robotistan KY-004](https://www.robotistan.com/ky-004-buton-modulu) yalnız prototip adayı; nihai panel butonu kasa tasarımına göre seçilecek. |
 | RGB durum LED'i | Ortak anot/katot RGB veya adreslenebilir LED; firmware seçimiyle uyumlu | 1 | 1 | 4 | [Robotistan 5 mm RGB modül](https://www.robotistan.com/3-renkli-rgb-led-modulu-5mm-rgb-led) prototip adayı. |
-| Sert güç anahtarı | Mandallı; en az 24 V DC / 5 A kontak hedefi | 1 | 1 | 4 | [Direnc.net 16 mm mandallı metal anahtar](https://www.direnc.net/16mm-ledli-12-24v-su-gecirmez-metal-anahtar) aday; sayfa 5 A @ 12 V DC belirtiyor, **16.8 V DC kesme kapasitesi satıcıdan yazılı doğrulanacak**. |
+| Sert güç anahtarı | Mandallı; en az 24 V DC / 5 A kontak hedefi | 1 | 1 | 4 | **Kullanıcının seçtiği mekanik aday:** [Direnc.net KM103 / DC-132A 12 V ışıklı 3P rocker](https://www.direnc.net/dc-132a-12v-yuvarlak-nokta-isikli-on-off-anahtar-3p-beyaz). Satıcı sayfası kontak akımı vermiyor; yalnız dahili LED için 12 V DC yazıyor. **16,8 V DC kesme kapasitesi yazılı doğrulanmadan ana batarya hattında onaylanmaz; LED pini doğrudan 4S'e bağlanmaz.** |
 
 ## Batarya ve şarj BOM'u
 
@@ -79,6 +79,7 @@ updated: 2026-08-30
 | Test noktaları `TP0–TP27` | Header kesiti veya prob pedi | Gerektikçe | 1×40 header'dan | Nihai PCB pedi | Üretimde ayrı BOM parçası değildir. |
 | Delikli pertinaks | 5×10 cm, tek yüzlü | 0 nihai | 1 | 1 ortak | Yalnız masaüstü prototip. |
 | Jumper kablo | 20 cm dişi-erkek, 40'lı | 0 nihai | 1 set | 1 ortak | Yalnız düşük akımlı I2S/GPIO prototipleme; güç/ses çıkışında kullanılmaz. |
+| `R_SW_LED` | Değer TBD, en az 1/4 W | 1 koşullu | Mevcut direnç setinden | 4 koşullu | KM103 dahili LED'i kullanılacaksa 12 V'taki LED akımı ölçülerek `R=(16,8−12)/I_LED` ile seçilir; ilk prototipte LED pini açık bırakılır. |
 
 Fiyat, bağlantı ve paket adetleri için [[turkey-shopping-list-2026-08-30#Yardımcı pasifler, konnektörler ve prototipleme parçaları|yardımcı parça sepetine]] bakın.
 

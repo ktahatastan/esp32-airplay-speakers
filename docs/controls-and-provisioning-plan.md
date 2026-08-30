@@ -125,6 +125,8 @@ LED animasyonları audio task üzerinde çalışmayacak; düşük öncelikli ayr
 ## Fiziksel güç anahtarı
 
 - Ayrı, kilitlemeli ve en az 24 V DC / 5 A değerli mekanik anahtar kullanılacak.
+- Kullanıcının seçtiği panel parçası [KM103 / DC-132A 12 V beyaz nokta ışıklı 3P rocker](https://www.direnc.net/dc-132a-12v-yuvarlak-nokta-isikli-on-off-anahtar-3p-beyaz) modelidir; ancak bu seçim elektriksel onay değildir. Ürün sayfasında kontak DC akım değeri bulunmadığından 16,8 V / 5 A yeterliliği yazılı doğrulanacak ve G3'te test edilecek.
+- Dahili ışık 12 V DC sınıfındadır. İlk prototipte LED pini bağlanmayacak; kullanılacaksa 12 V akımı ölçülüp 16,8 V tam dolu gerilime uygun harici seri direnç seçilecektir.
 - Anahtar BMS ile sistem yükleri arasına yerleştirilecek; amfi ve 5 V buck hattını birlikte kesecek.
 - Şarj jakı BMS tarafında kalacak; hoparlör kapalıyken batarya şarj edilebilecek.
 - Anahtar şarj akımını veya BMS balans işlevini kesmeyecek.

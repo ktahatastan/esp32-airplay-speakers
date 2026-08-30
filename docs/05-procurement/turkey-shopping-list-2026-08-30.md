@@ -38,12 +38,12 @@ USB-C soketi 4S pakete doğrudan bağlanmaz. PD tetikleyici yalnız 20 V anlaşm
 | 5–20 V PD/QC/AFC tetikleyici | USB-C adaptörden sabit 20 V PD profili ister | [Meltis Teknoloji](https://www.meltisteknoloji.com/pd-qc-afc-hizli-sarj-adaptorunden-voltaj-tetikleyici-secici-modul-1290) | 1 | 120,40 TL | 481,60 TL | 17 stok; DIP 20 V seçimi yük bağlamadan ölçülecek |
 | XL4015 CC/CV Li-ion şarj modülü `20040` | 20 V'u 16,80 V CC/CV şarja çevirir; akım 2,00 A ile sınırlandırılır | [Robotistan](https://www.robotistan.com/xl4015-lipo-sarj-modulu) | 1 | 188,88 TL | 755,52 TL | Stokta; **aday**, kalibrasyon, ters polarite ve termal test zorunlu |
 | 16 mm 10–30 V IP65 anlık metal buton | Kısa/uzun basma ile reset, provisioning ve eşleştirme komutları | [Direnc.net](https://www.direnc.net/16mm-10-30v-mavi-baglanti-kablolu-su-gecirmez-metal-yayli-buton) | 1 | 127,86 TL | 511,44 TL | Stokta; LED'i batarya hattından, kontak GPIO'dan sürülecek |
-| ASW-13D 12 V / 20 A kalıcı rocker anahtar | Cihazın batarya çıkışını fiziksel olarak keser | [Hatfon](https://www.hatfon.com/urun/anahtar-panel-tip-mavi-asw-13d-isikli-3-pin-12v-20a-kalici-tip) | 1 | 55,34 TL | 221,36 TL | **Teyit bekliyor**; 16,8 V DC kesme değeri ve LED bağlantısı sorulacak |
+| KM103 / DC-132A 12 V beyaz nokta ışıklı 3P rocker anahtar | Kullanıcının seçtiği cihaz güç anahtarı; doğrulanırsa batarya çıkışını fiziksel olarak keser | [Direnc.net](https://www.direnc.net/dc-132a-12v-yuvarlak-nokta-isikli-on-off-anahtar-3p-beyaz) | 1 | 20,34 TL | 81,36 TL | **Seçilen mekanik aday / elektriksel teyit bekliyor:** sayfa kontak akımı vermiyor ve yalnız LED'i 12 V DC olarak belirtiyor. 16,8 V hatta doğrudan bağlanmayacak; satıcı doğrulaması ve G3 testi zorunlu |
 | 5 mm RGB LED modülü | Wi-Fi, provisioning, hata, şarj ve OTA durumlarını gösterir | [Robotistan](https://www.robotistan.com/3-renkli-rgb-led-modulu-5mm-rgb-led) | 1 | 17,54 TL | 70,16 TL | Stokta; ortak anot/katot prototipte teyit edilecek |
 | 5x20 kablolu sigorta yuvası | Ana sigortayı BMS çıkışına ve hücrelere yakın taşır | [Direnc.net](https://www.direnc.net/fuse-fuse-holders?ps=2) | 1 | 10,23 TL | 40,92 TL | Aday; DC kullanım ve kablo kesiti kontrol edilecek |
 | F5AL 5 A hızlı cam sigorta | Kablo/paket kısa devre enerjisini sınırlar | [Robotistan](https://www.robotistan.com/f5al250v-cam-sigorta) | 1 | 1,47 TL | 5,88 TL | Başlangıç adayı; G3 akım ölçümünden sonra değer kesinleşir |
 
-**İç donanım ara toplamı:** 2.223,09 TL / hoparlör; **8.892,36 TL / dört hoparlör**.
+**İç donanım ara toplamı:** 2.188,09 TL / hoparlör; **8.752,36 TL / dört hoparlör**.
 
 ## Yardımcı pasifler, konnektörler ve prototipleme parçaları
 
@@ -77,9 +77,9 @@ Bir adaptör ve kablo dört hoparlör arasında sırayla kullanılabilir. Dört 
 
 | Senaryo | İç donanım | Adaptör + kablo | Sarf/izolasyon bütçesi | Genel toplam |
 |---|---:|---:|---:|---:|
-| 1 hoparlör prototipi + 1 adaptör/kablo | 2.223,09 TL | 865,00 TL | 250,00 TL tahmini | **3.338,09 TL** |
-| 4 hoparlör + ortak 1 adaptör/kablo | 8.892,36 TL | 865,00 TL | 1.000,00 TL tahmini | **10.757,36 TL** |
-| 4 hoparlör + 4 adaptör/kablo | 8.892,36 TL | 3.460,00 TL | 1.000,00 TL tahmini | **13.352,36 TL** |
+| 1 hoparlör prototipi + 1 adaptör/kablo | 2.188,09 TL | 865,00 TL | 250,00 TL tahmini | **3.303,09 TL** |
+| 4 hoparlör + ortak 1 adaptör/kablo | 8.752,36 TL | 865,00 TL | 1.000,00 TL tahmini | **10.617,36 TL** |
+| 4 hoparlör + 4 adaptör/kablo | 8.752,36 TL | 3.460,00 TL | 1.000,00 TL tahmini | **13.212,36 TL** |
 
 Sarf/izolasyon bütçesi; yukarıda açıkça fiyatlandırılan yardımcı sepetle birlikte saf nikel şerit, fish-paper, pozitif kutup halkası, silikon kablo, ısı makaronu, nihai JST/kilitli konnektör ve yükselticiler için fiyat tahminidir. Nokta kaynak hizmeti, kargo ve kasa dahil değildir. 4S2P seçilirse dört paket için 16 ek Aspilsan A28 gerekir; yalnız hücre farkı **1.909,76 TL**'dir.
 
@@ -87,7 +87,7 @@ Sarf/izolasyon bütçesi; yukarıda açıkça fiyatlandırılan yardımcı sepet
 
 1. İlk aşamada yalnız bir hoparlörlük elektronik ve dört aynı-parti hücre alınır.
 2. BMS satıcısından balans başlangıç gerilimi, balans akımı, sürekli deşarj akımı ve bağlantı sırası yazılı istenir.
-3. Güç anahtarı satıcısından 16,8 V DC'deki kesme akımı teyit edilir; teyit gelmezse ayrı DC-rated load switch/MOSFET çözümüne geçilir.
+3. KM103 / DC-132A güç anahtarının kontak akımı ve 16,8 V DC kesme kapasitesi satıcıdan yazılı teyit edilir. Teyit gelmezse bu parça batarya akımını doğrudan kesmez; ayrı DC-rated mekanik anahtar veya doğrulanmış load-switch/MOSFET çözümüne geçilir.
 4. XL4015, bataryaya bağlanmadan laboratuvar yükünde 16,80 V / 2,00 A olarak ayarlanır; 30 dakika sıcaklık ve ripple testi yapılır.
 5. [[../06-testing/test-strategy|G3 güç]] ve G4 batarya kapıları geçilmeden kalan üç set toplu alınmaz.
 
@@ -97,7 +97,8 @@ Sarf/izolasyon bütçesi; yukarıda açıkça fiyatlandırılan yardımcı sepet
 - Syrox set içindeki Type-C kablo 5 A e-marker içeriyor mu; adaptör tek Type-C kullanımında gerçek 20 V / 3,25 A PD profilini sunuyor mu?
 - HX-4S-20D gerçekten pasif balanslı mı; balans eşiği ve akımı kaç mA?
 - BMS'nin 10 A sürekli yükte MOSFET sıcaklığı ve koruma eşikleri belgeli mi?
-- ASW-13D anahtarın 16,8 V DC'de güvenli kesme akımı kaç A?
+- KM103 / DC-132A anahtarın kontakları 16,8 V DC'de kaç amperi güvenli biçimde açıp kapatabilir; DC ark ömrü nedir?
+- Anahtarın üçüncü pini yalnız dahili 12 V LED dönüşü mü; pin dizilimi ve dahili LED akımı nedir?
 - XL4015 kartının ters giriş koruması olmadığı kabul ediliyor mu; kart revizyonu tüm dört adette aynı mı?
 
 ## İlgili notlar

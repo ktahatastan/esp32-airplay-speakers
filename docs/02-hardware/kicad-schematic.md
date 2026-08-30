@@ -29,14 +29,14 @@ python hardware/kicad/generate_harman_kardom.py --validate
 ## Pafta kapsamı
 
 - USB-C PD tetikleyici ve XL4015 16,80 V CC/CV şarj zinciri
-- 4S1P hücreler, balanslı BMS, sigorta ve mekanik güç anahtarı
+- 4S1P hücreler, balanslı BMS, sigorta ve KM103 / DC-132A mekanik güç anahtarı; ayrı 12 V dahili LED dönüşü ve koşullu `R_SW_LED`
 - MP1584 5,10 V lojik beslemesi ve USB geri-besleme ayırma jumperı
 - ESP32-S3, fonksiyon butonu ve RGB durum LED'i
 - PCM5102A, XH-A232, woofer ve seri `C_SAFE` korumalı tweeter
 - TP0-TP25 güç, I2S, analog, BTL, şarj ve kullanıcı arayüzü ölçüm noktaları
 
 > [!warning]
-> Konektör pin sıraları mantıksaldır; satın alınan modüllerin fiziksel pin sırası olarak kullanılamaz. BMS baskı yazısı/veri sayfası, güç anahtarının 16,8 V DC kesme kapasitesi ve modül revizyonları ayrıca doğrulanır.
+> Konektör ve KM103 pin sıraları mantıksaldır; satın alınan parçaların fiziksel pin sırası olarak kullanılamaz. BMS baskı yazısı/veri sayfası, güç anahtarının 16,8 V DC kesme kapasitesi, KM103 dahili LED bağlantısı ve modül revizyonları ayrıca doğrulanır. Anahtar LED'i 12 V sınıfında olduğundan `R_SW_LED` ölçüm yapılana kadar `DNP` kalır.
 
 > [!danger]
 > `AMP_L_MINUS` ve `AMP_R_MINUS` BTL anahtarlama çıkışıdır; GND değildir. Osiloskop toprak klipsi hiçbir BTL ucuna bağlanmaz. G0-G4 ölçüm kapıları kapanmadan gerçek sürücülere enerji verilmez.

@@ -92,6 +92,15 @@ Her tarama kaydı tarihli tutulur. Fiyat ve stok geçmiş bilgi sayılır; yeni 
 - Buton, sert güç anahtarı, RGB modülü, sigorta ve yuva ana fiyat tablosunda zaten bulunduğu için yardımcı sepette ikinci kez maliyete eklenmedi.
 - Yardımcı sepet mevcut sarf/izolasyon bütçesinin içinde tutuldu; genel maliyet toplamları değişmedi. Fiyat ve stok 2026-08-30 erişim görüntüsüdür ve siparişten önce yenilenecektir.
 
+## 2026-08-30 — KM103 / DC-132A güç anahtarı seçimi
+
+- Kullanıcı, [Direnc.net KM103 / DC-132A 12 V beyaz nokta ışıklı 3P rocker anahtarı](https://www.direnc.net/dc-132a-12v-yuvarlak-nokta-isikli-on-off-anahtar-3p-beyaz) panel parçası olarak seçti.
+- 2026-08-30 erişiminde ürün 20,34 TL KDV dahil ve sepete eklenebilir görünüyordu; dört cihaz maliyeti 81,36 TL'dir. Sayfa `KM103`, `Swion`, `Daier / XN` ve URL'de `DC-132A` isimlerini birlikte kullandığından satın alınan parçanın baskısı/fiziksel revizyonu teslimatta kaydedilecektir.
+- Sayfada 28 × 23 × 23 mm ABS gövde, 3 pin ve **12 V DC LED** bilgisi vardır; kontak akımı, DC kesme gerilimi veya elektriksel ömür verilmemiştir.
+- Bu nedenle durum `seçilen mekanik aday / elektriksel teyit bekliyor` olarak tutuldu. Anahtar 16,8 V batarya hattına doğrudan bağlanmayacak; önce satıcıdan en az 16,8 V DC / 5 A kontak doğrulaması, sonra akım sınırlı G3 yük ve açma-kapama testi gerekir.
+- Dahili LED pini ilk prototipte açık bırakılacaktır. LED kullanılacaksa 12 V'taki akım ölçülüp `R=(16,8−12)/I_LED` ile harici seri direnç seçilecek; 4S tam dolu hatta doğrudan bağlanmayacaktır.
+- Önceki ASW-13D adayına göre anahtar maliyeti 35,00 TL/hoparlör, dört cihazda 140,00 TL azaldı. Güncel dört cihaz + ortak şarj seti + sarf toplamı 10.617,36 TL oldu; geçmiş fiyat araştırması kayıtları değiştirilmedi.
+
 ## İlgili notlar
 
 - [[bom|BOM ve satın alma listesi]]

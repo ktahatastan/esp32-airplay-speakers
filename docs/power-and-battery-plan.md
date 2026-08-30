@@ -71,7 +71,7 @@ Bu seçim, TPA3110D2'nin 16 V beslemede 8 ohm yükte yaklaşık 15 W/kanal veri 
 | Güç ölçümü | 1, opsiyonel | 36 V'a kadar çift yönlü akım/gerilim | INA226 modülü prototip telemetrisi için |
 | Fonksiyon butonu | 1 | Anlık, normalde açık | Provisioning ve reset; aktif-low GPIO |
 | RGB durum LED'i | 1 | Ortak katot, 3 kanal | Her renge seri direnç ve PWM GPIO |
-| Fiziksel güç anahtarı | 1 | Kilitlemeli, en az 24 V DC / 5 A | BMS sonrası yalnız sistem yüklerini keser |
+| Fiziksel güç anahtarı | 1 | Kilitlemeli, en az 24 V DC / 5 A kontak hedefi | KM103 / DC-132A seçilen mekanik aday; kontak değeri belgelenmediği ve dahili LED yalnız 12 V olduğu için 16,8 V hatta G3 öncesi bağlanmaz |
 | Paket izolasyonu | 1 set | Hücre tutucu, fish-paper halka, Kapton, nikel şerit, ısı makaron | Zorunlu |
 
 ## Araştırılan satın alma adayları
