@@ -19,6 +19,12 @@ Bu belge **tek Harman Kardom hoparlör** için modül-temelli prototip bağlant�
 
 Şema ölçeklenebilir SVG'dir; sabit çözünürlüklü önizleme için [PNG sürümünü](assets/harman-kardom-prototype-schematic.png) açabilirsiniz. Test noktası numaraları aşağıdaki ayrıntılı tabloyla aynıdır. Bu çizim modül-temelli prototip içindir ve üretim PCB şeması yerine geçmez.
 
+### Mühendislik paftası görünümü
+
+![Harman Kardom mühendislik tipi modül bağlantı şeması](assets/harman-kardom-engineering-schematic.svg)
+
+Bu alternatif pafta; referans görseldeki gibi koordinatlı çerçeve, fonksiyon başlıkları, devre sembolleri, net adları, referans/değer renkleri, test noktası indeksi ve antet kullanır. [SVG kaynağı](assets/harman-kardom-engineering-schematic.svg) veya [2000×1400 PNG önizlemesi](assets/harman-kardom-engineering-schematic.png) açılabilir.
+
 ## 1. Sistem bağlantı özeti
 
 ```mermaid

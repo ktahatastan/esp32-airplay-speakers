@@ -23,6 +23,7 @@ Tek Harman Kardom hoparlör için güç, batarya/BMS, I2S/DAC, bi-amp sürücül
 - Class-D BTL çıkışları için diferansiyel prob veya iki kanal `CH1-CH2` yöntemi tanımlandı.
 - Besleme ripple, I2S saatleri, DAC seviyesi, dummy-load ve power-sequence ölçüm planı eklendi.
 - Batarya, BMS, güç, ESP32-S3, PCM5102A, XH-A232, sürücüler, kullanıcı kontrolleri ve TP0-TP27 noktalarını tek paftada gösteren SVG/PNG görsel şema eklendi.
+- EasyEDA/KiCad benzeri koordinat çerçevesi, devre sembolleri, net ve parça referansları ile antet kullanan ikinci mühendislik paftası görünümü eklendi.
 - Belge donanım ve ana Obsidian MOC sayfalarına bağlandı.
 
 ## Kararlar
