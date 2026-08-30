@@ -7,6 +7,8 @@ tags: [procurement, moc]
 
 # Satın alma
 
+- [[turkey-shopping-list-2026-08-30|Türkiye satın alma listesi ve maliyet hesabı]]
+
 - [[bom|BOM ve toplam miktarlar]]
 - [[suppliers|Satıcı ve ürün adayları]]
 - [[research-log|Tarihli araştırma günlüğü]]

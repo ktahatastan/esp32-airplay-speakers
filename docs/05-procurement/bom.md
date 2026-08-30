@@ -42,8 +42,9 @@ updated: 2026-08-30
 |---|---|---:|---:|---:|---:|---|
 | 18650 Li-ion hücre | Aynı model/parti, başsız, yeni ve eşlenmiş | 4 | 16 | 8 | 32 | Molicel P28A aday; [Pilpaketi](https://www.pilpaketi.com/molicel-inr18650-p28a-2800-mah-35a-li-ion-pil) stokta yoktu, [Pilburada](https://www.pilburada.com/molicel-inr-18650-p28a-37v-2800-mah-li-ion-sarjli-pil-35a-60653) alternatif. 4S2P için 32 hücre tek partiden alınmalı. |
 | 4S Li-ion BMS | 16.8 V, gerçek sürekli >=10 A, hücre balansı; NTC tercih | 1 | 4 | 1 | 4 | [Pilburada HXYP 4S 12A](https://www.pilburada.com/hxyp-4s-148v-12a-li-ion-bms-devre-85187) aday; satıcı balans belirtiyor ancak NTC ve sürekli akım bağımsız doğrulanacak. [Elektropil OLT 4S 40A balanslı](https://www.elektropil.com/olt-4s-40a-168v-balansli-lityum-batarya-bms--mor-pcb--m031125) alternatif aday. |
-| Harici CC/CV şarj cihazı | 4S Li-ion, tam 16.8 V, 2-3 A, uygun DC uç | 1 | 4 | 1 | 4 | [Pil Servisi 16.8 V 2 A](https://pilservisi.com.tr/urun/16-8v-2a-li-ion-sarj-adaptoru/) veya [Pil Mağazası WEKO 2 A](https://pilmagazasi.com/products/weko-16-8v-2a-4s-li-ion-batarya-sarj-adaptoru-priz-tipi) aday. [Pilpaketi 3 A](https://www.pilpaketi.com/lion-sarj-aleti-4s-16.8-volt-3a-2.1-mm-soket) araştırma tarihinde stokta yoktu. |
-| Panel şarj soketi | Şarj cihazıyla aynı 5.5 x 2.1 veya 5.5 x 2.5 mm; akım >=3 A | 1 | 4 | 1 | 4 | [Direnc.net DC-005 5.5 x 2.1](https://www.direnc.net/dc-005-55-x-21mm-siyah-dc-guc-adaptoru-jak-soketi-modulu) prototip adayı; seçilen adaptör ucu ve kontak akımı doğrulanacak. |
+| USB-C PD tetikleyici | PD 20 V profilini seçer; 5 A sınıfı Type-C giriş | 1 | 4 | 1 | 4 | [Meltis 5-20 V PD/QC/AFC seçici](https://www.meltisteknoloji.com/pd-qc-afc-hizli-sarj-adaptorunden-voltaj-tetikleyici-secici-modul-1290) aday; 20 V seçimi batarya bağlanmadan ölçülecek. |
+| 16.8 V CC/CV şarj katı | 20 V giriş; çıkış 16,80 V ve 2,00 A'e kalibre edilebilir | 1 | 4 | 1 | 4 | [Robotistan XL4015 CC/CV](https://www.robotistan.com/xl4015-lipo-sarj-modulu) aday; ters polarite koruması yoktur, termal/ripple testi zorunludur. |
+| Harici USB-C PD adaptör + e-marker kablo | Tek portta en az 45 W; 20 V PD; kablo 5 A / 100 W e-marker | 1 ortak veya 1 | 1 ortak veya 4 | 1 ortak veya 1 | 1 ortak veya 4 | Baseus 65 W + 100 W kablo fiyatları ve iki senaryo için [[turkey-shopping-list-2026-08-30|Türkiye satın alma listesine]] bakın. |
 | Ana sigorta + yuva | BMS çıkışına yakın; değer kablo/amfi testine göre | 1 | 4 | 1 | 4 | Satın alınacak; başlangıç değeri kesinleştirilmedi. DC gerilim ve kesme kapasitesi doğrulanacak. |
 | NTC sensör | Seçilen BMS ile uyumlu; hücre grubuna termal temas | 1 | 4 | 1 | 4 | BMS ile birlikte tercih; ayrı giriş/pin değeri doğrulanacak. |
 | Nikel şerit / hücre izolatörü / fish-paper | Kaynak akımına uygun saf nikel; artı kutup halkaları ve izolasyon | 1 set | 4 set | 1 set | 4 set | Paket üreticisiyle kesinleştirilecek; nikel kaplı çelik kabul edilmeyecek. |
@@ -74,6 +75,7 @@ updated: 2026-08-30
 
 ## İlgili notlar
 
+- [[turkey-shopping-list-2026-08-30|Türkiye satın alma listesi ve maliyet hesabı]]
 - [[suppliers|Satıcı ve ürün adayları]]
 - [[research-log|Satın alma araştırma günlüğü]]
 - [[../power-and-battery-plan|Güç ve batarya planı]]

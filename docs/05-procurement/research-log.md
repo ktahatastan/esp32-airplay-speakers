@@ -63,7 +63,18 @@ Her tarama kaydı tarihli tutulur. Fiyat ve stok geçmiş bilgi sayılır; yeni 
 - [ ] Kasa çizimi çıkınca panel butonu, LED lensi, şarj soketi ve güç anahtarının mekanik ölçülerini dondur.
 - [ ] Dört ünite toplu alımından hemen önce stok/fiyat taramasını yenile.
 
+## 2026-08-30 — USB-C zinciri ve fiyatlı sepet taraması
+
+- Türkiye stoklu hazır bir IP2368 tabanlı 4S USB-C şarj modülü bulunamadı; bulunan IP2368 ürünü yalnız çıplak QFN entegre olduğundan prototip BOM'una alınmadı.
+- V1 zinciri `20 V PD tetikleyici -> XL4015 16,8 V / 2 A CC/CV -> balanslı 4S BMS` olarak fiyatlandırıldı.
+- TLS Robotik ESP32-S3 N16R8 810,30 TL, Aletler PCM5102A 190,26 TL, Robotistan MP1584 72,74 TL ve Pilburada P28A 594,00 TL/adet olarak görüldü.
+- Meltis PD tetikleyici 120,40 TL ve Robotistan XL4015 CC/CV 188,88 TL olarak stokta görünüyordu.
+- Motorobit HX-4S-20D BMS 112,80 TL idi; ürün başlığı balans iddiası taşısa da balans eşiği/akımı belgelenmediği için `teyit bekliyor` durumunda tutuldu.
+- Baseus GaN5 Pro 65 W adaptör 2.299,00 TL, Baseus Pudding 100 W e-marker kablo 399,00 TL olarak fiyatlandırıldı.
+- Ayrıntılı adetler, bağlantılar ve toplamlar [[turkey-shopping-list-2026-08-30|Türkiye satın alma listesine]] kaydedildi.
+
 ## İlgili notlar
 
 - [[bom|BOM ve satın alma listesi]]
+- [[turkey-shopping-list-2026-08-30|Türkiye satın alma listesi ve maliyet hesabı]]
 - [[suppliers|Satıcı ve ürün adayları]]
