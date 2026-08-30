@@ -73,6 +73,15 @@ Her tarama kaydı tarihli tutulur. Fiyat ve stok geçmiş bilgi sayılır; yeni 
 - Baseus GaN5 Pro 65 W adaptör 2.299,00 TL, Baseus Pudding 100 W e-marker kablo 399,00 TL olarak fiyatlandırıldı.
 - Ayrıntılı adetler, bağlantılar ve toplamlar [[turkey-shopping-list-2026-08-30|Türkiye satın alma listesine]] kaydedildi.
 
+## 2026-08-30 — Aspilsan A28 ve düşük maliyetli şarj seti
+
+- Kullanıcının seçimiyle hücre adayı [Pilpaketi Aspilsan INR18650A28](https://www.pilpaketi.com/aspilsan-pil) olarak değiştirildi; görülen fiyat 119,36 TL/adet ve ürün siparişe açıktı.
+- [Aspilsan A28 üretici veri sayfası](https://www.aspilsan.com/wp-content/uploads/2025/05/A28_Public_Datasheet_.pdf) 2.800 mAh nominal kapasite, 3,65 V nominal gerilim, 4,2 V şarj sonu, 1,4 A standart/4 A azami şarj ve **14 A sürekli deşarj** sınırını doğruluyor. Satıcıdaki 25 A ifadesi yalnız SOC/sıcaklık koşullu üst değerdir.
+- 4S1P paket yaklaşık 14,6 V / 2,8 Ah / 40,9 Wh; 4S2P yaklaşık 14,6 V / 5,6 Ah / 81,8 Wh olur. 16,8 V tam dolu gerilim ve mevcut 4S mimari değişmez.
+- Kablo dahil [Syrox GAN65T 65 W set](https://www.trendyol.com/syrox/gan65-type-c-usb-giris-baslik-type-c-kablo-65w-super-hizli-quick-sarj-set-p-793024101) 865,00 TL ve son bir ürün olarak görünüyordu. [Syrox katalog verisi](https://syrox.com.tr/wp-content/uploads/2024/02/Syrox_Katalog_Download.pdf) tek USB-C kullanımında 20 V / 3,25 A ve 1 m Type-C kablo belirtiyor.
+- Setin ayrı kablo maliyetini kaldırmasıyla önceki 2.698,00 TL Baseus adaptör+kablo bütçesi 865,00 TL'ye indi. Kutu kablosunun 5 A/e-marker kimliği katalogda açık yazmadığı için satın alma sonrası USB-C test cihazıyla doğrulama şartı kondu.
+- Alternatif olarak [Konfulon C99Q](https://www.mediamarkt.com.tr/tr/product/_konfulon-c99q-65w-pd-destekli-type-c-ve-usb-cift-cikisli-hizli-sarj-adaptoru-beyaz-172794171.html) 949,00 TL; tek Type-C çıkışı 20 V / 3,25 A olarak listelendi, fakat ayrıca kablo gerektiriyor.
+
 ## İlgili notlar
 
 - [[bom|BOM ve satın alma listesi]]

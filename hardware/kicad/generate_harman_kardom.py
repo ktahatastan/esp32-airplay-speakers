@@ -82,7 +82,7 @@ def add_note(schematic, text: str, position: tuple[float, float], *, size: float
 
 def add_series_battery(schematic) -> None:
     for index, y in enumerate((35, 45, 55, 65), start=1):
-        schematic.components.add("Device:Battery_Cell", reference=f"BT{index}", value=f"21700 CELL {index}", position=(183, y))
+        schematic.components.add("Device:Battery_Cell", reference=f"BT{index}", value=f"ASPILSAN A28 18650 / CELL {index}", position=(183, y))
     for reference, pin, net in (
         ("BT1", "1", "BPLUS"), ("BT1", "2", "B3"),
         ("BT2", "1", "B3"), ("BT2", "2", "B2"),

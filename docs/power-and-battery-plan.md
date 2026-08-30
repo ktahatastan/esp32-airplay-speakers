@@ -44,14 +44,14 @@ Bu seçim, TPA3110D2'nin 16 V beslemede 8 ohm yükte yaklaşık 15 W/kanal veri 
 ### Kompakt prototip: 4S1P
 
 - 4 adet aynı model ve aynı partiden 18650 hücre.
-- Molicel P28A kullanılırsa yaklaşık 14,8 V / 2,8 Ah / 41 Wh.
+- Aspilsan A28 kullanılırsa yaklaşık 14,6 V / 2,8 Ah / 40,9 Wh.
 - Tam güçte yaklaşık 1 saat, normal dinleme seviyesinde kabaca 3-5 saat hedeflenebilir.
 - Öncelik: tek hoparlör prototipi ve elektriksel doğrulama.
 
 ### Önerilen nihai paket: 4S2P
 
 - Hoparlör başına 8 adet aynı model ve aynı partiden 18650 hücre.
-- Molicel P28A kullanılırsa yaklaşık 14,8 V / 5,6 Ah / 83 Wh.
+- Aspilsan A28 kullanılırsa yaklaşık 14,6 V / 5,6 Ah / 81,8 Wh.
 - Normal dinleme seviyesinde kabaca 6-10 saat hedeflenebilir.
 - Dört hoparlör için toplam 32 hücre gerekir.
 
@@ -61,7 +61,7 @@ Bu seçim, TPA3110D2'nin 16 V beslemede 8 ohm yükte yaklaşık 15 W/kanal veri 
 
 | Kalem | Adet | Asgari özellik | Durum / aday |
 |---|---:|---|---|
-| Li-ion hücre | 4 veya 8 | Aynı model/parti; yeni ve eşlenmiş | Molicel P28A 2800 mAh aday |
+| Li-ion hücre | 4 veya 8 | Aynı model/parti; yeni ve eşlenmiş | Aspilsan INR18650A28 2800 mAh seçilen aday; G4 bekliyor |
 | BMS | 1 | 4S Li-ion, gerçek balans, en az 10 A sürekli, aşırı akım/kısa devre/aşırı şarj/deşarj; tercihen NTC | Satın almadan önce balans ve NTC doğrulanacak |
 | Harici şarj cihazı | 1 | 16,8 V CC/CV, 2-3 A | 4S 16,8 V 3 A adaptör adayı |
 | 5 V regülatör | 1 | 4,5-28 V giriş, 5 V / en az 2 A | MP1584EN 3 A modül; 5,10 V'a ayarlanıp yük altında test edilecek |
@@ -77,7 +77,8 @@ Bu seçim, TPA3110D2'nin 16 V beslemede 8 ohm yükte yaklaşık 15 W/kanal veri 
 ## Araştırılan satın alma adayları
 
 - PCM5102A DAC: https://www.aletler.com.tr/urun/pcm5102a-dac-modul
-- Molicel P28A hücre: https://www.pilpaketi.com/molicel-inr18650-p28a-2800-mah-35a-li-ion-pil
+- Aspilsan INR18650A28 hücre: https://www.pilpaketi.com/aspilsan-pil
+- Aspilsan A28 üretici veri sayfası: https://www.aspilsan.com/wp-content/uploads/2025/05/A28_Public_Datasheet_.pdf
 - 4S 20 A balanslı BMS adayı: https://www.candagrup.com/4s-20a-bms-lityum-18650-balans-pil-sarj-koruma-devresi
 - Alternatif 4S BMS kaynağı: https://www.pilmak.com/urun/4s-20a-168v-bms-hx-4s-bm20/
 - 16,8 V / 3 A şarj adaptörü adayı: https://www.pilpaketi.com/lion-sarj-aleti-4s-16.8-volt-3a-2.1-mm-soket

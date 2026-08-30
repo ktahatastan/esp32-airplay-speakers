@@ -2,7 +2,7 @@
 	(version 20250114)
 	(generator "eeschema")
 	(generator_version "9.0")
-	(uuid "35029f4d-8913-4efc-88a2-aa253a2cd07a")
+	(uuid "5ad5c568-c7e7-40fd-9fc8-742e45dff40d")
 	(paper "A3")
 	(title_block
 		(title "Harman Kardom - Module-Level Prototype")
@@ -3295,7 +3295,7 @@
 		(on_board yes)
 		(dnp no)
 		(fields_autoplaced no)
-		(uuid "7347c446-e53d-45db-9a87-be6fd99b873c")
+		(uuid "316ae7e4-29f8-4170-9d43-9437c8bd997e")
 		(property "Reference" "J1"
 			(at 35.56 50.8 0.0000)
 			(effects
@@ -3315,14 +3315,14 @@
 			)
 		)
 		(pin "1"
-			(uuid "240493d1-128f-4be5-83d9-71d6c0052b47")
+			(uuid "c2d40247-7efa-4e16-a22b-306a005fbf9f")
 		)
 		(pin "2"
-			(uuid "cb19be27-de1c-4cff-94f2-e4b51045f292")
+			(uuid "53f065b1-4019-4471-9972-55de883b8be1")
 		)
 		(instances
 			(project "harman-kardom"
-				(path "/35029f4d-8913-4efc-88a2-aa253a2cd07a"
+				(path "/5ad5c568-c7e7-40fd-9fc8-742e45dff40d"
 					(reference "J1")
 					(unit 1)
 				)
@@ -3338,7 +3338,7 @@
 		(on_board yes)
 		(dnp no)
 		(fields_autoplaced no)
-		(uuid "b6d70aeb-46ee-4e7a-a034-3f8166d7130a")
+		(uuid "981db557-a7ab-46ee-96df-6e51d8278144")
 		(property "Reference" "U1"
 			(at 82.55 53.34 0.0000)
 			(effects
@@ -3358,20 +3358,20 @@
 			)
 		)
 		(pin "1"
-			(uuid "47a901bc-a882-4b7b-8a84-adcd10466968")
+			(uuid "6cad39e3-fde8-487b-b566-f1533a76030a")
 		)
 		(pin "2"
-			(uuid "4b77de46-3b78-49e2-bcd7-01282b079924")
+			(uuid "725bec27-c73f-4cb2-8e9c-950bd3550c8b")
 		)
 		(pin "3"
-			(uuid "4169eddc-4013-4268-96fb-77dd91a29c17")
+			(uuid "f12f6593-e27d-449d-910e-e1bc5541b23f")
 		)
 		(pin "4"
-			(uuid "337ff0ab-d407-482c-8038-a730d01376f5")
+			(uuid "78509ef5-0691-4f28-a15d-1608deeb59fa")
 		)
 		(instances
 			(project "harman-kardom"
-				(path "/35029f4d-8913-4efc-88a2-aa253a2cd07a"
+				(path "/5ad5c568-c7e7-40fd-9fc8-742e45dff40d"
 					(reference "U1")
 					(unit 1)
 				)
@@ -3387,7 +3387,7 @@
 		(on_board yes)
 		(dnp no)
 		(fields_autoplaced no)
-		(uuid "f641bb9b-a65f-429a-b6f8-8c0e86d7875b")
+		(uuid "be7f3039-abb6-417c-97b2-8e4625270d5f")
 		(property "Reference" "U2"
 			(at 137.16 53.34 0.0000)
 			(effects
@@ -3407,20 +3407,20 @@
 			)
 		)
 		(pin "1"
-			(uuid "090eb5b2-cda7-4ff2-be88-477caef67c03")
+			(uuid "18501b19-7897-412e-a9ca-ba9a520d61cd")
 		)
 		(pin "2"
-			(uuid "419c8fe2-1951-47c8-a28e-405974a0bb01")
+			(uuid "13be4943-8705-4e94-9a13-9bce47152764")
 		)
 		(pin "3"
-			(uuid "063b3e92-af8e-4e10-83aa-d119e016c389")
+			(uuid "f65996de-ba06-4d0e-ba55-7ec106219d83")
 		)
 		(pin "4"
-			(uuid "ff7f5b27-e1e9-4c11-809a-d56a8322c257")
+			(uuid "48c0a201-6cbe-4ce7-b6e1-867d6ec46de7")
 		)
 		(instances
 			(project "harman-kardom"
-				(path "/35029f4d-8913-4efc-88a2-aa253a2cd07a"
+				(path "/5ad5c568-c7e7-40fd-9fc8-742e45dff40d"
 					(reference "U2")
 					(unit 1)
 				)
@@ -3436,7 +3436,7 @@
 		(on_board yes)
 		(dnp no)
 		(fields_autoplaced no)
-		(uuid "4447b5f1-0157-498f-bde6-69b5108a99a2")
+		(uuid "7f05590f-c153-41b5-bcb9-09733beacdb1")
 		(property "Reference" "U3"
 			(at 243.84 58.42 0.0000)
 			(effects
@@ -3456,32 +3456,32 @@
 			)
 		)
 		(pin "1"
-			(uuid "6f1f5984-46f5-4928-ba14-fe8f49bf9b4c")
+			(uuid "540d97bf-c939-4f95-a3f1-8e0233111f63")
 		)
 		(pin "2"
-			(uuid "094debfb-9b06-4a7f-a930-6efdf3f37d53")
+			(uuid "0d01f5d8-956d-4492-9102-8cabd426a1d1")
 		)
 		(pin "3"
-			(uuid "9a523fb0-1ce4-44dc-a6e2-5a871921ccf1")
+			(uuid "267bc04f-c15b-4367-9d57-9b1f86ea02c0")
 		)
 		(pin "4"
-			(uuid "89e2192a-75cc-47b8-88e5-5c5e85918605")
+			(uuid "aec42b6d-0676-43a7-96ae-1f48f45a6460")
 		)
 		(pin "5"
-			(uuid "914a49c5-bb7b-4cc8-9cbd-4587d8dda3fa")
+			(uuid "62b3c6b5-25d9-4981-bf80-3ba79094238a")
 		)
 		(pin "6"
-			(uuid "7aa2e28d-2fea-4153-a7cf-6ae7381d2413")
+			(uuid "cfccf8d5-2038-4a65-8256-9bace45fc9e9")
 		)
 		(pin "7"
-			(uuid "58873615-baae-4ec3-84ce-90d755d79f0c")
+			(uuid "bd6e7a7f-6131-4e00-bb08-1d60b1f8a75c")
 		)
 		(pin "8"
-			(uuid "141a20b9-0792-4d69-868c-9130c4f3b003")
+			(uuid "959da9e3-da40-4693-b7aa-bf2cb0ea55f3")
 		)
 		(instances
 			(project "harman-kardom"
-				(path "/35029f4d-8913-4efc-88a2-aa253a2cd07a"
+				(path "/5ad5c568-c7e7-40fd-9fc8-742e45dff40d"
 					(reference "U3")
 					(unit 1)
 				)
@@ -3497,7 +3497,7 @@
 		(on_board yes)
 		(dnp no)
 		(fields_autoplaced no)
-		(uuid "cd86df2b-3bb5-47f9-8e9d-3f3b792dcc95")
+		(uuid "8a977a5a-9352-49a0-93a0-679026c642b0")
 		(property "Reference" "U4"
 			(at 72.39 110.49 0.0000)
 			(effects
@@ -3517,20 +3517,20 @@
 			)
 		)
 		(pin "1"
-			(uuid "dd7ef6f3-c80c-4796-a558-21eda5846bc8")
+			(uuid "07b324d7-84bf-4205-b3f3-695e89822d69")
 		)
 		(pin "2"
-			(uuid "aa405bb1-b415-4d8a-8421-6e52fc891ba9")
+			(uuid "b1be3909-83c7-4ccb-9cb4-05a04f6aa9a4")
 		)
 		(pin "3"
-			(uuid "b425e8be-a143-487c-8ff4-c141d9981027")
+			(uuid "0b2f3e33-b59d-4f4b-a527-6d154605cdec")
 		)
 		(pin "4"
-			(uuid "781e70a7-6103-4685-8136-6e0a1985ec9b")
+			(uuid "8441b6ed-f65c-4c56-af20-083c8e3e5667")
 		)
 		(instances
 			(project "harman-kardom"
-				(path "/35029f4d-8913-4efc-88a2-aa253a2cd07a"
+				(path "/5ad5c568-c7e7-40fd-9fc8-742e45dff40d"
 					(reference "U4")
 					(unit 1)
 				)
@@ -3546,7 +3546,7 @@
 		(on_board yes)
 		(dnp no)
 		(fields_autoplaced no)
-		(uuid "94aba336-cbb8-4a63-b051-7b19c186c0f9")
+		(uuid "6dc17b2a-ee62-4b46-b23d-a7c5481cf4f6")
 		(property "Reference" "JP1"
 			(at 124.46 107.95 0.0000)
 			(effects
@@ -3566,14 +3566,14 @@
 			)
 		)
 		(pin "1"
-			(uuid "535a6ada-0bdb-4a7f-beab-0ea52d5522c8")
+			(uuid "0267ee36-39eb-412d-ae0e-57c42dc38b32")
 		)
 		(pin "2"
-			(uuid "9f3dbf34-fb6a-4782-825e-978e1bbf89dd")
+			(uuid "031e2eb7-8373-4ca8-936c-97e502554e77")
 		)
 		(instances
 			(project "harman-kardom"
-				(path "/35029f4d-8913-4efc-88a2-aa253a2cd07a"
+				(path "/5ad5c568-c7e7-40fd-9fc8-742e45dff40d"
 					(reference "JP1")
 					(unit 1)
 				)
@@ -3589,7 +3589,7 @@
 		(on_board yes)
 		(dnp no)
 		(fields_autoplaced no)
-		(uuid "a3b6a663-07b2-40d3-87c6-d7eb40719714")
+		(uuid "4786b491-5615-464d-862d-31cfb30d4ec2")
 		(property "Reference" "U5"
 			(at 237.49 129.54 0.0000)
 			(effects
@@ -3609,56 +3609,56 @@
 			)
 		)
 		(pin "1"
-			(uuid "ba707002-2767-41a2-a16c-c5644707b6fe")
+			(uuid "261b5186-75e2-4160-8f2f-a9dbb7a46119")
 		)
 		(pin "2"
-			(uuid "310e53ff-9126-4c36-aff2-d1c2d10227a8")
+			(uuid "e20e1fe5-b157-4127-a96d-0ee44f234c83")
 		)
 		(pin "3"
-			(uuid "9875ce03-9c24-4497-bfc0-76eed29c9fc1")
+			(uuid "fbe47d25-00de-4da4-90ee-e3436b9a03d3")
 		)
 		(pin "4"
-			(uuid "935c40d8-0bb0-4539-a066-215d090cc15f")
+			(uuid "524764b4-bd36-4643-a4f0-614d56e08fe4")
 		)
 		(pin "5"
-			(uuid "7799eb89-f294-458f-9d7c-2baafec85fd9")
+			(uuid "0a2d673c-c505-469b-94d6-633d847d0666")
 		)
 		(pin "6"
-			(uuid "883426ad-2109-44ea-b7f5-826cc6abcab5")
+			(uuid "bfbc9e68-740f-4f56-b0c8-97f4e998c1d2")
 		)
 		(pin "7"
-			(uuid "f338ef16-357c-4cdd-bb03-6fc2298c53e7")
+			(uuid "a22265e1-f318-44cb-93e3-870422bab0fc")
 		)
 		(pin "8"
-			(uuid "a0b85398-754f-4dfc-b482-9bc92fe72b8b")
+			(uuid "7619cc35-617b-4048-8b83-9064dee5251b")
 		)
 		(pin "9"
-			(uuid "7d3a59c3-5e5b-4294-9866-63ab76156858")
+			(uuid "beff3b0b-336a-4a98-9223-833a32402d08")
 		)
 		(pin "10"
-			(uuid "7b187520-1522-417d-ae1a-30987328bb5e")
+			(uuid "a8061c02-d6cb-4e06-a077-5db0123a1209")
 		)
 		(pin "11"
-			(uuid "3092b99e-d4c9-4ec6-858e-7b51de2d4be7")
+			(uuid "ad4d4f88-e1ce-46c5-9f12-830766ff5417")
 		)
 		(pin "12"
-			(uuid "0320650a-b19e-45ff-91ef-fd9ce2d05c99")
+			(uuid "7c96f495-600b-4727-b8eb-8a5d87f90287")
 		)
 		(pin "13"
-			(uuid "6ad878ab-3718-48ea-903c-bede3dfdb985")
+			(uuid "a28a56db-93ef-4a26-9091-7d6bc2ac6ae4")
 		)
 		(pin "14"
-			(uuid "ea770164-fb7f-4f42-bd44-8654b9c404ca")
+			(uuid "a515060d-5091-4462-8204-6fe688ddba1f")
 		)
 		(pin "15"
-			(uuid "3c292cf3-449a-496f-adcb-a049be34dfd0")
+			(uuid "0d5546e4-1a76-40be-b891-b84bebfca56d")
 		)
 		(pin "16"
-			(uuid "495f20f4-206d-4c85-8ebe-17e208c1e05c")
+			(uuid "ceb1635c-91c5-4dc3-9abb-b1cca06b47ba")
 		)
 		(instances
 			(project "harman-kardom"
-				(path "/35029f4d-8913-4efc-88a2-aa253a2cd07a"
+				(path "/5ad5c568-c7e7-40fd-9fc8-742e45dff40d"
 					(reference "U5")
 					(unit 1)
 				)
@@ -3674,7 +3674,7 @@
 		(on_board yes)
 		(dnp no)
 		(fields_autoplaced no)
-		(uuid "4d3861a1-1e13-451a-8b1c-053fca342802")
+		(uuid "6d77155a-4ec4-4a5a-b11d-457a6168fa8c")
 		(property "Reference" "D1"
 			(at 326.39 111.76 0.0000)
 			(effects
@@ -3694,20 +3694,20 @@
 			)
 		)
 		(pin "1"
-			(uuid "a8857f6e-698e-4c34-a22e-c2795945c476")
+			(uuid "2e62005f-c382-4566-ad5e-e541b58105e9")
 		)
 		(pin "2"
-			(uuid "c7ea9299-0c02-461b-b25e-6328e933f262")
+			(uuid "dba56f99-1cd1-4134-a199-ebbc1410f07c")
 		)
 		(pin "3"
-			(uuid "508bd524-2884-43cb-8ba2-3d8a888fad71")
+			(uuid "ffe13210-a3fb-4c46-ac80-c1ae4a243fb7")
 		)
 		(pin "4"
-			(uuid "162dba55-2b93-4500-9eb4-6a34a12e80d7")
+			(uuid "0a3839dc-3569-4fd7-88c6-224c86213847")
 		)
 		(instances
 			(project "harman-kardom"
-				(path "/35029f4d-8913-4efc-88a2-aa253a2cd07a"
+				(path "/5ad5c568-c7e7-40fd-9fc8-742e45dff40d"
 					(reference "D1")
 					(unit 1)
 				)
@@ -3723,7 +3723,7 @@
 		(on_board yes)
 		(dnp no)
 		(fields_autoplaced no)
-		(uuid "25e4b202-ec0d-4417-9095-1e54ed136dd3")
+		(uuid "b20a8621-42c3-4ac6-a3e9-4a7a63398d82")
 		(property "Reference" "U6"
 			(at 90.17 194.31 0.0000)
 			(effects
@@ -3743,44 +3743,44 @@
 			)
 		)
 		(pin "1"
-			(uuid "256cc4c9-5324-4c75-8f18-bdda3a2d7baa")
+			(uuid "f3a0d6b1-0e1b-4f05-aa84-e65cab753eec")
 		)
 		(pin "2"
-			(uuid "7dba0b9f-33b5-406c-96d1-3bc27a7cc3a4")
+			(uuid "26b226fe-5975-46ce-a097-144bcbe0266f")
 		)
 		(pin "3"
-			(uuid "64c6f888-5eeb-459b-bee7-86be95117260")
+			(uuid "8eb17ca4-3e98-4a7b-b478-ca4474962e7d")
 		)
 		(pin "4"
-			(uuid "f5207dc2-e2c6-4394-8260-580addba9c6d")
+			(uuid "3e0d2d7a-1c27-44d8-8796-fe3ff9a49454")
 		)
 		(pin "5"
-			(uuid "22797d4b-f861-4055-bc63-ab0b53c6cd3e")
+			(uuid "5e832998-3684-490f-af49-8fdb2eba3589")
 		)
 		(pin "6"
-			(uuid "cab5b15b-dd3b-4ba3-b44e-017d53414ace")
+			(uuid "30e2e3ea-177b-40ee-8126-a88ac2e55d2b")
 		)
 		(pin "7"
-			(uuid "04337623-7588-412f-9801-43e9739d5082")
+			(uuid "820ba11a-55cf-4ca1-9f1c-bb69072ca653")
 		)
 		(pin "8"
-			(uuid "4bb9edb1-e71d-4f14-ac75-54443d4bacba")
+			(uuid "36814a17-7166-4cf7-b857-5915197e0a02")
 		)
 		(pin "9"
-			(uuid "0dea5c3c-c4d6-458f-b46f-a1beef7d2063")
+			(uuid "e77fa1e2-02c4-4eb0-b64e-83311c8ae4e4")
 		)
 		(pin "10"
-			(uuid "a128e3dc-1385-44e2-a656-d3af2a3ddb2c")
+			(uuid "ac00fe56-c64d-4a43-8640-ef366c586a68")
 		)
 		(pin "11"
-			(uuid "f3f77a5e-c080-4a94-8a21-9874e075fa10")
+			(uuid "f80b7057-4561-436f-869c-77e50cef4984")
 		)
 		(pin "12"
-			(uuid "c4266f1e-fdf7-4209-ba2e-f5bdc61cfc3f")
+			(uuid "2c8cb92c-2c76-45f2-95b1-51bec938ade0")
 		)
 		(instances
 			(project "harman-kardom"
-				(path "/35029f4d-8913-4efc-88a2-aa253a2cd07a"
+				(path "/5ad5c568-c7e7-40fd-9fc8-742e45dff40d"
 					(reference "U6")
 					(unit 1)
 				)
@@ -3796,7 +3796,7 @@
 		(on_board yes)
 		(dnp no)
 		(fields_autoplaced no)
-		(uuid "d7203ae7-1f68-4ae4-909d-4abef1aab908")
+		(uuid "dfa824ad-f7ab-4b22-a2a0-0d40d9e3ab1b")
 		(property "Reference" "U7"
 			(at 203.2 191.77 0.0000)
 			(effects
@@ -3816,38 +3816,38 @@
 			)
 		)
 		(pin "1"
-			(uuid "f87fa5db-074d-4b48-b214-7a9cb1ce167c")
+			(uuid "e79af719-fa53-41ad-ae42-2d0e75ed6442")
 		)
 		(pin "2"
-			(uuid "6f804627-7bba-4a78-826d-ea9d8c9773ef")
+			(uuid "05796139-6955-47d9-947a-fc7826a81a1a")
 		)
 		(pin "3"
-			(uuid "ee297058-5b0d-40b9-99a5-b44ea75862cc")
+			(uuid "299b3003-042f-42d5-a780-509fa7169691")
 		)
 		(pin "4"
-			(uuid "c68e65bf-19c6-4ca9-bff7-de7b411aa0f8")
+			(uuid "382a1208-0794-45ac-9d65-bec4aeff6c37")
 		)
 		(pin "5"
-			(uuid "ecdf32b5-336f-419f-a9fe-b1160e93a000")
+			(uuid "36449ec4-fd45-4e83-a16a-4196c4799711")
 		)
 		(pin "6"
-			(uuid "7a490dbd-a68a-432f-a119-4b3cb950411c")
+			(uuid "e9a27078-d523-4a99-ab1f-c6dd1ed80cab")
 		)
 		(pin "7"
-			(uuid "d48e8942-ccbe-4e2c-9737-5b3a763e6195")
+			(uuid "1d2c7b14-8b48-49f3-a7a1-f35e9a3565da")
 		)
 		(pin "8"
-			(uuid "29494e71-1524-4db3-99c5-c5c0a609cdc7")
+			(uuid "daa4c5e5-c0b3-4b04-ac06-90f5a6975840")
 		)
 		(pin "9"
-			(uuid "e9084d3a-5b18-47c1-bed8-d6acff826395")
+			(uuid "eeb58167-10b0-493f-8772-b41fe287cd67")
 		)
 		(pin "10"
-			(uuid "b4a0a8cf-7015-49de-a619-a3edaf1b2713")
+			(uuid "6fcd1702-dab9-4d54-9a73-42ccd461cf6b")
 		)
 		(instances
 			(project "harman-kardom"
-				(path "/35029f4d-8913-4efc-88a2-aa253a2cd07a"
+				(path "/5ad5c568-c7e7-40fd-9fc8-742e45dff40d"
 					(reference "U7")
 					(unit 1)
 				)
@@ -3863,7 +3863,7 @@
 		(on_board yes)
 		(dnp no)
 		(fields_autoplaced no)
-		(uuid "14d1178a-ca6a-4a6b-83aa-1c3aa2533802")
+		(uuid "c44e4803-367f-4ad4-8653-9485c83f6924")
 		(property "Reference" "J2"
 			(at 279.4 168.91 0.0000)
 			(effects
@@ -3883,14 +3883,14 @@
 			)
 		)
 		(pin "1"
-			(uuid "30652fa3-8fd9-4e73-b7b4-25113d3bbbe2")
+			(uuid "48df6f38-ddbd-466f-a01a-a87093f22465")
 		)
 		(pin "2"
-			(uuid "ef9753a7-32d1-41a2-a188-fc6732bddb08")
+			(uuid "94896af9-2463-4820-84f7-eb412f56eeea")
 		)
 		(instances
 			(project "harman-kardom"
-				(path "/35029f4d-8913-4efc-88a2-aa253a2cd07a"
+				(path "/5ad5c568-c7e7-40fd-9fc8-742e45dff40d"
 					(reference "J2")
 					(unit 1)
 				)
@@ -3906,7 +3906,7 @@
 		(on_board yes)
 		(dnp no)
 		(fields_autoplaced no)
-		(uuid "155db063-dea2-4a03-8649-65692272be99")
+		(uuid "9bb47f2d-a470-4cca-96cd-e1c062f43d0f")
 		(property "Reference" "J3"
 			(at 344.17 186.69 0.0000)
 			(effects
@@ -3926,14 +3926,14 @@
 			)
 		)
 		(pin "1"
-			(uuid "547c763c-e1c8-4a6d-881a-4ed5efa44ede")
+			(uuid "6bb4dd9c-0b78-4d86-bd46-a68519aa615d")
 		)
 		(pin "2"
-			(uuid "044e4ea2-bbd8-4f99-bfeb-5884f59a784a")
+			(uuid "c3c582b7-4aff-4833-aa0c-9c62cff10aa3")
 		)
 		(instances
 			(project "harman-kardom"
-				(path "/35029f4d-8913-4efc-88a2-aa253a2cd07a"
+				(path "/5ad5c568-c7e7-40fd-9fc8-742e45dff40d"
 					(reference "J3")
 					(unit 1)
 				)
@@ -3949,7 +3949,7 @@
 		(on_board yes)
 		(dnp no)
 		(fields_autoplaced no)
-		(uuid "a4251c04-062a-4869-be42-e05aa2eb0e76")
+		(uuid "1a1e8b6a-b310-46a4-af98-e3613882934d")
 		(property "Reference" "JTP1"
 			(at 87.63 259.08 0.0000)
 			(effects
@@ -3969,38 +3969,38 @@
 			)
 		)
 		(pin "1"
-			(uuid "0fab10dd-a113-46dd-a644-08ae3f8af73f")
+			(uuid "2ae54d98-c4cc-44e5-9e65-fcf91b4e4ea8")
 		)
 		(pin "2"
-			(uuid "6ae46383-7eb5-41dc-954f-464cc5e924c2")
+			(uuid "92253f33-06a4-4b24-803b-88ba014e81f8")
 		)
 		(pin "3"
-			(uuid "f59f845a-91b0-4fab-8a79-fd5571d4a10c")
+			(uuid "5d52c6a7-3fa8-47c5-8510-cf26989dadf1")
 		)
 		(pin "4"
-			(uuid "c8da5816-be4b-4f60-b868-f8e2057e6c61")
+			(uuid "c8772c6d-713d-4764-b6d2-d8ece4e1e5bc")
 		)
 		(pin "5"
-			(uuid "ace1e5b7-d690-4317-9928-58aaa62a1ab4")
+			(uuid "d46bfc48-dfd5-48a6-a0bc-13b2bcff8ed1")
 		)
 		(pin "6"
-			(uuid "447b1679-faf7-435d-a201-75076ac7a5f4")
+			(uuid "f04929c0-96e5-4dc9-8cfd-0581992ba62e")
 		)
 		(pin "7"
-			(uuid "d8bea2d1-63be-465a-9cfc-8043cda60255")
+			(uuid "e0887e83-b07e-41cd-9338-dc945fbc2c3f")
 		)
 		(pin "8"
-			(uuid "b7822615-c565-487d-b34d-53d93c7ba937")
+			(uuid "5a5fdc2c-df08-4390-8555-edb48f93641a")
 		)
 		(pin "9"
-			(uuid "4385c9e7-85db-4fb9-a305-2e608ea08ab7")
+			(uuid "1f25389e-5f3d-498a-a7d8-724f520062be")
 		)
 		(pin "10"
-			(uuid "b5b0e43c-e3de-4928-bfbd-5759dd51a3a3")
+			(uuid "a19843f9-72a6-4cac-b495-6fa59aad54e5")
 		)
 		(instances
 			(project "harman-kardom"
-				(path "/35029f4d-8913-4efc-88a2-aa253a2cd07a"
+				(path "/5ad5c568-c7e7-40fd-9fc8-742e45dff40d"
 					(reference "JTP1")
 					(unit 1)
 				)
@@ -4016,7 +4016,7 @@
 		(on_board yes)
 		(dnp no)
 		(fields_autoplaced no)
-		(uuid "c706c344-4a7a-44ba-a01a-80d57e4756ff")
+		(uuid "3111c645-6bd9-4e89-9901-2a6dad3f99d2")
 		(property "Reference" "JTP2"
 			(at 195.58 256.54 0.0000)
 			(effects
@@ -4036,32 +4036,32 @@
 			)
 		)
 		(pin "1"
-			(uuid "2c512c7f-a299-4a06-943b-c999506a9ce1")
+			(uuid "797509c9-b2ef-4ff3-8939-31c883c93b9d")
 		)
 		(pin "2"
-			(uuid "6171f6d1-0de2-4826-9b0c-23d98a0ab247")
+			(uuid "7e376969-c990-49ed-838b-a21541051581")
 		)
 		(pin "3"
-			(uuid "ce882518-155f-4d6c-8b9a-f34c393e6749")
+			(uuid "0da083fc-bcbf-4101-bd10-9a9f9ec9e9b7")
 		)
 		(pin "4"
-			(uuid "b5373df2-be0f-4fb2-af0e-ff1194b4f747")
+			(uuid "08927db3-8557-4bb2-82b2-1e102f5e360b")
 		)
 		(pin "5"
-			(uuid "c592ab5d-2356-4332-a559-51ed4aacbbb9")
+			(uuid "5bb046d5-6c11-4497-af0b-fa2bf018a2c6")
 		)
 		(pin "6"
-			(uuid "ba6fd44f-49f4-4418-a563-bd09c184ce98")
+			(uuid "eb223b91-3b1f-4227-bcdd-0bc3502588a1")
 		)
 		(pin "7"
-			(uuid "48c1d5b8-9853-4de5-8718-ad03e84ef079")
+			(uuid "925c8f24-8f84-4305-a709-8801f130413f")
 		)
 		(pin "8"
-			(uuid "d5450889-51f2-4135-8839-972aadce4f86")
+			(uuid "8fb143d4-cff7-4c8b-b39f-ec6325235fff")
 		)
 		(instances
 			(project "harman-kardom"
-				(path "/35029f4d-8913-4efc-88a2-aa253a2cd07a"
+				(path "/5ad5c568-c7e7-40fd-9fc8-742e45dff40d"
 					(reference "JTP2")
 					(unit 1)
 				)
@@ -4077,7 +4077,7 @@
 		(on_board yes)
 		(dnp no)
 		(fields_autoplaced no)
-		(uuid "0d3ea14c-744a-4a9c-bfb8-eda2df445c47")
+		(uuid "c2e77171-7f46-4070-b84c-cfd5f78fdf55")
 		(property "Reference" "JTP3"
 			(at 297.18 256.54 0.0000)
 			(effects
@@ -4097,32 +4097,32 @@
 			)
 		)
 		(pin "1"
-			(uuid "02d0dfa0-79b1-4e8e-8949-f76fc763b48b")
+			(uuid "fb21143a-77e9-4b71-b70a-70dd3b45da19")
 		)
 		(pin "2"
-			(uuid "51d5b516-32fb-4e30-9b8f-211dfe8595f2")
+			(uuid "b291bfa3-e6e5-4cfa-8763-44c866b9ce30")
 		)
 		(pin "3"
-			(uuid "9bbceef0-db60-4100-aa89-8246abb22408")
+			(uuid "e5477328-5ff1-4669-b6c5-1140b24bb9fd")
 		)
 		(pin "4"
-			(uuid "44c15c96-9ac0-430f-b0c6-eab7de223eed")
+			(uuid "39462743-2071-4881-9fb2-9fd94322457c")
 		)
 		(pin "5"
-			(uuid "e9cf2efe-af1b-4230-9d9d-b758e4d5d001")
+			(uuid "2acf3361-910c-4fd6-8295-c0a762791b20")
 		)
 		(pin "6"
-			(uuid "6db2bd53-029f-433c-8089-2dfb52ea243e")
+			(uuid "df515663-9820-409e-aa53-d6a7d31cf8a1")
 		)
 		(pin "7"
-			(uuid "995a55fe-4fd1-4209-9b27-4232e3e6269c")
+			(uuid "7668f2f5-5ec9-42ba-9bda-a26dca085849")
 		)
 		(pin "8"
-			(uuid "65cb6948-6563-468a-98e9-997b108fe42e")
+			(uuid "9509e2f5-d29c-4718-ae18-d32f1eb3af9a")
 		)
 		(instances
 			(project "harman-kardom"
-				(path "/35029f4d-8913-4efc-88a2-aa253a2cd07a"
+				(path "/5ad5c568-c7e7-40fd-9fc8-742e45dff40d"
 					(reference "JTP3")
 					(unit 1)
 				)
@@ -4138,7 +4138,7 @@
 		(on_board yes)
 		(dnp no)
 		(fields_autoplaced no)
-		(uuid "bbc97b9a-9a35-4977-afaf-563f4f4b3e38")
+		(uuid "1bba3721-7b0c-4942-9633-86ea43c15ea5")
 		(property "Reference" "BT1"
 			(at 185.42 38.1 0.0000)
 			(effects
@@ -4148,7 +4148,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "21700 CELL 1"
+		(property "Value" "ASPILSAN A28 18650 / CELL 1"
 			(at 185.42 35.56 0.0000)
 			(effects
 				(font
@@ -4158,14 +4158,14 @@
 			)
 		)
 		(pin "1"
-			(uuid "be4cea6c-e2fe-41ca-b3be-dd89ba6fa79c")
+			(uuid "2a31cd37-1089-4dae-8b14-1df9a2ef70d7")
 		)
 		(pin "2"
-			(uuid "b551e1e3-2bcf-4549-a34e-79b18330b386")
+			(uuid "806500d6-1c96-41da-ab6d-d87cdc1304c0")
 		)
 		(instances
 			(project "harman-kardom"
-				(path "/35029f4d-8913-4efc-88a2-aa253a2cd07a"
+				(path "/5ad5c568-c7e7-40fd-9fc8-742e45dff40d"
 					(reference "BT1")
 					(unit 1)
 				)
@@ -4181,7 +4181,7 @@
 		(on_board yes)
 		(dnp no)
 		(fields_autoplaced no)
-		(uuid "8b05fdbb-4117-44fb-a29a-9c8d070846f9")
+		(uuid "19fe81fe-95ad-44c2-a073-91e1183a26aa")
 		(property "Reference" "BT2"
 			(at 185.42 46.99 0.0000)
 			(effects
@@ -4191,7 +4191,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "21700 CELL 2"
+		(property "Value" "ASPILSAN A28 18650 / CELL 2"
 			(at 185.42 44.45 0.0000)
 			(effects
 				(font
@@ -4201,14 +4201,14 @@
 			)
 		)
 		(pin "1"
-			(uuid "e73dbf8a-f440-4b62-b262-c2d393a2272f")
+			(uuid "95f4cc5b-0731-47e5-b901-2d0bf9a1dbc0")
 		)
 		(pin "2"
-			(uuid "e9bf4483-f6ef-44ae-aec2-ff507b3b0bb3")
+			(uuid "905ee9e7-5f18-424b-a14e-085b0e08bf27")
 		)
 		(instances
 			(project "harman-kardom"
-				(path "/35029f4d-8913-4efc-88a2-aa253a2cd07a"
+				(path "/5ad5c568-c7e7-40fd-9fc8-742e45dff40d"
 					(reference "BT2")
 					(unit 1)
 				)
@@ -4224,7 +4224,7 @@
 		(on_board yes)
 		(dnp no)
 		(fields_autoplaced no)
-		(uuid "5ccba164-870a-4200-91ee-dacd680b1bd4")
+		(uuid "b00796a6-80e4-4efa-9e4f-18d516b64a56")
 		(property "Reference" "BT3"
 			(at 185.42 57.15 0.0000)
 			(effects
@@ -4234,7 +4234,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "21700 CELL 3"
+		(property "Value" "ASPILSAN A28 18650 / CELL 3"
 			(at 185.42 54.61 0.0000)
 			(effects
 				(font
@@ -4244,14 +4244,14 @@
 			)
 		)
 		(pin "1"
-			(uuid "22219347-59fd-4fce-9a06-f68f094761bc")
+			(uuid "617472d0-fd96-4b49-85c5-fe52f722e013")
 		)
 		(pin "2"
-			(uuid "63a6dea3-3f90-4b9a-b030-3db101c6da2b")
+			(uuid "efdc7755-bafc-4f40-9b78-62968c4be3fa")
 		)
 		(instances
 			(project "harman-kardom"
-				(path "/35029f4d-8913-4efc-88a2-aa253a2cd07a"
+				(path "/5ad5c568-c7e7-40fd-9fc8-742e45dff40d"
 					(reference "BT3")
 					(unit 1)
 				)
@@ -4267,7 +4267,7 @@
 		(on_board yes)
 		(dnp no)
 		(fields_autoplaced no)
-		(uuid "1c45e1de-f81c-4cdd-baf4-06575899f00f")
+		(uuid "6921d657-4879-4bdb-9e18-081af365a472")
 		(property "Reference" "BT4"
 			(at 185.42 67.31 0.0000)
 			(effects
@@ -4277,7 +4277,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "21700 CELL 4"
+		(property "Value" "ASPILSAN A28 18650 / CELL 4"
 			(at 185.42 64.77 0.0000)
 			(effects
 				(font
@@ -4287,14 +4287,14 @@
 			)
 		)
 		(pin "1"
-			(uuid "6a0fc5d3-353b-4065-925e-db48b0d44e93")
+			(uuid "f5a8c057-f718-4109-b2c9-152168b1d2c3")
 		)
 		(pin "2"
-			(uuid "52389153-f987-4a3a-bbce-a9704d286e58")
+			(uuid "b239ca6e-16d4-4e98-ad6a-f9ef3bd70b6a")
 		)
 		(instances
 			(project "harman-kardom"
-				(path "/35029f4d-8913-4efc-88a2-aa253a2cd07a"
+				(path "/5ad5c568-c7e7-40fd-9fc8-742e45dff40d"
 					(reference "BT4")
 					(unit 1)
 				)
@@ -4310,7 +4310,7 @@
 		(on_board yes)
 		(dnp no)
 		(fields_autoplaced no)
-		(uuid "f7ca7ab4-4644-46cc-ab86-35404b13099f")
+		(uuid "be16a54c-4b12-4252-99bb-9de96a346113")
 		(property "Reference" "F1"
 			(at 292.1 49.022 180)
 			(effects
@@ -4330,14 +4330,14 @@
 			)
 		)
 		(pin "1"
-			(uuid "98394601-dd38-42bd-98a9-0a82855d8746")
+			(uuid "c775e5a7-af8c-4e88-998c-57c088606437")
 		)
 		(pin "2"
-			(uuid "47b64800-9d10-460f-9601-333590114002")
+			(uuid "d6862c4b-da56-4404-ad78-ad8b6aa02ab2")
 		)
 		(instances
 			(project "harman-kardom"
-				(path "/35029f4d-8913-4efc-88a2-aa253a2cd07a"
+				(path "/5ad5c568-c7e7-40fd-9fc8-742e45dff40d"
 					(reference "F1")
 					(unit 1)
 				)
@@ -4353,7 +4353,7 @@
 		(on_board yes)
 		(dnp no)
 		(fields_autoplaced no)
-		(uuid "abc9d919-6e7d-4d0c-9185-d43840b8c722")
+		(uuid "69d5c96b-869f-42ad-8d9c-d172004a4fac")
 		(property "Reference" "S1"
 			(at 329.565 46.99 90)
 			(effects
@@ -4373,14 +4373,14 @@
 			)
 		)
 		(pin "1"
-			(uuid "0ad241ef-48a7-4980-a7b1-d34b31982aa9")
+			(uuid "4dac757a-f757-42a7-bfc7-11ab72a3b8d7")
 		)
 		(pin "2"
-			(uuid "7aa7b687-6bb0-4b16-bef1-b119066d7b47")
+			(uuid "de04ef41-f1b5-4be8-a0c6-ff4d9deee2bc")
 		)
 		(instances
 			(project "harman-kardom"
-				(path "/35029f4d-8913-4efc-88a2-aa253a2cd07a"
+				(path "/5ad5c568-c7e7-40fd-9fc8-742e45dff40d"
 					(reference "S1")
 					(unit 1)
 				)
@@ -4396,7 +4396,7 @@
 		(on_board yes)
 		(dnp no)
 		(fields_autoplaced no)
-		(uuid "52d7d419-4482-4fa0-b630-029996b6ea6e")
+		(uuid "ad93bdf3-7e40-44e7-9094-4d91f63f6b28")
 		(property "Reference" "C1"
 			(at 34.925 107.95 0.0000)
 			(effects
@@ -4416,14 +4416,14 @@
 			)
 		)
 		(pin "1"
-			(uuid "ca9f9f2a-43a1-4530-811e-4fea20ae9db2")
+			(uuid "ee2e7480-d9c9-4fdd-aa76-9e4c0840d64d")
 		)
 		(pin "2"
-			(uuid "dd106909-5d6d-4eb2-ab47-563581458714")
+			(uuid "c35f66ce-6fd8-481a-b2e7-6260d65a1abc")
 		)
 		(instances
 			(project "harman-kardom"
-				(path "/35029f4d-8913-4efc-88a2-aa253a2cd07a"
+				(path "/5ad5c568-c7e7-40fd-9fc8-742e45dff40d"
 					(reference "C1")
 					(unit 1)
 				)
@@ -4439,7 +4439,7 @@
 		(on_board yes)
 		(dnp no)
 		(fields_autoplaced no)
-		(uuid "c8975773-1a72-41e3-a603-677f46f84309")
+		(uuid "841ea654-8287-412e-9439-2a37a18ffaae")
 		(property "Reference" "SW1"
 			(at 283.21 106.68 90)
 			(effects
@@ -4459,14 +4459,14 @@
 			)
 		)
 		(pin "1"
-			(uuid "3b4e4a97-4576-45a4-8d4e-fd6707ed46a5")
+			(uuid "fc7e980a-9e8e-4ee1-8553-99fce4a4f9e0")
 		)
 		(pin "2"
-			(uuid "8b65da97-17ad-4e48-bb09-3cf9e7e92623")
+			(uuid "dec84adb-e0b0-4b7c-84b9-78aa64bf4724")
 		)
 		(instances
 			(project "harman-kardom"
-				(path "/35029f4d-8913-4efc-88a2-aa253a2cd07a"
+				(path "/5ad5c568-c7e7-40fd-9fc8-742e45dff40d"
 					(reference "SW1")
 					(unit 1)
 				)
@@ -4482,7 +4482,7 @@
 		(on_board yes)
 		(dnp no)
 		(fields_autoplaced no)
-		(uuid "551aaffb-9c2a-4ce2-a554-047d3bd1a54d")
+		(uuid "d43a8bb8-7bfc-4b4d-9ce8-f02b50aa3c35")
 		(property "Reference" "R1"
 			(at 287.782 124.46 90)
 			(effects
@@ -4502,14 +4502,14 @@
 			)
 		)
 		(pin "1"
-			(uuid "ab56d87b-8312-49e3-8c06-e5876f9c9672")
+			(uuid "cbb1b7f8-d449-4b12-9653-27b553e1364c")
 		)
 		(pin "2"
-			(uuid "09d4252d-32f2-4f61-aaf5-23eab2e1c649")
+			(uuid "d85e41a4-544c-4fab-853e-50b4a8f056ce")
 		)
 		(instances
 			(project "harman-kardom"
-				(path "/35029f4d-8913-4efc-88a2-aa253a2cd07a"
+				(path "/5ad5c568-c7e7-40fd-9fc8-742e45dff40d"
 					(reference "R1")
 					(unit 1)
 				)
@@ -4525,7 +4525,7 @@
 		(on_board yes)
 		(dnp no)
 		(fields_autoplaced no)
-		(uuid "9f773d41-b0e8-4459-84d5-eb53a1b7a4c5")
+		(uuid "e7bbba12-0fc8-4856-96ac-5faa78f5d286")
 		(property "Reference" "C2"
 			(at 308.61 184.785 90)
 			(effects
@@ -4545,14 +4545,14 @@
 			)
 		)
 		(pin "1"
-			(uuid "81e42b24-d6fc-4084-b687-cac0ad28b919")
+			(uuid "9c1ceaf3-feec-4064-a45b-52ee61e9cf68")
 		)
 		(pin "2"
-			(uuid "c8bc92f1-ecf6-46fe-9da2-6f004139df0e")
+			(uuid "4a40a125-4f12-4594-b2c2-863f395befe6")
 		)
 		(instances
 			(project "harman-kardom"
-				(path "/35029f4d-8913-4efc-88a2-aa253a2cd07a"
+				(path "/5ad5c568-c7e7-40fd-9fc8-742e45dff40d"
 					(reference "C2")
 					(unit 1)
 				)
@@ -4567,7 +4567,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "cd3efe9a-b66c-4811-9bc1-372bb5eae508")
+		(uuid "230a0ace-5fa4-400b-ad58-0692583dc0da")
 	)
 	(label "POWER_GND"
 		(at 30.48 50.8 180)
@@ -4577,7 +4577,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "f9f87145-d30e-46c9-9218-540bec79d627")
+		(uuid "549bb69e-9a8a-48d6-93fb-993b35ebaefd")
 	)
 	(label "USB_PD_VBUS"
 		(at 77.47 45.72 180)
@@ -4587,7 +4587,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "f4c46d29-3c69-47d8-bdab-713eb061fcd0")
+		(uuid "650490a8-735e-465d-84dc-7ec551a4bc7a")
 	)
 	(label "POWER_GND"
 		(at 77.47 48.26 180)
@@ -4597,7 +4597,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "9354a69c-87fd-4ae7-ba9c-d3da893fade0")
+		(uuid "5606b174-0ff4-4402-a925-a5a11e50186d")
 	)
 	(label "PD20V"
 		(at 77.47 50.8 180)
@@ -4607,7 +4607,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "80d74aff-96a4-45e0-9dac-3e38ebf1701e")
+		(uuid "b59708c1-03c7-4d38-9f68-00d1861289e9")
 	)
 	(label "POWER_GND"
 		(at 77.47 53.34 180)
@@ -4617,7 +4617,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "1b0b19e5-19ca-4b77-8718-43ec8f7f4af9")
+		(uuid "857d7de0-8cd8-467b-973e-2481dfd555f3")
 	)
 	(label "PD20V"
 		(at 132.08 45.72 180)
@@ -4627,7 +4627,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "25ca76c6-2edf-42c9-94e7-97d915741814")
+		(uuid "4d13f273-531c-4748-956f-57427c94548c")
 	)
 	(label "POWER_GND"
 		(at 132.08 48.26 180)
@@ -4637,7 +4637,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "5fdc3696-2186-44dd-bbaf-24bb816ea46e")
+		(uuid "5cbd67b1-b5da-4355-b9aa-2dcb6cf7e765")
 	)
 	(label "CHG_16V8"
 		(at 132.08 50.8 180)
@@ -4647,7 +4647,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "2178fda5-b8da-4837-9788-8fcf67eacefd")
+		(uuid "1d4b6bfc-b272-4f46-9536-ea98541335a3")
 	)
 	(label "CHG_NEG"
 		(at 132.08 53.34 180)
@@ -4657,7 +4657,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "b91291c2-5f58-4143-b1c9-fcd49b7fe544")
+		(uuid "c4c92ef9-270c-4f38-ad2a-6c3fadc7e97f")
 	)
 	(label "BMINUS"
 		(at 238.76 40.64 180)
@@ -4667,7 +4667,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "d1977a42-5ca6-47eb-b7c3-8b04d91c6451")
+		(uuid "58519cec-9742-4300-b8a3-178810792f99")
 	)
 	(label "B1"
 		(at 238.76 43.18 180)
@@ -4677,7 +4677,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "c5b5cb67-3534-433c-826a-300d64d28d4c")
+		(uuid "88c8c4d7-5a0e-4bb4-93ed-79c01af306bd")
 	)
 	(label "B2"
 		(at 238.76 45.72 180)
@@ -4687,7 +4687,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "71a359ae-ad0e-403d-866a-17d522c661d6")
+		(uuid "d1be32a4-49d8-449c-ba31-a337b695f07f")
 	)
 	(label "B3"
 		(at 238.76 48.26 180)
@@ -4697,7 +4697,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "f7084af3-4f3a-4ab2-84e8-be84c84b1ea5")
+		(uuid "58b6beab-75e2-46bc-b9bc-1e06063b3fb1")
 	)
 	(label "BPLUS"
 		(at 238.76 50.8 180)
@@ -4707,7 +4707,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "aa3570a6-e353-4d4f-9afc-8b79148d960e")
+		(uuid "44ed3942-e7e0-4cab-b0c7-2ffb8bc29252")
 	)
 	(label "PACK_POS"
 		(at 238.76 53.34 180)
@@ -4717,7 +4717,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "9e90eb6a-a3f8-4566-bb66-069008f2ab7c")
+		(uuid "9a73e71a-e95d-4ba6-b432-bc143c99c2c0")
 	)
 	(label "PACK_NEG"
 		(at 238.76 55.88 180)
@@ -4727,7 +4727,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "9455ceb6-0274-4358-bafb-c072b42997de")
+		(uuid "d645cd91-2d1b-4724-941c-6f8ff39db6ac")
 	)
 	(label "NTC_BMS"
 		(at 238.76 58.42 180)
@@ -4737,7 +4737,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "e474dda2-3639-4ef9-85a7-22d46cc2e63d")
+		(uuid "6e132875-0d7b-48bb-9b09-e70cb266fe0f")
 	)
 	(label "VBAT_SW"
 		(at 67.31 102.87 180)
@@ -4747,7 +4747,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "d15a739c-30f3-4cb8-b029-73a498111777")
+		(uuid "484c2758-f3f0-4039-9bca-0895244d8fc0")
 	)
 	(label "POWER_GND"
 		(at 67.31 105.41 180)
@@ -4757,7 +4757,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "6a8ed9b3-3cb1-4b41-afc0-73857af4d99c")
+		(uuid "9ab8ec24-6c1c-48a1-924f-460ca9acb7ff")
 	)
 	(label "V5_SYS"
 		(at 67.31 107.95 180)
@@ -4767,7 +4767,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "3dcab02e-ceb7-4c9d-8bfd-037a0b4c234b")
+		(uuid "9af14997-04f9-4b69-86ca-04eb630d5931")
 	)
 	(label "STAR_GND"
 		(at 67.31 110.49 180)
@@ -4777,7 +4777,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "5a5b3702-7676-4546-a5f8-ac4fbe1c3915")
+		(uuid "98152a59-34e1-4874-9fb4-1944c8984d80")
 	)
 	(label "V5_SYS"
 		(at 119.38 105.41 180)
@@ -4787,7 +4787,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "f7085a9c-5481-4200-9fcf-347a92bde704")
+		(uuid "fb8b4eb0-198d-457b-983b-862c0151e0d2")
 	)
 	(label "V5_LOGIC"
 		(at 119.38 107.95 180)
@@ -4797,7 +4797,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "c49375bd-8205-4a31-a261-218f7c426431")
+		(uuid "240bec17-7569-4804-bded-69f96329ac5c")
 	)
 	(label "V5_LOGIC"
 		(at 232.41 91.44 180)
@@ -4807,7 +4807,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "86d5a484-7a0d-4972-9e06-f816a06fd6f3")
+		(uuid "a3e7e2e5-4ba8-4d36-812e-ff51c57e9958")
 	)
 	(label "STAR_GND"
 		(at 232.41 93.98 180)
@@ -4817,7 +4817,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "30340d15-f254-48f8-90ed-5a3d62dbe4d0")
+		(uuid "e669bd82-dd61-4d9d-a5b0-a566e1202c9e")
 	)
 	(label "ESP_3V3"
 		(at 232.41 96.52 180)
@@ -4827,7 +4827,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "d7a24cf5-8158-411a-b116-cb527a3d14e6")
+		(uuid "ce8a8b84-18b8-47ed-b80c-92cfe539bff9")
 	)
 	(label "I2S_BCLK"
 		(at 232.41 99.06 180)
@@ -4837,7 +4837,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "61f94869-e98f-4f86-b9c2-c34ad11f9f0a")
+		(uuid "446e2a7e-7bdb-471f-b6ef-512144945c15")
 	)
 	(label "I2S_LRCLK"
 		(at 232.41 101.6 180)
@@ -4847,7 +4847,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "13977072-a2b5-468a-98ec-d8899560e2b2")
+		(uuid "3e8402a2-2dfe-44b0-a152-2235e204b51d")
 	)
 	(label "I2S_DATA"
 		(at 232.41 104.14 180)
@@ -4857,7 +4857,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "da81faa1-71ff-461e-b593-691b8ad2de18")
+		(uuid "159fae5b-5d78-4f6b-bf6f-c1c182717dd3")
 	)
 	(label "BUTTON_N"
 		(at 232.41 106.68 180)
@@ -4867,7 +4867,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "6715aa97-af45-4c56-a844-017ea6a56b8c")
+		(uuid "e55680ca-c57e-498a-8af2-0cbb0dd50b87")
 	)
 	(label "LED_R"
 		(at 232.41 109.22 180)
@@ -4877,7 +4877,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "5ed4b7dd-e529-406d-a232-eaa08fc51c60")
+		(uuid "e1950dfa-55f7-430a-b653-1667a6b5e3f2")
 	)
 	(label "LED_G"
 		(at 232.41 111.76 180)
@@ -4887,7 +4887,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "ad17c161-13ad-464b-9ea5-73d54e0a1c91")
+		(uuid "1534c381-310d-428c-8160-02696453e767")
 	)
 	(label "LED_B"
 		(at 232.41 114.3 180)
@@ -4897,7 +4897,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "ae8f02de-41d8-48bf-99e6-ec28e0e9efff")
+		(uuid "adf0ea3c-9de5-4954-9b20-53963d4ff280")
 	)
 	(label "I2C_SDA"
 		(at 232.41 116.84 180)
@@ -4907,7 +4907,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "344a2f3e-4683-4331-a908-51ec006fb784")
+		(uuid "f9d5e69c-a1c6-4c38-b4d3-183d14bdcd48")
 	)
 	(label "I2C_SCL"
 		(at 232.41 119.38 180)
@@ -4917,7 +4917,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "fd3eb192-6601-46d5-8638-f104982b6f6c")
+		(uuid "1ddbe718-28ae-4d79-9717-4247450a6d64")
 	)
 	(label "AMP_MUTE_TBD"
 		(at 232.41 121.92 180)
@@ -4927,7 +4927,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "8b226d9a-fa42-4d5c-934a-bf8dc19e0066")
+		(uuid "86ab8ea6-c584-405a-966d-e4ecfed95f6f")
 	)
 	(label "USB_DN_TBD"
 		(at 232.41 124.46 180)
@@ -4937,7 +4937,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "31143e56-2e01-45b8-acfc-44eaa068eeea")
+		(uuid "b173520f-fe87-4909-9c0d-37482adfa7f2")
 	)
 	(label "USB_DP_TBD"
 		(at 232.41 127 180)
@@ -4947,7 +4947,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "6ff50b2d-03e6-4d7f-8cb6-c17d5b69f7b2")
+		(uuid "ade44a76-ced5-4227-b550-2d0d68a56f91")
 	)
 	(label "NC_RESERVED"
 		(at 232.41 129.54 180)
@@ -4957,7 +4957,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "b49123f1-2bbb-43cc-a7d9-d7c1e9e4b9fa")
+		(uuid "89f8d1ba-f0ca-4f61-be7e-02a94e7be135")
 	)
 	(label "LED_R"
 		(at 321.31 104.14 180)
@@ -4967,7 +4967,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "e84a297e-dd3f-4e4d-987a-09c15a82cf7b")
+		(uuid "9e0e5334-d066-40b0-b348-a201a47c0026")
 	)
 	(label "LED_G"
 		(at 321.31 106.68 180)
@@ -4977,7 +4977,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "14b6014e-01ca-4dc6-97ed-d98886321ad9")
+		(uuid "3a6d4b04-397a-4ed4-8ba9-39c7b8d1dd3f")
 	)
 	(label "LED_B"
 		(at 321.31 109.22 180)
@@ -4987,7 +4987,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "d58489bd-4ae5-4f70-84cc-ddc77b3e3687")
+		(uuid "410ffad3-b0b8-4d5d-ae52-98f1d8f0f063")
 	)
 	(label "STAR_GND"
 		(at 321.31 111.76 180)
@@ -4997,7 +4997,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "d12ac93b-2bde-410b-9906-9db97ea06019")
+		(uuid "c0ff4f8d-6a62-4766-9f87-9def58aab367")
 	)
 	(label "V5_LOGIC"
 		(at 85.09 166.37 180)
@@ -5007,7 +5007,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "980d731d-2c70-454e-81d2-6d85b6cc38e1")
+		(uuid "03681851-3f04-4a63-9011-2e73f85cd5a1")
 	)
 	(label "STAR_GND"
 		(at 85.09 168.91 180)
@@ -5017,7 +5017,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "f6c65626-08dc-47c4-b94d-94337a791347")
+		(uuid "52c56d3b-3f4a-4a8b-9c1a-854689bed01c")
 	)
 	(label "I2S_BCLK"
 		(at 85.09 171.45 180)
@@ -5027,7 +5027,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "eb315b85-3a47-4285-a1b7-db27ad694871")
+		(uuid "81fff07e-b0e4-42db-b1be-f7fd23eb9905")
 	)
 	(label "I2S_LRCLK"
 		(at 85.09 173.99 180)
@@ -5037,7 +5037,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "332496d8-58e8-4bbe-8601-24f2f5c61bdc")
+		(uuid "c0d02b2c-01e5-4e9c-ac27-f53cadab0884")
 	)
 	(label "I2S_DATA"
 		(at 85.09 176.53 180)
@@ -5047,7 +5047,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "ada9b02d-8edb-423b-a8d1-f882fc723ba2")
+		(uuid "cc28b04e-566e-440e-88b2-8e0e73164eeb")
 	)
 	(label "SCK_GND"
 		(at 85.09 179.07 180)
@@ -5057,7 +5057,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "eddd8c1b-8cb2-4ebd-9761-adf3a6f37a70")
+		(uuid "564c8588-661d-41bd-a1f2-8c6659cbd3d9")
 	)
 	(label "FMT_LOW"
 		(at 85.09 181.61 180)
@@ -5067,7 +5067,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "9e8701a0-b93d-4c0c-a8cf-fb0636297a07")
+		(uuid "f52127bc-bf36-4336-848c-766dffac7e85")
 	)
 	(label "XSMT_HIGH"
 		(at 85.09 184.15 180)
@@ -5077,7 +5077,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "1d32c99d-c33d-437c-a855-508597e793c4")
+		(uuid "16c4af67-674d-4d90-93c5-dd2d60e2477f")
 	)
 	(label "DAC_LOUT"
 		(at 85.09 186.69 180)
@@ -5087,7 +5087,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "c4d8bd84-b92d-4477-a0f6-b002162256f0")
+		(uuid "27eeae3e-e605-4f59-b4f7-3e7da576b63e")
 	)
 	(label "DAC_AGND"
 		(at 85.09 189.23 180)
@@ -5097,7 +5097,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "6d221926-7762-4b20-ae1a-0a6af8abd898")
+		(uuid "76326657-b340-445b-aa86-2720c857e9dd")
 	)
 	(label "DAC_ROUT"
 		(at 85.09 191.77 180)
@@ -5107,7 +5107,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "e77351b8-7947-4566-bbd7-176e8f34a0df")
+		(uuid "c787d231-1f00-4f9f-998f-d414b8c2f15d")
 	)
 	(label "NC_DAC"
 		(at 85.09 194.31 180)
@@ -5117,7 +5117,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "fc0173ec-4f1b-465f-95bb-d702e44162d6")
+		(uuid "94dfe208-101f-49a6-8596-1e4ca7b4a239")
 	)
 	(label "VBAT_SW"
 		(at 198.12 168.91 180)
@@ -5127,7 +5127,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "12a76989-3cf3-4707-b146-e841d12c9d6c")
+		(uuid "76df6cb6-c941-46d8-83b4-4492344be35c")
 	)
 	(label "POWER_GND"
 		(at 198.12 171.45 180)
@@ -5137,7 +5137,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "94b3b9f2-e0c1-471b-9fdd-12ece91dcf65")
+		(uuid "cd34a18b-1888-486f-a411-45befe89b496")
 	)
 	(label "DAC_LOUT"
 		(at 198.12 173.99 180)
@@ -5147,7 +5147,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "8db588f1-235e-4aa0-8b0f-4477121c94dc")
+		(uuid "a8b5099f-1b6b-410a-9ea5-1e63074ccf92")
 	)
 	(label "DAC_AGND"
 		(at 198.12 176.53 180)
@@ -5157,7 +5157,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "a0a284c9-a72f-495f-b0fd-c4257b38af7f")
+		(uuid "c30cd389-30f5-4e13-ba63-bdaabe650487")
 	)
 	(label "DAC_ROUT"
 		(at 198.12 179.07 180)
@@ -5167,7 +5167,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "b5612dcb-fd14-4348-a991-b0a06cbbbcaf")
+		(uuid "bccffad4-2fac-4e98-8202-d481e1b27e8e")
 	)
 	(label "AMP_L_PLUS"
 		(at 198.12 181.61 180)
@@ -5177,7 +5177,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "e5a79232-9ac1-436a-88e3-739f16bd4c8c")
+		(uuid "960c7701-c767-46e7-b3ea-1b38f7e4f5e5")
 	)
 	(label "AMP_L_MINUS"
 		(at 198.12 184.15 180)
@@ -5187,7 +5187,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "0ec4641a-f654-48d5-b454-71e1a3766346")
+		(uuid "bf16c78f-eca5-4721-8ac9-3763684dde39")
 	)
 	(label "AMP_R_PLUS"
 		(at 198.12 186.69 180)
@@ -5197,7 +5197,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "b83d3a71-67b1-4827-a12f-4178ca9b6d31")
+		(uuid "9c1a1721-7312-4164-8ad8-e68386c116da")
 	)
 	(label "AMP_R_MINUS"
 		(at 198.12 189.23 180)
@@ -5207,7 +5207,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "ff1fc812-2514-4f96-8086-2bd991619f09")
+		(uuid "eab8a5e1-a51a-4849-bcbc-b2bebd614561")
 	)
 	(label "AMP_SD_TBD"
 		(at 198.12 191.77 180)
@@ -5217,7 +5217,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "6a681cdf-7913-4576-900f-0536c327cd6a")
+		(uuid "373cd0e3-d547-4a0f-b6fd-7fb47a54e197")
 	)
 	(label "AMP_L_PLUS"
 		(at 274.32 166.37 180)
@@ -5227,7 +5227,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "e1bc48b3-9948-423e-9af6-145618898870")
+		(uuid "65cb595d-e8d9-42f9-a731-6982e7fda3f6")
 	)
 	(label "AMP_L_MINUS"
 		(at 274.32 168.91 180)
@@ -5237,7 +5237,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "2ee8744c-3672-4d7d-a152-d1307f0a1499")
+		(uuid "bbf1944c-d68a-4c00-83af-d80472c9f4ee")
 	)
 	(label "TWEETER_POS"
 		(at 339.09 184.15 180)
@@ -5247,7 +5247,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "8f5a1606-bc21-440e-9f85-8e02b10ca4dd")
+		(uuid "f6f04538-ef52-4986-ad6b-b387f5c76251")
 	)
 	(label "AMP_R_MINUS"
 		(at 339.09 186.69 180)
@@ -5257,7 +5257,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "8bc1f26f-8ced-47ca-958b-8cbbd21370e4")
+		(uuid "dc3737ad-9013-4b05-8a67-8a7f5ae8a5ae")
 	)
 	(label "BMINUS"
 		(at 82.55 236.22 180)
@@ -5267,7 +5267,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "09f3d57d-fab4-405d-817d-df3ad9759c19")
+		(uuid "05b77b47-2151-4b73-b80d-956f15e0aeed")
 	)
 	(label "B1"
 		(at 82.55 238.76 180)
@@ -5277,7 +5277,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "d82148ac-b0a1-4e6d-a28c-8613d5aebb78")
+		(uuid "175a180e-bc0a-4ebb-ae81-623cf739d41e")
 	)
 	(label "B2"
 		(at 82.55 241.3 180)
@@ -5287,7 +5287,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "9e423171-06be-4df8-9dd4-818227f84975")
+		(uuid "941aeac6-3c55-44d6-8de1-bc7da350ad5d")
 	)
 	(label "B3"
 		(at 82.55 243.84 180)
@@ -5297,7 +5297,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "bd1ad5ea-f65f-4f42-acda-da63180750e2")
+		(uuid "298cc239-4370-4890-9d71-bb2cbab253fa")
 	)
 	(label "BPLUS"
 		(at 82.55 246.38 180)
@@ -5307,7 +5307,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "eb779b0b-f1c8-4862-80bb-acadba84c9c3")
+		(uuid "2c93481f-5f7d-4064-9253-cf96ae10c42b")
 	)
 	(label "PACK_POS"
 		(at 82.55 248.92 180)
@@ -5317,7 +5317,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "b21660a3-70cd-4372-b1c2-6931bcaffa8f")
+		(uuid "8161fbdb-53ea-499f-bbce-355dac8e635a")
 	)
 	(label "PACK_NEG"
 		(at 82.55 251.46 180)
@@ -5327,7 +5327,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "70e8bf6f-e197-4f44-9f04-09bf2f4224cc")
+		(uuid "5f952ba9-0f20-4485-a5aa-49ebfa10e356")
 	)
 	(label "FUSED_POS"
 		(at 82.55 254 180)
@@ -5337,7 +5337,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "5b0118ce-af9a-443e-a7e6-1d6e5aab7491")
+		(uuid "643af2be-d953-4ed3-958b-22ffa5e7245b")
 	)
 	(label "VBAT_SW"
 		(at 82.55 256.54 180)
@@ -5347,7 +5347,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "3e40f345-bae2-43e0-b590-071ab4e431c7")
+		(uuid "3732e9d9-b93a-43e8-815b-c3d8482d692c")
 	)
 	(label "V5_SYS"
 		(at 82.55 259.08 180)
@@ -5357,7 +5357,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "9cb43474-64c7-4862-85a2-7ee07e01eb03")
+		(uuid "9f1ca727-3dcd-43dd-845e-716a38570cad")
 	)
 	(label "ESP_3V3"
 		(at 190.5 238.76 180)
@@ -5367,7 +5367,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "93d51509-eed6-49df-8bb3-a42a272f9412")
+		(uuid "f911d4fa-f6c5-4b87-bb06-70cdfd5cad3b")
 	)
 	(label "I2S_BCLK"
 		(at 190.5 241.3 180)
@@ -5377,7 +5377,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "32ba2a2d-5425-433d-8e55-ff45b98917c5")
+		(uuid "cbeb4359-8b2d-427d-a16f-7eecab2c62c5")
 	)
 	(label "I2S_LRCLK"
 		(at 190.5 243.84 180)
@@ -5387,7 +5387,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "ce2f63d6-99d3-4eeb-afdd-d8e0b0d7104d")
+		(uuid "20590c7d-f8a6-41f5-a840-6c0d154b0e06")
 	)
 	(label "I2S_DATA"
 		(at 190.5 246.38 180)
@@ -5397,7 +5397,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "4dcfd19b-043d-4377-b872-928030516eae")
+		(uuid "ee6313d8-6897-492a-8e12-3d9441857e6e")
 	)
 	(label "DAC_LOUT"
 		(at 190.5 248.92 180)
@@ -5407,7 +5407,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "b195b78c-29a3-4c38-8591-f66a6d1d69f9")
+		(uuid "e7950f17-d834-4b50-bfff-74ae72bc8db5")
 	)
 	(label "DAC_ROUT"
 		(at 190.5 251.46 180)
@@ -5417,7 +5417,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "1484c2e4-d2d6-48f3-a982-7c060d23c5db")
+		(uuid "283ae5cd-5f73-4fc1-90db-1dbc717751bc")
 	)
 	(label "BUTTON_N"
 		(at 190.5 254 180)
@@ -5427,7 +5427,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "92ec0128-1ff9-4208-8d9c-b8d9578277f1")
+		(uuid "202a0224-e861-4cac-874f-ed4ece590fb4")
 	)
 	(label "LED_R"
 		(at 190.5 256.54 180)
@@ -5437,7 +5437,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "a9e1e727-16e4-41cc-8238-5c8c55beebff")
+		(uuid "f08f5632-1b54-4a25-93fe-dbe0c8a517c2")
 	)
 	(label "AMP_L_PLUS"
 		(at 292.1 238.76 180)
@@ -5447,7 +5447,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "b51c63ca-29fc-44bf-a534-1bf12ace29eb")
+		(uuid "611a0cfb-42b0-4e48-8cd9-b0b681e1802f")
 	)
 	(label "AMP_L_MINUS"
 		(at 292.1 241.3 180)
@@ -5457,7 +5457,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "0060f414-9c85-477f-bef0-551fa60e33e0")
+		(uuid "5b0972cc-29f2-47e1-a567-ef8226300300")
 	)
 	(label "AMP_R_PLUS"
 		(at 292.1 243.84 180)
@@ -5467,7 +5467,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "4863e6a9-2b5d-420b-95d3-4fa5b5bbece9")
+		(uuid "3ba43641-f898-4cc8-8bb7-d4b4a1303873")
 	)
 	(label "AMP_R_MINUS"
 		(at 292.1 246.38 180)
@@ -5477,7 +5477,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "b78545af-74cd-452e-9a5a-8b5f6196c621")
+		(uuid "d589b050-e480-4a8e-9231-d88585e7e49e")
 	)
 	(label "CHG_16V8"
 		(at 292.1 248.92 180)
@@ -5487,7 +5487,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "0e35e8e5-d6cb-4d2b-bdeb-bdcb42caeaea")
+		(uuid "9210ba24-b69d-4794-be4d-e949d72affae")
 	)
 	(label "CHG_NEG"
 		(at 292.1 251.46 180)
@@ -5497,7 +5497,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "d0e53c81-233d-4270-bcfb-521c2a94c323")
+		(uuid "f37187e7-9ead-48bc-9272-a948b0238ad5")
 	)
 	(label "NTC_BMS"
 		(at 292.1 254 180)
@@ -5507,7 +5507,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "95ece918-af7b-45c5-8f5c-7020d97d6e90")
+		(uuid "9128cd9e-be12-400b-a49c-9235257dfb6a")
 	)
 	(label "STAR_GND"
 		(at 292.1 256.54 180)
@@ -5517,7 +5517,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "76d81b62-ce98-4530-9dbb-2820333f0317")
+		(uuid "6fb5f4b8-636e-4898-8d19-0715e495f73d")
 	)
 	(label "BPLUS"
 		(at 182.88 30.48 90)
@@ -5527,7 +5527,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "741309d7-a814-475d-88e7-e40d02f381d7")
+		(uuid "d4408be3-5216-46c4-98d0-e9c60ccb08ee")
 	)
 	(label "B3"
 		(at 182.88 38.1 270)
@@ -5537,7 +5537,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "8b15b45c-ba49-4d0a-bed3-d25fd2c90de5")
+		(uuid "8e387e7c-e9cf-4b08-a282-6c6f11a463af")
 	)
 	(label "B3"
 		(at 182.88 39.37 90)
@@ -5547,7 +5547,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "d91db0ce-dbbb-47c3-a455-10e2099073e7")
+		(uuid "d7f01db2-3a2d-4431-85eb-6bf612ed7d65")
 	)
 	(label "B2"
 		(at 182.88 46.99 270)
@@ -5557,7 +5557,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "ade54d17-b962-43c1-9add-7b5ce6368677")
+		(uuid "9f9d8734-7dfd-424f-a3b7-fae2bd23cf58")
 	)
 	(label "B2"
 		(at 182.88 49.53 90)
@@ -5567,7 +5567,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "39005837-4f05-49f6-957b-e6f95ebcae77")
+		(uuid "aef6a7a7-12f3-4293-9b3f-ae4b0d922964")
 	)
 	(label "B1"
 		(at 182.88 57.15 270)
@@ -5577,7 +5577,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "a1347308-6dd6-48d8-b5c3-e898f0f103ea")
+		(uuid "65c14365-f215-4501-8707-66c80e407c7c")
 	)
 	(label "B1"
 		(at 182.88 59.69 90)
@@ -5587,7 +5587,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "445fda6d-85a3-4905-a4fd-c2291605da27")
+		(uuid "c262ac20-ce3d-46bd-bda9-3b936cdf4135")
 	)
 	(label "BMINUS"
 		(at 182.88 67.31 270)
@@ -5597,7 +5597,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "0324a516-858f-4930-a4f0-51353788d551")
+		(uuid "618f3c25-3611-40ed-b181-528fafeb94a5")
 	)
 	(label "PACK_POS"
 		(at 295.91 46.99 180)
@@ -5607,7 +5607,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "ef8ad301-ba64-4c3a-a55a-fa83965fc776")
+		(uuid "df5c1b62-e09a-4c89-a758-6f9883e34868")
 	)
 	(label "FUSED_POS"
 		(at 288.29 46.99 0.0000)
@@ -5617,7 +5617,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "ad4264ae-4c11-4228-9283-cd7c247e5a27")
+		(uuid "f937e7a4-4309-461b-9b1d-26d625dc3501")
 	)
 	(label "FUSED_POS"
 		(at 332.74 41.91 270)
@@ -5627,7 +5627,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "76f0a4ef-59e8-43ea-b3c1-d77001f1d41f")
+		(uuid "4a61a013-d412-4557-b6bc-5205e3ee6a34")
 	)
 	(label "VBAT_SW"
 		(at 332.74 52.07 90)
@@ -5637,7 +5637,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "55a1cedd-af48-4de3-afd4-8fd4044d954f")
+		(uuid "aafc3a53-3e43-478e-81f0-ed9d2a14ee26")
 	)
 	(label "VBAT_SW"
 		(at 34.29 101.6 90)
@@ -5647,7 +5647,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "424e3d37-b1c0-417e-ab63-fa95f866832a")
+		(uuid "0096cb7d-e28b-48f8-9c24-9e7fafa840d1")
 	)
 	(label "POWER_GND"
 		(at 34.29 109.22 270)
@@ -5657,7 +5657,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "26631c78-c858-49e5-9020-b59ee1958d46")
+		(uuid "81367b06-0208-46b4-aff4-f87407fe5993")
 	)
 	(label "BUTTON_N"
 		(at 285.75 100.33 270)
@@ -5667,7 +5667,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "cb9ecd33-2877-434d-8ddf-e6c58fd2e295")
+		(uuid "69e78b87-dbf0-40da-998a-75263b7e4d78")
 	)
 	(label "STAR_GND"
 		(at 285.75 110.49 90)
@@ -5677,7 +5677,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "81a87214-79df-4014-ab85-59398333919c")
+		(uuid "e7874d20-12dd-479f-b11a-c649ad5ae0bb")
 	)
 	(label "ESP_3V3"
 		(at 285.75 120.65 90)
@@ -5687,7 +5687,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "fd95db40-c3d7-458e-969d-cbf1bbbc3f00")
+		(uuid "0a0834a1-d0fe-47de-9a92-0548d58ff438")
 	)
 	(label "BUTTON_N"
 		(at 285.75 128.27 270)
@@ -5697,7 +5697,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "7251f254-a80e-4256-8a2d-a0e15f89cf40")
+		(uuid "8f5adad5-5ed5-4561-9b4f-8342d06473a4")
 	)
 	(label "AMP_R_PLUS"
 		(at 314.96 184.15 180)
@@ -5707,7 +5707,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "b65319e3-290c-4902-9e8f-43c900281376")
+		(uuid "218da326-b663-4391-a7f2-a245102c698c")
 	)
 	(label "TWEETER_POS"
 		(at 307.34 184.15 0.0000)
@@ -5717,7 +5717,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "7e5aa844-bdd0-4229-8b9b-cf1acb011aaf")
+		(uuid "7b047d1d-3d06-4536-834c-b1dede747a78")
 	)
 	(rectangle
 		(start 25 15)
@@ -5729,7 +5729,7 @@
 		(fill
 			(type none)
 		)
-		(uuid "0f649394-4ba3-47e1-973d-53d6042eb5b1")
+		(uuid "af0fa484-9190-447b-8ad1-c74861517321")
 	)
 	(rectangle
 		(start 162 15)
@@ -5741,7 +5741,7 @@
 		(fill
 			(type none)
 		)
-		(uuid "1ef91aef-a648-422a-ba22-79f6c0ebd5fd")
+		(uuid "064465da-fad6-4b6e-89c8-c42f6e9505d1")
 	)
 	(rectangle
 		(start 25 86)
@@ -5753,7 +5753,7 @@
 		(fill
 			(type none)
 		)
-		(uuid "40b7b498-d2d5-4189-ac44-eaa0f67ca84f")
+		(uuid "e9b565b6-cd03-4804-9ebe-db94d58870a8")
 	)
 	(rectangle
 		(start 157 86)
@@ -5765,7 +5765,7 @@
 		(fill
 			(type none)
 		)
-		(uuid "908d0fcf-dbb9-4bbf-ae22-b3ca2dc06af7")
+		(uuid "d43e592c-8218-4113-9123-ebe0ada1bc03")
 	)
 	(rectangle
 		(start 25 148)
@@ -5777,7 +5777,7 @@
 		(fill
 			(type none)
 		)
-		(uuid "0ecf5d1e-3411-4534-9ab5-b5db587f824e")
+		(uuid "7569c5aa-f4d4-4879-ad86-e8fcb5df1130")
 	)
 	(rectangle
 		(start 25 224)
@@ -5789,7 +5789,7 @@
 		(fill
 			(type none)
 		)
-		(uuid "9b52e146-d340-4703-998b-c703564e577a")
+		(uuid "13548378-2efa-4f20-a138-7ef5dd1b88ba")
 	)
 	(text "A. USB-C PD + 4S CC/CV CHARGE"
 		(exclude_from_sim no)
@@ -5800,7 +5800,7 @@
 				(bold yes)
 			)
 		)
-		(uuid "8f63c27a-06e5-4b65-8ffe-6a2f616a7a14")
+		(uuid "959c7cde-7bb5-4f3b-80c7-abaff4e97072")
 	)
 	(text "B. 4S PACK, BMS, FUSE, HARD POWER"
 		(exclude_from_sim no)
@@ -5811,7 +5811,7 @@
 				(bold yes)
 			)
 		)
-		(uuid "783bc3f0-811b-4107-96f4-71f40d4561d1")
+		(uuid "058e54be-949a-4c0e-b8cb-58ed239d3715")
 	)
 	(text "C. SWITCHED POWER"
 		(exclude_from_sim no)
@@ -5822,7 +5822,7 @@
 				(bold yes)
 			)
 		)
-		(uuid "07714cb3-1d72-4203-ae50-f25877721851")
+		(uuid "df69bb7e-1363-4c27-96ac-a0f84fc621f6")
 	)
 	(text "D. ESP32-S3 + USER INTERFACE"
 		(exclude_from_sim no)
@@ -5833,7 +5833,7 @@
 				(bold yes)
 			)
 		)
-		(uuid "0dda2f0a-f6b2-4a5d-a366-86a1dfec2748")
+		(uuid "94e01bd2-4d2c-44bd-a68c-307a856aad1f")
 	)
 	(text "E. I2S DAC + BTL AMP + DRIVERS"
 		(exclude_from_sim no)
@@ -5844,7 +5844,7 @@
 				(bold yes)
 			)
 		)
-		(uuid "2b2c01a4-13ca-49a1-ae43-53d218daacc0")
+		(uuid "899d35ee-50fb-41b8-a040-1cb9d3341afd")
 	)
 	(text "F. TEST POINTS / OSCILLOSCOPE ACCESS"
 		(exclude_from_sim no)
@@ -5855,7 +5855,7 @@
 				(bold yes)
 			)
 		)
-		(uuid "09a678d4-c1c2-4853-978a-4fb5de7dbaa3")
+		(uuid "26a9aea0-d650-4e3e-86ae-a6a86c45210b")
 	)
 	(text "Set PD trigger to 20 V without the battery connected."
 		(exclude_from_sim no)
@@ -5865,7 +5865,7 @@
 				(size 1.27 1.27)
 			)
 		)
-		(uuid "e4630fb4-8300-4fc9-815e-dfed98a846e0")
+		(uuid "0b796315-57dc-4642-af55-2f1595846a21")
 	)
 	(text "Calibrate XL4015 to 16.80 V / 2.00 A on a dummy load. V1: CHARGE WHILE PLAYING DISABLED."
 		(exclude_from_sim no)
@@ -5876,7 +5876,7 @@
 				(bold yes)
 			)
 		)
-		(uuid "4f0e7f5f-b7ff-4295-91dc-f601f59083b1")
+		(uuid "234f6528-92a4-4683-9fab-8fbb85ca7a23")
 	)
 	(text "BMS pin order is logical only. Verify actual silkscreen, balance threshold/current and NTC behavior."
 		(exclude_from_sim no)
@@ -5886,7 +5886,7 @@
 				(size 1.27 1.27)
 			)
 		)
-		(uuid "f03efdf4-5b02-40af-9ba5-58f1032fad11")
+		(uuid "8f743a87-5a02-40d4-8924-e081b0b5590a")
 	)
 	(text "Verify S1 breaking capacity at 16.8 VDC."
 		(exclude_from_sim no)
@@ -5897,7 +5897,7 @@
 				(bold yes)
 			)
 		)
-		(uuid "bbcbef21-78ab-42c5-ac06-9db73ed3c936")
+		(uuid "4b2d63f4-a2a5-4a9c-ac33-599e9c90e6e8")
 	)
 	(text "Adjust U4 to 5.10 V before connecting ESP32/DAC. Keep JP1 open until USB backfeed safety is proven."
 		(exclude_from_sim no)
@@ -5907,7 +5907,7 @@
 				(size 1.27 1.27)
 			)
 		)
-		(uuid "e12d03a9-08d7-4cd4-b50b-46f4f54a92be")
+		(uuid "3a2a4033-b750-4501-b2a7-e6e7b597b067")
 	)
 	(text "GPIO candidates: BCLK=4, LRCLK=5, DATA=6, BTN=7, RGB=8/9/10, I2C=11/12."
 		(exclude_from_sim no)
@@ -5917,7 +5917,7 @@
 				(size 1.27 1.27)
 			)
 		)
-		(uuid "a83ff04a-5cdd-4e20-aa9a-6ddcbd258d4e")
+		(uuid "143bcaf2-77c2-43f3-89f6-161ed68f4e53")
 	)
 	(text "Avoid strapping GPIO0/3/45/46 and native USB GPIO19/20."
 		(exclude_from_sim no)
@@ -5927,7 +5927,7 @@
 				(size 1.27 1.27)
 			)
 		)
-		(uuid "37bd11ca-ec68-4d57-b645-8ee36d3cab9c")
+		(uuid "0ae5cf36-6847-4b30-9019-62b46060a88a")
 	)
 	(text "PCM5102A: SCK->GND for 3-wire PLL; verify module solder bridges."
 		(exclude_from_sim no)
@@ -5937,7 +5937,7 @@
 				(size 1.27 1.27)
 			)
 		)
-		(uuid "fd2bfb78-b08a-4843-b424-474284411fe1")
+		(uuid "a960c653-31fd-406b-80b6-a93a94f6a11d")
 	)
 	(text "DANGER: L-/R- are BTL switching outputs. NEVER connect them to GND."
 		(exclude_from_sim no)
@@ -5948,7 +5948,7 @@
 				(bold yes)
 			)
 		)
-		(uuid "4d785412-efdc-457e-8926-72ed0561ea71")
+		(uuid "db24a310-5a40-49e6-8580-449caa2d2a51")
 	)
 	(text "C_SAFE remains TBD until tweeter DCR/impedance and safe HPF are measured."
 		(exclude_from_sim no)
@@ -5959,7 +5959,7 @@
 				(bold yes)
 			)
 		)
-		(uuid "fbbafd0d-df68-4b5b-a227-b5fb3b1c08f3")
+		(uuid "fdefbc09-c41a-43d5-a13f-9476dc97527d")
 	)
 	(text "Scope ground: POWER_GND/STAR_GND only. For BTL use a differential probe or CH1-CH2; both ground clips at POWER_GND."
 		(exclude_from_sim no)
@@ -5970,7 +5970,7 @@
 				(bold yes)
 			)
 		)
-		(uuid "e1ea900b-2a52-402a-ae70-e3c5d1bcee22")
+		(uuid "8fb64de6-21db-4bca-a593-911f1f01aa86")
 	)
 	(text "G0 driver impedance BLOCKED | G1 dummy-load amp BLOCKED | G2 C_SAFE BLOCKED | G3 power/thermal BLOCKED | G4 battery/BMS BLOCKED"
 		(exclude_from_sim no)
@@ -5981,7 +5981,7 @@
 				(bold yes)
 			)
 		)
-		(uuid "9eac5262-7e0a-4c66-9697-8c056d71fb14")
+		(uuid "f9d10027-a8bc-4c2c-a467-5be98decc54f")
 	)
 	(sheet_instances
 		(path "/"
