@@ -45,6 +45,24 @@ USB-C soketi 4S pakete doğrudan bağlanmaz. PD tetikleyici yalnız 20 V anlaşm
 
 **İç donanım ara toplamı:** 2.223,09 TL / hoparlör; **8.892,36 TL / dört hoparlör**.
 
+## Yardımcı pasifler, konnektörler ve prototipleme parçaları
+
+Fonksiyon butonu, sert güç anahtarı, RGB LED modülü, sigorta ve sigorta yuvası yukarıdaki ana tabloda zaten fiyatlandırılmıştır; bu bölümde ikinci kez maliyete eklenmez. Aşağıdaki sepet şemada kullanılan direnç, kondansatör, jumper, klemens ve masaüstü prototipleme parçalarını görünür hale getirir.
+
+| Parça / değer | Devredeki görevi | Satıcı ve bağlantı | Satın alma adedi | Sepet tutarı | Durum / kullanım notu |
+|---|---|---|---:|---:|---|
+| 1/4 W direnç: 10 kΩ, 330 Ω ve 680 Ω; her değerden 10'lu paket | Buton `R_PU` pull-up ve çıplak RGB LED seçilirse kanal akım sınırlama | [Robotistan 1/4 W dirençler](https://www.robotistan.com/14w-direnc) | 3 paket | 0,69 TL | Dört cihaz için 4×10 kΩ, 8×330 Ω ve 4×680 Ω gereksinimini karşılar. RGB modülünde seri direnç varsa 330/680 Ω parçalar takılmaz. |
+| 100 nF seramik kondansatör, 10'lu paket | İsteğe bağlı `C_DB` buton debounce ve lokal bypass | [Robotistan seramik kondansatörler](https://www.robotistan.com/seramik-kondansator-1) | 1 paket | 1,11 TL | Dört cihaz için yeterli; buton davranışı firmware ile test edilerek takılmasına karar verilir. |
+| 1.000 µF / 25 V elektrolitik kondansatör | Amfi beslemesi yakınında `C_A` bulk enerji/ripple bastırma | [Direnc.net 1000 µF / 25 V](https://www.direnc.net/1000uf25v) | 4 | 18,60 TL | **Yalnız prototip adayı:** sayfa düşük ESR veya 105 °C sınıfını doğrulamıyor. G3 ölçümünden sonra markalı 105 °C düşük-ESR nihai parça seçilecek. |
+| 2,2 µF / 400 V kutupsuz polyester kondansatör | `C_SAFE` tweeter seri koruma filtresi için ölçüm bankası | [Direnc.net 2,2 µF / 400 V](https://www.direnc.net/22uf-400v-damla-tipi-polyester-kondansator-225mm) | 4 | 79,56 TL | **Nihai değer değildir.** Paralel bağlanarak 2,2 / 4,4 / 6,6 / 8,8 µF deney değerleri üretilir; tweeter empedansı ve G2 süpürmesi tamamlanmadan gerçek sürücüye bağlanmaz. |
+| 1×40, 2,54 mm erkek pin header | `JP1`, servis noktaları ve geçici test pini | [Robotistan header](https://www.robotistan.com/header) | 1 | 7,68 TL | Bir şerit dört cihazın `JP1` pinleri için yeterlidir; nihai PCB test noktaları lehim pedi olur. |
+| 2,54 mm jumper cap | `JP1` USB/system 5 V izolasyon köprüsü | [Direnc.net jumper](https://www.direnc.net/jumpers) | 4 | 1,96 TL | Her cihaz için bir adet. Enerji kaynağı değiştirilmeden önce güç kesilir. |
+| KF128V 5,08 mm 2'li vidalı klemens | Güç, woofer ve tweeter kablolarının sökülebilir prototip bağlantısı | [Robotistan klemens](https://www.robotistan.com/klemens-1) | 16 | 105,12 TL | Dört adet/hoparlör prototip varsayımıdır; nihai kilitli konnektör kasa ve titreşim testinden sonra seçilir. |
+| 5×10 cm tek yüzlü delikli pertinaks | İlk masaüstü prototip taşıyıcısı | [Robotistan pertinaks](https://www.robotistan.com/5x10-cm-delikli-pertinaks-bakir-tek-yuzlu) | 1 | 18,65 TL | Yalnız ilk prototip; dört nihai cihaz için taşıyıcı PCB hedeflenir. |
+| 20 cm dişi-erkek jumper kablo, 40'lı | Düşük akımlı I2S/GPIO masaüstü bağlantıları | [Direnc.net jumper kablo](https://www.direnc.net/40-adet-disi-erkek-jumper-20cm-1) | 1 set | 39,52 TL | Güç, amfi ve hoparlör hatlarında kullanılmaz; o hatlar uygun kesitli silikon kabloyla yapılır. |
+
+**Açıkça fiyatlandırılan yardımcı sepet:** **272,89 TL**. Bunun **178,63 TL**'lik bölümü ilk prototip kurulumunda kullanılabilir; kalan parçalar dört cihaz için paylaşımlıdır. Bu tutar aşağıdaki mevcut 250 TL / 1.000 TL sarf bütçelerinin içindedir ve genel toplama yeniden eklenmemiştir. İlk prototipte kalan 71,37 TL'nin kablo, makaron ve izolasyona yetip yetmediği sipariş öncesi kontrol edilmelidir.
+
 ## Harici USB-C adaptör ve kablo
 
 | Parça / marka-model | Teknik gerekçe | Satıcı | Adet | Birim fiyat | Toplam |
@@ -63,7 +81,7 @@ Bir adaptör ve kablo dört hoparlör arasında sırayla kullanılabilir. Dört 
 | 4 hoparlör + ortak 1 adaptör/kablo | 8.892,36 TL | 865,00 TL | 1.000,00 TL tahmini | **10.757,36 TL** |
 | 4 hoparlör + 4 adaptör/kablo | 8.892,36 TL | 3.460,00 TL | 1.000,00 TL tahmini | **13.352,36 TL** |
 
-Sarf/izolasyon bütçesi; saf nikel şerit, fish-paper, pozitif kutup halkası, silikon kablo, ısı makaronu, klemens/JST, yükseltici ve küçük pasif elemanlar için fiyat tahminidir. Nokta kaynak hizmeti, kargo ve kasa dahil değildir. 4S2P seçilirse dört paket için 16 ek Aspilsan A28 gerekir; yalnız hücre farkı **1.909,76 TL**'dir.
+Sarf/izolasyon bütçesi; yukarıda açıkça fiyatlandırılan yardımcı sepetle birlikte saf nikel şerit, fish-paper, pozitif kutup halkası, silikon kablo, ısı makaronu, nihai JST/kilitli konnektör ve yükselticiler için fiyat tahminidir. Nokta kaynak hizmeti, kargo ve kasa dahil değildir. 4S2P seçilirse dört paket için 16 ek Aspilsan A28 gerekir; yalnız hücre farkı **1.909,76 TL**'dir.
 
 ## Sipariş sırası
 

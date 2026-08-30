@@ -10,6 +10,7 @@ tags: [development-log, moc]
 - [[2026-08-30-turkey-procurement-costing|Türkiye tedarik ve maliyet araştırması]]
 - [[2026-08-30-kicad-generator|KiCad şema üreticisi]]
 - [[2026-08-30-aspilsan-low-cost-charger|Aspilsan hücre ve düşük maliyetli şarj seti]]
+- [[2026-08-30-auxiliary-passives-bom|Yardımcı pasifler ve prototipleme BOM'u]]
 
 Günlükler yapılan işi, nedenini, doğrulamayı ve açık riskleri kalıcı tutar. Yeni kayıt için [[../templates/development-log|şablonu]] kullanın.
 

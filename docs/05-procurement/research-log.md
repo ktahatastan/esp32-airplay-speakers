@@ -82,6 +82,16 @@ Her tarama kaydı tarihli tutulur. Fiyat ve stok geçmiş bilgi sayılır; yeni 
 - Setin ayrı kablo maliyetini kaldırmasıyla önceki 2.698,00 TL Baseus adaptör+kablo bütçesi 865,00 TL'ye indi. Kutu kablosunun 5 A/e-marker kimliği katalogda açık yazmadığı için satın alma sonrası USB-C test cihazıyla doğrulama şartı kondu.
 - Alternatif olarak [Konfulon C99Q](https://www.mediamarkt.com.tr/tr/product/_konfulon-c99q-65w-pd-destekli-type-c-ve-usb-cift-cikisli-hizli-sarj-adaptoru-beyaz-172794171.html) 949,00 TL; tek Type-C çıkışı 20 V / 3,25 A olarak listelendi, fakat ayrıca kablo gerektiriyor.
 
+## 2026-08-30 — Yardımcı pasifler ve prototipleme sepeti
+
+- Şemadaki `R_PU`, RGB kanal dirençleri, isteğe bağlı `C_DB`, `C_A`, `C_SAFE`, `JP1` ve prototip bağlantıları BOM ile karşılaştırıldı.
+- Robotistan'da 10'lu 1/4 W direnç paketleri 10 kΩ, 330 Ω ve 680 Ω için 0,23 TL/paket; 10'lu 100 nF seramik paket 1,11 TL olarak görüldü.
+- Direnc.net 1.000 µF / 25 V elektrolitik 4,65 TL/adet olarak görüldü. Ürün sayfası düşük ESR/105 °C sınıfını doğrulamadığı için yalnız G3 prototip adayıdır.
+- 2,2 µF / 400 V kutupsuz polyester kondansatör 19,89 TL/adet olarak görüldü. Dört adet paralel kombinasyonla 2,2 / 4,4 / 6,6 / 8,8 µF deney bankası oluşturabilir; bu **nihai tweeter filtresi seçimi değildir**.
+- Header, jumper cap, prototip klemens, pertinaks ve düşük akımlı jumper kablo eklendi. Dört cihazı kapsayan açık yardımcı sepet 272,89 TL; ilk prototipte kullanılabilecek bölüm 178,63 TL hesaplandı.
+- Buton, sert güç anahtarı, RGB modülü, sigorta ve yuva ana fiyat tablosunda zaten bulunduğu için yardımcı sepette ikinci kez maliyete eklenmedi.
+- Yardımcı sepet mevcut sarf/izolasyon bütçesinin içinde tutuldu; genel maliyet toplamları değişmedi. Fiyat ve stok 2026-08-30 erişim görüntüsüdür ve siparişten önce yenilenecektir.
+
 ## İlgili notlar
 
 - [[bom|BOM ve satın alma listesi]]

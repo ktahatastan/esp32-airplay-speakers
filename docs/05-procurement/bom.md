@@ -64,6 +64,24 @@ updated: 2026-08-30
 | PCB / delikli pertinaks / kablo demeti | 1 | 4 | Prototipte modüler; nihai sürümde servis edilebilir tek taşıyıcı PCB hedeflenir. |
 | Vida, yükseltici, ısı iletken ped, kablo bağı | 1 set | 4 set | Kısa devre ve titreşim önleme için. |
 
+## Yardımcı pasifler ve prototipleme BOM'u
+
+| Referans / kalem | Değer veya tip | Bir ünite | İlk prototip satın alımı | Dört ünite için toplam | Durum |
+|---|---|---:|---:|---:|---|
+| `R_PU` | 10 kΩ, 1/4 W | 1 | 10'lu paket | 4 | Buton pull-up; aday. |
+| `R_LED_R` | 680 Ω, 1/4 W | 1 | 10'lu paket | 4 | Yalnız çıplak RGB LED'de; modül üzerinde direnç varsa `DNP`. |
+| `R_LED_G`, `R_LED_B` | 330 Ω, 1/4 W | 2 | 10'lu paket | 8 | Yalnız çıplak RGB LED'de; modül üzerinde direnç varsa `DNP`. |
+| `C_DB` | 100 nF seramik | 1 isteğe bağlı | 10'lu paket | 4 | Donanım debounce/bypass adayı; firmware testiyle karar verilecek. |
+| `C_A` | 1.000 µF / 25 V, 105 °C düşük-ESR hedef | 1 | 1 | 4 | Bulunan perakende ürün yalnız prototip adayı; ESR/ripple/sıcaklık G3'te ölçülecek. |
+| `C_SAFE` deney bankası | 4×2,2 µF / 400 V kutupsuz film | Değer TBD | 4 ortak deney parçası | Nihai: 4 eş değer | Tweeter empedansı ve G2 süpürmesi olmadan değer dondurulmaz veya sürücüye bağlanmaz. |
+| `JP1` + jumper cap | 2 pin 2,54 mm + kısa devre şapkası | 1 | 1×40 header + 1 cap | 4 cap | USB/system 5 V izolasyonu; nihai PCB'de bulunur. |
+| Vidalı klemens | KF128V, 5,08 mm, 2 pin | Prototipte 4 | 4 | 16 | Prototip adayı; nihai titreşim dayanımlı kilitli konnektör daha sonra seçilir. |
+| Test noktaları `TP0–TP27` | Header kesiti veya prob pedi | Gerektikçe | 1×40 header'dan | Nihai PCB pedi | Üretimde ayrı BOM parçası değildir. |
+| Delikli pertinaks | 5×10 cm, tek yüzlü | 0 nihai | 1 | 1 ortak | Yalnız masaüstü prototip. |
+| Jumper kablo | 20 cm dişi-erkek, 40'lı | 0 nihai | 1 set | 1 ortak | Yalnız düşük akımlı I2S/GPIO prototipleme; güç/ses çıkışında kullanılmaz. |
+
+Fiyat, bağlantı ve paket adetleri için [[turkey-shopping-list-2026-08-30#Yardımcı pasifler, konnektörler ve prototipleme parçaları|yardımcı parça sepetine]] bakın.
+
 ## Elde olanların kabul kontrolü
 
 - [ ] Dört XH-A232 kartın parça kodu, kanal yapısı ve görsel revizyonu aynı mı?

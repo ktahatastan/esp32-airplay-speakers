@@ -30,6 +30,12 @@ Bu liste bir onaylı tedarikçi listesi değil, sipariş öncesi kısa listedir.
 | Fonksiyon butonu | [Robotistan: KY-004](https://www.robotistan.com/ky-004-buton-modulu) | Kasa için panel tipi NO buton | Elektriksel ömür, panel derinliği ve titreşim dayanımı? |
 | Sert güç anahtarı | [Direnc.net: 16 mm mandallı metal anahtar](https://www.direnc.net/16mm-ledli-12-24v-su-gecirmez-metal-anahtar) | Anahtar + ayrı yüksek akım MOSFET/load-switch topolojisi | Kontak 16.8 V DC'de en az 5 A'i güvenle kesebiliyor mu? Sayfadaki 5 A değeri 12 V DC içindir. |
 | Şarj soketi | [Direnc.net: DC-005 5.5 x 2.1](https://www.direnc.net/dc-005-55-x-21mm-siyah-dc-guc-adaptoru-jak-soketi-modulu) | Seçilen adaptöre uygun panel tipi 5.5 x 2.5 | Kontak akımı ve uç ölçüsü/polaritesi? |
+| 1/4 W dirençler | [Robotistan: 1/4 W direnç kategorisi](https://www.robotistan.com/14w-direnc) | [Direnc.net: 600'lü metal film set](https://www.direnc.net/1/4w-metal-film-direnc-paketi-600-adet) | 10 kΩ, 330 Ω ve 680 Ω değerleri; RGB modülünde seri direnç var mı? |
+| 100 nF seramik | [Robotistan: seramik kondansatörler](https://www.robotistan.com/seramik-kondansator-1) | Aynı değerde X7R, en az 25 V | Paket adedi ve dielektrik bilgisi? |
+| Amfi bulk kondansatörü | [Direnc.net: 1000 µF / 25 V](https://www.direnc.net/1000uf25v) | Markalı 105 °C düşük-ESR seri | ESR, ripple akımı ve 105 °C ömür sınıfı nedir? Perakende aday nihai onay değildir. |
+| Tweeter deney kondansatörü | [Direnc.net: 2,2 µF / 400 V kutupsuz polyester](https://www.direnc.net/22uf-400v-damla-tipi-polyester-kondansator-225mm) | [Direnc.net: kutupsuz µF kategorisi](https://www.direnc.net/kutupsuz-uf-kondansatorler) | Kapasitans toleransı ölçülebiliyor mu; dört nihai parça aynı seri/lot mu? Değer G2'den önce dondurulmaz. |
+| Header ve jumper | [Robotistan: 2,54 mm header](https://www.robotistan.com/header) | [Direnc.net: jumper cap](https://www.direnc.net/jumpers) | Pin aralığı 2,54 mm mi; jumper temas direnci/prototip uygunluğu? |
+| Vidalı klemens | [Robotistan: KF128V 5,08 mm klemens](https://www.robotistan.com/klemens-1) | Kasa kararından sonra kilitli JST/Micro-Fit sınıfı | Akım, kablo kesiti, titreşim ve kutuplama gereksinimini karşılıyor mu? |
 
 ## Üretici ve birincil teknik kaynaklar
 
