@@ -67,7 +67,9 @@ GitHub iki ayrı hiyerarşi sunar. `api.github.com` Sectigo'ya, sürüm varlık 
 
 `.github/workflows/release.yml`: `verify` → `build` → `publish`. Derleme işi imzalama anahtarını **hiç görmez**; `CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES=n` ile imzasız derlenir. Anahtarı yalnız `publish` işi okur.
 
-**Bu bölümün ilk hâli fazla iddialıydı ve düzeltildi.** "Korumalı `release` ortamına bağlı" demişti; 2026-08-31'de ölçüldüğünde o ortam **mevcut değil** (`environments` → `total_count: 0`) ve oluşturmak için gereken `admin` yetkisi bu depoda yok. GitHub, bir iş akışının referans verdiği ortamı ilk çalışmada **koruma kuralı olmadan** kendisi yaratır. Yani koruma, deponun sahip olduğu bir özellik değil, henüz yapılmamış bir kurulum adımıdır. Risk kaydında açık satır olarak durur.
+**Bu bölümün ilk hâli fazla iddialıydı, düzeltildi ve sonra gerçekten kuruldu.** İlk yazımda "korumalı `release` ortamına bağlı" demiştim; ölçüldüğünde ortam mevcut değildi ve oluşturacak yetki yoktu. Depo 2026-08-31'de `ktahatastan`'a taşınıp **private** yapıldıktan sonra ortam oluşturuldu ve `HK_SIGNING_KEY` **ortam** secret'ı olarak saklandı. Depo secret'ı sayısı **0**: yani `build` işi anahtarı gerçekten okuyamıyor ve bölünme artık bir tasarım niyeti değil, doğrulanmış bir özellik.
+
+Hâlâ eksik olan tek şey, olduğu gibi yazılıyor: **zorunlu inceleyici yok.** Private bir depoda ortam koruma kuralları ücretli plan istiyor ve API `HTTP 422` ile reddediyor. Yani bir etiket push'u insan onayı olmadan yayımlar. Ortam kapsamı geçerli, onay kapısı değil. Risk kaydında satırı var.
 
 Bunun etrafından `HK_SIGNING_KEY`'i **depo** secret'ı yaparak dolaşmak yasaktır. Hattı çalıştırırdı, ama anahtarı `build` dahil her işe okutarak — yani bölmenin tek sebebini ortadan kaldırarak. Doğrusu `release` ortamına bağlı **ortam** secret'ıdır.
 

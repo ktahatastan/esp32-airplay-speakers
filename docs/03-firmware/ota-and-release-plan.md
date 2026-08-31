@@ -238,8 +238,9 @@ Açık:
 - [ ] Güncelleme zamanlayıcısı: rastgele gecikme, günde en fazla bir kontrol, backoff.
 - [ ] Canary/stable kanal politikasının işletilmesi.
 - [ ] USB/UART recovery prosedürünün yazılması.
-- [ ] Deponun `private` yapılması — yalnız sahibi (`serbaysancak`) yapabilir.
-- [ ] Gerçek `HK_SIGNING_KEY` üretimi, açık yarısının sabitlenmesi ve `release` ortamının zorunlu inceleyiciyle korunması — sahibi yapar, CI değil.
+- [x] Depo `ktahatastan`'a taşındı ve `private` yapıldı.
+- [x] Gerçek `HK_SIGNING_KEY` çevrimdışı üretildi, açık yarısı `firmware/certs/hk-signing-key.pub.bin` olarak sabitlendi, özel yarısı `release` **ortam** secret'ında. İlk anahtar yandı ve `burned-keys.txt` ile kalıcı reddediliyor.
+- [ ] `release` ortamına zorunlu inceleyici — private depoda ücretli plan istiyor (`HTTP 422`). Onay kapısı yok; risk kaydında.
 - [ ] G6 enerji kesintisi ve rollback testleri — **donanım bekliyor**.
 
 ## Kaynaklar

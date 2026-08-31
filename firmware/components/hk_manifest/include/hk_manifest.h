@@ -33,7 +33,7 @@
  * Long enough for a real GitHub release URL with headroom. The obvious-looking
  * 96 was measured against this repository and came up two bytes short:
  *
- *   https://github.com/serbaysancak/esp32-airplay-speakers/releases/download/v0.1.0/harman-kardom.bin
+ *   https://github.com/ktahatastan/esp32-airplay-speakers/releases/download/v0.1.0/harman-kardom.bin
  *
  * is 97 bytes, and a two-digit minor version makes it 98. A URL that does not
  * fit is refused as a missing field, so the failure would not have looked like

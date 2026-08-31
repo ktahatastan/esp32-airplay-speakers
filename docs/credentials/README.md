@@ -10,55 +10,48 @@ tags: [credentials, security, moc, rule]
 ## Kural
 
 > Kimlik bilgisi dosyaları `docs/credentials/` altında tutulur; başka hiçbir yerde bulunamaz.
+> Sürüm imzalama anahtarının **özel yarısı** buraya da girmez: o, `release` ortam secret'ında yaşar.
 
-İki yarısı var ve ikisi de denetleniyor:
+Ayrım şu: buradaki dosyalar **kayıttır** — hangi anahtar var, açık parmak izi ne, hangisi yanmış. Sürümü imzalayan sır ise depoda değil, GitHub'ın ortam secret'ında.
 
-1. **Buraya konabilir.** Bu klasör, geliştirme aşamasında kullanılan kimlik bilgilerinin evidir. Buradaki her şey **açık kabul edilir**.
-2. **Başka yere konamaz.** `scripts/check_no_private_keys.py` depodaki her izlenen dosyanın **içeriğine** bakar — adına değil — ve bu klasörün dışında özel anahtar bulursa durur. `key.pem`, `backup.pem` ya da `meeting-notes.md` adıyla saklanmış bir anahtarı da yakalar; `.gitignore`'daki isim listesi yakalayamaz.
-
-Denetim iki yerde çalışır: `firmware-ci.yml` ve `release.yml` içinde her push'ta, ve yerel `pre-commit` kancası olarak. Kancayı bir kez etkinleştirin:
+Konum kuralı `scripts/check_no_private_keys.py` ile uygulanır. Depodaki her izlenen dosyanın **içeriğine** bakar, adına değil: `key.pem`, `backup.pem` ya da `meeting-notes.md` adıyla saklanmış bir anahtarı da yakalar. İki yerde çalışır — CI'da ve yerel `pre-commit` kancasında:
 
 ```bash
 git config core.hooksPath .githooks
 ```
 
-## Buradaki her şey açıktır — bu bilinçli
+## Şu anki durum (2026-08-31)
 
-Bu depo şu an **public** (`serbaysancak/esp32-airplay-speakers`, 2026-08-31 itibarıyla `visibility: public`) ve sahibi başka bir hesap; bu depoda çalışan geliştiricinin `admin` yetkisi yok, dolayısıyla görünürlüğü değiştiremiyor.
-
-Bu yüzden buradaki bir özel anahtar, internetteki herkes tarafından indirilebilir. Bu kabul edilmiş ve **geçici** bir durumdur, kaza değil. Kabul edilebilir olmasının tek sebebi şu anki aşama:
-
-| Ölçüm (2026-08-31) | Değer |
+| | |
 |---|---|
-| Yayımlanmış sürüm | 0 |
-| Etiket | 0 |
-| Fork / watcher / star | 0 / 0 / 0 |
-| Sahadaki cihaz | 0 — donanım henüz gelmedi |
+| Depo | `ktahatastan/esp32-airplay-speakers` |
+| Görünürlük | **private** |
+| Yetki | sahibi, `admin` |
+| `release` ortamı | var |
+| `HK_SIGNING_KEY` | **ortam** secret'ı olarak saklı |
+| Depo secret'ı | **0 adet** |
+| Zorunlu inceleyici | **yok** — aşağıya bakın |
 
-Yani buradaki anahtar şu an **hiçbir şeyi korumuyor**; koruyacak bir şey yok. Bir cihaz o anahtarla imzalanmış bir imajı çalıştırmaya başladığı andan itibaren bu doğru olmaktan çıkar.
+Depo secret'ının sıfır olması tesadüf değil, tasarımın kendisi: ortam secret'ını yalnız `environment: release` diyen iş okuyabilir, `build` işi okuyamaz. Anahtarı depo secret'ı yapmak hattı çalıştırırdı ve tam da bu özelliği silerdi. Yapmayın.
 
-## Gerçek sürümden önce ne değişmeli
+**Zorunlu inceleyici eklenemedi.** Private bir depoda ortam koruma kuralları ücretli plan istiyor; API `HTTP 422` ile reddediyor. Yani bir etiket push'u insan onayı olmadan yayımlar. Ortam kapsamı geçerli, onay kapısı değil. Risk kaydında satırı var.
 
-Sırasıyla:
+## Anahtar geçmişi
 
-1. Depo `private` yapılmalı — bunu yalnız `serbaysancak` yapabilir.
-2. **Yeni** bir imzalama anahtarı çevrimdışı üretilmeli. Buradaki anahtar yanmıştır; public bir depoda durduğu için geri döndürülemez şekilde açıktır.
-3. Yeni anahtarın açık yarısı `firmware/certs/hk-signing-key.pub.bin` olarak sabitlenmeli.
-4. Özel yarısı `release` **ortam** secret'ı olarak `HK_SIGNING_KEY` adıyla saklanmalı — depo secret'ı olarak değil, çünkü depo secret'ını her iş okuyabilir ve bu, hattı ikiye bölme sebebini ortadan kaldırır.
+İlk anahtar **yandı**. 2026-08-31'de üretilip depoya konmuştu ve o sırada depo public'ti (`9afd991`, 15:33 UTC). Depo artık private ve dosya kaldırıldı, ama bir süre herkese okunabilirdi — GitHub'ın genel olay akışı dakikalar içinde taranıyor. Sonradan private yapmak bunu geri almaz.
 
-Bunlar yapılana kadar yayın hattı **yayımlayamaz**, ve bu bir temenni değil: `release.yml` içindeki `publish` işi, `docs/credentials/` altında duran bir anahtarla imzalamayı reddeder ve sabitlenmiş açık anahtar yoksa durur.
+Parmak izi `burned-keys.txt` içinde ve yayın hattı o anahtarla imzalamayı **kalıcı olarak** reddediyor. Git geçmişinden geri getirilse bile: bu sınandı.
+
+Yerine geçen anahtar çevrimdışı üretildi, depoya hiç girmedi, açık yarısı `firmware/certs/hk-signing-key.pub.bin` olarak sabitlendi.
 
 ## Buraya asla yazılmayanlar
 
-Klasör açık olduğu için, açık olmasının bedeli kabul edilebilir olmayan hiçbir şey buraya girmez:
-
+- Sürüm imzalama anahtarının özel yarısı — ortam secret'ında olmalı.
 - Wi-Fi parolaları.
-- Provisioning parolaları ve PoP değerleri (cihaz zaten yalnız salt/verifier saklar; parola hiçbir yerde durmaz).
-- API tokenları, kişisel erişim tokenları.
-- Kullanıcıya ait hiçbir şey.
+- Provisioning parolaları ve PoP değerleri (cihaz zaten yalnız salt/verifier saklar).
+- API tokenları.
 
 ## İçerik
 
-- [[signing-keys|Firmware imzalama anahtarları]] — envanter, parmak izi, kayıp ve ifşa prosedürü.
-- `hk-dev-signing-key.pem` — geliştirme imzalama anahtarı. **Açık. Gerçek sürüm imzalamaz.**
-- `hk-dev-signing-key.pub.bin` — aynı anahtarın açık yarısı; parmak izi doğrulaması için.
+- [[signing-keys|Firmware imzalama anahtarları]] — envanter, parmak izleri, kayıp ve ifşa prosedürü.
+- `burned-keys.txt` — bir daha asla imzalamayacak anahtarların parmak izleri.

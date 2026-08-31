@@ -56,7 +56,7 @@ void test_manifest(void)
      * project can realistically produce. */
     {
         static const char k_real_url[] =
-            "https://github.com/serbaysancak/esp32-airplay-speakers"
+            "https://github.com/ktahatastan/esp32-airplay-speakers"
             "/releases/download/v10.20.30/harman-kardom.bin";
         HK_CHECK(sizeof(k_real_url) <= HK_MANIFEST_ASSET_MAX);
 

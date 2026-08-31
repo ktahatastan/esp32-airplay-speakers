@@ -10,20 +10,20 @@
 # ESP-IDF itself prints "App built but not signed. Sign app before flashing".
 # The key is read only by the publish job, through an environment secret.
 #
-# CAVEAT, true as of 2026-08-31 and not yet fixed: the `release` environment
-# does NOT exist on this repository (the API reports total_count 0), and
-# GitHub auto-creates a referenced environment on first use "without any
-# protection rules or secrets configured". So the protection this split is
-# designed around is a setup step nobody has performed, not a property the
-# repository has. Creating it needs admin, which the current collaborator does
-# not have. Until the owner creates `release`, adds a required reviewer and
-# stores HK_SIGNING_KEY there as an ENVIRONMENT secret, the first tag push
-# would manufacture an unprotected environment and publish unreviewed.
+# The `release` environment exists and holds HK_SIGNING_KEY as an ENVIRONMENT
+# secret, so only a job declaring `environment: release` can read it. The build
+# job cannot, which is the property this split exists to create. Verified
+# 2026-08-31: the repository has zero repository-level secrets.
 #
-# Do NOT work around this by storing HK_SIGNING_KEY as a repository secret.
-# That would make the pipeline run, and it would do so by handing the key to
-# every job in the repository — deleting the exact property the split exists
-# to create.
+# What is NOT in place, stated plainly rather than assumed: there is no
+# required-reviewer rule on that environment. Adding one to a PRIVATE
+# repository needs a paid plan, and the API refuses it with HTTP 422 on this
+# account. So a tag push publishes without a human approval step. The
+# environment scoping still holds; the approval gate does not.
+#
+# Do NOT work around any of this by storing HK_SIGNING_KEY as a repository
+# secret. That would hand the key to every job in the repository — deleting the
+# exact property the split exists to create.
 #
 # What this pipeline CANNOT prove: that the image runs. Every physical gate
 # needs a device and an operator. A green run here means the image is
@@ -187,22 +187,21 @@ jobs:
           espsecure.py extract_public_key --version 2 \
             --keyfile signing_key.pem signing_key.pub.bin
 
-          # A key committed to this repository is public, so a release signed
-          # with it could be forged by anyone. docs/credentials/ holds exactly
-          # such a key on purpose, for development.
-          for committed in docs/credentials/*.pem; do
-            [ -e "$committed" ] || continue
-            espsecure.py extract_public_key --version 2 \
-              --keyfile "$committed" committed.pub.bin 2>/dev/null || continue
-            if cmp -s signing_key.pub.bin committed.pub.bin; then
-              echo "HK_SIGNING_KEY is $committed, which is committed to this"
-              echo "public repository. Anyone could sign firmware the speakers"
-              echo "would accept. Generate a real key offline and store it as"
-              echo "an environment secret; see docs/credentials/README.md."
+          # A key that has ever been exposed can be used by whoever saw it to
+          # sign firmware these speakers would accept. Exposure is not undone
+          # by making a repository private afterwards, so the list is permanent
+          # and is checked before anything is signed.
+          FINGERPRINT=$(sha256sum signing_key.pub.bin | cut -d' ' -f1)
+          while IFS= read -r line; do
+            case "$line" in ''|'#'*) continue ;; esac
+            if [ "$line" = "$FINGERPRINT" ]; then
+              echo "HK_SIGNING_KEY matches a fingerprint in"
+              echo "docs/credentials/burned-keys.txt. That key was exposed and"
+              echo "must never sign a release. Generate a new one offline and"
+              echo "store it as the release environment secret."
               exit 1
             fi
-          done
-          rm -f committed.pub.bin
+          done < docs/credentials/burned-keys.txt
 
           # Verifying the signature against the key that just made it proves
           # nothing — any valid RSA-3072 key passes. What matters is whether

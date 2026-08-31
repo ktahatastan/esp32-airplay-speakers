@@ -1,22 +1,29 @@
 #!/usr/bin/env python3
 """Keep private key material to the one folder that is allowed to hold it.
 
-`docs/credentials/` is the declared home for development credentials, and what
-lives there is understood to be public: this repository is public, so anything
-committed to it is readable by anyone. That is an accepted, temporary state
-recorded in docs/credentials/README.md, not an accident.
+`docs/credentials/` is the declared home for credentials, per the rule in
+AGENTS.md. In practice nothing secret needs to live there: the release signing
+key's private half is a `release` environment secret on GitHub, and the folder
+holds records — public fingerprints, and the list of keys that must never sign
+again. The allowance exists so the rule has one answer rather than two.
 
 Everywhere else is refused. The .gitignore names the files a key is *likely* to
 be called, which is a guess rather than a guard — a key copied as `key.pem`,
 `backup.pem` or `meeting-notes.md` sails straight past it. So this checks
 content, not names, and it checks location: a key outside the declared folder
-is a mistake by definition, because the folder is where someone decided to put
-one on purpose.
+is a mistake by definition, because the folder is where someone would put one
+on purpose.
 
-What this deliberately does NOT do is stop a key inside `docs/credentials/`
-from being used to sign a real release. That is a different failure with a
-different guard, in .github/workflows/release.yml: the publish job refuses to
-sign with any key committed to this repository.
+This is a location check and nothing more. It does not know whether a key has
+been exposed, and it would not stop a compromised key from signing. That is a
+different failure with a different guard: the publish job in
+.github/workflows/release.yml refuses any key whose fingerprint appears in
+docs/credentials/burned-keys.txt, and any key that does not match the pinned
+public half in firmware/certs/.
+
+The repository was public until 2026-08-31 and is private now. Being private is
+not a reason to relax this: history is permanent, visibility can change back,
+and the first signing key was burned by exactly that sequence.
 
 Usage:
     check_no_private_keys.py              # every tracked file
