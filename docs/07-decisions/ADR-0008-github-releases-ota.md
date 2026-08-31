@@ -65,7 +65,13 @@ GitHub iki ayrı hiyerarşi sunar. `api.github.com` Sectigo'ya, sürüm varlık 
 
 ### 6. Hat iki işe bölündü
 
-`.github/workflows/release.yml`: `verify` → `build` → `publish`. Derleme işi imzalama anahtarını **hiç görmez**; `CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES=n` ile imzasız derlenir. Yalnız korumalı `release` ortamına bağlı `publish` işi anahtarı okur. Böylece CI'ya dokunan bir değişiklik anahtara ulaşamaz.
+`.github/workflows/release.yml`: `verify` → `build` → `publish`. Derleme işi imzalama anahtarını **hiç görmez**; `CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES=n` ile imzasız derlenir. Anahtarı yalnız `publish` işi okur.
+
+**Bu bölümün ilk hâli fazla iddialıydı ve düzeltildi.** "Korumalı `release` ortamına bağlı" demişti; 2026-08-31'de ölçüldüğünde o ortam **mevcut değil** (`environments` → `total_count: 0`) ve oluşturmak için gereken `admin` yetkisi bu depoda yok. GitHub, bir iş akışının referans verdiği ortamı ilk çalışmada **koruma kuralı olmadan** kendisi yaratır. Yani koruma, deponun sahip olduğu bir özellik değil, henüz yapılmamış bir kurulum adımıdır. Risk kaydında açık satır olarak durur.
+
+Bunun etrafından `HK_SIGNING_KEY`'i **depo** secret'ı yaparak dolaşmak yasaktır. Hattı çalıştırırdı, ama anahtarı `build` dahil her işe okutarak — yani bölmenin tek sebebini ortadan kaldırarak. Doğrusu `release` ortamına bağlı **ortam** secret'ıdır.
+
+Ayrıca `publish` işi iki şeyi imzalamadan önce denetler: anahtarın açık yarısı `docs/credentials/` altında duran bir anahtarla eşleşiyorsa (yani depoda, yani açıksa) reddeder; ve `firmware/certs/hk-signing-key.pub.bin` ile sabitlenmiş açık anahtarla eşleşmiyorsa reddeder. İkincisi olmadan, geçerli ama **yanlış** bir RSA-3072 anahtarı her denetimden geçer ve dört hoparlörün de sessizce reddedeceği bir sürüm yayımlanırdı; kurtarma yolu dört cihazı USB'den yeniden yazmaktır.
 
 ## Gerekçe
 

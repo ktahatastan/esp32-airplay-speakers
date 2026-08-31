@@ -1,0 +1,8 @@
+#!/bin/sh
+# Harman Kardom pre-commit guard.
+#
+# Enable with:  git config core.hooksPath .githooks
+#
+# The repository is public and its owner commits straight to main, so there is
+# no review step between a mistake and the internet. This is that step.
+exec python3 "$(git rev-parse --show-toplevel)/scripts/check_no_private_keys.py" --staged

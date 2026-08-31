@@ -23,7 +23,7 @@ Before work, read `docs/Home.md`, the relevant accepted ADRs under `docs/07-deci
 - An architectural, safety, product-identity or protocol decision requires an ADR.
 - Update `docs/08-development-log/` for material work and `docs/06-testing/` for evidence.
 - Use current primary documentation for unstable APIs/protocols; procurement links are candidates until rechecked on purchase day.
-- Do not commit generated secrets, Wi-Fi credentials, provisioning PoP values or private keys.
+- Credential files live in `docs/credentials/` and nowhere else. That folder is public by construction, because this repository is public, so everything in it is treated as burned: it holds development material and the record of what exists — which key, its public fingerprint, which release it signed, what to do if it is lost. Never put a user's own secrets there: no Wi-Fi credentials, provisioning passwords or PoP values, no API tokens. The location rule is enforced by `scripts/check_no_private_keys.py`, which inspects file contents rather than names and runs in CI and as a pre-commit hook (`git config core.hooksPath .githooks`). A key committed there can never sign a release: the publish job refuses it. See `docs/credentials/README.md` for what must change before a real release is signed.
 
 ## Hardware safety
 

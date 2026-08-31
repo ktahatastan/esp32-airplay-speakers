@@ -8,10 +8,22 @@
 # profile and never has access to the signing key: with
 # CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES=n the build succeeds unsigned and
 # ESP-IDF itself prints "App built but not signed. Sign app before flashing".
-# Only the publish job, bound to a protected environment, can read the key.
-# So a change to the build — a dependency, a script, a pull request that
-# touches CI — cannot reach the key, and reviewing who may publish is the same
-# thing as reviewing that environment.
+# The key is read only by the publish job, through an environment secret.
+#
+# CAVEAT, true as of 2026-08-31 and not yet fixed: the `release` environment
+# does NOT exist on this repository (the API reports total_count 0), and
+# GitHub auto-creates a referenced environment on first use "without any
+# protection rules or secrets configured". So the protection this split is
+# designed around is a setup step nobody has performed, not a property the
+# repository has. Creating it needs admin, which the current collaborator does
+# not have. Until the owner creates `release`, adds a required reviewer and
+# stores HK_SIGNING_KEY there as an ENVIRONMENT secret, the first tag push
+# would manufacture an unprotected environment and publish unreviewed.
+#
+# Do NOT work around this by storing HK_SIGNING_KEY as a repository secret.
+# That would make the pipeline run, and it would do so by handing the key to
+# every job in the repository — deleting the exact property the split exists
+# to create.
 #
 # What this pipeline CANNOT prove: that the image runs. Every physical gate
 # needs a device and an operator. A green run here means the image is
@@ -46,6 +58,8 @@ jobs:
           python-version: '3.11'
       - name: documentation integrity
         run: python3 scripts/check_docs.py
+      - name: no private key material anywhere in the tree
+        run: python3 scripts/check_no_private_keys.py
       - name: host unit tests
         run: |
           cmake -S firmware/test -B build/host-tests -DCMAKE_BUILD_TYPE=Debug
@@ -170,12 +184,59 @@ jobs:
           fi
           umask 077
           printf '%s' "$HK_SIGNING_KEY" > signing_key.pem
+          espsecure.py extract_public_key --version 2 \
+            --keyfile signing_key.pem signing_key.pub.bin
+
+          # A key committed to this repository is public, so a release signed
+          # with it could be forged by anyone. docs/credentials/ holds exactly
+          # such a key on purpose, for development.
+          for committed in docs/credentials/*.pem; do
+            [ -e "$committed" ] || continue
+            espsecure.py extract_public_key --version 2 \
+              --keyfile "$committed" committed.pub.bin 2>/dev/null || continue
+            if cmp -s signing_key.pub.bin committed.pub.bin; then
+              echo "HK_SIGNING_KEY is $committed, which is committed to this"
+              echo "public repository. Anyone could sign firmware the speakers"
+              echo "would accept. Generate a real key offline and store it as"
+              echo "an environment secret; see docs/credentials/README.md."
+              exit 1
+            fi
+          done
+          rm -f committed.pub.bin
+
+          # Verifying the signature against the key that just made it proves
+          # nothing — any valid RSA-3072 key passes. What matters is whether
+          # this is the key the DEVICES already trust, because the trust anchor
+          # is the running app's own signature block. Signing with the wrong
+          # valid key produces a release all four speakers silently refuse,
+          # recoverable only by USB reflashing every unit.
+          PINNED=firmware/certs/hk-signing-key.pub.bin
+          if [ ! -f "$PINNED" ]; then
+            echo "No pinned public key at $PINNED, so there is no way to tell"
+            echo "whether HK_SIGNING_KEY is the key the devices trust."
+            echo "Pin it once, from the real signing key:"
+            echo "  espsecure.py extract_public_key --version 2 \\"
+            echo "    --keyfile hk_signing_key.pem $PINNED"
+            exit 1
+          fi
+          cmp -s signing_key.pub.bin "$PINNED" || {
+            echo "HK_SIGNING_KEY does not match the pinned public key in"
+            echo "$PINNED. Publishing this would ship a release every device"
+            echo "refuses. Refusing."
+            exit 1
+          }
+
           espsecure.py sign_data --version 2 --keyfile signing_key.pem \
             --output harman-kardom-signed.bin \
             artifacts/harman-kardom.bin
-          espsecure.py verify_signature --version 2 --keyfile signing_key.pem \
-            harman-kardom-signed.bin
+
+      - name: wipe the key
+        # Its own step, and always: a failed sign or a failed comparison above
+        # must not leave the key sitting in the workspace.
+        if: always()
+        run: |
           shred -u signing_key.pem 2>/dev/null || rm -f signing_key.pem
+          rm -f signing_key.pub.bin committed.pub.bin
 
       - name: describe what was signed
         run: |
@@ -223,5 +284,5 @@ jobs:
             --generate-notes \
             --verify-tag \
             harman-kardom.bin manifest.json \
-            artifacts/bootloader.bin \
-            artifacts/partition-table.bin
+            artifacts/bootloader/bootloader.bin \
+            artifacts/partition_table/partition-table.bin

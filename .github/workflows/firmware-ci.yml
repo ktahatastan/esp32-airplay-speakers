@@ -32,6 +32,11 @@ jobs:
           python-version: '3.11'
       - name: check_docs
         run: python3 scripts/check_docs.py
+      - name: no private key material anywhere in the tree
+        # Content-based, not name-based. The .gitignore names the files a key
+        # is likely to be called; this catches one called anything at all.
+        # The repository is public and its history cannot be taken back.
+        run: python3 scripts/check_no_private_keys.py
 
   host-tests:
     name: host unit tests

@@ -97,13 +97,20 @@ Kritik öz-test hatasında `esp_ota_mark_app_invalid_rollback_and_reboot()` kull
 2. **build** — `sdkconfig.defaults` + `sdkconfig.release` ile derler. **İmzalama anahtarını görmez.** Ayrıca sürüm profilinin gerçekten imza istediğini ve anti-rollback'in kapalı kaldığını üretilen `sdkconfig` üzerinden doğrular; bu seçenek sessizce kapansaydı başka hiçbir şey fark etmezdi. Boyut kapısı burada çalışır.
 3. **publish** — korumalı `release` ortamına bağlıdır ve `contents: write` iznini yalnız bu iş alır. Görüntüyü `espsecure.py sign_data --version 2` ile imzalar, imzayı geri doğrular, manifest'i **imzalanmış** dosyadan üretir, manifest ile ikilinin uyuştuğunu bir kez daha okuyup karşılaştırır, sonra release'i oluşturur.
 
-Anahtar çevrimdışı bir kez üretilir ve yalnız `release` ortamının `HK_SIGNING_KEY` gizli değerinde yaşar:
+Anahtar yönetiminin tamamı [[../credentials/signing-keys|imzalama anahtarları kaydında]]. Özeti:
 
-```bash
-idf.py secure-generate-signing-key --version 2 --scheme rsa3072 hk_signing_key.pem
-```
+- Şu an depoda bir **geliştirme** anahtarı var (`docs/credentials/hk-dev-signing-key.pem`). Depo public olduğu için o anahtar tasarım gereği açıktır ve `publish` işi onunla imzalamayı **reddeder**.
+- Gerçek anahtar henüz üretilmedi; gidecek güvenli bir yer yok (depo public, `release` ortamı mevcut değil, `admin` yetkisi yok).
+- Üretildiğinde çevrimdışı üretilir, açık yarısı `firmware/certs/hk-signing-key.pub.bin` olarak sabitlenir ve özel yarısı `release` **ortam** secret'ında yaşar.
 
-Bölünmenin nedeni: `CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES=n` sayesinde derleme anahtarsız başarılı olur — ESP-IDF'in kendisi "App built but not signed. Sign app before flashing" der. Böylece CI'ya dokunan bir değişiklik anahtara ulaşamaz; kimin yayımlayabileceğini gözden geçirmek, o ortamı gözden geçirmekle aynı şeydir.
+Bölünmenin nedeni: `CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES=n` sayesinde derleme anahtarsız başarılı olur — ESP-IDF'in kendisi "App built but not signed. Sign app before flashing" der. Böylece CI'ya dokunan bir değişiklik anahtara ulaşamaz.
+
+Bu, `release` ortamının **korunmuş olmasına** bağlıdır ve şu an değildir: ortam hiç yok, ilk etiket onu korumasız yaratır. Ayrıntı ve sahibinin yapması gerekenler ADR-0008 §6'da ve risk kaydında.
+
+`publish` işi imzalamadan önce iki şeyi denetler:
+
+1. Anahtarın açık yarısı `docs/credentials/` altındaki bir anahtarla eşleşiyorsa **reddeder** — o anahtar depoda, yani herkeste.
+2. Sabitlenmiş `firmware/certs/hk-signing-key.pub.bin` ile eşleşmiyorsa **reddeder**. İmzayı imzalayan anahtarla doğrulamak hiçbir şey kanıtlamaz; her geçerli RSA-3072 anahtarı o denetimden geçer. Önemli olan cihazların **zaten güvendiği** anahtar olup olmadığıdır, çünkü güven çıpası çalışan uygulamanın kendi imza bloğudur. Yanlış ama geçerli bir anahtarla yayımlanan sürümü dört hoparlör de sessizce reddeder ve kurtarma yolu dört cihazı USB'den yeniden yazmaktır.
 
 Manifest'in imzalı dosyadan üretilmesi zorunludur: imzalama görüntüyü sektör sınırına doldurur ve 4096 baytlık imza sektörü ekler, yani imzasız ikiliden üretilen manifest yanlış boyut ve özet taşır ve her cihaz reddeder.
 
@@ -230,7 +237,8 @@ Açık:
 - [ ] Güncelleme zamanlayıcısı: rastgele gecikme, günde en fazla bir kontrol, backoff.
 - [ ] Canary/stable kanal politikasının işletilmesi.
 - [ ] USB/UART recovery prosedürünün yazılması.
-- [ ] `HK_SIGNING_KEY` üretimi ve `release` ortamının korumaya alınması — sahibi yapar, CI değil.
+- [ ] Deponun `private` yapılması — yalnız sahibi (`serbaysancak`) yapabilir.
+- [ ] Gerçek `HK_SIGNING_KEY` üretimi, açık yarısının sabitlenmesi ve `release` ortamının zorunlu inceleyiciyle korunması — sahibi yapar, CI değil.
 - [ ] G6 enerji kesintisi ve rollback testleri — **donanım bekliyor**.
 
 ## Kaynaklar
