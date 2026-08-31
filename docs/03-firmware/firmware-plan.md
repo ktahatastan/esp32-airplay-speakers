@@ -125,6 +125,7 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
   - [x] Provisioning politikası saf mantık olarak yazıldı ve test edildi (`hk_provision`): ilk açılışta zaman aşımı yok, butonla açılan pencere 10 dakikada kapanır, bağlantı denemesi boyunca radyolar açık kalır, başarıdan sonra ikisi de kapanır ve BLE serbest bırakılabilir.
   - [x] Wi-Fi istasyon, yeniden bağlanma, mDNS ve SoftAP provisioning sürücü katmanı yazıldı; ESP-IDF v5.5.1 ile derleniyor.
   - [x] BLE transport'u NimBLE ile etkinleştirildi. ADR-0005 seçenek C: transport girişten türetilir — kimlik bilgisi yoksa SoftAP, yapılandırılmış cihazda butonla BLE.
+  - [x] Provisioning politikası artık gerçekten işletiliyor. Önceki hâlinde `hk_prov_handle` her yerde `now_ms = 0` ile çağrılıyor, `HK_PROV_EV_TICK` hiç gönderilmiyor ve `hk_prov_radios()` hiç okunmuyordu: on dakikalık sınırlı pencere hiçbir zaman dolamazdı. Ana döngü saniyede bir tick veriyor ve pencere kapandığında `hk_network_close_provisioning()` çağrılıyor.
   - [ ] iOS ve Android'de hem uygulamalı BLE hem uygulamasız captive portal akışı — donanım gerekir.
   - [ ] Provisioning sonrası BLE heap'inin geri kazanıldığı ölçülmedi — donanım gerekir.
   - [x] Wi-Fi parolası ve PoP'un loglarda görünmediği otomatik taramayla denetleniyor (`tools/check_no_credential_logs.py`, CI'da).
@@ -142,6 +143,7 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
   - [x] LED durum önceliği yazıldı ve test edildi (`hk_led`): hata > OTA > buton geri bildirimi > düşük batarya > etkinlik.
   - [x] Buton GPIO ve RGB PWM sürücüsü yazıldı; ayrı düşük öncelikli görevde çalışıyor, ses görevinden bağımsız.
   - [ ] Kullanıcı resetinin `factory_cal`'a dokunmadığı NVS testiyle gösterilmedi (`F6` deposunu bekliyor).
+  - [x] LED durum alanlarının sahipliği ayrıldı. Önceki `hk_ui_set_status()` tüm yapıyı değiştiriyordu ve her çağıran alanların yalnız bir kısmını dolduruyordu; OTA göstergesi sıradaki Wi-Fi olayında sessizce sönerdi.
   - [ ] LED PWM'inin I2S zamanlamasına ve analog dip gürültüsüne etkisi ölçülmedi — donanım gerekir.
 - **Gate:** `PRD-005`, `G3` katkı.
 
@@ -174,7 +176,8 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
   - [x] `sdkconfig.release` imzalama profili ve iki işli `release.yml` hattı. İmzalama adımı tek kullanımlık anahtarla uçtan uca denendi.
   - [x] `make_manifest.py` — manifest imzalı ikiliden üretiliyor, alan adları aygıt yazılımıyla CI'da çapraz denetleniyor.
   - [x] ISRG Root YR sertifikası pakete eklendi ve üretilen pakette doğrulandı.
-  - [ ] İlk-boot sağlık kontrolü ve `esp_ota_mark_app_valid_cancel_rollback()`.
+  - [x] İlk-boot sağlık kontrolü politikası (`hk_health`) — planın beş ölçütü, enjekte edilen girdilerle host'ta test edildi. Çağrının kendisi ve alt sistem raporlamaları açık.
+  - [ ] `esp_ota_mark_app_valid_cancel_rollback()` çağrısı ve alt sistem raporlayıcıları. Bunlar yazılana kadar `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` kapalı kalır; yayın hattı bu eşleşmeyi denetliyor.
   - [ ] Güncelleme zamanlayıcısı ve LED entegrasyonu.
   - [ ] USB/UART recovery prosedürü.
   - [ ] `G6` matrisinin on iki satırı — **donanım gerekir**, hiçbiri çalıştırılmadı.
@@ -230,6 +233,7 @@ firmware/
     hk_manifest/       yayımlanan sürüm bu cihaza ait mi (saf, testli)      [F7 · var]
     hk_gate/           güncelleme şimdi başlayabilir mi (saf, testli)       [F7 · var]
     hk_ota/            inen görüntü manifest ile uyuşuyor mu + istemci      [F7 · var]
+    hk_health/         ilk açılış imajı onaylanmalı mı (saf, testli)        [F7 · var]
   test/                host tarafı birim testleri                           [F0 · var]
   tools/               partition ve boyut doğrulaması                       [F0 · var]
 ```

@@ -13,6 +13,7 @@ idf_component_register(SRCS "hk_main.c"
                                 hk_ui
                                 hk_version
                                 hk_ota
+                                hk_health
                                 app_update
                                 esp_system
                                 esp_hw_support

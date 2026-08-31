@@ -92,6 +92,19 @@ esp_err_t hk_network_start(hk_net_status_cb_t callback, void *context);
 esp_err_t hk_network_open_provisioning(void);
 
 /** Forget stored Wi-Fi credentials and reopen provisioning. */
+/**
+ * Shut the setup radios.
+ *
+ * The counterpart to hk_network_open_provisioning(), and the reason the
+ * bounded window in hk_provision means anything: without it the policy could
+ * decide the window had expired and nothing would happen. A device left
+ * advertising BLE all evening because nobody could close it is the failure
+ * this prevents.
+ *
+ * Safe to call when provisioning is already shut.
+ */
+esp_err_t hk_network_close_provisioning(void);
+
 esp_err_t hk_network_forget_credentials(void);
 
 /** True when Wi-Fi credentials are stored. */

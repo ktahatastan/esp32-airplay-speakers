@@ -16,6 +16,7 @@ int main(void)
     HK_RUN(test_manifest);
     HK_RUN(test_gate);
     HK_RUN(test_ota);
+    HK_RUN(test_health);
     printf("%d checks, %d failures\n", hk_test_checks, hk_test_failures);
     return hk_test_failures == 0 ? 0 : 1;
 }

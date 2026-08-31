@@ -58,7 +58,49 @@ esp_err_t hk_ui_start(hk_ui_event_cb_t callback, void *context);
  * The button hold level is filled in by the UI task itself and is ignored here.
  * Safe to call from any task.
  */
-void hk_ui_set_status(const hk_led_inputs_t *status);
+/**
+ * Sources that can raise the fault indication.
+ *
+ * A bitmask rather than a bool because the LED's single red state is shared by
+ * several unrelated subsystems. If it were one flag, whichever of them wrote
+ * last would decide, and clearing a network fault would quietly clear an audio
+ * one. Each source owns its bit and can only speak for itself.
+ */
+typedef enum {
+    HK_UI_FAULT_NETWORK = 1u << 0,
+    HK_UI_FAULT_AUDIO   = 1u << 1,
+    HK_UI_FAULT_POWER   = 1u << 2,
+    HK_UI_FAULT_UPDATE  = 1u << 3,
+} hk_ui_fault_t;
+
+/*
+ * Status is set field by field, by whoever owns that field.
+ *
+ * There is deliberately no "set the whole status" call. There used to be, and
+ * every caller built a fresh struct with a few fields filled in, so each one
+ * silently zeroed everything it did not know about. The update indication —
+ * the one that tells someone not to pull the power while flash is being
+ * written — would have been switched off by the next routine Wi-Fi event, and
+ * nothing anywhere would have reported it.
+ */
+
+/** The network layer's own fields. Owns nothing else. */
+void hk_ui_set_network(bool provisioning, bool connecting, bool ready);
+
+/** Raise or clear one source's contribution to the fault indication. */
+void hk_ui_set_fault(hk_ui_fault_t source, bool active);
+
+/** An update is writing flash. Do not interrupt the power. */
+void hk_ui_set_ota(bool active);
+
+/** Playback is running. */
+void hk_ui_set_playing(bool playing);
+
+/** The pack is below its warning threshold. */
+void hk_ui_set_battery_low(bool low);
+
+/** Boot is finished; stop showing the boot state. */
+void hk_ui_clear_booting(void);
 
 /**
  * Whether the button was already held when hk_ui_start() ran.

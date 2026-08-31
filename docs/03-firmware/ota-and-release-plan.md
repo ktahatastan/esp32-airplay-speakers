@@ -173,6 +173,7 @@ G6 kabul matrisinin dört satırı kütüphanenin çekirdeği yeniden yazılmada
 | `hk_manifest` | Manifest'i **tek bayt indirmeden** yargılar: ürün, hedef, donanım, kanal, SemVer, kesin yenilik, sha256 biçimi, boyut ≤ yuva | Ana makine |
 | `hk_gate` | Güncellemenin şimdi başlayabilir mi olduğunu söyler. Kalibrasyon yoksa `HK_GATE_NO_LIMITS` ile engeller | Ana makine |
 | `hk_ota` (saf C) | İnen görüntünün tanımlayıcısını manifest'in vaadiyle karşılaştırır; varlık URL'sini denetler | Ana makine |
+| `hk_health` (saf C) | İlk açılışta imajın onaylanıp onaylanmayacağına karar verir: onayla, geri al, ya da bekle | Ana makine |
 | `hk_ota_client` | HTTPS, JSON, `esp_https_ota` döngüsü. Yukarıdakileri doğru sırayla çağırır | Yalnız derleme; çalışma G6'yı bekler |
 
 Sıralama tasarımın kendisidir: manifest **indirmeden önce**, kapılar **soket açılmadan önce**, görüntü tanımlayıcısı **açılış bölümü taşınmadan önce** yargılanır.

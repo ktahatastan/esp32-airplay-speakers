@@ -35,6 +35,7 @@ static const led_channel_t LED_CHANNELS[3] = {
 
 static hk_button_t       s_button;
 static hk_led_inputs_t   s_status;
+static uint32_t          s_faults;   /**< Bitmask of hk_ui_fault_t */
 static portMUX_TYPE      s_status_lock = portMUX_INITIALIZER_UNLOCKED;
 static hk_ui_event_cb_t  s_callback;
 static void             *s_context;
@@ -188,6 +189,7 @@ esp_err_t hk_ui_start(hk_ui_event_cb_t callback, void *context)
     hk_button_init(&s_button, s_recovery, now_ms());
 
     memset(&s_status, 0, sizeof(s_status));
+    s_faults = 0u;
     s_status.booting = true;
 
     BaseType_t created = xTaskCreate(ui_task, "hk_ui", HK_UI_TASK_STACK, NULL,
@@ -203,13 +205,54 @@ esp_err_t hk_ui_start(hk_ui_event_cb_t callback, void *context)
     return ESP_OK;
 }
 
-void hk_ui_set_status(const hk_led_inputs_t *status)
+void hk_ui_set_network(bool provisioning, bool connecting, bool ready)
 {
-    if (status == NULL) {
-        return;
-    }
     portENTER_CRITICAL(&s_status_lock);
-    s_status = *status;
+    s_status.provisioning = provisioning;
+    s_status.connecting = connecting;
+    s_status.ready = ready;
+    portEXIT_CRITICAL(&s_status_lock);
+}
+
+void hk_ui_set_fault(hk_ui_fault_t source, bool active)
+{
+    portENTER_CRITICAL(&s_status_lock);
+    if (active) {
+        s_faults |= (uint32_t)source;
+    } else {
+        s_faults &= ~(uint32_t)source;
+    }
+    /* Red while any source is still raised, so one subsystem recovering does
+     * not clear another's fault. */
+    s_status.error = (s_faults != 0u);
+    portEXIT_CRITICAL(&s_status_lock);
+}
+
+void hk_ui_set_ota(bool active)
+{
+    portENTER_CRITICAL(&s_status_lock);
+    s_status.ota = active;
+    portEXIT_CRITICAL(&s_status_lock);
+}
+
+void hk_ui_set_playing(bool playing)
+{
+    portENTER_CRITICAL(&s_status_lock);
+    s_status.playing = playing;
+    portEXIT_CRITICAL(&s_status_lock);
+}
+
+void hk_ui_set_battery_low(bool low)
+{
+    portENTER_CRITICAL(&s_status_lock);
+    s_status.battery_low = low;
+    portEXIT_CRITICAL(&s_status_lock);
+}
+
+void hk_ui_clear_booting(void)
+{
+    portENTER_CRITICAL(&s_status_lock);
+    s_status.booting = false;
     portEXIT_CRITICAL(&s_status_lock);
 }
 

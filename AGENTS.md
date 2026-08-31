@@ -43,7 +43,7 @@ Before work, read `docs/Home.md`, the relevant accepted ADRs under `docs/07-deci
 
 ## Current blockers
 
-These are the open `Kritik` risks from `docs/01-planning/risk-register.md` that still block a gate: each one is an unverified fact, not a hazard with a mitigation already in place. The register is the complete list and the detailed source; the two `Kritik` rows not repeated here (tweeter DC exposure and cell thermal runaway) are hazards whose standing mitigations are in `Hardware safety` above. Adding a blocker here means adding its row to the register too.
+These are the open `Kritik` risks from `docs/01-planning/risk-register.md` that still block a gate: each one is an unverified fact, not a hazard with a mitigation already in place. The register is the complete list and the detailed source. It carries `Kritik` rows that are deliberately not repeated here, because they are not of this kind: hazards whose standing mitigations are already in `Hardware safety` above, and accepted risks recorded with the reason they are accepted. Do not restate the count of those rows in this file — a number here goes stale the moment a row is added there, and a contract that misdescribes its own source is worse than one that points at it. Adding a blocker here means adding its row to the register too.
 
 - Individual Nova woofer/tweeter impedance is not confirmed; follow `docs/02-hardware/driver-measurements.md`. Blocks G0, `C_SAFE`, crossover and safe amplifier level.
 - AirPlay 2 group synchronization is not measured. The stack is chosen and its AirPlay 2 and PTP capability is verified in source (ADR-0007), but no four-device measurement exists. Follow `docs/01-architecture/audio-network-feasibility.md`. Blocks G7 and PRD-002.

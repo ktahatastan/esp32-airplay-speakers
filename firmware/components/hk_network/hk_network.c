@@ -392,6 +392,21 @@ esp_err_t hk_network_open_provisioning(void)
     return err;
 }
 
+esp_err_t hk_network_close_provisioning(void)
+{
+    if (!s_status.provisioning) {
+        return ESP_OK;
+    }
+    ESP_LOGI(TAG, "closing provisioning");
+    /* stop_provisioning() before deinit(): ESP-IDF's own documentation warns
+     * that deinit alone leaves the transport running. */
+    wifi_prov_mgr_stop_provisioning();
+    wifi_prov_mgr_deinit();
+    s_status.provisioning = false;
+    publish_status();
+    return ESP_OK;
+}
+
 esp_err_t hk_network_forget_credentials(void)
 {
     ESP_LOGW(TAG, "forgetting stored Wi-Fi credentials");

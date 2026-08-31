@@ -31,6 +31,7 @@
 #include "esp_mac.h"
 #include "esp_ota_ops.h"
 #include "esp_system.h"
+#include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -164,12 +165,25 @@ static hk_prov_t s_provisioning;
  * is F6 work, and wiring a half-built erase path to a physical button is how a
  * user loses their calibration by accident.
  */
+/**
+ * Milliseconds since boot.
+ *
+ * The provisioning policy is written against a real clock, and until now every
+ * call site passed a literal 0. That made the bounded window — the ten minutes
+ * after which a setup session opened on an already-configured speaker closes
+ * itself — unreachable: no time ever passed, so it could never expire.
+ */
+static uint32_t now_ms(void)
+{
+    return (uint32_t)(esp_timer_get_time() / 1000);
+}
+
 static void on_button(hk_button_event_t event, void *context)
 {
     (void)context;
     switch (event) {
     case HK_BUTTON_EVENT_SHORT_PRESS:
-        hk_prov_handle(&s_provisioning, HK_PROV_EV_BUTTON_SHORT, 0);
+        hk_prov_handle(&s_provisioning, HK_PROV_EV_BUTTON_SHORT, now_ms());
         ESP_LOGI(TAG, "button: opening provisioning -> %s",
                  hk_prov_state_name(s_provisioning.state));
         if (hk_network_open_provisioning() != ESP_OK) {
@@ -178,14 +192,14 @@ static void on_button(hk_button_event_t event, void *context)
         break;
     case HK_BUTTON_EVENT_NETWORK_RESET:
         ESP_LOGW(TAG, "button: forgetting Wi-Fi credentials");
-        hk_prov_handle(&s_provisioning, HK_PROV_EV_NETWORK_RESET, 0);
+        hk_prov_handle(&s_provisioning, HK_PROV_EV_NETWORK_RESET, now_ms());
         if (hk_network_forget_credentials() != ESP_OK) {
             ESP_LOGE(TAG, "could not clear credentials");
         }
         break;
     case HK_BUTTON_EVENT_FACTORY_RESET:
         ESP_LOGW(TAG, "button: restoring user settings to defaults");
-        hk_prov_handle(&s_provisioning, HK_PROV_EV_FACTORY_RESET, 0);
+        hk_prov_handle(&s_provisioning, HK_PROV_EV_FACTORY_RESET, now_ms());
         /* User settings first, then credentials. Calibration is in another
          * partition that this firmware opens read-only, so neither call can
          * reach it (PRD-008). */
@@ -206,13 +220,8 @@ static void on_button(hk_button_event_t event, void *context)
 static void on_network_status(const hk_net_status_t *network, void *context)
 {
     (void)context;
-    hk_led_inputs_t status = {
-        .provisioning = network->provisioning,
-        .connecting = network->connecting,
-        .ready = network->connected,
-        .error = network->error,
-    };
-    hk_ui_set_status(&status);
+    hk_ui_set_network(network->provisioning, network->connecting, network->connected);
+    hk_ui_set_fault(HK_UI_FAULT_NETWORK, network->error);
 }
 
 /**
@@ -226,7 +235,7 @@ static void on_network_status(const hk_net_status_t *network, void *context)
 static void start_network(void)
 {
     hk_prov_init(&s_provisioning, hk_network_is_provisioned(),
-                 hk_ui_recovery_requested(), 0);
+                 hk_ui_recovery_requested(), now_ms());
     ESP_LOGI(TAG, "provisioning policy: %s, bounded=%d",
              hk_prov_state_name(s_provisioning.state), s_provisioning.bounded);
 
@@ -236,8 +245,7 @@ static void start_network(void)
     esp_err_t err = hk_network_start(on_network_status, NULL);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "network did not start: %s", esp_err_to_name(err));
-        hk_led_inputs_t status = {.error = true};
-        hk_ui_set_status(&status);
+        hk_ui_set_fault(HK_UI_FAULT_NETWORK, true);
     }
 
     ESP_LOGI(TAG, "button       short %u-%u ms, network reset %u ms, factory reset %u ms",
@@ -269,12 +277,30 @@ void app_main(void)
      * runs: the button is read and the LED is driven. */
     ESP_ERROR_CHECK(hk_ui_start(on_button, NULL));
     start_network();
-    ESP_LOGW(TAG, "no audio and no network in this build. The button and LED are live; "
-                  "the provisioning policy is decided but its radios are not started. "
-                  "See docs/03-firmware/firmware-plan.md for what comes next.");
+    hk_ui_clear_booting();
+    ESP_LOGW(TAG, "no audio in this build. The button, LED and provisioning policy are "
+                  "live. See docs/03-firmware/firmware-plan.md for what comes next.");
 
-    /* Idle. A busy loop here would only burn power and hide the log. */
+    /* The supervisory loop. It exists to give the provisioning policy a clock:
+     * a window that closes after ten minutes needs something to notice that
+     * ten minutes have passed, and an event-driven system has no event for
+     * "nothing happened". One second is far finer than the window needs and
+     * costs nothing measurable next to the radios. */
+    bool radios_were_open = false;
     while (true) {
-        vTaskDelay(pdMS_TO_TICKS(10000));
+        vTaskDelay(pdMS_TO_TICKS(1000));
+
+        hk_prov_handle(&s_provisioning, HK_PROV_EV_TICK, now_ms());
+
+        const hk_prov_radios_t want = hk_prov_radios(&s_provisioning);
+        const bool radios_open = want.ble || want.softap;
+        if (radios_were_open && !radios_open) {
+            ESP_LOGI(TAG, "provisioning window closed after %s",
+                     s_provisioning.bounded ? "its bounded timeout" : "success");
+            if (hk_network_close_provisioning() != ESP_OK) {
+                ESP_LOGE(TAG, "could not close provisioning");
+            }
+        }
+        radios_were_open = radios_open;
     }
 }
