@@ -9,8 +9,6 @@
 #include "esp_netif.h"
 #include "esp_wifi.h"
 #include "mdns.h"
-#include "nvs.h"
-#include "nvs_flash.h"
 #include "wifi_provisioning/manager.h"
 #include "wifi_provisioning/scheme_softap.h"
 /* The BLE scheme only exists when Bluetooth is compiled in. Guarding it here
@@ -22,22 +20,45 @@
 
 #include "hk_identity.h"
 #include "hk_provision.h"
+#include "hk_storage.h"
 
 static const char *TAG = "hk_net";
 
 /**
  * Where per-device provisioning credentials live.
  *
- * The factory_cal partition, not the user settings one: a user reset must not
- * be able to destroy the salt and verifier printed on the label (PRD-008).
+ * Read through hk_storage rather than opened here. That module owns the
+ * factory_cal partition, opens it read-only, and is the single place the
+ * PRD-008 wall is enforced; a second opener would be a second place to get it
+ * wrong. An earlier version of this file called nvs_open("factory_cal", ...),
+ * which opens a NAMESPACE of that name inside the DEFAULT partition — so the
+ * credentials would have sat in the user-settings partition, where the
+ * reformat-on-corruption path erases everything.
  */
-#define HK_PROV_NVS_NAMESPACE "factory_cal"
 #define HK_PROV_NVS_SALT      "prov_salt"
 #define HK_PROV_NVS_VERIFIER  "prov_verif"
 
-/* SRP6a salt is 16 bytes; the verifier for the 3072-bit group is 384. */
-#define HK_PROV_SALT_LEN 16
-#define HK_PROV_VERIFIER_LEN 384
+/*
+ * SRP6a salt and verifier sizes.
+ *
+ * These are UPPER BOUNDS, not fixed sizes, and the difference matters. The
+ * generator derives both from big integers and serialises them with the minimal
+ * number of bytes, so a value whose top byte happens to be zero comes out one
+ * byte short. Measured over 600 generations: the salt was 15 bytes once and the
+ * verifier 383 bytes four times, both close to the 1-in-256 the arithmetic
+ * predicts.
+ *
+ * The bytes are used verbatim on both sides — the generator hashes the salt as
+ * a raw byte string when computing the verifier — so padding a short one to a
+ * fixed width here would silently break the handshake on roughly one device in
+ * every 256. Whatever length was stored is the length that must be used.
+ */
+#define HK_PROV_SALT_MAX 16
+#define HK_PROV_VERIFIER_MAX 384
+
+/* Below these, something other than a credential was stored. */
+#define HK_PROV_SALT_MIN 8
+#define HK_PROV_VERIFIER_MIN 256
 
 /** Consecutive join attempts before the policy module is told it failed. */
 #define HK_NET_RETRY_LIMIT 5
@@ -48,8 +69,10 @@ static hk_net_status_cb_t s_callback;
 static void              *s_context;
 static hk_net_status_t    s_status;
 static int                s_retries;
-static uint8_t            s_salt[HK_PROV_SALT_LEN];
-static uint8_t            s_verifier[HK_PROV_VERIFIER_LEN];
+static uint8_t            s_salt[HK_PROV_SALT_MAX];
+static uint8_t            s_verifier[HK_PROV_VERIFIER_MAX];
+static size_t             s_salt_len;
+static size_t             s_verifier_len;
 static bool               s_have_security2;
 
 static void publish_status(void)
@@ -68,28 +91,28 @@ static void publish_status(void)
  */
 static esp_err_t load_security2_credentials(void)
 {
-    nvs_handle_t handle;
-    esp_err_t err = nvs_open(HK_PROV_NVS_NAMESPACE, NVS_READONLY, &handle);
-    if (err != ESP_OK) {
-        return err;
-    }
+    s_salt_len = sizeof(s_salt);
+    s_verifier_len = sizeof(s_verifier);
 
-    size_t salt_len = sizeof(s_salt);
-    size_t verifier_len = sizeof(s_verifier);
-    err = nvs_get_blob(handle, HK_PROV_NVS_SALT, s_salt, &salt_len);
+    esp_err_t err = hk_storage_factory_get_blob(HK_PROV_NVS_SALT, s_salt, &s_salt_len);
     if (err == ESP_OK) {
-        err = nvs_get_blob(handle, HK_PROV_NVS_VERIFIER, s_verifier, &verifier_len);
+        err = hk_storage_factory_get_blob(HK_PROV_NVS_VERIFIER, s_verifier, &s_verifier_len);
     }
-    nvs_close(handle);
-
     if (err != ESP_OK) {
         return err;
     }
-    if (salt_len != HK_PROV_SALT_LEN || verifier_len != HK_PROV_VERIFIER_LEN) {
-        ESP_LOGE(TAG, "provisioning credentials are the wrong size (%u/%u)",
-                 (unsigned)salt_len, (unsigned)verifier_len);
+
+    /* A range, not an equality. See the note on HK_PROV_SALT_MAX: demanding an
+     * exact length would reject roughly one device in 256 for no reason. */
+    if (s_salt_len < HK_PROV_SALT_MIN || s_salt_len > HK_PROV_SALT_MAX ||
+        s_verifier_len < HK_PROV_VERIFIER_MIN || s_verifier_len > HK_PROV_VERIFIER_MAX) {
+        ESP_LOGE(TAG, "provisioning credentials are implausible: salt %u B, verifier %u B",
+                 (unsigned)s_salt_len, (unsigned)s_verifier_len);
         return ESP_ERR_INVALID_SIZE;
     }
+
+    ESP_LOGI(TAG, "provisioning credentials loaded: salt %u B, verifier %u B",
+             (unsigned)s_salt_len, (unsigned)s_verifier_len);
     return ESP_OK;
 }
 
@@ -220,17 +243,19 @@ static esp_err_t start_provisioning(void)
         /* Deliberately fatal to provisioning rather than a downgrade. Accepting
          * a Wi-Fi password over a channel secured by a shared or absent
          * credential is worse than refusing to accept one at all. */
-        ESP_LOGE(TAG, "no per-device provisioning credentials in %s; refusing to open "
-                      "provisioning rather than fall back to a weaker security mode",
-                 HK_PROV_NVS_NAMESPACE);
+        ESP_LOGE(TAG, "no per-device provisioning credentials in the calibration store; "
+                      "refusing to open provisioning rather than fall back to a weaker "
+                      "security mode");
         return ESP_ERR_NOT_FOUND;
     }
 
+    /* The stored lengths, not the buffer sizes. Passing sizeof() here would
+     * hand protocomm trailing zero bytes that were never part of the salt. */
     wifi_prov_security2_params_t security_params = {
         .salt = (const char *)s_salt,
-        .salt_len = sizeof(s_salt),
+        .salt_len = (uint16_t)s_salt_len,
         .verifier = (const char *)s_verifier,
-        .verifier_len = sizeof(s_verifier),
+        .verifier_len = (uint16_t)s_verifier_len,
     };
 
     /* service_key is the SoftAP password. NULL leaves the setup network open,
@@ -308,12 +333,16 @@ esp_err_t hk_network_start(hk_net_status_cb_t callback, void *context)
     ESP_RETURN_ON_ERROR(esp_event_handler_register(WIFI_PROV_EVENT, ESP_EVENT_ANY_ID,
                                                    on_prov_event, NULL), TAG, "prov events");
 
-    esp_err_t credentials = load_security2_credentials();
-    s_have_security2 = (credentials == ESP_OK);
+    /* Named for what it holds, a status, not for what was being loaded. A
+     * variable called `credentials` reaching a log line is exactly the shape
+     * tools/check_no_credential_logs.py is looking for, and it was right to
+     * object even though nothing secret was printed. */
+    esp_err_t load_status = load_security2_credentials();
+    s_have_security2 = (load_status == ESP_OK);
     if (!s_have_security2) {
         ESP_LOGE(TAG, "provisioning credentials unavailable: %s. This device cannot be "
                       "provisioned until they are written at manufacturing time.",
-                 esp_err_to_name(credentials));
+                 esp_err_to_name(load_status));
     }
 
     /* The manager is needed just to answer "are we provisioned?", and the

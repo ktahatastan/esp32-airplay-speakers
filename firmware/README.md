@@ -67,7 +67,10 @@ python3 firmware/tools/test_check_partitions.py
 # 4. A user reset must not be able to erase the calibration store (PRD-008)
 python3 firmware/tools/check_storage_isolation.py
 
-# 5. Documentation integrity
+# 5. No log statement may print a credential
+python3 firmware/tools/check_no_credential_logs.py
+
+# 6. Documentation integrity
 python3 scripts/check_docs.py
 ```
 
@@ -83,10 +86,19 @@ network layer starts Wi-Fi, mDNS and SoftAP provisioning. None of that has run
 on a board, so treat every behaviour below the policy modules as written but
 unproven.
 
-Two things will stop provisioning from opening on a fresh device, both on
-purpose. There is no tool yet that writes the per-device SRP6a salt and
-verifier, and without them the firmware refuses to provision rather than fall
-back to a weaker security mode. The transport is chosen by the situation, not by the caller: SoftAP with
+Provisioning will not open on a device whose per-device credentials have not
+been written, and that is on purpose: the firmware refuses rather than falling
+back to a weaker security mode. Generate them with
+
+```bash
+. $IDF_PATH/export.sh
+python3 firmware/tools/provision_credentials.py --device A1B2
+```
+
+Each device gets its own random password. The speaker stores only an SRP6a salt
+and verifier, from which the password cannot be recovered, so reading the flash
+off a speaker does not yield the credential. The generated `label.txt` is the
+only copy of the password; it is written owner-only and must not be committed. The transport is chosen by the situation, not by the caller: SoftAP with
 nothing stored, BLE from a button press on a configured device. ADR-0005
 option C, because ESP-IDF cannot run both in one session.
 

@@ -7,6 +7,8 @@ tags: [development-log, moc]
 
 # Geliştirme günlüğü
 
+- [[2026-08-31-provisioning-credentials|2026-08-31 — F4 cihaz başına kimlik ve log taraması]]
+
 - [[2026-08-31-storage-and-calibration-wall|2026-08-31 — F6 depolama ve kalibrasyon duvarı]]
 
 - [[2026-08-31-ui-and-network-drivers|2026-08-31 — F5 UI sürücüsü ve F4 ağ katmanı]]

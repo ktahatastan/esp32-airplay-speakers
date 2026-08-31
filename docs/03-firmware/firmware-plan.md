@@ -127,8 +127,9 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
   - [x] BLE transport'u NimBLE ile etkinleştirildi. ADR-0005 seçenek C: transport girişten türetilir — kimlik bilgisi yoksa SoftAP, yapılandırılmış cihazda butonla BLE.
   - [ ] iOS ve Android'de hem uygulamalı BLE hem uygulamasız captive portal akışı — donanım gerekir.
   - [ ] Provisioning sonrası BLE heap'inin geri kazanıldığı ölçülmedi — donanım gerekir.
-  - [ ] Wi-Fi parolası ve PoP'un loglarda görünmediği otomatik taramayla doğrulanmadı.
-  - [ ] Cihaz başına salt/verifier üreten üretim aracı yazılmadı. Firmware bunlar yoksa provisioning'i **açmayı reddediyor**, zayıf bir güvenlik moduna düşmüyor.
+  - [x] Wi-Fi parolası ve PoP'un loglarda görünmediği otomatik taramayla denetleniyor (`tools/check_no_credential_logs.py`, CI'da).
+  - [x] Cihaz başına salt/verifier üreten üretim aracı yazıldı (`tools/provision_credentials.py`), ESP-IDF'in kendi SRP6a uygulamasını kullanıyor. Firmware kimlik bilgisi yoksa provisioning'i **açmayı reddediyor**, zayıf bir güvenlik moduna düşmüyor.
+  - [x] Cihaz başına QR yükü üretiliyor; biçim ESP-IDF'in `wifi_prov_print_qr()` çıktısıyla aynı.
 - **Gate:** `PRD-004`. `G6` girdi.
 
 ### F5 — Kullanıcı arayüzü
