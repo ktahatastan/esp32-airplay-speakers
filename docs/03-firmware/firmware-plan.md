@@ -121,11 +121,13 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
 - **Önkoşul:** F0. F2'den bağımsız çalışabilir.
 - **Çıktı:** Wi-Fi istemci ve yeniden bağlanma, mDNS adı, SoftAP + captive portal, BLE Unified Provisioning (Security 2 / SRP6a, cihaz başına PoP), QR üretimi, provisioning zaman aşımı, BLE belleğinin serbest bırakılması.
 - **Kabul ölçütü:**
-  - [[../controls-and-provisioning-plan#Harman Kardom ürün kimliği\|kimlik tablosundaki]] tüm yüzey adları doğru üretiliyor.
-  - iOS ve Android'de hem uygulamalı BLE hem uygulamasız captive portal akışı test raporuyla geçti.
-  - Provisioning sonrası BLE kapandı ve heap geri kazanıldı (ölçüldü).
-  - Wi-Fi parolası ve PoP hiçbir log, portal yanıtı veya crash dump'ta görünmüyor (otomatik tarama).
-  - Cihaz başına PoP benzersiz; ortak fabrika parolası yok.
+  - [x] [[../controls-and-provisioning-plan#Harman Kardom ürün kimliği\|Kimlik tablosundaki]] tüm yüzey adları doğru üretiliyor (`hk_identity`, host testli).
+  - [x] Provisioning politikası saf mantık olarak yazıldı ve test edildi (`hk_provision`): ilk açılışta zaman aşımı yok, butonla açılan pencere 10 dakikada kapanır, bağlantı denemesi boyunca radyolar açık kalır, başarıdan sonra ikisi de kapanır ve BLE serbest bırakılabilir.
+  - [ ] Wi-Fi, mDNS, SoftAP portal ve BLE Unified Provisioning sürücü katmanı yazılmadı.
+  - [ ] iOS ve Android'de hem uygulamalı BLE hem uygulamasız captive portal akışı — donanım gerekir.
+  - [ ] Provisioning sonrası BLE heap'inin geri kazanıldığı ölçülmedi — donanım gerekir.
+  - [ ] Wi-Fi parolası ve PoP'un loglarda görünmediği otomatik taramayla doğrulanmadı.
+  - [ ] Cihaz başına benzersiz PoP üretimi yazılmadı.
 - **Gate:** `PRD-004`. `G6` girdi.
 
 ### F5 — Kullanıcı arayüzü
@@ -133,10 +135,12 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
 - **Önkoşul:** F4 (provisioning tetikleyicisi için).
 - **Çıktı:** buton durum makinesi (kısa / 5 sn / 12 sn), 50 ms debounce, açılışta kurtarma modu, RGB LED animatörü ve durum tablosu.
 - **Kabul ölçütü:**
-  - Üç eşik ayrı ayrı doğrulandı; 12 sn işlemi **yalnız buton bırakılınca** onaylanıyor.
-  - Yanlışlıkla kısa dokunma kayıtlı Wi-Fi'yi silmiyor.
-  - Kullanıcı reseti `factory_cal`'a dokunmuyor (PRD-008 testi).
-  - LED PWM'inin I2S zamanlamasına ve analog dip gürültüsüne etkisi ölçüldü.
+  - [x] Üç eşik ayrı ayrı doğrulandı; 12 sn işlemi **yalnız buton bırakılınca** onaylanıyor (`hk_button`, host testli).
+  - [x] Yanlışlıkla kısa dokunma kayıtlı Wi-Fi'yi silmiyor. Kısa basış ile ağ sıfırlama arasındaki aralık bilerek ölüdür: orada bırakmak hiçbir şey yapmaz.
+  - [x] LED durum önceliği yazıldı ve test edildi (`hk_led`): hata > OTA > buton geri bildirimi > düşük batarya > etkinlik.
+  - [ ] GPIO ve PWM sürücü katmanı yazılmadı.
+  - [ ] Kullanıcı resetinin `factory_cal`'a dokunmadığı NVS testiyle gösterilmedi (`F6` deposunu bekliyor).
+  - [ ] LED PWM'inin I2S zamanlamasına ve analog dip gürültüsüne etkisi ölçülmedi — donanım gerekir.
 - **Gate:** `PRD-005`, `G3` katkı.
 
 ### F6 — Depolama ve güç telemetrisi
@@ -198,8 +202,11 @@ firmware/
     hk_version/        SemVer ayrıştırma ve OTA güncelleme kararı           [F0 · var]
     hk_audio/          I2S, DSP, limiter                                    [F2-F3]
     hk_airplay/        rbouteiller/airplay-esp32 sarmalayıcısı              [F1 · vendor]
-    hk_network/        Wi-Fi, mDNS, portal, BLE provisioning                [F4]
-    hk_ui/             buton, LED                                           [F5]
+    hk_provision/      provisioning politikası (saf, testli)               [F4 · var]
+    hk_network/        Wi-Fi, mDNS, portal, BLE sürücü katmanı             [F4]
+    hk_button/         buton durum makinesi (saf, testli)                  [F5 · var]
+    hk_led/            LED durum önceliği ve deseni (saf, testli)          [F5 · var]
+    hk_ui/             GPIO ve PWM sürücü katmanı                           [F5]
     hk_storage/        NVS şeması ve migrasyon                              [F6]
     hk_power/          telemetri, kapanış politikası                        [F6]
     hk_update/         manifest, OTA, sağlık kontrolü                       [F7]

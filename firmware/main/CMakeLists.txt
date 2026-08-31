@@ -3,8 +3,11 @@
 # rather than relied on as transitive requirements.
 idf_component_register(SRCS "hk_main.c"
                        INCLUDE_DIRS ""
-                       REQUIRES hk_identity
+                       REQUIRES hk_button
+                                hk_identity
+                                hk_led
                                 hk_pins
+                                hk_provision
                                 hk_version
                                 nvs_flash
                                 app_update

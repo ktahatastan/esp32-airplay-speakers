@@ -69,6 +69,11 @@ with no warnings in project sources, the host suite passes, the partition gate
 and its own tests pass, and `PROJECT_VER` in the built image matches
 `version.txt`.
 
+The button, LED and provisioning modules are complete policy, fully covered by
+host tests. What is missing is the layer beneath them: no GPIO is configured,
+no PWM runs, no radio is started. `app_main` prints what those policies decide
+and acts on none of it.
+
 **Not verified: nothing has run on hardware.** No board has been flashed, so the
 boot report, the GPIO assignment and the PSRAM detection are unexercised. The
 pin table stays a candidate until that happens.
@@ -86,6 +91,9 @@ firmware/
     hk_pins/            GPIO assignment; the compiler enforces the constraints
     hk_identity/        every user-visible name, derived from the MAC
     hk_version/         SemVer parsing and the OTA update decision
+    hk_button/          function button: debounce, hold levels, what commits
+    hk_led/             which status wins the single LED, and how it looks
+    hk_provision/       when the setup radios are open, and when they shut
   test/                 host unit tests, built with plain CMake
   tools/                partition and size validation
 ```

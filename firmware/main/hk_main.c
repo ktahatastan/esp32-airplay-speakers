@@ -34,8 +34,11 @@
 #include "freertos/task.h"
 #include "nvs_flash.h"
 
+#include "hk_button.h"
 #include "hk_identity.h"
+#include "hk_led.h"
 #include "hk_pins.h"
+#include "hk_provision.h"
 #include "hk_version.h"
 
 static const char *TAG = "hk";
@@ -147,6 +150,36 @@ static void report_hardware(void)
     }
 }
 
+/**
+ * Report what the policy modules decide, without acting on any of it.
+ *
+ * These state machines are complete and host-tested, but the layers that would
+ * carry out their decisions are not: no GPIO is configured, no radio is
+ * started. Printing the decision is how a bring-up session can compare the
+ * policy against the documented tables before anything is driven.
+ */
+static void report_policy(void)
+{
+    /* Nothing has read the button or storage yet, so the inputs here are the
+     * documented cold-start case: no credentials, button not held. */
+    hk_prov_t provisioning;
+    hk_prov_init(&provisioning, false, false, 0);
+    hk_prov_radios_t radios = hk_prov_radios(&provisioning);
+    ESP_LOGI(TAG, "provisioning %s (ble=%d softap=%d) on a device with no stored credentials",
+             hk_prov_state_name(provisioning.state), radios.ble, radios.softap);
+
+    hk_led_inputs_t led_inputs = {.booting = true};
+    hk_led_state_t led = hk_led_resolve(&led_inputs);
+    const hk_led_pattern_t *pattern = hk_led_pattern(led);
+    ESP_LOGI(TAG, "led          %s rgb(%u,%u,%u) at %u%%",
+             hk_led_state_name(led), pattern->red, pattern->green, pattern->blue,
+             pattern->brightness);
+
+    ESP_LOGI(TAG, "button       short %u-%u ms, network reset %u ms, factory reset %u ms",
+             (unsigned)HK_BUTTON_SHORT_MIN_MS, (unsigned)HK_BUTTON_SHORT_MAX_MS,
+             (unsigned)HK_BUTTON_NETWORK_MS, (unsigned)HK_BUTTON_FACTORY_MS);
+}
+
 void app_main(void)
 {
     esp_err_t err = nvs_flash_init();
@@ -164,7 +197,9 @@ void app_main(void)
     report_hardware();
     ESP_ERROR_CHECK(report_identity());
     report_pins();
-    ESP_LOGW(TAG, "F0 build: no audio, no network, no GPIO driven. "
+    report_policy();
+    ESP_LOGW(TAG, "F0 build: no audio, no network, no GPIO driven. The button, LED and "
+                  "provisioning policies above are decided but not acted on. "
                   "See docs/03-firmware/firmware-plan.md for what comes next.");
 
     /* Idle. A busy loop here would only burn power and hide the log. */

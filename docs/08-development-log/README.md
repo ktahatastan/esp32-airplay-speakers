@@ -7,6 +7,8 @@ tags: [development-log, moc]
 
 # Geliştirme günlüğü
 
+- [[2026-08-31-ui-and-provisioning-policy|2026-08-31 — F5 buton ve LED, F4 provisioning politikası]]
+
 - [[2026-08-31-airplay-stack-spike|2026-08-31 — F1 AirPlay yığını fizibilite spike'ı]]
 
 - [[2026-08-31-firmware-f0-skeleton|2026-08-31 — Firmware F0 iskeleti]]

@@ -60,5 +60,8 @@ extern int hk_test_checks;
 void test_pins(void);
 void test_identity(void);
 void test_version(void);
+void test_button(void);
+void test_led(void);
+void test_provision(void);
 
 #endif /* HK_TEST_H */
