@@ -157,8 +157,9 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
   - [x] Kullanıcı reseti `factory_cal`'a ulaşamıyor. Garanti yapısal: ayrı partition, salt-okunur açılış ve `tools/check_storage_isolation.py` ile CI'da denetleniyor (PRD-008).
   - [x] Kalibrasyon yoksa veya okunamıyorsa ses **izinli değil**; uydurma bir varsayılan profil yazılmıyor.
   - [ ] `OTA_MIN_PACK_MV` eşiği G3/G4 ölçümünden türetilecek — donanım gerekir.
-  - [ ] Paket gerilimi ve NTC okuma, düşük gerilimde kontrollü kapanış — donanım gerekir.
-  - [ ] Şarj algılandığında amfi kilidi (ADR-0004) — amfi kontrolü `F2`, algılama donanım gerektirir.
+  - [x] Düşük gerilim politikası saf mantık olarak yazıldı ve test edildi (`hk_power`): bantlar, histerezis, imkânsız okumanın batarya değil **sensör** arızası sayılması, sıcaklık önceliği ve ADR-0004 şarj kilidi. Eşiklerin hiçbiri uydurulmadı; enjekte ediliyor.
+  - [ ] Paket gerilimi ve NTC'nin gerçekten okunması, ve kontrollü kapanışın işletilmesi — ADC sürücüsü donanım gerektirir.
+  - [ ] Şarj algılandığında amfi kilidi (ADR-0004) — politika `hk_power_audio_permitted()` içinde yazıldı ve test edildi; **algılama** için tanımlı bir sinyal yok (ADR-0009 topolojiyi açık bırakıyor, ADR-0011).
 - **Gate:** `G4` girdi, `G8` katkı.
 
 ### F7 — OTA ve release hattı
@@ -234,6 +235,7 @@ firmware/
     hk_gate/           güncelleme şimdi başlayabilir mi (saf, testli)       [F7 · var]
     hk_ota/            inen görüntü manifest ile uyuşuyor mu + istemci      [F7 · var]
     hk_health/         ilk açılış imajı onaylanmalı mı (saf, testli)        [F7 · var]
+    hk_power/          gerilim/sıcaklık politikası (saf, testli)            [F6 · var]
   test/                host tarafı birim testleri                           [F0 · var]
   tools/               partition ve boyut doğrulaması                       [F0 · var]
 ```

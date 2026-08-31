@@ -13,6 +13,16 @@ tags: [adr, airplay, sync, license]
 
 Alıcı yığın olarak [`rbouteiller/airplay-esp32`](https://github.com/rbouteiller/airplay-esp32) (CMake proje adı `airplay2-receiver`) seçilmiştir. Depoya sabit bir commit'e sabitlenerek vendor edilir.
 
+> **2026-08-31 notu — vendor'lama henüz yapılmadı ve "bileşen olarak vendor et" ifadesi göründüğü kadar basit değil.**
+>
+> Yukarı akış incelendi (`v0.2.0`, commit `38027441ff43`, Non-Commercial License © 2026 Remi Bouteiller). Bulgular:
+>
+> - Yığın bir kütüphane değil, **kendi `app_main`'i olan tam bir ESP-IDF uygulaması** (`main/main.c:209`, 374 satır; AirPlay çekirdeği toplam 23.5k satır). İki `app_main` bir arada bulunamaz.
+> - Onların `app_main`'i bizim kabul edilmiş kararlarımızla doğrudan çakışıyor: sürüm uyuşmazlığında `nvs_flash_erase()` çağırıyor (kalibrasyon duvarı, PRD-008), `led_init()` `hk_ui` ile, `iot_board_init()` `hk_pins` ile çakışıyor.
+> - `components/` 18 MB ve bunun 17.3 MB'ı kullanmadığımız TI DSP amfilerinin blob'ları (`dac_tas58xx` 11 MB, `dac_tas57xx` 6.3 MB). Bizim DAC'ımız PCM5102A.
+>
+> Yani entegrasyon, kopyalama değil mimari bir karar: ya onların `app_main`'i `hk_airplay_start()`'a çevrilir (vendor'lanmış kodda kalıcı yama), ya da bizim katmanlarımız onların uygulamasına taşınır (birkaç ADR'yi supersede etmeyi gerektirir). Kullanıcı 2026-08-31'de bu düğümü **donanım gelene kadar ertelemeyi** seçti; entegrasyon gerçekten test edilebildiği zaman kararlaştırılacak. Bu ADR'nin yığın seçimi değişmedi.
+
 Bu karar **yığın seçimidir**. Dört cihazın gerçekten senkron çaldığı iddiası değildir; o iddia yalnız aşağıdaki `G7` ölçümüyle kurulabilir.
 
 ## Kanıt
