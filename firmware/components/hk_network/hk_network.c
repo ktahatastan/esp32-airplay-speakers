@@ -240,6 +240,16 @@ static esp_err_t start_provisioning(void)
                                             s_identity.softap, NULL);
 }
 
+hk_net_scheme_t hk_network_scheme_for(bool has_credentials)
+{
+    /* ADR-0005 option C. The app-less path must always be reachable, so a
+     * device with nothing stored opens SoftAP; a device that already works
+     * opens BLE, because a SoftAP would push the user's phone off the network
+     * they are on. Clearing credentials with a 5 s hold returns them to the
+     * SoftAP case, which is how the app-less route stays available. */
+    return has_credentials ? HK_NET_SCHEME_BLE : HK_NET_SCHEME_SOFTAP;
+}
+
 static esp_err_t init_provisioning_manager(void)
 {
     if (s_scheme == HK_NET_SCHEME_BLE) {
@@ -266,9 +276,8 @@ static esp_err_t init_provisioning_manager(void)
     return wifi_prov_mgr_init(config);
 }
 
-esp_err_t hk_network_start(hk_net_scheme_t scheme, hk_net_status_cb_t callback, void *context)
+esp_err_t hk_network_start(hk_net_status_cb_t callback, void *context)
 {
-    s_scheme = scheme;
     s_callback = callback;
     s_context = context;
     memset(&s_status, 0, sizeof(s_status));
@@ -283,9 +292,11 @@ esp_err_t hk_network_start(hk_net_scheme_t scheme, hk_net_status_cb_t callback, 
     ESP_RETURN_ON_ERROR(esp_netif_init(), TAG, "netif init");
     ESP_RETURN_ON_ERROR(esp_event_loop_create_default(), TAG, "event loop");
     esp_netif_create_default_wifi_sta();
-    if (scheme == HK_NET_SCHEME_SOFTAP) {
-        esp_netif_create_default_wifi_ap();
-    }
+    /* The AP interface is created unconditionally: whether SoftAP is needed
+     * depends on stored credentials, which cannot be read until the manager is
+     * up, and creating a netif is cheap next to discovering too late that it is
+     * missing. */
+    esp_netif_create_default_wifi_ap();
 
     wifi_init_config_t wifi_config = WIFI_INIT_CONFIG_DEFAULT();
     ESP_RETURN_ON_ERROR(esp_wifi_init(&wifi_config), TAG, "wifi init");
@@ -305,10 +316,15 @@ esp_err_t hk_network_start(hk_net_scheme_t scheme, hk_net_status_cb_t callback, 
                  esp_err_to_name(credentials));
     }
 
+    /* The manager is needed just to answer "are we provisioned?", and the
+     * answer decides the scheme. It is initialised with SoftAP for that query
+     * and reinitialised below if BLE turns out to be the right transport. */
+    s_scheme = HK_NET_SCHEME_SOFTAP;
     ESP_RETURN_ON_ERROR(init_provisioning_manager(), TAG, "prov mgr init");
 
     bool provisioned = false;
     ESP_RETURN_ON_ERROR(wifi_prov_mgr_is_provisioned(&provisioned), TAG, "is provisioned");
+    s_scheme = hk_network_scheme_for(provisioned);
 
     if (provisioned) {
         /* Nothing to set up. Release the manager and just join. */
@@ -328,6 +344,17 @@ esp_err_t hk_network_start(hk_net_scheme_t scheme, hk_net_status_cb_t callback, 
 
 esp_err_t hk_network_open_provisioning(void)
 {
+    if (s_status.provisioning) {
+        /* Already open. A stray press must not tear down a setup session the
+         * user is in the middle of. */
+        ESP_LOGI(TAG, "provisioning is already open; leaving it alone");
+        return ESP_OK;
+    }
+
+    s_scheme = hk_network_scheme_for(hk_network_is_provisioned());
+    ESP_LOGI(TAG, "opening provisioning over %s",
+             s_scheme == HK_NET_SCHEME_BLE ? "ble" : "softap");
+
     ESP_RETURN_ON_ERROR(init_provisioning_manager(), TAG, "prov mgr init");
     esp_err_t err = start_provisioning();
     if (err != ESP_OK) {

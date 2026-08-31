@@ -36,6 +36,12 @@ Flash and watch the boot report:
 idf.py -C firmware -p /dev/tty.usbmodem* flash monitor
 ```
 
+> Changing `sdkconfig.defaults` does **not** update an existing `sdkconfig`.
+> ESP-IDF applies the defaults only when it generates the file, so a local build
+> keeps the old settings and silently omits whatever you just enabled. Delete
+> `firmware/sdkconfig` and rebuild after editing the defaults. CI is immune,
+> since it starts from a fresh checkout.
+
 `PROJECT_VER` comes from `version.txt`. It must stay strict SemVer, because the
 OTA client compares it numerically and the release pipeline checks it against the
 Git tag.
@@ -77,9 +83,9 @@ unproven.
 Two things will stop provisioning from opening on a fresh device, both on
 purpose. There is no tool yet that writes the per-device SRP6a salt and
 verifier, and without them the firmware refuses to provision rather than fall
-back to a weaker security mode. And the BLE transport needs `CONFIG_BT_ENABLED`,
-which this build does not set, because ESP-IDF cannot run BLE and SoftAP
-provisioning in the same session — see the open question on ADR-0005.
+back to a weaker security mode. The transport is chosen by the situation, not by the caller: SoftAP with
+nothing stored, BLE from a button press on a configured device. ADR-0005
+option C, because ESP-IDF cannot run both in one session.
 
 **Not verified: nothing has run on hardware.** No board has been flashed, so the
 boot report, the GPIO assignment and the PSRAM detection are unexercised. The

@@ -22,7 +22,6 @@ tags: [risk, fmea]
 | XL4015 şarj sonlandırma garantisi yok | Kritik | Yüksek | G4'te CV akım düşüşü ve sonlandırma ölçümü; sonlandırma yoksa ADR ile alternatif; ölçümden önce gözetimsiz şarj yasak (ADR-0009) | power |
 | XL4015'te ters polarite koruması yok | Yüksek | Orta | Kutup etiketleme, bağlantı sırası prosedürü, ilk enerjilendirmede akım sınırlı kaynak | power |
 | BMS pasif balans akımı şarj akımından çok küçük | Orta | Yüksek | Balans akımını/eşiğini satıcıdan yazılı al; G4'te hücre sapmasını çok çevrimde ölç | power |
-| ADR-0005 iki provisioning yolunu birlikte istiyor; ESP-IDF tek scheme destekliyor | Orta | Kesin | Scheme parametre yapıldı, SoftAP varsayılan; ADR-0005'te dört seçenek kaydedildi, karar bekliyor | firmware |
 | Cihaz başına provisioning kimlik bilgisi (salt/verifier) üretim aracı yok | Yüksek | Kesin | Firmware yoksa provisioning'i açmayı reddediyor, zayıf moda düşmüyor; üretim aracı F4 iş listesinde | firmware |
 | Paralel agent çakışması | Orta | Orta | Tek orkestratör ve tek yazma sahibi | orchestrator |
 | Belge sapması: kanonik plan ile şema/BOM ayrışması | Yüksek | Orta | `scripts/check_docs.py` birleşme öncesi zorunlu; mimari değişiklik ADR'siz birleşmez | orchestrator |

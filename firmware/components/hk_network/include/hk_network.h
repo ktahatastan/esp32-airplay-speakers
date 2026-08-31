@@ -14,10 +14,21 @@
  * -----------------------
  * ESP-IDF's provisioning manager keeps a single static context and takes one
  * scheme, so BLE and SoftAP cannot both be live in one session: scheme_ble
- * puts Wi-Fi in station mode while scheme_softap needs AP+station. ADR-0005
- * asks for both to be offered together, which this framework cannot do without
- * a custom protocomm layer. The scheme is therefore a parameter here, and the
- * conflict is recorded in the docs rather than silently resolved.
+ * puts Wi-Fi in station mode while scheme_softap needs AP+station.
+ *
+ * ADR-0005 resolves this by offering them in sequence, and which one opens is
+ * decided by how provisioning was entered, never by the caller:
+ *
+ *   no stored credentials -> SoftAP and a captive portal
+ *   button on a configured device -> BLE
+ *
+ * The reasoning is that the app-less path must always be reachable. Someone
+ * setting a speaker up for the first time may have no app at all, so first
+ * boot gets SoftAP. Someone pressing the button on a working speaker already
+ * has a network, and a SoftAP would push their phone off it, so that path gets
+ * BLE. A user who needs the app-less route on a configured device holds the
+ * button for 5 s to clear the credentials, which lands them back in the first
+ * case.
  *
  * Security
  * --------
@@ -34,14 +45,22 @@
 
 #include "esp_err.h"
 
-/** Which provisioning transport this session offers. */
+/**
+ * Which provisioning transport a session offers.
+ *
+ * Chosen by hk_network from the situation, not passed in. Exposed so it can be
+ * logged and reasoned about.
+ */
 typedef enum {
     HK_NET_SCHEME_SOFTAP = 0, /**< App-less: SoftAP plus a captive portal */
     HK_NET_SCHEME_BLE,        /**< Espressif provisioning apps over BLE.
-                                   Requires CONFIG_BT_ENABLED; without it
-                                   hk_network_start returns ESP_ERR_NOT_SUPPORTED
-                                   rather than silently using another transport. */
+                                   Needs CONFIG_BT_ENABLED; without it the call
+                                   fails with ESP_ERR_NOT_SUPPORTED rather than
+                                   silently using another transport. */
 } hk_net_scheme_t;
+
+/** The transport that a given situation opens. See the note above for why. */
+hk_net_scheme_t hk_network_scheme_for(bool has_credentials);
 
 /** What the network layer is doing, for the status LED. */
 typedef struct {
@@ -56,15 +75,20 @@ typedef void (*hk_net_status_cb_t)(const hk_net_status_t *status, void *context)
 
 /**
  * Bring up netif, the event loop and Wi-Fi, then either join a stored network
- * or open provisioning.
+ * or open provisioning on the transport that fits the situation.
  *
- * @param scheme    transport to offer if provisioning opens
  * @param callback  status changes; may be NULL
  * @param context   passed back to the callback
  */
-esp_err_t hk_network_start(hk_net_scheme_t scheme, hk_net_status_cb_t callback, void *context);
+esp_err_t hk_network_start(hk_net_status_cb_t callback, void *context);
 
-/** Open a provisioning window on a device that already has credentials. */
+/**
+ * Open a provisioning window from a button press.
+ *
+ * On a configured device this opens BLE. On one with no credentials
+ * provisioning is already open over SoftAP and this does nothing, so a stray
+ * press cannot tear down a setup session the user is in the middle of.
+ */
 esp_err_t hk_network_open_provisioning(void);
 
 /** Forget stored Wi-Fi credentials and reopen provisioning. */

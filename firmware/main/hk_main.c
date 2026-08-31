@@ -222,10 +222,10 @@ static void start_network(void)
     ESP_LOGI(TAG, "provisioning policy: %s, bounded=%d",
              hk_prov_state_name(s_provisioning.state), s_provisioning.bounded);
 
-    /* SoftAP is the app-less path and works for every user, so it is the
-     * default. ESP-IDF cannot run both transports at once; see the note in
-     * hk_network.h and the open question against ADR-0005. */
-    esp_err_t err = hk_network_start(HK_NET_SCHEME_SOFTAP, on_network_status, NULL);
+    /* The transport follows the situation rather than a choice made here:
+     * SoftAP with nothing stored, BLE from a button press on a configured
+     * device. ADR-0005 option C; the reasoning is in hk_network.h. */
+    esp_err_t err = hk_network_start(on_network_status, NULL);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "network did not start: %s", esp_err_to_name(err));
         hk_led_inputs_t status = {.error = true};

@@ -18,7 +18,7 @@ Bu belge firmware'in **ne olduğunu** ve **hangi sırayla yapıldığını** bir
 |---|---|---|
 | Kart | ESP32-S3, 16 MB flash + 8 MB PSRAM | [[../07-decisions/ADR-0010-esp32-s3-n16r8-board\|ADR-0010]] |
 | Ses topolojisi | Mono program, bi-amp: sol yol woofer, sağ yol tweeter | [[../07-decisions/ADR-0002-biamp-signal-chain\|ADR-0002]] |
-| Provisioning | SoftAP/captive portal **ve** BLE Unified Provisioning | [[../07-decisions/ADR-0005-dual-provisioning\|ADR-0005]] |
+| Provisioning | SoftAP/captive portal ve BLE, **sırayla**; transport girişten türetilir | [[../07-decisions/ADR-0005-dual-provisioning\|ADR-0005]] |
 | Dağıtım | SemVer tag -> GitHub Releases -> imzalı A/B OTA | [[../07-decisions/ADR-0008-github-releases-ota\|ADR-0008]] |
 | Şarj davranışı | V1'de şarj sırasında amfi kapalı | [[../07-decisions/ADR-0004-v1-charge-policy\|ADR-0004]] |
 | AirPlay yığını | `rbouteiller/airplay-esp32`, sabit commit'e vendor | [[../07-decisions/ADR-0007-airplay-stack\|ADR-0007]] |
@@ -124,7 +124,7 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
   - [x] [[../controls-and-provisioning-plan#Harman Kardom ürün kimliği\|Kimlik tablosundaki]] tüm yüzey adları doğru üretiliyor (`hk_identity`, host testli).
   - [x] Provisioning politikası saf mantık olarak yazıldı ve test edildi (`hk_provision`): ilk açılışta zaman aşımı yok, butonla açılan pencere 10 dakikada kapanır, bağlantı denemesi boyunca radyolar açık kalır, başarıdan sonra ikisi de kapanır ve BLE serbest bırakılabilir.
   - [x] Wi-Fi istasyon, yeniden bağlanma, mDNS ve SoftAP provisioning sürücü katmanı yazıldı; ESP-IDF v5.5.1 ile derleniyor.
-  - [ ] BLE transport `CONFIG_BT_ENABLED` gerektiriyor ve bu derlemede kapalı. ADR-0005'in "birlikte sunulur" ifadesi ESP-IDF ile uygulanamıyor; karar bekliyor.
+  - [x] BLE transport'u NimBLE ile etkinleştirildi. ADR-0005 seçenek C: transport girişten türetilir — kimlik bilgisi yoksa SoftAP, yapılandırılmış cihazda butonla BLE.
   - [ ] iOS ve Android'de hem uygulamalı BLE hem uygulamasız captive portal akışı — donanım gerekir.
   - [ ] Provisioning sonrası BLE heap'inin geri kazanıldığı ölçülmedi — donanım gerekir.
   - [ ] Wi-Fi parolası ve PoP'un loglarda görünmediği otomatik taramayla doğrulanmadı.
