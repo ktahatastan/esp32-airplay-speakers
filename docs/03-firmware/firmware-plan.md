@@ -21,9 +21,9 @@ Bu belge firmware'in **ne olduğunu** ve **hangi sırayla yapıldığını** bir
 | Provisioning | SoftAP/captive portal **ve** BLE Unified Provisioning | [[../07-decisions/ADR-0005-dual-provisioning\|ADR-0005]] |
 | Dağıtım | SemVer tag -> GitHub Releases -> imzalı A/B OTA | [[../07-decisions/ADR-0008-github-releases-ota\|ADR-0008]] |
 | Şarj davranışı | V1'de şarj sırasında amfi kapalı | [[../07-decisions/ADR-0004-v1-charge-policy\|ADR-0004]] |
-| AirPlay yığını | **Seçilmedi** | [[../07-decisions/ADR-0007-airplay-stack\|ADR-0007]] açık |
+| AirPlay yığını | `rbouteiller/airplay-esp32`, sabit commit'e vendor | [[../07-decisions/ADR-0007-airplay-stack\|ADR-0007]] |
 
-`ADR-0007` açık olduğu için `F1` bir fizibilite spike'ıdır ve sonucu tüm ses mimarisini etkileyebilir. `F1` kapanmadan `F2` sonrasına kaynak ayrılmaz.
+`F1` spike'ının araştırma yarısı tamamlandı ve `ADR-0007` kabul edildi; ölçüm yarısı donanım bekliyor. Yığının lisansı **ticari olmayan** kullanımla sınırlıdır ve bu tüm projeyi bağlar.
 
 ## Modüller
 
@@ -75,12 +75,16 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
 - **Önkoşul:** F0. Bir adet ESP32-S3 kartı. Hoparlör gerekmez.
 - **Çıktı:** aday yığınların kaynak kodu/lisans incelemesi, en küçük çalışan alıcı, dört sahte cihazın Apple istemcisinde birlikte görünüp görünmediğinin kanıtı, kaynak tüketimi ölçümü, `ADR-0007` doldurulmuş hâli.
 - **Kabul ölçütü:**
-  - Desteklenen AirPlay sürümü birincil kaynakla (kaynak kodu/lisans) belgelendi.
-  - Dört hedefin Apple cihazında **birlikte seçilebildiği** kayıtla gösterildi veya gösterilemediği açıkça yazıldı.
-  - Heap/PSRAM kullanımı ve CPU yükü ölçüldü; 16 MB flash + 8 MB PSRAM bütçesine sığıyor.
-  - Lisans hedef kullanımla uyumlu.
-  - `ADR-0007` `accepted` veya `rejected` oldu.
-- **Gate:** `G7`'nin ön koşulu. **Bu aşama başarısız olursa ürün gereksinimi PRD-002 yeniden müzakere edilir.**
+  - [x] Desteklenen AirPlay sürümü birincil kaynakla belgelendi — kaynakta HomeKit SRP-6a, FairPlay `/fp-setup`, IEEE-1588 PTP ve AirPlay 2'ye özgü RTSP metotları.
+  - [x] Flash/DIRAM bütçesine sığdığı **derlenerek** gösterildi: ESP32-S3 + ESP-IDF v5.5.1, 1.460.192 baytlık imaj (bir OTA slotunun %20,3'ü), 136.495 bayt statik DIRAM.
+  - [x] Lisans hedef kullanımla uyumlu; ticari olmayan sınırı kabul edildi ve kaydedildi.
+  - [x] `ADR-0007` `accepted` oldu ve `G7` sayısal eşikleri kilitlendi.
+  - [ ] Dört hedefin Apple cihazında **birlikte seçilebildiği** gösterilmedi — donanım gerekir.
+  - [ ] Çalışma zamanı heap/PSRAM ve CPU yükü ölçülmedi — donanım gerekir.
+- **Gate:** `G7`'nin ön koşulu. **`G7` başarısız olursa** yığının `CONFIG_AIRPLAY_FORCE_V1` yoluyla AirPlay 1'e geri çekilme seçeneği vardır; senkron çoklu-oda düşer ve PRD-002 yeniden müzakere edilir.
+
+> [!note] F1 kısmen tamamlandı
+> Araştırma ve derleme yarısı bitti; ölçüm yarısı donanım bekliyor. Yığın seçimi bu yüzden `accepted`, senkron iddiası değil.
 
 > [!warning] Bu aşama projenin en büyük teknik riskidir
 > Multiroom senkron kanıtlanamazsa dört senkron hoparlör hedefi düşer. Bu nedenle F1, pahalı donanım işinden **önce** yapılır.
@@ -193,7 +197,7 @@ firmware/
     hk_identity/       MAC'ten türetilen tüm yüzey adları                   [F0 · var]
     hk_version/        SemVer ayrıştırma ve OTA güncelleme kararı           [F0 · var]
     hk_audio/          I2S, DSP, limiter                                    [F2-F3]
-    hk_airplay/        seçilen yığının sarmalayıcısı                        [F1]
+    hk_airplay/        rbouteiller/airplay-esp32 sarmalayıcısı              [F1 · vendor]
     hk_network/        Wi-Fi, mDNS, portal, BLE provisioning                [F4]
     hk_ui/             buton, LED                                           [F5]
     hk_storage/        NVS şeması ve migrasyon                              [F6]

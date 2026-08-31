@@ -9,9 +9,9 @@ Kilitli kararlar `AGENTS.md` içindedir ve yalnız supersede eden ADR ile deği�
 - [ ] Sürücü etiketlerini ve bağlantı uçlarını fotoğraflandır.
 - [ ] Hedefi kesinleştir: dört bağımsız mono kutu mu, iki stereo çift mi?
 - [ ] İstenen normal ses seviyesinde çalışma süresi hedefini belirle.
-- [ ] Aday AirPlay yığınının AirPlay 1/2 ve multiroom yeteneklerini kaynak kodu/lisansla doğrula.
+- [x] Aday AirPlay yığınının AirPlay 1/2 ve multiroom yeteneklerini kaynak kodu/lisansla doğrula.
 - [ ] Dört hedefin birlikte seçilebildiği en küçük ağ ses prototipini kur.
-- [ ] İki saatlik drift/jitter ölçüm düzenini ve G7 sayısal kabul eşiklerini ADR-0007'de kilitle.
+- [x] İki saatlik drift/jitter ölçüm düzenini ve G7 sayısal kabul eşiklerini ADR-0007'de kilitle.
 
 ## P1 - Tek hoparlör güç prototipi
 
@@ -78,7 +78,8 @@ Ayrıntı, önkoşul ve kabul ölçütleri: [[docs/03-firmware/firmware-plan|fir
 
 - [x] `F0` iskelet: ESP-IDF `v5.5.1` kilidi, partition CSV, boyut/partition doğrulayıcısı, host testi, PR CI.
 - [ ] `F0` kalan: satın alınan kartla `idf.py flash monitor` ile açılış raporunu doğrula ve GPIO tablosunu `accepted` yap.
-- [ ] `F1` AirPlay yığını fizibilite spike'ı ve ADR-0007'nin kapatılması.
+- [x] `F1` araştırma yarısı: yığın seçildi, derlendi, lisans incelendi, ADR-0007 kabul edildi.
+- [ ] `F1` ölçüm yarısı: yığını vendor et, karta yükle, dört hedefin birlikte seçilebildiğini ve çalışma zamanı kaynak kullanımını ölç.
 - [ ] `F2` I2S/DAC/bi-amp ses yolu bring-up (G1 sonrası).
 - [ ] `F3` HPF, crossover ve limiter zinciri (G0 kapandıktan sonra).
 - [ ] `F4` Wi-Fi, mDNS, SoftAP portal ve BLE Unified Provisioning.

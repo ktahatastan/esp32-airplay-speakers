@@ -7,6 +7,8 @@ tags: [development-log, moc]
 
 # Geliştirme günlüğü
 
+- [[2026-08-31-airplay-stack-spike|2026-08-31 — F1 AirPlay yığını fizibilite spike'ı]]
+
 - [[2026-08-31-firmware-f0-skeleton|2026-08-31 — Firmware F0 iskeleti]]
 
 - [[2026-08-31-consistency-and-schematic-rework|2026-08-31 — Tutarlılık, agent altyapısı, firmware aşamalandırma ve şema yenilemesi]]

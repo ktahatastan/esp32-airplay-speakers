@@ -9,7 +9,9 @@ tags: [risk, fmea]
 
 | Risk | Etki | Olasılık | Azaltma | Sahip |
 |---|---|---|---|---|
-| AirPlay yığını multiroom desteklemiyor | Kritik | Yüksek | Erken G7 prototipi ve ADR-0007 | firmware |
+| AirPlay multiroom senkronu ölçülmedi | Kritik | Orta | Yığın seçildi ve AP2/PTP yeteneği kaynakta doğrulandı (ADR-0007); kalan risk gerçek cihazlarda ölçüm. G7 elektriksel ölçümü; başarısızsa AirPlay 1'e geri çekilme | firmware |
+| FairPlay yanıtları sabit kodlu; iOS/macOS güncellemesi eşleşmeyi kırabilir | Yüksek | Orta | Sürüm sabitleme, vendor edilmiş kopya, kırılırsa AirPlay 1 yoluna geçiş | firmware |
+| Seçilen yığının lisansı ticari olmayan kullanımla sınırlı | Orta | Kesin | Kabul edildi ve ADR-0007'ye yazıldı; release asset'leri lisans metnini taşır | orchestrator |
 | Sürücü empedansı/rezonansı bilinmiyor | Kritik | Yüksek | G0 ve düşük seviyeli G2 | acoustics |
 | Tweeter'a DC/düşük frekans gider | Kritik | Orta | HPF, limiter, mute | hardware |
 | BMS ilan akımı gerçek değil | Kritik | Orta | Teknik doğrulama, yük testi, sigorta | power |
