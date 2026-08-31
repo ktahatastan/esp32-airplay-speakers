@@ -123,11 +123,12 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
 - **Kabul ölçütü:**
   - [x] [[../controls-and-provisioning-plan#Harman Kardom ürün kimliği\|Kimlik tablosundaki]] tüm yüzey adları doğru üretiliyor (`hk_identity`, host testli).
   - [x] Provisioning politikası saf mantık olarak yazıldı ve test edildi (`hk_provision`): ilk açılışta zaman aşımı yok, butonla açılan pencere 10 dakikada kapanır, bağlantı denemesi boyunca radyolar açık kalır, başarıdan sonra ikisi de kapanır ve BLE serbest bırakılabilir.
-  - [ ] Wi-Fi, mDNS, SoftAP portal ve BLE Unified Provisioning sürücü katmanı yazılmadı.
+  - [x] Wi-Fi istasyon, yeniden bağlanma, mDNS ve SoftAP provisioning sürücü katmanı yazıldı; ESP-IDF v5.5.1 ile derleniyor.
+  - [ ] BLE transport `CONFIG_BT_ENABLED` gerektiriyor ve bu derlemede kapalı. ADR-0005'in "birlikte sunulur" ifadesi ESP-IDF ile uygulanamıyor; karar bekliyor.
   - [ ] iOS ve Android'de hem uygulamalı BLE hem uygulamasız captive portal akışı — donanım gerekir.
   - [ ] Provisioning sonrası BLE heap'inin geri kazanıldığı ölçülmedi — donanım gerekir.
   - [ ] Wi-Fi parolası ve PoP'un loglarda görünmediği otomatik taramayla doğrulanmadı.
-  - [ ] Cihaz başına benzersiz PoP üretimi yazılmadı.
+  - [ ] Cihaz başına salt/verifier üreten üretim aracı yazılmadı. Firmware bunlar yoksa provisioning'i **açmayı reddediyor**, zayıf bir güvenlik moduna düşmüyor.
 - **Gate:** `PRD-004`. `G6` girdi.
 
 ### F5 — Kullanıcı arayüzü
@@ -138,7 +139,7 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
   - [x] Üç eşik ayrı ayrı doğrulandı; 12 sn işlemi **yalnız buton bırakılınca** onaylanıyor (`hk_button`, host testli).
   - [x] Yanlışlıkla kısa dokunma kayıtlı Wi-Fi'yi silmiyor. Kısa basış ile ağ sıfırlama arasındaki aralık bilerek ölüdür: orada bırakmak hiçbir şey yapmaz.
   - [x] LED durum önceliği yazıldı ve test edildi (`hk_led`): hata > OTA > buton geri bildirimi > düşük batarya > etkinlik.
-  - [ ] GPIO ve PWM sürücü katmanı yazılmadı.
+  - [x] Buton GPIO ve RGB PWM sürücüsü yazıldı; ayrı düşük öncelikli görevde çalışıyor, ses görevinden bağımsız.
   - [ ] Kullanıcı resetinin `factory_cal`'a dokunmadığı NVS testiyle gösterilmedi (`F6` deposunu bekliyor).
   - [ ] LED PWM'inin I2S zamanlamasına ve analog dip gürültüsüne etkisi ölçülmedi — donanım gerekir.
 - **Gate:** `PRD-005`, `G3` katkı.
@@ -203,10 +204,10 @@ firmware/
     hk_audio/          I2S, DSP, limiter                                    [F2-F3]
     hk_airplay/        rbouteiller/airplay-esp32 sarmalayıcısı              [F1 · vendor]
     hk_provision/      provisioning politikası (saf, testli)               [F4 · var]
-    hk_network/        Wi-Fi, mDNS, portal, BLE sürücü katmanı             [F4]
+    hk_network/        Wi-Fi, mDNS, provisioning transport                  [F4 · var]
     hk_button/         buton durum makinesi (saf, testli)                  [F5 · var]
     hk_led/            LED durum önceliği ve deseni (saf, testli)          [F5 · var]
-    hk_ui/             GPIO ve PWM sürücü katmanı                           [F5]
+    hk_ui/             buton GPIO ve RGB PWM sürücüsü                       [F5 · var]
     hk_storage/        NVS şeması ve migrasyon                              [F6]
     hk_power/          telemetri, kapanış politikası                        [F6]
     hk_update/         manifest, OTA, sağlık kontrolü                       [F7]

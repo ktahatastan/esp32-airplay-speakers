@@ -1,7 +1,7 @@
 ---
 status: active
 owner: firmware-engineer
-updated: 2026-08-30
+updated: 2026-08-31
 tags: [controls, provisioning, firmware]
 ---
 
@@ -17,10 +17,15 @@ Her hoparlörde üç kullanıcı arayüzü öğesi bulunacak:
 2. Bir adet RGB durum LED'i: açılış, provisioning, Wi-Fi, AirPlay, hata ve düşük batarya durumları.
 3. Ayrı bir kilitlemeli mekanik güç anahtarı: yükleri fiziksel olarak bataryadan ayırır.
 
-Wi-Fi kurulumu iki paralel yöntemle sunulacak:
+Wi-Fi kurulumu iki yöntemle sunulacak:
 
-- Uygulamasız: SoftAP + captive portal. Mevcut `airplay-esp32` ilk açılış davranışı genişletilecek.
+- Uygulamasız: SoftAP + captive portal.
 - Bluetooth LE: ESP-IDF Unified Provisioning. Espressif uygulaması veya ileride hazırlanacak özel iOS/Android uygulaması kullanılacak.
+
+> [!warning] İkisi aynı anda açılamıyor
+> ESP-IDF'in provisioning yöneticisi tek bir statik bağlam tutar ve yapılandırmasında **tek bir scheme** alır. `scheme_ble` Wi-Fi'yi `WIFI_MODE_STA`'ya, `scheme_softap` ise `WIFI_MODE_APSTA`'ya alır; ikisi bir oturumda birlikte çalışamaz. Kaynak: `components/wifi_provisioning/src/manager.c` (tek `prov_ctx`), `scheme_ble.c:337` ve `scheme_softap.c:185`, ESP-IDF v5.5.1.
+>
+> [[07-decisions/ADR-0005-dual-provisioning|ADR-0005]] ikisinin "birlikte sunulması"nı söylüyor. Bu, protocomm üzerine özel bir katman yazılmadan mümkün değil. Firmware şimdilik scheme'i parametre olarak alıyor ve **SoftAP'ı varsayılan yapıyor** (uygulamasız yol herkes için çalışır). Nihai davranış ADR-0005'i güncelleyen bir kararla belirlenecek; seçenekler o kayıtta.
 
 ESP32-S3'te Bluetooth Classic/A2DP bulunmaması BLE provisioning'i engellemez. Provisioning tamamlanınca BLE servisi durdurulacak ve ayrılan bellek serbest bırakılacak; normal AirPlay çalışmasında BLE açık tutulmayacak.
 

@@ -22,7 +22,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SKIP_DIRS = {".git", ".obsidian", "node_modules", "generated"}
+# Third-party and generated trees. managed_components holds vendored ESP-IDF
+# components whose documentation is not ours to police.
+SKIP_DIRS = {".git", ".obsidian", "node_modules", "generated",
+             "managed_components", "build"}
 
 # The vault frontmatter contract applies to notes under docs/ only. Agent and
 # skill definitions follow their own tool-defined schema, checked separately.

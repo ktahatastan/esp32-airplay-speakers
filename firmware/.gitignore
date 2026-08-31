@@ -3,7 +3,9 @@ build/
 sdkconfig
 sdkconfig.old
 managed_components/
-dependencies.lock
+
+# dependencies.lock is NOT ignored: it pins the exact managed-component
+# versions, and a build that cannot be reproduced is not a build.
 
 # Host test build output
 /test/build/

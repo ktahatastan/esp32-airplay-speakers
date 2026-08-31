@@ -69,10 +69,17 @@ with no warnings in project sources, the host suite passes, the partition gate
 and its own tests pass, and `PROJECT_VER` in the built image matches
 `version.txt`.
 
-The button, LED and provisioning modules are complete policy, fully covered by
-host tests. What is missing is the layer beneath them: no GPIO is configured,
-no PWM runs, no radio is started. `app_main` prints what those policies decide
-and acts on none of it.
+The button and LED now have a driver: the pin is read, the PWM runs, and the
+network layer starts Wi-Fi, mDNS and SoftAP provisioning. None of that has run
+on a board, so treat every behaviour below the policy modules as written but
+unproven.
+
+Two things will stop provisioning from opening on a fresh device, both on
+purpose. There is no tool yet that writes the per-device SRP6a salt and
+verifier, and without them the firmware refuses to provision rather than fall
+back to a weaker security mode. And the BLE transport needs `CONFIG_BT_ENABLED`,
+which this build does not set, because ESP-IDF cannot run BLE and SoftAP
+provisioning in the same session — see the open question on ADR-0005.
 
 **Not verified: nothing has run on hardware.** No board has been flashed, so the
 boot report, the GPIO assignment and the PSRAM detection are unexercised. The
@@ -94,6 +101,8 @@ firmware/
     hk_button/          function button: debounce, hold levels, what commits
     hk_led/             which status wins the single LED, and how it looks
     hk_provision/       when the setup radios are open, and when they shut
+    hk_ui/              button GPIO and RGB PWM, on its own low-priority task
+    hk_network/         Wi-Fi, mDNS and the provisioning transport
   test/                 host unit tests, built with plain CMake
   tools/                partition and size validation
 ```

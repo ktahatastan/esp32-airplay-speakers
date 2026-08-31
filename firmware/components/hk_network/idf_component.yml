@@ -1,0 +1,4 @@
+dependencies:
+  # mDNS is not in the ESP-IDF tree; it ships as a managed component. Pinned to
+  # a minor version so a build that passed yesterday cannot break today.
+  espressif/mdns: "^1.8.0"

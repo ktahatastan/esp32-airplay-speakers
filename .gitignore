@@ -23,3 +23,7 @@ Thumbs.db
 
 # Host test builds
 build/host-tests/
+
+# Python bytecode
+__pycache__/
+*.pyc

@@ -10,8 +10,9 @@
  *   F1  AirPlay stack is not chosen (ADR-0007 is still open)
  *   F2  audio path needs G1, the amplifier on a dummy load
  *   F3  DSP protection needs G0, the driver impedance measurement
- *   F4  provisioning
- *   F5  button and LED
+ *   F4  Wi-Fi, mDNS and SoftAP provisioning are live; per-device credentials
+ *       must be written before provisioning can open
+ *   F5  button and LED are live; storage-backed reset actions wait for F6
  *   F6  storage and power telemetry, needs G4
  *   F7  OTA, needs G6
  *
@@ -37,8 +38,10 @@
 #include "hk_button.h"
 #include "hk_identity.h"
 #include "hk_led.h"
+#include "hk_network.h"
 #include "hk_pins.h"
 #include "hk_provision.h"
+#include "hk_ui.h"
 #include "hk_version.h"
 
 static const char *TAG = "hk";
@@ -150,30 +153,84 @@ static void report_hardware(void)
     }
 }
 
-/**
- * Report what the policy modules decide, without acting on any of it.
- *
- * These state machines are complete and host-tested, but the layers that would
- * carry out their decisions are not: no GPIO is configured, no radio is
- * started. Printing the decision is how a bring-up session can compare the
- * policy against the documented tables before anything is driven.
- */
-static void report_policy(void)
-{
-    /* Nothing has read the button or storage yet, so the inputs here are the
-     * documented cold-start case: no credentials, button not held. */
-    hk_prov_t provisioning;
-    hk_prov_init(&provisioning, false, false, 0);
-    hk_prov_radios_t radios = hk_prov_radios(&provisioning);
-    ESP_LOGI(TAG, "provisioning %s (ble=%d softap=%d) on a device with no stored credentials",
-             hk_prov_state_name(provisioning.state), radios.ble, radios.softap);
+/** Provisioning policy for this boot. Nothing drives the radios yet. */
+static hk_prov_t s_provisioning;
 
-    hk_led_inputs_t led_inputs = {.booting = true};
-    hk_led_state_t led = hk_led_resolve(&led_inputs);
-    const hk_led_pattern_t *pattern = hk_led_pattern(led);
-    ESP_LOGI(TAG, "led          %s rgb(%u,%u,%u) at %u%%",
-             hk_led_state_name(led), pattern->red, pattern->green, pattern->blue,
-             pattern->brightness);
+/**
+ * Act on a committed button gesture.
+ *
+ * Runs in the UI task, so it stays short. The destructive branches log their
+ * intent rather than performing it: the storage layer that would carry them out
+ * is F6 work, and wiring a half-built erase path to a physical button is how a
+ * user loses their calibration by accident.
+ */
+static void on_button(hk_button_event_t event, void *context)
+{
+    (void)context;
+    switch (event) {
+    case HK_BUTTON_EVENT_SHORT_PRESS:
+        hk_prov_handle(&s_provisioning, HK_PROV_EV_BUTTON_SHORT, 0);
+        ESP_LOGI(TAG, "button: opening provisioning -> %s",
+                 hk_prov_state_name(s_provisioning.state));
+        if (hk_network_open_provisioning() != ESP_OK) {
+            ESP_LOGE(TAG, "could not open provisioning");
+        }
+        break;
+    case HK_BUTTON_EVENT_NETWORK_RESET:
+        ESP_LOGW(TAG, "button: forgetting Wi-Fi credentials");
+        hk_prov_handle(&s_provisioning, HK_PROV_EV_NETWORK_RESET, 0);
+        if (hk_network_forget_credentials() != ESP_OK) {
+            ESP_LOGE(TAG, "could not clear credentials");
+        }
+        break;
+    case HK_BUTTON_EVENT_FACTORY_RESET:
+        ESP_LOGW(TAG, "button: factory reset requested; storage layer is F6, nothing erased. "
+                      "When it exists it restores user settings only and never touches "
+                      "factory_cal (PRD-008)");
+        break;
+    case HK_BUTTON_EVENT_NONE:
+    default:
+        break;
+    }
+}
+
+/** Mirror the network layer's state onto the status LED. */
+static void on_network_status(const hk_net_status_t *network, void *context)
+{
+    (void)context;
+    hk_led_inputs_t status = {
+        .provisioning = network->provisioning,
+        .connecting = network->connecting,
+        .ready = network->connected,
+        .error = network->error,
+    };
+    hk_ui_set_status(&status);
+}
+
+/**
+ * Bring up the network.
+ *
+ * A failure here is reported and survived rather than fatal. The most likely
+ * one on a fresh board is that the per-device provisioning credentials have
+ * never been written, and a device that reboots forever cannot tell anyone
+ * that. It stays up, lights the error state, and says why.
+ */
+static void start_network(void)
+{
+    hk_prov_init(&s_provisioning, hk_network_is_provisioned(),
+                 hk_ui_recovery_requested(), 0);
+    ESP_LOGI(TAG, "provisioning policy: %s, bounded=%d",
+             hk_prov_state_name(s_provisioning.state), s_provisioning.bounded);
+
+    /* SoftAP is the app-less path and works for every user, so it is the
+     * default. ESP-IDF cannot run both transports at once; see the note in
+     * hk_network.h and the open question against ADR-0005. */
+    esp_err_t err = hk_network_start(HK_NET_SCHEME_SOFTAP, on_network_status, NULL);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "network did not start: %s", esp_err_to_name(err));
+        hk_led_inputs_t status = {.error = true};
+        hk_ui_set_status(&status);
+    }
 
     ESP_LOGI(TAG, "button       short %u-%u ms, network reset %u ms, factory reset %u ms",
              (unsigned)HK_BUTTON_SHORT_MIN_MS, (unsigned)HK_BUTTON_SHORT_MAX_MS,
@@ -197,9 +254,13 @@ void app_main(void)
     report_hardware();
     ESP_ERROR_CHECK(report_identity());
     report_pins();
-    report_policy();
-    ESP_LOGW(TAG, "F0 build: no audio, no network, no GPIO driven. The button, LED and "
-                  "provisioning policies above are decided but not acted on. "
+
+    /* The UI is the one subsystem whose hardware layer exists, so it really
+     * runs: the button is read and the LED is driven. */
+    ESP_ERROR_CHECK(hk_ui_start(on_button, NULL));
+    start_network();
+    ESP_LOGW(TAG, "no audio and no network in this build. The button and LED are live; "
+                  "the provisioning policy is decided but its radios are not started. "
                   "See docs/03-firmware/firmware-plan.md for what comes next.");
 
     /* Idle. A busy loop here would only burn power and hide the log. */
