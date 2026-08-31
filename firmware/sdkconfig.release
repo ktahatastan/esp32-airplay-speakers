@@ -1,0 +1,48 @@
+# Harman Kardom surum profili. Yalnizca .github/workflows/release.yml kullanir:
+#
+#   idf.py -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.release" build
+#
+# Bu dosyayi tek basina kullanmayin. Actigi imza denetimi, imzasiz bir
+# uygulamada acilista abort() ile sonuclanir (esp_efuse_startup.c:103 ->
+# esp_secure_boot_init_checks() -> check_signature_on_update_check(),
+# ESP-IDF v5.5.1). Yani bu profille derlenen her ikili, cihaza yazilmadan ve
+# yayimlanmadan once espsecure.py ile imzalanmak ZORUNDA.
+
+# --- OTA sirasinda imza dogrulamasi.
+#     ESP32-S3'te bu seçenek hicbir eFuse yakmaz ve geri alinabilir: sdkconfig
+#     duzeltilip USB'den yeniden flash'lanir. Donanimsal Secure Boot V2'nin
+#     zayif ama geri donulebilir kardesi.
+#     Kapsam durustce sinirli: S3'te imza yalnizca OTA aninda dogrulanir, ACILIS
+#     ANINDA DEGIL. Acilista dogrulama SECURE_SIGNED_ON_BOOT_NO_SECURE_BOOT'a,
+#     o da SECURE_BOOT_V1_SUPPORTED'a bagli ve S3'te SOC_SECURE_BOOT_V1 yok.
+#     Yani bu ayar uzaktan sahte guncellemeye karsi korur, fiziksel erisime
+#     karsi korumaz. Kabul edilen takas: dort cihaz kullanicinin evinde.
+CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT=y
+
+# --- Ozel anahtar derleme sirasinda ISTENMEZ. Boylece CI is akisinin derleme
+#     adimi anahtari hic gormez; imzalama ayri ve korumali bir adimdir.
+CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES=n
+
+# --- Geri alma korumasi (anti-rollback) BILEREK KAPALI.
+#     CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK yazilim ayari degil, eFuse yakar:
+#     bootloader gecerli her aciliista secure_version alanini eFuse'a isler.
+#     S3'te alan 16 bitlik unary, yani toplam 16 artis hakki var ve geri
+#     alinamaz. Bir kez secure_version=12 yayimlamak o cihazin 12 hakkini
+#     kalici harcar ve daha eski her imaji o yongada kalici olarak
+#     acilamaz yapar. Dort prototip icin bu takas kotu.
+#     Manifest'teki "secure_version" alani ayrilmis olarak durur ve hk_manifest
+#     icinde yalnizca YAZILIMSAL olarak karsilastirilir; eFuse yakilmaz.
+CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK=n
+
+# --- OTA geri donusu HENUZ KAPALI, sdkconfig.defaults ile ayni gerekcyle.
+#     Acikken yeni imaj "pending verify" olarak acilir ve uygulama
+#     esp_ota_mark_app_valid_cancel_rollback() cagirmazsa bootloader onceki
+#     yuvaya doner. O cagriyi yapacak ilk-acilis saglik denetimi henuz
+#     yazilmadi, dolayisiyla bunu simdi acmak her OTA'nin her seferinde geri
+#     donmesi demek olurdu -- guncelleme hic tutmazdi.
+#     Bu satir ve saglik denetimi AYNI degisiklikte acilir. Ayri acilirlarsa
+#     ya guncelleme tutmaz (denetim yok, bayrak var) ya da bozuk bir imaj
+#     kalici olur (denetim var, bayrak yok).
+#     Kabul kosulu: docs/03-firmware/ota-and-release-plan.md icindeki bes
+#     maddelik ilk-acilis listesi kodda karsiligini bulduktan sonra.
+CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=n

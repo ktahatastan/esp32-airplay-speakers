@@ -64,5 +64,8 @@ void test_button(void);
 void test_led(void);
 void test_provision(void);
 void test_schema(void);
+void test_manifest(void);
+void test_gate(void);
+void test_ota(void);
 
 #endif /* HK_TEST_H */

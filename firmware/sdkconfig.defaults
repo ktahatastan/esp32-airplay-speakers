@@ -42,3 +42,19 @@ CONFIG_BT_NIMBLE_ENABLED=y
 # --- Diagnostics must never carry credentials (docs/03-firmware/security-and-recovery.md)
 CONFIG_LOG_DEFAULT_LEVEL_INFO=y
 CONFIG_LOG_MAXIMUM_LEVEL_DEBUG=y
+
+# --- TLS kok sertifikalari. Varsayilan paket FULL kalir; uzerine certs/
+#     dizinindeki ek kokler bindirilir. Neden gerektigi certs/README.md'de
+#     olculmus haliyle duruyor: GitHub'in release varlik sunucusu ISRG Root YR
+#     altinda ve o kok ESP-IDF v5.5.1 paketinde yok.
+CONFIG_MBEDTLS_CERTIFICATE_BUNDLE=y
+CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_FULL=y
+CONFIG_MBEDTLS_CUSTOM_CERTIFICATE_BUNDLE=y
+CONFIG_MBEDTLS_CUSTOM_CERTIFICATE_BUNDLE_PATH="certs/isrg-root-yr.pem"
+
+# --- Uygulama imzasi burada ACIK DEGIL, bilerek. Acildiginda ESP-IDF acilista
+#     esp_secure_boot_init_checks() -> check_signature_on_update_check() yolunu
+#     isletir ve imzasiz bir uygulamada abort() eder; yani duz "idf.py flash"
+#     ile derlenen bir gelistirme yapisi boot dongusune girer. Imzalama yalniz
+#     imzalama adiminin ayni is icinde kesin calistigi surum yolunda acilir:
+#     sdkconfig.release. Ayrinti ADR-0008'de.

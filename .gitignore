@@ -1,5 +1,6 @@
 # Build and tool output
 build/
+build-release/
 dist/
 .pio/
 .cache/
@@ -11,6 +12,14 @@ Thumbs.db
 .DS_Store
 *.swp
 .claude/settings.local.json
+
+# Firmware signing keys never enter the repository. They are generated offline
+# and live only in the protected 'release' GitHub environment (ADR-0008).
+# firmware/certs/*.pem is deliberately NOT covered: those are public root
+# certificates, not keys.
+*signing_key*.pem
+secure_boot_signing_key*
+*.pem.key
 
 # Local secrets; commit only documented examples
 .env

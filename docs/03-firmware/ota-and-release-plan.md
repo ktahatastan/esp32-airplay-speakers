@@ -12,7 +12,7 @@ tags: [firmware, ota, github-actions, releases, semver, recovery]
 
 Harman Kardom cihazları, kararlı bir firmware GitHub Release olarak yayımlandıktan sonra güncellemeyi internet üzerinden otomatik olarak bulur, güvenli koşullarda indirir, kullanılmayan OTA slotuna yazar, yeniden başlatır ve açılış öz-testinden sonra sürümü onaylar. Başarısız açılışta önceki çalışan imaja geri döner.
 
-Bu özellik henüz uygulanmış değildir. Firmware projesi oluşturulmadığı için durum `planned`; otomatik güncelleme G6 kanıtı olmadan tamamlanmış sayılmaz.
+F7 aşamasında manifest doğrulayıcı, güncelleme kapıları, OTA istemcisi, imzalama profili ve etiket/yayın hattı yazıldı ve ana makinede doğrulandı. Durum yine de `planned`: **hiçbiri cihaz üzerinde çalıştırılmadı**, donanım henüz elde değil ve otomatik güncelleme G6 kanıtı olmadan tamamlanmış sayılmaz. Bu belgede "yazıldı" ile "kanıtlandı" ayrı tutulur.
 
 ## Mimari
 
@@ -91,60 +91,86 @@ Kritik öz-test hatasında `esp_ota_mark_app_invalid_rollback_and_reboot()` kull
 
 ### `v*.*.*` etiketi release hattı
 
-1. Etiketin SemVer olduğunu ve firmware `PROJECT_VER` ile eşleştiğini doğrula.
-2. Temiz checkout'ta test ve tekrarlanabilir release build çalıştır.
-3. Uygulama imajını korunan imzalama ortamında imzala.
-4. SHA-256, boyut, ESP-IDF/toolchain sürümü, commit SHA, `target`, `hw_revision`, `secure_version` ve kanal bilgisi içeren manifest üret.
-5. GitHub Release ve otomatik release notes oluştur.
-6. Release asset'lerini yükle; yükleme ve checksum doğrulanmadan release'i yayımlama.
-7. Prerelease canary doğrulamasından sonra aynı imzalı asset'i stable olarak terfi ettir; yeniden build etme.
+`.github/workflows/release.yml`, üç iş: `verify` → `build` → `publish`.
 
-Release job yalnız gerekli kapsamla `contents: write` izni alır. İmzalama özel anahtarı repoya, firmware'e, workflow artifact'ine veya loglara yazılmaz. Prototipte GitHub protected environment secret değerlendirilebilir; üretimde uzak imzalama/HSM tercih edilir.
+1. **verify** — `check_docs`, ana makine birim testleri, araç testleri ve depo değişmezleri (`check_partitions`, `check_storage_isolation`, `check_no_credential_logs`).
+2. **build** — `sdkconfig.defaults` + `sdkconfig.release` ile derler. **İmzalama anahtarını görmez.** Ayrıca sürüm profilinin gerçekten imza istediğini ve anti-rollback'in kapalı kaldığını üretilen `sdkconfig` üzerinden doğrular; bu seçenek sessizce kapansaydı başka hiçbir şey fark etmezdi. Boyut kapısı burada çalışır.
+3. **publish** — korumalı `release` ortamına bağlıdır ve `contents: write` iznini yalnız bu iş alır. Görüntüyü `espsecure.py sign_data --version 2` ile imzalar, imzayı geri doğrular, manifest'i **imzalanmış** dosyadan üretir, manifest ile ikilinin uyuştuğunu bir kez daha okuyup karşılaştırır, sonra release'i oluşturur.
+
+Anahtar çevrimdışı bir kez üretilir ve yalnız `release` ortamının `HK_SIGNING_KEY` gizli değerinde yaşar:
+
+```bash
+idf.py secure-generate-signing-key --version 2 --scheme rsa3072 hk_signing_key.pem
+```
+
+Bölünmenin nedeni: `CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES=n` sayesinde derleme anahtarsız başarılı olur — ESP-IDF'in kendisi "App built but not signed. Sign app before flashing" der. Böylece CI'ya dokunan bir değişiklik anahtara ulaşamaz; kimin yayımlayabileceğini gözden geçirmek, o ortamı gözden geçirmekle aynı şeydir.
+
+Manifest'in imzalı dosyadan üretilmesi zorunludur: imzalama görüntüyü sektör sınırına doldurur ve 4096 baytlık imza sektörü ekler, yani imzasız ikiliden üretilen manifest yanlış boyut ve özet taşır ve her cihaz reddeder.
+
+`prerelease` canary doğrulamasından sonra **aynı imzalı asset** stable'a terfi ettirilir; yeniden derlenmez.
 
 ## Release asset sözleşmesi
 
-Örnek `v1.0.0` release içeriği:
+`v0.1.0` release içeriği:
 
 ```text
-harman-kardom-esp32s3-n16r8-v1.0.0.bin
-harman-kardom-esp32s3-n16r8-v1.0.0.manifest.json
-harman-kardom-esp32s3-n16r8-v1.0.0.sha256
-release-notes.md
+harman-kardom.bin          imzalı uygulama imajı
+manifest.json              cihazın okuduğu sürüm tanımı
+bootloader.bin             yalnız USB kurtarma için; OTA ile gönderilmez
+partition-table.bin        yalnız USB kurtarma için; OTA ile gönderilmez
 ```
 
-Manifestte en az şu alanlar bulunur:
+Manifest `firmware/tools/make_manifest.py` tarafından üretilir. `product`, `version` ve `secure_version` komut satırından **alınmaz**, imzalı ikilinin uygulama tanımlayıcısından okunur; böylece manifest ile görüntünün çelişmesi ifade edilemez. Etiket ise doğrulanır: `v0.3.0` etiketiyle 0.2.0 derlemesi yayımlanamaz.
+
+Gerçek çıktı (0.1.0 sürüm profili derlemesinden, 2026-08-31):
 
 ```json
 {
-  "product": "Harman Kardom",
-  "version": "1.0.0",
+  "asset": "https://github.com/OWNER/REPO/releases/download/v0.1.0/harman-kardom.bin",
   "channel": "stable",
-  "target": "esp32s3",
   "hw_revision": "prototype-n16r8",
-  "asset": "harman-kardom-esp32s3-n16r8-v1.0.0.bin",
-  "size": 0,
-  "sha256": "TBD_BY_CI",
-  "secure_version": 0,
   "min_updater_version": "0.1.0",
-  "commit": "TBD_BY_CI"
+  "product": "harman-kardom",
+  "secure_version": 0,
+  "sha256": "6092fad9b8ae75e2e5fe819fefc2b0f924870e64efee68f27b216dc04c9dc24b",
+  "size": 1126400,
+  "target": "esp32s3",
+  "version": "0.1.0"
 }
 ```
 
-`size`, hash ve commit CI tarafından üretilir; elde düzenlenmez. OTA istemcisi dosya adı yerine manifestteki target/hardware alanlarını doğrular.
+`product` alanı ikilinin `project_name`'idir, yani `harman-kardom` — ürün adının insan okur biçimi (`Harman Kardom`) değil. Cihaz bu ikisini karşılaştırdığı için biçim serbest değildir.
 
-## `esp_ghota` değerlendirmesi
+OTA istemcisi dosya adı yerine manifestteki `target`/`hw_revision` alanlarını doğrular. `size`, `sha256` ve `secure_version` CI tarafından üretilir; elde düzenlenmez.
 
-`esp_ghota`; GitHub Releases üzerinden SemVer denetimi, firmware/filesystem asset indirme, periyodik veya manuel kontrol ve ESP-IDF rollback/anti-rollback ile çalışma özellikleri sunduğu için birinci uygulama adayıdır.
+Manifest'teki `sha256` alanı hakkında dürüst olmak gerekir: **cihaz onu hesaplayıp karşılaştırmaz.** Biçimi (64 küçük harf onaltılık) doğrulanır ve yayın işi imzalı ikiliye karşı denetler, ama indirilen baytların bütünlüğü cihazda ESP-IDF'in kendi eklediği SHA-256 ile sağlanır: `esp_https_ota_finish` → `esp_ota_end` → `esp_image_verify` (`esp_ota_ops.c:459`). Sürüm profilinde buna imza doğrulaması da eklenir. Manifest özeti bu yüzden insan ve CI içindir, cihazın güven zinciri değildir.
 
-Kabul öncesi spike görevleri:
+## `esp_ghota` değerlendirmesi: reddedildi (2026-08-31)
 
-- Seçilecek ESP-IDF ve AirPlay yığınıyla build uyumluluğunu kanıtla.
-- TLS sertifika doğrulaması, redirect davranışı ve GitHub API hata/rate-limit durumlarını test et.
-- Audio task çalışırken heap/PSRAM, flash yazma süresi ve Wi-Fi bant kullanımını ölç.
-- Private-repo tokenını firmware'e gömme. Release kaynağı kimlik doğrulama istiyorsa cihaz başına güvenli kimlik veya ayrı OTA servisi tasarla.
-- Bağımlılığı kesin commit/sürümle sabitle, lisans ve bakım durumunu kaydet.
+Spike yapıldı ve aday elendi. Karar ve kanıt [[../07-decisions/ADR-0008-github-releases-ota|ADR-0008]] içindedir; özet:
 
-Spike başarısızsa ESP-IDF `ESP HTTPS OTA` ile küçük bir release-manifest istemcisi yazılır. GitHub Releases dağıtım kararı korunur; yalnız istemci kütüphanesi değişir.
+| Kriter | Bulgu |
+|---|---|
+| Bakım | Son commit 2024-02-17, 2,5 yıl önce. Üç açık issue, üçü de yanıtsız. |
+| ESP-IDF uyumu | CI matrisi en fazla v5.2. Bu proje v5.5.1'de. |
+| Kurulabilirlik | README'nin kendi komutu çalışmıyor; `fishwaldo/ghota` kayıtta yok, `fishwaldo/esp_ghota` yalnız 0.0.1. |
+| Mimari | Donanım eşleşmesini `fnmatch` ile **dosya adından** yapıyor, manifest kavramı yok. Bu planın kuralının tam tersi. |
+| Lisans | MIT; sorun değil. |
+
+G6 kabul matrisinin dört satırı kütüphanenin çekirdeği yeniden yazılmadan sağlanamıyor. Bu planın öngördüğü yedek yol işletildi: `esp_https_ota` üstünde küçük bir istemci yazıldı.
+
+## Yazılan istemci
+
+| Modül | Ne yapar | Nerede test edilir |
+|---|---|---|
+| `hk_manifest` | Manifest'i **tek bayt indirmeden** yargılar: ürün, hedef, donanım, kanal, SemVer, kesin yenilik, sha256 biçimi, boyut ≤ yuva | Ana makine |
+| `hk_gate` | Güncellemenin şimdi başlayabilir mi olduğunu söyler. Kalibrasyon yoksa `HK_GATE_NO_LIMITS` ile engeller | Ana makine |
+| `hk_ota` (saf C) | İnen görüntünün tanımlayıcısını manifest'in vaadiyle karşılaştırır; varlık URL'sini denetler | Ana makine |
+| `hk_ota_client` | HTTPS, JSON, `esp_https_ota` döngüsü. Yukarıdakileri doğru sırayla çağırır | Yalnız derleme; çalışma G6'yı bekler |
+
+Sıralama tasarımın kendisidir: manifest **indirmeden önce**, kapılar **soket açılmadan önce**, görüntü tanımlayıcısı **açılış bölümü taşınmadan önce** yargılanır.
+
+`hk_ota_image_check()` neden var: ESP-IDF v5.5.1 `esp_https_ota_get_img_desc` yalnız `magic_word` denetler ve `project_name`'i OTA yolunda hiç karşılaştırmaz. Başka bir projenin doğru derlenmiş ESP32-S3 görüntüsü IDF'in tüm denetimlerinden geçer. Bu karşılaştırma onu yakalayan tek yerdir.
 
 ## Dört cihaz için dağıtım
 
@@ -173,21 +199,39 @@ Spike başarısızsa ESP-IDF `ESP HTTPS OTA` ile küçük bir release-manifest i
 
 Her satır [[../templates/test-report|test raporu]] ile kanıtlanır. G6 geçmeden “otomatik güncelleme hazır” denmez.
 
+## İmzalama, geri alma ve sertifika kararları
+
+Üçü de [[../07-decisions/ADR-0008-github-releases-ota|ADR-0008]]'de gerekçesiyle kayıtlıdır. Buradaki özet işletim içindir:
+
+- **İmzalama** `CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT` ile yapılır ve **hiçbir eFuse yakmaz**; geri alınabilir. Kapsamı sınırlıdır: imza yalnız OTA anında doğrulanır, açılışta değil (ESP32-S3'te açılış doğrulaması yalnız Secure Boot V1 donanımında var, S3'te yok). Uzaktan sahte güncellemeye karşı korur, fiziksel erişime karşı korumaz.
+- Bu yüzden imzalama ayarı `sdkconfig.defaults` içinde **değildir**, `sdkconfig.release` içindedir. Açık olsaydı imzasız bir geliştirme yapısı açılışta `abort()` ederdi (`esp_efuse_startup.c:103` → `esp_secure_boot_init_checks()`), yani düz `idf.py flash` boot döngüsü verirdi.
+- **Anti-rollback (`CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK`) kapalıdır ve öyle kalır.** eFuse yakar, ESP32-S3'te ömür boyu 16 artış hakkı vardır ve geri alınamaz. `secure_version` yalnız yazılımsal karşılaştırılır.
+- **Sertifika paketi**: GitHub'ın sürüm varlık sunucusu `ISRG Root YR` altındadır ve o kök ESP-IDF v5.5.1 paketinde **yoktur**. Bugün yalnız çapraz imza sayesinde çalışıyor. Kök `firmware/certs/isrg-root-yr.pem` olarak eklendi; gerekçesi ve ölçümü `firmware/certs/README.md` içinde. **2032-09-02'de dolar, öncesinde yenilenmeli.**
+
 ## Uygulama iş listesi
 
-- [ ] Firmware framework/ESP-IDF sürümünü kilitle.
-- [ ] `esp_ghota` uyumluluk ve kaynak kullanımı spike'ı.
-- [ ] OTA partition CSV ve size budget.
-- [ ] Firmware version/build metadata modülü.
-- [ ] Manifest parser ve donanım eşleme testleri.
-- [ ] Güç/thermal/audio update gate state machine.
-- [ ] HTTPS indirme, progress event ve LED entegrasyonu.
-- [ ] İlk-boot health check ve rollback.
-- [ ] GitHub Actions PR CI.
-- [ ] SemVer tag release, imzalama, SHA-256 ve asset yükleme.
-- [ ] Canary/stable kanal politikası.
-- [ ] USB/UART recovery prosedürü.
-- [ ] G6 enerji kesintisi ve rollback testleri.
+Yazıldı ve ana makinede doğrulandı:
+
+- [x] Firmware framework/ESP-IDF sürümünü kilitle (v5.5.1).
+- [x] `esp_ghota` uyumluluk spike'ı — reddedildi, yerine kendi istemcimiz.
+- [x] OTA partition CSV ve size budget.
+- [x] Firmware version/build metadata modülü (`hk_version`).
+- [x] Manifest parser ve donanım eşleme testleri (`hk_manifest`).
+- [x] Güç/thermal/audio update gate state machine (`hk_gate`).
+- [x] İnen görüntünün manifest ile karşılaştırılması (`hk_ota`).
+- [x] HTTPS indirme istemcisi (`hk_ota_client`) — derleniyor, çalıştırılmadı.
+- [x] GitHub Actions PR CI.
+- [x] SemVer tag release, imzalama, manifest üretimi ve asset yükleme.
+
+Açık:
+
+- [ ] Progress event ve LED entegrasyonu (`hk_led` OTA durumu tanımlı, istemciye bağlanmadı).
+- [ ] İlk-boot health check ve `esp_ota_mark_app_valid_cancel_rollback()` çağrısı. `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` bu çağrı yazılana kadar **kapalı** kalır; açık olsaydı yayımlanan her imaj ilk yeniden başlatmada geri döner ve güncelleme hiç tutmazdı. İkisi aynı değişiklikte açılır ve yayın hattı bunu denetler.
+- [ ] Güncelleme zamanlayıcısı: rastgele gecikme, günde en fazla bir kontrol, backoff.
+- [ ] Canary/stable kanal politikasının işletilmesi.
+- [ ] USB/UART recovery prosedürünün yazılması.
+- [ ] `HK_SIGNING_KEY` üretimi ve `release` ortamının korumaya alınması — sahibi yapar, CI değil.
+- [ ] G6 enerji kesintisi ve rollback testleri — **donanım bekliyor**.
 
 ## Kaynaklar
 
@@ -196,5 +240,6 @@ Her satır [[../templates/test-report|test raporu]] ile kanıtlanır. G6 geçmed
 - [ESP-IDF ESP32-S3 partition tabloları](https://docs.espressif.com/projects/esp-idf/en/release-v5.3/esp32s3/api-guides/partition-tables.html) — `otadata`, `ota_0`, `ota_1`; erişim 2026-08-30.
 - [ESP32-S3 Secure Boot v2](https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/security/secure-boot-v2.html) — imzalı image ve anahtar yönetimi; erişim 2026-08-30.
 - [GitHub Releases](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases) ve [otomatik release notes](https://docs.github.com/en/repositories/releasing-projects-on-github/automatically-generated-release-notes) — release asset dağıtımı; erişim 2026-08-30.
+- ESP-IDF v5.5.1 kaynak ağacı, F7 kararlarının birincil dayanağı: `components/bootloader/Kconfig.projbuild` (imzalama seçenekleri), `components/bootloader_support/src/secure_boot.c` (imzasız uygulamada `abort()`), `components/esp_https_ota/src/esp_https_ota.c:589-594` (yalnız magic word denetimi), `components/mbedtls/esp_crt_bundle/cacrt_all.pem` (150 kök, ISRG Root YR yok); okuma 2026-08-31.
 - Kullanıcının verdiği ek uygulama örnekleri: [GitHub Actions ile ESP32 release](https://www.smartlab.at/an-automated-ci-cd-pipeline-to-build-and-release-your-esp32-firmware-with-github-actions/) ve [SPIFFS/GitHub Actions örneği](https://blog.r0b.io/post/deploying-esp32-with-spiffs-using-github-actions/); erişim 2026-08-30.
 

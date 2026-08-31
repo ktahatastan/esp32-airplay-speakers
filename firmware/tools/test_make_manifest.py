@@ -1,0 +1,209 @@
+#!/usr/bin/env python3
+"""Tests for make_manifest.py.
+
+The generator's job is to make manifest-versus-image disagreement impossible,
+so the cases that matter are the ones where something tries to introduce a
+disagreement anyway.
+"""
+import hashlib
+import json
+import re
+import struct
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import make_manifest  # noqa: E402
+
+TOOL = Path(__file__).resolve().parent / "make_manifest.py"
+
+
+def make_image(version="0.2.0", project="harman-kardom", secure_version=0,
+               chip_id=0x0009, magic=0xABCD5432, first_byte=0xE9, payload=4096):
+    """Assemble a minimal but structurally correct ESP32-S3 app image."""
+    header = bytearray(24)
+    header[0] = first_byte
+    struct.pack_into("<H", header, 12, chip_id)
+
+    segment = bytearray(8)
+
+    desc = bytearray(256)
+    struct.pack_into("<II", desc, 0, magic, secure_version)
+    desc[16:16 + len(version)] = version.encode()
+    desc[48:48 + len(project)] = project.encode()
+
+    body = bytes(payload)
+    return bytes(header) + bytes(segment) + bytes(desc) + body
+
+
+class TestReadAppDesc(unittest.TestCase):
+    def _write(self, blob):
+        path = Path(self.tmp.name) / "image.bin"
+        path.write_bytes(blob)
+        return path
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+
+    def test_reads_the_fields_it_publishes(self):
+        path = self._write(make_image(version="1.4.2", project="harman-kardom",
+                                      secure_version=3))
+        desc = make_manifest.read_app_desc(path)
+        self.assertEqual(desc["version"], "1.4.2")
+        self.assertEqual(desc["project_name"], "harman-kardom")
+        self.assertEqual(desc["secure_version"], 3)
+
+    def test_rejects_a_non_image(self):
+        path = self._write(b"this is not firmware")
+        with self.assertRaises(make_manifest.ImageError):
+            make_manifest.read_app_desc(path)
+
+    def test_rejects_a_missing_image_magic(self):
+        path = self._write(make_image(first_byte=0x00))
+        with self.assertRaises(make_manifest.ImageError):
+            make_manifest.read_app_desc(path)
+
+    def test_rejects_another_chip(self):
+        """An ESP32-C3 build must not be published as an S3 release."""
+        path = self._write(make_image(chip_id=0x0005))
+        with self.assertRaises(make_manifest.ImageError) as caught:
+            make_manifest.read_app_desc(path)
+        self.assertIn("ESP32-S3", str(caught.exception))
+
+    def test_rejects_a_bad_descriptor_magic(self):
+        """Reading at the wrong offset produces plausible garbage, so the magic
+        word is the only thing that catches it."""
+        path = self._write(make_image(magic=0x12345678))
+        with self.assertRaises(make_manifest.ImageError):
+            make_manifest.read_app_desc(path)
+
+
+class TestBuildManifest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+
+    def _run(self, image_blob, tag="v0.2.0", extra=()):
+        path = Path(self.tmp.name) / "image.bin"
+        path.write_bytes(image_blob)
+        out = Path(self.tmp.name) / "manifest.json"
+        result = subprocess.run(
+            [sys.executable, str(TOOL), "--image", str(path), "--tag", tag,
+             "--asset-url", "https://github.com/o/r/releases/download/x/hk.bin",
+             "--out", str(out), *extra],
+            capture_output=True, text=True)
+        return result, out
+
+    def test_publishes_what_the_image_says(self):
+        blob = make_image(version="0.2.0")
+        result, out = self._run(blob)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        manifest = json.loads(out.read_text())
+        self.assertEqual(manifest["version"], "0.2.0")
+        self.assertEqual(manifest["product"], "harman-kardom")
+        self.assertEqual(manifest["target"], "esp32s3")
+        self.assertEqual(manifest["size"], len(blob))
+        self.assertEqual(manifest["sha256"], hashlib.sha256(blob).hexdigest())
+
+    def test_tag_must_match_the_built_version(self):
+        """The failure this exists for: tagging v0.3.0 and publishing an
+        unchanged 0.2.0 binary, which the device would then refuse forever."""
+        result, _ = self._run(make_image(version="0.2.0"), tag="v0.3.0")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("0.3.0", result.stderr)
+        self.assertIn("0.2.0", result.stderr)
+
+    def test_tag_without_the_v_prefix_is_accepted(self):
+        result, _ = self._run(make_image(version="0.2.0"), tag="0.2.0")
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_image_larger_than_the_slot_is_refused(self):
+        result, _ = self._run(make_image(payload=8192),
+                              extra=("--slot-size", "4096"))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("slot", result.stderr)
+
+    def test_manifest_carries_every_field_the_device_requires(self):
+        """hk_manifest refuses any manifest missing a required field, so the
+        generator and the firmware have to agree on the list."""
+        result, out = self._run(make_image(version="0.2.0"))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        manifest = json.loads(out.read_text())
+        required = {"product", "version", "channel", "target", "hw_revision",
+                    "asset", "size", "sha256", "secure_version",
+                    "min_updater_version"}
+        self.assertEqual(required - set(manifest), set())
+
+    def test_sha256_is_lowercase_hex_of_the_right_length(self):
+        _, out = self._run(make_image())
+        digest = json.loads(out.read_text())["sha256"]
+        self.assertEqual(len(digest), 64)
+        self.assertEqual(digest, digest.lower())
+        self.assertTrue(all(c in "0123456789abcdef" for c in digest))
+
+
+class TestGeneratorAgreesWithFirmware(unittest.TestCase):
+    """The two ends of the contract, checked against each other.
+
+    hk_ota_client.c names every field it will read; hk_manifest.h says all of
+    them are required and a missing one is refused. If this generator spells
+    one differently — hw_rev for hw_revision, say — nothing fails at build
+    time, nothing fails in CI, and every device refuses every update forever
+    with a message about a missing field. Comparing the two lists is the only
+    place that mismatch is cheap to catch.
+    """
+
+    def setUp(self):
+        self.firmware = Path(__file__).resolve().parents[1]
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+
+    def _generated_keys(self):
+        path = Path(self.tmp.name) / "image.bin"
+        path.write_bytes(make_image(version="0.2.0"))
+        out = Path(self.tmp.name) / "m.json"
+        result = subprocess.run(
+            [sys.executable, str(TOOL), "--image", str(path), "--tag", "v0.2.0",
+             "--asset-url", "https://github.com/o/r/releases/download/x/hk.bin",
+             "--out", str(out)], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return set(json.loads(out.read_text()))
+
+    def _keys_the_client_reads(self):
+        source = (self.firmware / "components/hk_ota/hk_ota_client.c").read_text()
+        keys = set(re.findall(r'take_(?:string|u32)\(root, "([a-z0-9_]+)"', source))
+        self.assertTrue(keys, "found no manifest keys in hk_ota_client.c")
+        return keys
+
+    def test_every_field_the_client_reads_is_generated(self):
+        missing = self._keys_the_client_reads() - self._generated_keys()
+        self.assertEqual(missing, set(),
+                         f"firmware reads fields the generator never writes: {missing}")
+
+    def test_the_generator_writes_nothing_the_client_ignores(self):
+        extra = self._generated_keys() - self._keys_the_client_reads()
+        self.assertEqual(extra, set(),
+                         f"generator writes fields the firmware never reads: {extra}")
+
+    def test_the_field_list_matches_hk_manifest_required(self):
+        """And both match the bitmask the validator insists on."""
+        header = (self.firmware / "components/hk_manifest/include/hk_manifest.h").read_text()
+        block = header.split("HK_MANIFEST_REQUIRED_FIELDS")[1].split("/**")[0]
+        bits = set(re.findall(r"HK_MF_([A-Z0-9_]+)", block))
+        expected = {
+            "PRODUCT": "product", "VERSION": "version", "CHANNEL": "channel",
+            "TARGET": "target", "HW_REVISION": "hw_revision", "ASSET": "asset",
+            "SIZE": "size", "SHA256": "sha256", "SECURE_VER": "secure_version",
+            "MIN_UPDATER": "min_updater_version",
+        }
+        self.assertEqual(bits, set(expected),
+                         "HK_MANIFEST_REQUIRED_FIELDS changed; update the generator")
+        self.assertEqual(set(expected.values()), self._generated_keys())
+
+
+if __name__ == "__main__":
+    unittest.main()

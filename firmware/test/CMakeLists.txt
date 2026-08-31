@@ -29,6 +29,9 @@ add_executable(hk_host_tests
     test_led.c
     test_provision.c
     test_schema.c
+    test_manifest.c
+    test_gate.c
+    test_ota.c
     ${HK_COMPONENTS}/hk_pins/hk_pins.c
     ${HK_COMPONENTS}/hk_identity/hk_identity.c
     ${HK_COMPONENTS}/hk_version/hk_version.c
@@ -36,6 +39,9 @@ add_executable(hk_host_tests
     ${HK_COMPONENTS}/hk_led/hk_led.c
     ${HK_COMPONENTS}/hk_provision/hk_provision.c
     ${HK_COMPONENTS}/hk_schema/hk_schema.c
+    ${HK_COMPONENTS}/hk_manifest/hk_manifest.c
+    ${HK_COMPONENTS}/hk_gate/hk_gate.c
+    ${HK_COMPONENTS}/hk_ota/hk_ota.c
 )
 
 target_include_directories(hk_host_tests PRIVATE
@@ -47,6 +53,9 @@ target_include_directories(hk_host_tests PRIVATE
     ${HK_COMPONENTS}/hk_led/include
     ${HK_COMPONENTS}/hk_provision/include
     ${HK_COMPONENTS}/hk_schema/include
+    ${HK_COMPONENTS}/hk_manifest/include
+    ${HK_COMPONENTS}/hk_gate/include
+    ${HK_COMPONENTS}/hk_ota/include
 )
 
 enable_testing()

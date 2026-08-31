@@ -13,6 +13,9 @@ int main(void)
     HK_RUN(test_led);
     HK_RUN(test_provision);
     HK_RUN(test_schema);
+    HK_RUN(test_manifest);
+    HK_RUN(test_gate);
+    HK_RUN(test_ota);
     printf("%d checks, %d failures\n", hk_test_checks, hk_test_failures);
     return hk_test_failures == 0 ? 0 : 1;
 }

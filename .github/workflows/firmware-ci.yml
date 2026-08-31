@@ -57,6 +57,11 @@ jobs:
         run: python3 firmware/tools/check_partitions.py
       - name: test the partition validator itself
         run: python3 firmware/tools/test_check_partitions.py
+      - name: test the release manifest generator
+        # Includes the cross-check that the generator and hk_ota_client.c agree
+        # on every field name. A mismatch there is silent everywhere else and
+        # would make every device refuse every update.
+        run: python3 firmware/tools/test_make_manifest.py
       - name: a user reset must not reach the calibration store (PRD-008)
         run: python3 firmware/tools/check_storage_isolation.py
       - name: no log statement may print a credential

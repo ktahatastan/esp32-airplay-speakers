@@ -1,0 +1,227 @@
+# Harman Kardom release pipeline.
+#
+# Publishes a signed firmware image and the manifest that describes it, from a
+# SemVer tag. ADR-0008 is the decision; docs/03-firmware/ota-and-release-plan.md
+# is the detail.
+#
+# The pipeline is split in two on purpose. The build job compiles the release
+# profile and never has access to the signing key: with
+# CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES=n the build succeeds unsigned and
+# ESP-IDF itself prints "App built but not signed. Sign app before flashing".
+# Only the publish job, bound to a protected environment, can read the key.
+# So a change to the build — a dependency, a script, a pull request that
+# touches CI — cannot reach the key, and reviewing who may publish is the same
+# thing as reviewing that environment.
+#
+# What this pipeline CANNOT prove: that the image runs. Every physical gate
+# needs a device and an operator. A green run here means the image is
+# well-formed, signed and described correctly, nothing more. The canary rollout
+# in ADR-0008 exists because of exactly that gap.
+
+name: release
+
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to publish, e.g. v0.2.0'
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  IDF_VERSION: v5.5.1
+
+jobs:
+  verify:
+    name: verify before publishing anything
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: documentation integrity
+        run: python3 scripts/check_docs.py
+      - name: host unit tests
+        run: |
+          cmake -S firmware/test -B build/host-tests -DCMAKE_BUILD_TYPE=Debug
+          cmake --build build/host-tests
+          ctest --test-dir build/host-tests --output-on-failure
+      - name: tooling tests
+        run: |
+          python3 firmware/tools/test_check_partitions.py
+          python3 firmware/tools/test_make_manifest.py
+      - name: repository invariants
+        run: |
+          python3 firmware/tools/check_partitions.py
+          python3 firmware/tools/check_storage_isolation.py
+          python3 firmware/tools/check_no_credential_logs.py
+
+  build:
+    name: build the release profile (no key here)
+    needs: verify
+    runs-on: ubuntu-latest
+    container: espressif/idf:v5.5.1
+    steps:
+      - uses: actions/checkout@v4
+      - name: build with sdkconfig.release
+        shell: bash
+        run: |
+          . $IDF_PATH/export.sh
+          idf.py -C firmware -B firmware/build-release \
+            -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.release" \
+            -D SDKCONFIG=build-release/sdkconfig \
+            build
+      - name: the release profile must actually require a signature
+        shell: bash
+        run: |
+          # Kconfig writes a disabled option as "# CONFIG_X is not set", never
+          # as "=n", so every assertion here is about the presence or absence
+          # of "=y". Testing for "=n" would fail on a correct build.
+          SDKCONFIG=firmware/build-release/sdkconfig
+
+          # If this ever turns off silently, the pipeline would publish an
+          # image that accepts unsigned updates, and nothing else would notice.
+          grep -qx 'CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT=y' "$SDKCONFIG" \
+            || { echo "release build does not require signed images"; exit 1; }
+
+          # The build must NOT sign: the key belongs to the publish job alone.
+          ! grep -qx 'CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES=y' "$SDKCONFIG" \
+            || { echo "the build job would need the signing key"; exit 1; }
+
+          # Anti-rollback burns eFuses irreversibly. It stays off (ADR-0008).
+          ! grep -qx 'CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK=y' "$SDKCONFIG" \
+            || { echo "anti-rollback would burn eFuses on every boot"; exit 1; }
+      - name: rollback and its health check must be enabled together
+        shell: bash
+        run: |
+          # Enabling rollback without the call that confirms a good boot means
+          # every published image reverts on first restart, so updates never
+          # take. Enabling the call without rollback means a bad image stays.
+          # Neither failure is visible until a device is in someone's room, so
+          # the two are tied together here rather than in a comment.
+          if grep -qx 'CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y' \
+               firmware/build-release/sdkconfig; then
+            if ! grep -rq 'esp_ota_mark_app_valid_cancel_rollback' \
+                   firmware/main firmware/components; then
+              echo "Rollback is enabled but nothing calls"
+              echo "esp_ota_mark_app_valid_cancel_rollback(). Every update"
+              echo "would revert on the first restart."
+              exit 1
+            fi
+          fi
+      - name: size gate
+        shell: bash
+        run: |
+          python3 firmware/tools/check_partitions.py \
+            --app-size firmware/build-release/harman-kardom.bin
+      - uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-release-build
+          path: |
+            firmware/build-release/harman-kardom.bin
+            firmware/build-release/harman-kardom.elf
+            firmware/build-release/bootloader/bootloader.bin
+            firmware/build-release/partition_table/partition-table.bin
+          retention-days: 90
+
+  publish:
+    name: sign and publish
+    needs: build
+    runs-on: ubuntu-latest
+    # The only job that can read HK_SIGNING_KEY. Protect this environment with
+    # required reviewers: approving a release and approving key use are then
+    # the same action.
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/download-artifact@v4
+        with:
+          name: unsigned-release-build
+          path: artifacts
+      - name: resolve the tag
+        id: tag
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          echo "value=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: install esptool
+        run: pip install --disable-pip-version-check 'esptool==4.12.0'
+
+      - name: sign the image
+        env:
+          HK_SIGNING_KEY: ${{ secrets.HK_SIGNING_KEY }}
+        run: |
+          if [ -z "$HK_SIGNING_KEY" ]; then
+            echo "HK_SIGNING_KEY is not set in the 'release' environment."
+            echo "Generate it OFFLINE, once, and never in CI:"
+            echo "  idf.py secure-generate-signing-key --version 2 --scheme rsa3072 hk_signing_key.pem"
+            echo "RSA-3072 is the only scheme ESP32-S3 supports."
+            exit 1
+          fi
+          umask 077
+          printf '%s' "$HK_SIGNING_KEY" > signing_key.pem
+          espsecure.py sign_data --version 2 --keyfile signing_key.pem \
+            --output harman-kardom-signed.bin \
+            artifacts/harman-kardom.bin
+          espsecure.py verify_signature --version 2 --keyfile signing_key.pem \
+            harman-kardom-signed.bin
+          shred -u signing_key.pem 2>/dev/null || rm -f signing_key.pem
+
+      - name: describe what was signed
+        run: |
+          # The manifest is generated FROM the signed image, because that is the
+          # file devices download and hash. Signing pads the image and appends a
+          # signature sector, so a manifest built from the unsigned binary would
+          # carry the wrong size and digest and every device would refuse it.
+          python3 firmware/tools/make_manifest.py \
+            --image harman-kardom-signed.bin \
+            --tag "${{ steps.tag.outputs.value }}" \
+            --asset-url "https://github.com/${{ github.repository }}/releases/download/${{ steps.tag.outputs.value }}/harman-kardom.bin" \
+            --out manifest.json
+          cat manifest.json
+
+      - name: the published image must satisfy the device's own checks
+        run: |
+          # A last read-back: the manifest has to agree with the binary beside
+          # it. make_manifest generates both from the same file, so this can
+          # only fail if the artefacts were swapped between steps — which is
+          # precisely the case worth catching before four speakers try it.
+          python3 - <<'PY'
+          import hashlib, json, pathlib, sys
+          manifest = json.loads(pathlib.Path("manifest.json").read_text())
+          blob = pathlib.Path("harman-kardom-signed.bin").read_bytes()
+          problems = []
+          if manifest["sha256"] != hashlib.sha256(blob).hexdigest():
+              problems.append("sha256 does not match the signed image")
+          if manifest["size"] != len(blob):
+              problems.append(f"size {manifest['size']} != {len(blob)}")
+          if manifest["target"] != "esp32s3":
+              problems.append("target is not esp32s3")
+          if problems:
+              sys.exit("manifest disagrees with the image: " + "; ".join(problems))
+          print("manifest and signed image agree")
+          PY
+
+      - name: publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp harman-kardom-signed.bin harman-kardom.bin
+          gh release create "${{ steps.tag.outputs.value }}" \
+            --repo "${{ github.repository }}" \
+            --title "${{ steps.tag.outputs.value }}" \
+            --generate-notes \
+            --verify-tag \
+            harman-kardom.bin manifest.json \
+            artifacts/bootloader.bin \
+            artifacts/partition-table.bin

@@ -165,6 +165,19 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
 - **Çıktı:** manifest ayrıştırıcı ve donanım eşleme, HTTPS indirme, güncelleme kapıları durum makinesi, ilk-boot sağlık kontrolü, rollback, `esp_ghota` spike sonucu, imzalama ve GitHub Actions release hattı, canary/stable kanal politikası, USB/UART recovery prosedürü.
 - **Kabul ölçütü:** [[ota-and-release-plan#G6 kabul matrisi\|G6 kabul matrisinin]] on iki satırının tamamı test raporlu.
 - **Gate:** `G6` zorunlu.
+- **Durum (2026-08-31):** yazma yarısı bitti, ölçme yarısı donanım bekliyor.
+  - [x] `esp_ghota` spike'ı yapıldı ve aday **reddedildi** (ADR-0008). Yerine `esp_https_ota` üstünde kendi istemcimiz.
+  - [x] `hk_manifest` — manifest tek bayt indirilmeden yargılanıyor.
+  - [x] `hk_gate` — kalibrasyon yoksa güncelleme başlamıyor.
+  - [x] `hk_ota` — inen görüntünün tanımlayıcısı manifest ile karşılaştırılıyor. ESP-IDF `project_name`'i hiç karşılaştırmadığı için bu kontrol yoksa başka bir projenin S3 görüntüsü kurulurdu.
+  - [x] `hk_ota_client` — HTTPS/JSON/`esp_https_ota` katmanı. Derleniyor; **çalıştırılmadı**.
+  - [x] `sdkconfig.release` imzalama profili ve iki işli `release.yml` hattı. İmzalama adımı tek kullanımlık anahtarla uçtan uca denendi.
+  - [x] `make_manifest.py` — manifest imzalı ikiliden üretiliyor, alan adları aygıt yazılımıyla CI'da çapraz denetleniyor.
+  - [x] ISRG Root YR sertifikası pakete eklendi ve üretilen pakette doğrulandı.
+  - [ ] İlk-boot sağlık kontrolü ve `esp_ota_mark_app_valid_cancel_rollback()`.
+  - [ ] Güncelleme zamanlayıcısı ve LED entegrasyonu.
+  - [ ] USB/UART recovery prosedürü.
+  - [ ] `G6` matrisinin on iki satırı — **donanım gerekir**, hiçbiri çalıştırılmadı.
 
 ### F8 — Çoklu cihaz ve dayanıklılık
 
@@ -214,7 +227,9 @@ firmware/
     hk_schema/         hangi durumda ne yapılacağı (saf, testli)            [F6 · var]
     hk_storage/        iki NVS deposu ve aralarındaki duvar                 [F6 · var]
     hk_power/          telemetri, kapanış politikası                        [F6]
-    hk_update/         manifest, OTA, sağlık kontrolü                       [F7]
+    hk_manifest/       yayımlanan sürüm bu cihaza ait mi (saf, testli)      [F7 · var]
+    hk_gate/           güncelleme şimdi başlayabilir mi (saf, testli)       [F7 · var]
+    hk_ota/            inen görüntü manifest ile uyuşuyor mu + istemci      [F7 · var]
   test/                host tarafı birim testleri                           [F0 · var]
   tools/               partition ve boyut doğrulaması                       [F0 · var]
 ```

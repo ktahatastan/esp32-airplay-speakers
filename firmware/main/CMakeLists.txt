@@ -12,6 +12,7 @@ idf_component_register(SRCS "hk_main.c"
                                 hk_network
                                 hk_ui
                                 hk_version
+                                hk_ota
                                 app_update
                                 esp_system
                                 esp_hw_support
