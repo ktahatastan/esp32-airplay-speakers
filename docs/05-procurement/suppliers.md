@@ -3,8 +3,9 @@ title: Satıcılar ve ürün adayları
 tags:
   - procurement
   - suppliers
+owner: procurement-researcher
 status: living-document
-updated: 2026-08-30
+updated: 2026-08-31
 ---
 
 # Satıcılar ve ürün adayları
@@ -15,8 +16,8 @@ Bu liste bir onaylı tedarikçi listesi değil, sipariş öncesi kısa listedir.
 
 | Grup | Öncelikli aday | Alternatif | Sipariş öncesi soru |
 |---|---|---|---|
-| ESP32-S3 N16R8 | [TLS Robotik: ESP32-S3 N16R8](https://www.tlsrobotik.com/urun/esp32-s3-n16r8-wifi-bluetooth-gelistirme-karti/) | Orijinal Espressif N8R8/N16R8 dağıtıcı stoğu | Kart gerçekten WROOM-1-N16R8 mi; pin dizilimi ve kart şeması sağlanabiliyor mu? |
-| ESP32-S3 N8R8 | [Mouser Türkiye: ESP32-S3-DevKitC-1U-N8R8](https://www.mouser.com.tr/ProductDetail/Espressif-Systems/ESP32-S3-DevKitC-1U-N8R8) | [Robo90: ESP32-S3-DevKitC-1-N8R8](https://www.robo90.com/esp32-s3-devkitc-1-n8r8-gelistirme-karti-orjinal) | Kart gerçekten N8R8 mi? `1U` ise IPEX anten dahil mi, ayrıca anten alınmalı mı? |
+| **ESP32-S3 N16R8 — kanonik** ([[../07-decisions/ADR-0010-esp32-s3-n16r8-board\|ADR-0010]]) | [TLS Robotik: ESP32-S3 N16R8](https://www.tlsrobotik.com/urun/esp32-s3-n16r8-wifi-bluetooth-gelistirme-karti/) | Orijinal Espressif **N16R8** dağıtıcı stoğu | Kart gerçekten WROOM-1-N16R8 mi; pin dizilimi ve kart şeması sağlanabiliyor mu? |
+| ESP32-S3 N8R8 — **yalnız yedek, sipariş edilmez** | [Mouser Türkiye: ESP32-S3-DevKitC-1U-N8R8](https://www.mouser.com.tr/ProductDetail/Espressif-Systems/ESP32-S3-DevKitC-1U-N8R8) | [Robo90: ESP32-S3-DevKitC-1-N8R8](https://www.robo90.com/esp32-s3-devkitc-1-n8r8-gelistirme-karti-orjinal) | ADR-0010 kartı N16R8'e kilitledi. Bu satır yalnız partition bütçesi 8 MB'a sığdığı kanıtlanır ve yeni bir ADR açılırsa değerlendirilir. |
 | PCM5102A DAC | [Aletler: PCM5102A DAC modülü](https://www.aletler.com.tr/urun/pcm5102a-dac-modul) | Türkiye stok bulunamazsa aynı PCB pin dizilimli ürün araştırılacak | PCB üzerindeki `SCK/BCK/LCK/DIN`, `XSMT`, `FLT`, `DEMP` bağlantıları ve line-out topolojisi nedir? |
 | 5 V buck | [Robotistan: MP1584EN 3 A](https://www.robotistan.com/3a-mini-ayarlanabilir-voltaj-dusurucu-regulator-karti-step-down) | Daha düşük ripple'lı otomotiv sınıfı buck araştırılacak | 14.8 V giriş / 5 V gerçek yükte sıcaklık ve ripple değeri? |
 | Li-ion hücre | [Pilpaketi: Aspilsan INR18650A28](https://www.pilpaketi.com/aspilsan-pil) | Molicel P28A yalnız ikincil alternatif | 16/32 adet aynı üretim partisi sağlanabiliyor mu; kapasite/iç direnç eşleme ve punta paket hizmeti var mı? |

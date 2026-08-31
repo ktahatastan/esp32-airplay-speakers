@@ -15,6 +15,9 @@ tags: [development-log, procurement, battery, usb-c]
 - Ayrı Baseus adaptör+kablo yerine, kablo dahil Syrox GAN65T 65 W set düşük maliyetli aday yapıldı.
 - KiCad hücre değerleri yanlış `21700` etiketinden `ASPILSAN A28 18650` olarak düzeltildi.
 
+> [!note] Kısmen üzerine yazıldı
+> Bu kayıttaki **10.757,36 TL** toplamı, sonraki [[2026-08-30-km103-power-switch|KM103 güç anahtarı seçimiyle]] 140,00 TL düşerek **10.617,36 TL** olmuştur. Güncel tablo: [[../05-procurement/turkey-shopping-list-2026-08-30#Maliyet özeti|Türkiye satın alma listesi]]. Hücre ve adaptör kararları geçerliliğini korur.
+
 ## Maliyet etkisi
 
 - Hücre: 594,00 TL/adet yerine 119,36 TL/adet.

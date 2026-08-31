@@ -1,7 +1,7 @@
 ---
 status: active
 owner: orchestrator
-updated: 2026-08-30
+updated: 2026-08-31
 tags: [adr, decisions, moc]
 ---
 
@@ -17,3 +17,5 @@ Durumlar: `proposed`, `accepted`, `superseded`, `rejected`.
 - [[ADR-0006-single-orchestrator|ADR-0006 — Tek orkestratör]]
 - [[ADR-0007-airplay-stack|ADR-0007 — AirPlay yığını ve senkron]]
 - [[ADR-0008-github-releases-ota|ADR-0008 — Otomatik OTA ve GitHub Releases]]
+- [[ADR-0009-usb-c-pd-charge-chain|ADR-0009 — USB-C PD tabanlı 16,8 V CC/CV şarj zinciri]]
+- [[ADR-0010-esp32-s3-n16r8-board|ADR-0010 — Kanonik ESP32-S3 kartı N16R8]]

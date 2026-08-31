@@ -2,7 +2,7 @@
 status: planned
 owner: firmware-engineer
 reviewers: [orchestrator, qa-engineer]
-updated: 2026-08-30
+updated: 2026-08-31
 tags: [firmware, ota, github-actions, releases, semver, recovery]
 ---
 
@@ -64,6 +64,7 @@ Kesin boyutlar firmware, ses kütüphaneleri ve seçilen flash kapasitesi ölç�
 - `nvs`: kullanıcı ayarları.
 - `nvs_keys`: NVS encryption anahtarları kullanılırsa.
 - `factory_calibration`: sürücü koruma ve donanım kalibrasyonu; kullanıcı reseti silmez.
+- Flash bütçesi [[../07-decisions/ADR-0010-esp32-s3-n16r8-board|ADR-0010]] ile 16 MB varsayımına dayanır.
 - `otadata`: ESP-IDF OTA seçimi için `0x2000` veri bölümü.
 - `ota_0` ve `ota_1`: eşit boyutlu iki uygulama slotu.
 - Opsiyonel `factory/recovery`: flash alanı ve kurtarma stratejisi onaylanırsa salt okunur kurtarma imajı.
@@ -105,9 +106,9 @@ Release job yalnız gerekli kapsamla `contents: write` izni alır. İmzalama öz
 Örnek `v1.0.0` release içeriği:
 
 ```text
-harman-kardom-esp32s3-n8r8-v1.0.0.bin
-harman-kardom-esp32s3-n8r8-v1.0.0.manifest.json
-harman-kardom-esp32s3-n8r8-v1.0.0.sha256
+harman-kardom-esp32s3-n16r8-v1.0.0.bin
+harman-kardom-esp32s3-n16r8-v1.0.0.manifest.json
+harman-kardom-esp32s3-n16r8-v1.0.0.sha256
 release-notes.md
 ```
 
@@ -119,8 +120,8 @@ Manifestte en az şu alanlar bulunur:
   "version": "1.0.0",
   "channel": "stable",
   "target": "esp32s3",
-  "hw_revision": "prototype-n8r8",
-  "asset": "harman-kardom-esp32s3-n8r8-v1.0.0.bin",
+  "hw_revision": "prototype-n16r8",
+  "asset": "harman-kardom-esp32s3-n16r8-v1.0.0.bin",
   "size": 0,
   "sha256": "TBD_BY_CI",
   "secure_version": 0,

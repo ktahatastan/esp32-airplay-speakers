@@ -2,8 +2,8 @@
 status: proposed
 owner: hardware-engineer
 reviewers: [orchestrator, qa-engineer]
-updated: 2026-08-30
-tags: [hardware, wiring, schematic, power, audio]
+updated: 2026-08-31
+tags: [hardware, wiring, schematic, power, audio, usb-c]
 ---
 
 # Devre ve bağlantı şemaları
@@ -13,27 +13,25 @@ Bu belge **tek Harman Kardom hoparlör** için modül-temelli prototip bağlant�
 > [!danger] Enerji verme yasağı
 > Nova woofer/tweeter değerleri G0 ile ölçülmeden gerçek sürücülere tam güç uygulanmaz. XH-A232 önce akım sınırlı laboratuvar kaynağı ve dummy-load ile G1 testinden geçer. Tweeter, `C_SAFE` seri koruma kondansatörü ile DSP HPF/limiter doğrulanmadan bağlanmaz.
 
-## Görsel prototip şeması
+## Devre şeması
 
-![Harman Kardom tek hoparlör prototip devre şeması](assets/harman-kardom-prototype-schematic.svg)
+![Harman Kardom tek hoparlör devre şeması](assets/harman-kardom-schematic.svg)
 
-Şema ölçeklenebilir SVG'dir; sabit çözünürlüklü önizleme için [PNG sürümünü](assets/harman-kardom-prototype-schematic.png) açabilirsiniz. Test noktası numaraları aşağıdaki ayrıntılı tabloyla aynıdır. Bu çizim modül-temelli prototip içindir ve üretim PCB şeması yerine geçmez.
+Tek sayfalık pafta; USB-C PD şarj zinciri, 4S paket ve BMS, sigorta ve ana anahtar, 5 V lojik beslemesi, ESP32-S3 N16R8, PCM5102A, XH-A232 BTL bi-amp, sürücüler, kullanıcı arayüzü ve `TP0-TP27` ölçüm noktalarını gösterir. Ölçeklenebilir SVG'dir; Obsidian ve GitHub üzerinde doğrudan açılır.
 
-### Mühendislik paftası görünümü
-
-![Harman Kardom mühendislik tipi modül bağlantı şeması](assets/harman-kardom-engineering-schematic.svg)
-
-Bu alternatif pafta; referans görseldeki gibi koordinatlı çerçeve, fonksiyon başlıkları, devre sembolleri, net adları, referans/değer renkleri, test noktası indeksi ve antet kullanır. [SVG kaynağı](assets/harman-kardom-engineering-schematic.svg) veya [2000×1400 PNG önizlemesi](assets/harman-kardom-engineering-schematic.png) açılabilir.
+Pafta `hardware/diagrams/generate_schematic_svg.py` ile üretilir ve elle düzenlenmez. Bu çizim modül-temelli prototip içindir; üretim PCB şeması yerine geçmez.
 
 ### Düzenlenebilir KiCad paftası
 
-Şemanın KiCad 10 ile açılabilen, Python scriptinden tekrar üretilebilen sürümü [[kicad-schematic|KiCad şeması ve üretim scripti]] belgesinde açıklanır. Script ve üretilen `.kicad_pro/.kicad_sch` kaynakları `hardware/kicad/` altında Git'e alınır.
+Netlist, ERC ve ileride PCB için elektriksel kaynak KiCad projesidir: [[kicad-schematic|KiCad şeması ve üretim scripti]]. Script ve üretilen `.kicad_pro` / `.kicad_sch` kaynakları `hardware/kicad/` altında Git'e alınır.
+
+İki çıktı bilerek ayrıdır: SVG paftası okunabilirlik ve bring-up prosedürü için, KiCad paftası elektriksel doğrulama için tutulur. İkisi de aynı net adlarını ve aynı `TP0-TP27` numaralandırmasını kullanır.
 
 ## 1. Sistem bağlantı özeti
 
 ```mermaid
 flowchart LR
-    PHONE[Apple cihazı / Wi-Fi] -->|AirPlay - doğrulanacak| ESP[ESP32-S3 N8R8]
+    PHONE[Apple cihazı / Wi-Fi] -->|AirPlay - doğrulanacak| ESP[ESP32-S3 N16R8]
     ESP -->|BCLK + LRCK + DATA| DAC[PCM5102A I2S DAC]
     DAC -->|LOUT = woofer yolu| AL[XH-A232 kanal L]
     DAC -->|ROUT = tweeter yolu| AR[XH-A232 kanal R]
@@ -41,7 +39,9 @@ flowchart LR
     AR -->|R+ / R- BTL + C_SAFE| T[Tweeter - ohm TBD]
 
     PACK[4S Li-ion paket] --> BMS[4S balanslı BMS]
-    CHG[16.8 V CC/CV şarj] --> BMS
+    UC[USB-C PD adaptör 65 W] --> PDT[PD tetikleyici - sabit 20 V]
+    PDT --> XL[XL4015 CC/CV - 16.80 V / 2.00 A]
+    XL --> BMS
     BMS --> F1[F1 yük sigortası]
     F1 --> SW[Ana mekanik güç anahtarı]
     SW --> AMP[XH-A232 8-26 V]
@@ -77,8 +77,12 @@ flowchart LR
     N4 --> BP[TP5: BMS B+ / P+]
 
     BP --> FCHG[F_CHG 3 A aday]
-    FCHG --> JACKP[Şarj jakı merkez +]
-    PM[TP6: BMS P-] --> JACKN[Şarj jakı dış -]
+    FCHG --> CHGP[TP26: CHG+ 16.80 V - XL4015 OUT+]
+    PM[TP6: BMS P-] --> CHGN[CHG- - XL4015 OUT-]
+    UCJ[USB-C soketi] --> PDT2[PD tetikleyici 20 V]
+    PDT2 --> XL2[XL4015 CC/CV]
+    XL2 --> CHGP
+    XL2 --> CHGN
 
     BP --> F1[F1 5 A başlangıç adayı]
     F1 --> TP7[TP7: sigorta sonrası]
@@ -133,7 +137,7 @@ flowchart TB
 
 ### 3.1 Aday ESP32-S3 pin planı
 
-Bu GPIO tablosu PCB antenli ESP32-S3-DevKitC-1 N8R8 için **prototip adayıdır**. Satın alınan kartın şeması ve boot testi görülmeden `accepted` yapılmaz.
+Bu GPIO tablosu [[../07-decisions/ADR-0010-esp32-s3-n16r8-board|ADR-0010]] ile kilitlenen ESP32-S3 **N16R8** (16 MB flash + 8 MB PSRAM) kartı için **prototip adayıdır**. Kart seçimi `accepted`, pin ataması `candidate`: satın alınan kartın şeması ve boot testi görülmeden pin tablosu `accepted` yapılmaz.
 
 | İşlev | ESP32-S3 aday GPIO | Modül ucu | Not |
 |---|---:|---|---|
@@ -233,7 +237,7 @@ flowchart LR
 | J5 woofer | `L+`, `L-` | Bükümlü çift, polarize |
 | J6 tweeter | `R+ -> C_SAFE`, `R-` | Bükümlü çift, farklı anahtar/konnektör ile yanlış takma önlenir |
 | J7 UI | `3V3`, `BUTTON`, `LED_R/G/B`, `GND` | Düşük akım, güç/speaker kablolarından ayrı |
-| J8 şarj | `16.8V+`, `CHG-` | Merkez pozitif; jak ölçüsü ve polarite etiketi |
+| J8 şarj girişi | `USB_PD_VBUS`, `POWER_GND` | USB-C soketi veya PD tetikleyici girişi. V1'de ayrı DC jak yoktur; 16,80 V zincir içinde üretilir. Yedek hazır adaptör yoluna geçilirse bu satır jak ölçüsü/polaritesiyle yeniden yazılır. |
 
 ## 6. Fiziksel yerleşim
 
@@ -293,7 +297,7 @@ PCB veya kablo dağıtım kartında test noktaları iğne probla erişilebilir, 
 | TP20/TP21 | XH `R+` / `R-` | Birbirine diferansiyel | Tweeter BTL PWM + diferansiyel audio | Diferansiyel prob veya CH1-CH2 |
 | TP22 | Buton GPIO7 | TPG | Boşta yaklaşık 3.3 V, basılı 0 V | DMM/scope; debounce |
 | TP23/24/25 | LED R/G/B anot sürüşü | TPG | 0-3.3 V PWM | Scope; PWM frekansı ve audio paraziti |
-| TP26 | Şarj jakı merkez + | TP6 veya C- | 16.8 V CC/CV adaptör | Önce yüksüz DMM; polarite |
+| TP26 | XL4015 çıkışı `CHG+` | TP6 veya C- | Yüksüz 16,80 V ± kalibrasyon toleransı | Önce **batarya bağlı değilken** DMM; polarite ve akım sınırı ayarı |
 | TP27 | NTC iki ucu | BMS şemasına göre | Direnç/sıcaklık ilişkisi | Enerjisiz ohmmetre; BMS'e göre |
 
 `TP10` ESP32 geliştirme kartının gerçek `3V3` pininden alınır. Kart regülatörü ve USB güç topolojisi görülmeden 3V3 hattına harici enerji verilmez.
@@ -415,6 +419,9 @@ Her adım için [[../templates/test-report|test raporu]] oluşturulur. Fiziksel 
 - [ ] F1/F_CHG değeri, kablo kesiti ve konnektör akım sınıfı.
 - [ ] USB ile harici 5 V arasında jumper, Schottky OR veya load-switch seçimi.
 - [ ] INA226'nın yalnız prototip ölçümü mü yoksa kalıcı telemetri mi olacağı.
+- [ ] XL4015 şarj sonlandırma davranışı ve sonlandırma yoksa uygulanacak çözüm (ADR-0009 G4 ölçümü).
+- [ ] PD tetikleyicinin 20 V profilini yük altında koruyup korumadığı.
+- [ ] `F_CHG` değeri ve XL4015 ters polarite koruma yöntemi.
 
 ## 10. Teknik kaynaklar
 
@@ -422,6 +429,8 @@ Her adım için [[../templates/test-report|test raporu]] oluşturulur. Fiziksel 
 - [TI TPA3110D2 veri sayfası](https://www.ti.com/lit/ds/symlink/tpa3110d2.pdf): BTL çıkış, 8-26 V besleme, shutdown ve decoupling/layout.
 - [XH-A232 modül referansı](https://www.taydaelectronics.com/tpa3110-xh-a232-digital-stereo-audio-power-amplifier-board.html): kart sınıfı, 8-26 V ve 4-8 Ω satıcı bilgisi; güç etiketi ölçüm yerine geçmez.
 - [Seçilen PCM5102A satın alma kaynağı](https://www.aletler.com.tr/urun/pcm5102a-dac-modul): fiziksel modül revizyonu teslim alınınca karşılaştırılır.
+- [XLSEMI XL4015 veri sayfası](https://www.xlsemi.com/datasheet/XL4015%20datasheet.pdf): buck çalışma sınırları. Modül CC/CV kartıdır, şarj sonlandırma entegresi değildir.
+- [USB PD spesifikasyonu](https://www.usb.org/document-library/usb-power-delivery): 20 V sabit profil anlaşması.
 
 ## 11. İlgili belgeler
 
@@ -432,3 +441,5 @@ Her adım için [[../templates/test-report|test raporu]] oluşturulur. Fiziksel 
 - [[../power-and-battery-plan|Güç ve batarya planı]]
 - [[../controls-and-provisioning-plan|Kontroller ve provisioning]]
 - [[../06-testing/test-strategy|Test kapıları]]
+- [[../07-decisions/ADR-0009-usb-c-pd-charge-chain|ADR-0009 — USB-C PD şarj zinciri]]
+- [[../07-decisions/ADR-0010-esp32-s3-n16r8-board|ADR-0010 — Kanonik N16R8 kartı]]

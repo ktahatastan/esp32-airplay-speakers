@@ -7,8 +7,9 @@ tags:
   - procurement
   - hardware
   - bom
+owner: procurement-researcher
 status: draft
-updated: 2026-08-30
+updated: 2026-08-31
 ---
 
 # BOM ve satın alma listesi
@@ -27,7 +28,7 @@ updated: 2026-08-30
 
 | Kalem | Teknik koşul | Bir ünite | 1 ünite prototip | 4 ünite nihai | Durum / kaynak |
 |---|---|---:|---:|---:|---|
-| ESP32-S3 geliştirme kartı | En az 8 MB flash + 8 MB PSRAM; PCB antenli `N8R8` tercih | 1 | 1 | 4 | Satın alınacak; [Mouser ESP32-S3-DevKitC-1U-N8R8](https://www.mouser.com.tr/ProductDetail/Espressif-Systems/ESP32-S3-DevKitC-1U-N8R8) dış antenlidir, anten ve kasa kararı doğrulanacak. PCB antenli [Robo90 N8R8](https://www.robo90.com/esp32-s3-devkitc-1-n8r8-gelistirme-karti-orjinal) alternatif adaydır. |
+| ESP32-S3 geliştirme kartı | **16 MB flash + 8 MB PSRAM (`N16R8`)** — [[../07-decisions/ADR-0010-esp32-s3-n16r8-board\|ADR-0010]] ile kilitlendi | 1 | 1 | 4 | Fiyatlandırılan aday: [TLS Robotik N16R8](https://www.tlsrobotik.com/urun/esp32-s3-n16r8-wifi-bluetooth-gelistirme-karti/). Anten tipi (PCB / IPEX) kasa kararıyla ayrıca belirlenecek. `N8R8` yalnız ikincil yedektir ve partition bütçesi kanıtlanmadan kullanılmaz. |
 | PCM5102A I2S DAC modülü | Stereo, line-level çıkış; kart pin dizilimi kontrolü | 1 | 1 | 4 | Satın alınacak; kullanıcının seçtiği [Aletler PCM5102A modülü](https://www.aletler.com.tr/urun/pcm5102a-dac-modul). |
 | XH-A232 / TPA3110 amfi | Stereo Class-D; 4S bataryadan doğrudan besleme adayı | 1 | 0 | 0 | Elde 4 adet olduğu varsayılıyor; adet fiziksel sayımla doğrulanacak. |
 | Harman Kardon Nova sürücü takımı | Bir woofer + bir tweeter / ünite | 1 takım | 0 | 0 | Elde olduğu varsayılıyor; DC direnç ve empedans ölçümü zorunlu. |
@@ -37,6 +38,8 @@ updated: 2026-08-30
 | Sert güç anahtarı | Mandallı; en az 24 V DC / 5 A kontak hedefi | 1 | 1 | 4 | **Kullanıcının seçtiği mekanik aday:** [Direnc.net KM103 / DC-132A 12 V ışıklı 3P rocker](https://www.direnc.net/dc-132a-12v-yuvarlak-nokta-isikli-on-off-anahtar-3p-beyaz). Satıcı sayfası kontak akımı vermiyor; yalnız dahili LED için 12 V DC yazıyor. **16,8 V DC kesme kapasitesi yazılı doğrulanmadan ana batarya hattında onaylanmaz; LED pini doğrudan 4S'e bağlanmaz.** |
 
 ## Batarya ve şarj BOM'u
+
+Şarj zinciri [[../07-decisions/ADR-0009-usb-c-pd-charge-chain|ADR-0009]] ile kilitlendi: `USB-C PD adaptör -> 20 V tetikleyici -> XL4015 16,80 V/2,00 A CC/CV -> 4S BMS -> paket`. XL4015'in **şarj sonlandırma garantisi yoktur**; G4 ölçümü zorunludur.
 
 | Kalem | Teknik koşul | Bir ünite 4S1P | 4 ünite 4S1P | Bir ünite 4S2P | 4 ünite 4S2P | Durum / kaynak |
 |---|---|---:|---:|---:|---:|---|

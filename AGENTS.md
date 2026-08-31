@@ -43,5 +43,20 @@ Before work, read `docs/Home.md`, the relevant accepted ADRs under `docs/07-deci
 
 ## Current blockers
 
-- Individual Nova woofer/tweeter impedance is not confirmed; follow `docs/02-hardware/driver-measurements.md`.
-- AirPlay 2 group synchronization is not confirmed; follow `docs/01-architecture/audio-network-feasibility.md` and ADR-0007.
+These are the open `Kritik` risks from `docs/01-planning/risk-register.md` that still block a gate: each one is an unverified fact, not a hazard with a mitigation already in place. The register is the complete list and the detailed source; the two `Kritik` rows not repeated here (tweeter DC exposure and cell thermal runaway) are hazards whose standing mitigations are in `Hardware safety` above. Adding a blocker here means adding its row to the register too.
+
+- Individual Nova woofer/tweeter impedance is not confirmed; follow `docs/02-hardware/driver-measurements.md`. Blocks G0, `C_SAFE`, crossover and safe amplifier level.
+- AirPlay 2 group synchronization is not confirmed; follow `docs/01-architecture/audio-network-feasibility.md` and ADR-0007. Blocks G7 and PRD-002.
+- The XL4015 charge stage has no guaranteed charge termination; follow ADR-0009. No unattended or overnight charging before the G4 termination measurement.
+- The KM103 / DC-132A switch has no documented 16.8 VDC contact rating; it stays off the main battery line until written vendor data and the G3 load test exist.
+- BMS real continuous current, balance threshold/current and NTC behaviour are vendor claims only; they are not verified.
+
+## Locked decisions agents must not re-open silently
+
+- Board: ESP32-S3 `N16R8`, 16 MB flash + 8 MB PSRAM (ADR-0010). The GPIO assignment is still a candidate.
+- V1 charge chain: USB-C PD -> 20 V trigger -> XL4015 16.80 V / 2.00 A CC/CV -> 4S BMS (ADR-0009).
+- V1 does not play audio while charging (ADR-0004).
+
+## Documentation integrity
+
+Run `python3 scripts/check_docs.py` before integrating. It checks wiki links, frontmatter, ADR status vocabulary and canonical-term drift. It does not replace physical gates.

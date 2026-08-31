@@ -1,5 +1,7 @@
 # Harman Kardom iş listesi
 
+Kilitli kararlar `AGENTS.md` içindedir ve yalnız supersede eden ADR ile değişir. Firmware aşama sırası [[docs/03-firmware/firmware-plan|firmware planındadır]].
+
 ## P0 - Tasarımı kilitleyen ölçümler
 
 - [ ] Dört woofer'ın DC dirençlerini ayrı ayrı ölç.
@@ -16,7 +18,10 @@
 - [ ] 4S1P test paketi için dört eşlenmiş hücre seç.
 - [ ] Gerçek balanslı, en az 10 A sürekli 4S BMS seçimini doğrula.
 - [ ] Paketi sigorta, NTC ve uygun izolasyonla punta kaynaklı hazırlat.
-- [ ] 16,8 V CC/CV şarj cihazını boşta ve yükte doğrula.
+- [ ] PD tetikleyicinin 20 V profilini boşta ve 2 A yükte doğrula.
+- [ ] XL4015'i batarya bağlı değilken 16,80 V / 2,00 A'e kalibre et; elektronik yükle doğrula.
+- [ ] XL4015 şarj sonlandırma davranışını ölç; sonlandırma yoksa ADR-0009 alternatiflerinden birini seç.
+- [ ] Type-C kablosunun 5 A / e-marker kimliğini USB-C test cihazıyla doğrula.
 - [ ] XH-A232'yi 12 V, 14,8 V ve 16,8 V'ta dummy-load ile test et.
 - [ ] MP1584'ü 5,10 V'a ayarla; ESP32 Wi-Fi akım sıçramalarında brownout testi yap.
 - [ ] PCM5102A ve amfi girişinde buck kaynaklı gürültüyü ölç.
@@ -34,6 +39,8 @@
 
 - [ ] Sürüm 1'de şarj sırasında amfiyi donanımsal olarak kapat.
 - [ ] Şarj akımı, hücre sıcaklığı, balans ve şarj sonlandırmayı doğrula.
+- [ ] BMS balans akımını/eşiğini satıcıdan yazılı al; beş çevrimde hücre sapmasını ölç.
+- [ ] XL4015 ters polarite riskine karşı kutup etiketleme ve bağlantı sırası prosedürünü yaz.
 - [ ] Şarjdayken çalma gereksinimi için BQ24610 hazır kart/modül araştırmasını tamamla.
 - [ ] Hazır çözüm uygun değilse BQ24610 veya BQ25792 tabanlı özel güç PCB'si tasarla.
 - [ ] Adaptör-batarya geçişinde pop, reset ve ses kesintisi testi yap.
@@ -49,7 +56,8 @@
 ## P5 - Buton, LED ve provisioning
 
 - [ ] Proje, AirPlay, BLE, SoftAP, mDNS, captive portal ve QR yüzeylerinde Harman Kardom adlandırmasını uygula.
-- [ ] Kesin ESP32-S3 kartını seç ve I2S/strapping pinleriyle çakışmayan buton + RGB GPIO'larını ata.
+- [x] Kanonik ESP32-S3 kartını seç (ADR-0010: N16R8).
+- [ ] Satın alınan kartın şemasıyla aday GPIO tablosunu doğrula ve boot testinden geçir.
 - [ ] Tek buton için kısa basış, 5 sn ağ sıfırlama ve 12 sn kullanıcı fabrika sıfırlama durum makinesini geliştir.
 - [ ] Fabrika sürücü koruma/limiter kalibrasyonunu kullanıcı resetinden ayrı NVS alanında tut.
 - [ ] RGB LED durum sürücüsünü audio task'tan bağımsız düşük öncelikli görev olarak geliştir.
@@ -64,7 +72,21 @@
 - [ ] Ayrı 24 V DC / 5 A fiziksel güç anahtarını BMS sonrası yük hattına ekle.
 - [ ] Hoparlör kapalıyken şarj; açılırken/kapanırken pop ve ESP32 reset testlerini yap.
 
-## P6 - Firmware güvenliği ve kurtarma
+## P6 - Firmware aşamaları
+
+Ayrıntı, önkoşul ve kabul ölçütleri: [[docs/03-firmware/firmware-plan|firmware planı]].
+
+- [ ] `F0` iskelet: ESP-IDF sürüm kilidi, partition CSV, boyut bütçesi, host testi, PR CI.
+- [ ] `F1` AirPlay yığını fizibilite spike'ı ve ADR-0007'nin kapatılması.
+- [ ] `F2` I2S/DAC/bi-amp ses yolu bring-up (G1 sonrası).
+- [ ] `F3` HPF, crossover ve limiter zinciri (G0 kapandıktan sonra).
+- [ ] `F4` Wi-Fi, mDNS, SoftAP portal ve BLE Unified Provisioning.
+- [ ] `F5` buton durum makinesi ve RGB LED animatörü.
+- [ ] `F6` NVS ayrımı, güç telemetrisi ve güvenli kapanış (G4 sonrası).
+- [ ] `F7` imzalı A/B OTA, release hattı ve recovery (G6).
+- [ ] `F8` dört cihaz senkronu ve soak (G7, G8).
+
+## P6b - Firmware güvenliği ve kurtarma
 
 - [ ] `factory_calibration` ile `user_settings` NVS şemasını ve migration testlerini yaz.
 - [ ] Cihaz başına benzersiz PoP/QR üretim, seri eşleme ve güvenli yedekleme prosedürünü tanımla.
@@ -83,4 +105,6 @@
 - [ ] Mimari/güvenlik davranışı değiştiğinde ADR aç veya mevcut ADR'yi supersede et.
 - [ ] Material değişikliklerde geliştirme günlüğü ve test kanıtını güncelle.
 - [ ] Agent sahipliği değişiminde handoff kaydı oluştur.
-- [ ] Birleşme öncesi Obsidian linkleri, JSON/TOML/YAML, skill ve `git diff --check` doğrulamalarını çalıştır.
+- [x] Birleşme öncesi doğrulamayı tekrarlanabilir hâle getir (`scripts/check_docs.py`).
+- [ ] Her birleşme öncesi `python3 scripts/check_docs.py` ve `git diff --check` çalıştır.
+- [ ] KiCad kurulu bir makinede `generate_harman_kardom.py --validate` ile ERC/PDF doğrulamasını tamamla.

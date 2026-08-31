@@ -8,6 +8,7 @@ tags:
   - bom
   - battery
   - usb-c
+owner: procurement-researcher
 status: candidate
 updated: 2026-08-30
 ---

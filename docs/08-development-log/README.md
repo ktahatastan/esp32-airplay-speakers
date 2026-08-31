@@ -1,11 +1,13 @@
 ---
 status: active
 owner: orchestrator
-updated: 2026-08-30
+updated: 2026-08-31
 tags: [development-log, moc]
 ---
 
 # Geliştirme günlüğü
+
+- [[2026-08-31-consistency-and-schematic-rework|2026-08-31 — Tutarlılık, agent altyapısı, firmware aşamalandırma ve şema yenilemesi]]
 
 - [[2026-08-30-turkey-procurement-costing|Türkiye tedarik ve maliyet araştırması]]
 - [[2026-08-30-kicad-generator|KiCad şema üreticisi]]

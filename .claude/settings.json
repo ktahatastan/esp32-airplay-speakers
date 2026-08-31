@@ -1,3 +1,26 @@
 {
-  "$schema": "https://json.schemastore.org/claude-code-settings.json"
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(python3 scripts/check_docs.py)",
+      "Bash(python3 scripts/check_docs.py:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)"
+    ],
+    "ask": [
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(python3 hardware/kicad/generate_harman_kardom.py:*)",
+      "Bash(python3 hardware/diagrams/generate_schematic_svg.py:*)"
+    ],
+    "deny": [
+      "Read(./**/*.env)",
+      "Read(./**/*.env.*)",
+      "Read(./**/secrets/**)",
+      "Read(./**/*.pem)",
+      "Read(./**/*.key)"
+    ]
+  }
 }

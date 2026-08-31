@@ -3,6 +3,7 @@ title: Satın alma araştırma günlüğü
 tags:
   - procurement
   - research-log
+owner: procurement-researcher
 status: living-document
 updated: 2026-08-30
 ---

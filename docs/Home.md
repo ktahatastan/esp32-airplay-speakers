@@ -2,7 +2,7 @@
 title: Harman Kardom Proje Merkezi
 status: active
 owner: orchestrator
-updated: 2026-08-30
+updated: 2026-08-31
 tags: [harman-kardom, moc]
 ---
 
@@ -16,7 +16,7 @@ Bu sayfa ortak Obsidian kasasının ana haritasıdır.
 - [[01-planning/work-breakdown|İş kırılımı]]
 - [[01-planning/risk-register|Risk kaydı]]
 - [[06-testing/test-strategy|Test stratejisi ve kabul kapıları]]
-- [[08-development-log/2026-08-30-km103-power-switch|Son geliştirme günlüğü]]
+- [[08-development-log/2026-08-31-consistency-and-schematic-rework|Son geliştirme günlüğü]]
 
 ## Ürün ve mimari
 
@@ -27,6 +27,7 @@ Bu sayfa ortak Obsidian kasasının ana haritasıdır.
 - [[02-hardware/audio-signal-chain|Ses sinyal zinciri]]
 - [[02-hardware/circuit-and-wiring-plan|Devre ve bağlantı şemaları]]
 - [[02-hardware/kicad-schematic|KiCad şeması ve üretim scripti]]
+- [[03-firmware/firmware-plan|Firmware planı ve aşamalandırma]]
 - [[power-and-battery-plan|Güç ve batarya]]
 - [[controls-and-provisioning-plan|Kontroller ve provisioning]]
 
@@ -51,3 +52,8 @@ Bu sayfa ortak Obsidian kasasının ana haritasıdır.
 
 > [!WARNING]
 > AirPlay 2 grup/multiroom senkronu gerçek testle kanıtlanmadan “4 senkron hoparlör” gereksinimi tamamlanmış sayılmaz.
+
+> [!IMPORTANT]
+> XL4015 şarj katının sonlandırma garantisi yoktur. G4 ölçümü tamamlanmadan gözetimsiz veya gece boyu şarj yapılmaz. Ayrıntı: [[07-decisions/ADR-0009-usb-c-pd-charge-chain|ADR-0009]].
+
+Birleşme öncesi `python3 scripts/check_docs.py` çalıştırılır.

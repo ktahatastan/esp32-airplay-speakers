@@ -1,13 +1,16 @@
 ---
 status: active
 owner: hardware-engineer
-updated: 2026-08-30
-tags: [power, battery, hardware]
+reviewers: [orchestrator, qa-engineer]
+updated: 2026-08-31
+tags: [power, battery, hardware, usb-c]
 ---
 
 # Harman Kardom güç ve batarya planı
 
-Güncelleme: 2026-08-30
+Güncelleme: 2026-08-31
+
+Kanonik kararlar: [[07-decisions/ADR-0003-4s-power|ADR-0003 (4S mimari)]], [[07-decisions/ADR-0004-v1-charge-policy|ADR-0004 (V1 şarjdayken çalma yok)]], [[07-decisions/ADR-0009-usb-c-pd-charge-chain|ADR-0009 (USB-C PD şarj zinciri)]], [[07-decisions/ADR-0010-esp32-s3-n16r8-board|ADR-0010 (N16R8 kart)]].
 
 ## Karar özeti
 
@@ -19,16 +22,20 @@ Her aktif hoparlör için önerilen ana enerji mimarisi `4S Li-ion` pakettir:
 - İlk prototipte şarj sırasında çalma kapalı olacak.
 - Şarj olurken kesintisiz çalma, doğrulanmış power-path devresiyle ikinci aşamada eklenecek.
 
-Bu seçim, TPA3110D2'nin 16 V beslemede 8 ohm yükte yaklaşık 15 W/kanal veri sayfası çalışma noktasına yakındır. 5S Li-ion paket tam doluyken 21 V'a çıktığı için sürücüler doğrulanmadan kullanılmayacaktır. Hoparlörlerin gerçek empedansı ölçülene kadar nihai güç ve limiter ayarı kilitlenmeyecektir.
+Bu seçim, TPA3110D2'nin 16 V beslemede 8 ohm yükte yaklaşık 15 W/kanal veri sayfası çalışma noktasına yakındır. Bu değer veri sayfasında `%10 THD+N` koşulunda verilir; temiz güç bundan düşüktür. 5S Li-ion paket tam doluyken 21 V'a çıktığı için sürücüler doğrulanmadan kullanılmayacaktır. Hoparlörlerin gerçek empedansı ölçülene kadar nihai güç ve limiter ayarı kilitlenmeyecektir.
 
 ## Önerilen blok şema
 
 ```text
-16,8 V CC/CV şarj adaptörü
+USB-C PD adaptör (65 W sınıfı)
              |
-          şarj jakı
+      Type-C kablo (5 A / e-marker doğrulanacak)
              |
-      4S balanslı BMS
+      PD tetikleyici -> sabit 20 V
+             |
+      XL4015 CC/CV -> 16,80 V / 2,00 A'e kalibre
+             |
+      4S balanslı BMS (yalnız koruma + balans)
              |
        4S1P / 4S2P paket
              |
@@ -36,8 +43,10 @@ Bu seçim, TPA3110D2'nin 16 V beslemede 8 ohm yükte yaklaşık 15 W/kanal veri 
              |
              +--------------------> XH-A232 (batarya gerilimi)
              |
-             +--> MP1584 5 V ----> ESP32-S3 + PCM5102A
+             +--> MP1584 5,10 V --> ESP32-S3 + PCM5102A
 ```
+
+Şarj katı ana güç anahtarının batarya tarafında kalır; cihaz kapalıyken şarj mümkündür (PRD-006). Şarj sırasında amfi kapalıdır (ADR-0004).
 
 ## Batarya seçenekleri
 
@@ -63,10 +72,13 @@ Bu seçim, TPA3110D2'nin 16 V beslemede 8 ohm yükte yaklaşık 15 W/kanal veri 
 |---|---:|---|---|
 | Li-ion hücre | 4 veya 8 | Aynı model/parti; yeni ve eşlenmiş | Aspilsan INR18650A28 2800 mAh seçilen aday; G4 bekliyor |
 | BMS | 1 | 4S Li-ion, gerçek balans, en az 10 A sürekli, aşırı akım/kısa devre/aşırı şarj/deşarj; tercihen NTC | Satın almadan önce balans ve NTC doğrulanacak |
-| Harici şarj cihazı | 1 | 16,8 V CC/CV, 2-3 A | 4S 16,8 V 3 A adaptör adayı |
+| PD tetikleyici | 1 | USB-C PD, sabit 20 V profili seçebilen | Meltis 5-20 V PD/QC/AFC seçici; 20 V DIP seçimi batarya bağlı değilken ölçülecek |
+| 16,8 V CC/CV şarj katı | 1 | 20 V giriş; 16,80 V / 2,00 A'e kalibre edilebilir | XL4015 modülü; **şarj sonlandırma garantisi yok**, ters polarite koruması yok, G4 zorunlu |
+| USB-C PD adaptör + kablo | 1 ortak | Tek Type-C portta 20 V / 3,25 A; kablo 5 A/e-marker | Syrox GAN65T 65 W set adayı; e-marker kimliği test cihazıyla doğrulanacak |
+| Yedek: hazır 4S şarj adaptörü | 0 (yedek) | 16,8 V CC/CV, 2-3 A | ADR-0009 G4 sonlandırma ölçümü başarısız olursa ilk alternatif |
 | 5 V regülatör | 1 | 4,5-28 V giriş, 5 V / en az 2 A | MP1584EN 3 A modül; 5,10 V'a ayarlanıp yük altında test edilecek |
 | Sigorta | 1 | DC uygun, batarya artısına çok yakın | 5 A veya 7,5 A; yük testinden sonra seçilecek |
-| Şarj jakı | 1 | 16,8 V / 3 A DC | 5,5 x 2,1 mm veya kilitli DC jak; polarite standardize edilecek |
+| USB-C şarj girişi | 1 | USB-C soketi veya PD tetikleyici üzerindeki hazır giriş; 20 V / 3,25 A taşıyabilmeli | ADR-0009 zincirinin tek girişi. Ayrı DC jak V1'de kullanılmaz; yedek adaptör yoluna geçilirse jak ölçüsü ve polaritesi ayrıca kararlaştırılır. |
 | Sıcaklık sensörü | 1 | 10k NTC, orta hücreye temas | BMS destekliyorsa zorunlu bağlanacak |
 | Güç ölçümü | 1, opsiyonel | 36 V'a kadar çift yönlü akım/gerilim | INA226 modülü prototip telemetrisi için |
 | Fonksiyon butonu | 1 | Anlık, normalde açık | Provisioning ve reset; aktif-low GPIO |
@@ -81,7 +93,9 @@ Bu seçim, TPA3110D2'nin 16 V beslemede 8 ohm yükte yaklaşık 15 W/kanal veri 
 - Aspilsan A28 üretici veri sayfası: https://www.aspilsan.com/wp-content/uploads/2025/05/A28_Public_Datasheet_.pdf
 - 4S 20 A balanslı BMS adayı: https://www.candagrup.com/4s-20a-bms-lityum-18650-balans-pil-sarj-koruma-devresi
 - Alternatif 4S BMS kaynağı: https://www.pilmak.com/urun/4s-20a-168v-bms-hx-4s-bm20/
-- 16,8 V / 3 A şarj adaptörü adayı: https://www.pilpaketi.com/lion-sarj-aleti-4s-16.8-volt-3a-2.1-mm-soket
+- USB-C PD tetikleyici adayı: https://www.meltisteknoloji.com/pd-qc-afc-hizli-sarj-adaptorunden-voltaj-tetikleyici-secici-modul-1290
+- XL4015 CC/CV şarj katı adayı: https://www.robotistan.com/xl4015-lipo-sarj-modulu
+- Yedek 16,8 V / 3 A hazır adaptör: https://www.pilpaketi.com/lion-sarj-aleti-4s-16.8-volt-3a-2.1-mm-soket
 - MP1584EN buck modülü: https://www.robotistan.com/3a-mini-ayarlanabilir-voltaj-dusurucu-regulator-karti-step-down
 - INA226 güç ölçüm modülü: https://www.robotistan.com/ina226-i2c-akim-sensoru
 
@@ -91,10 +105,13 @@ Fiyat ve stok bilgisi kalıcı kabul edilmeyecek; satın alma gününde tekrar d
 
 ### Sürüm 1: güvenli ve basit
 
-- Şarj adaptörü doğrudan BMS'nin ortak şarj/deşarj portuna bağlanır.
-- Ana amfi şarj sırasında kapalı tutulur.
-- BMS yalnızca koruma ve balans sağlar; CC/CV şarj profilini 16,8 V şarj adaptörü sağlar.
+- USB-C PD -> 20 V tetikleyici -> XL4015 CC/CV zinciri BMS'nin ortak şarj/deşarj portuna bağlanır (ADR-0009).
+- Ana amfi şarj sırasında kapalı tutulur (ADR-0004).
+- BMS yalnızca koruma ve balans sağlar; CC/CV profilini XL4015 katı sağlar.
 - Bu sürüm ilk kabin ve ses testleri için kullanılacaktır.
+
+> [!warning] Şarj sonlandırma açık risktir
+> XL4015 amaca özel bir Li-ion şarj entegresi değildir; CV aşamasında akım düşse de çıkışı 16,80 V'ta süresiz tutabilir. BMS'in aşırı şarj koruması bir sonlandırma algoritması değildir. Sonlandırma davranışı G4'te ölçülüp belgelenmeden gözetimsiz veya gece boyu şarj yapılmaz. Ayrıntı ve alternatifler: [[07-decisions/ADR-0009-usb-c-pd-charge-chain|ADR-0009]].
 
 ### Sürüm 2: gerçek power-path
 
@@ -117,7 +134,7 @@ Fiyat ve stok bilgisi kalıcı kabul edilmeyecek; satın alma gününde tekrar d
 - Hücreler aynı model, kapasite, yaş ve başlangıç voltajında olacak.
 - Batarya bölmesi akustik hacimden rijit bir duvarla ayrılacak ve dış ortama kontrollü şekilde havalandırılacak.
 - BMS, sigorta ve kablolar pasif radyatör/woofer hareket alanına girmeyecek.
-- Güç anahtarı amfi ve 5 V buck hattını kesecek; şarj jakı BMS tarafında kalacağı için cihaz kapalıyken şarj mümkün olacak.
+- Güç anahtarı amfi ve 5 V buck hattını kesecek; şarj katı BMS tarafında kalacağı için cihaz kapalıyken şarj mümkün olacak.
 - İlk şarjlar yanmaz yüzeyde, gözetim altında ve hücre sıcaklığı izlenerek yapılacak.
 - Paket düşme, kısa devre ve ters polarite testinden geçmeden kabin kapatılmayacak.
 
@@ -127,4 +144,5 @@ Fiyat ve stok bilgisi kalıcı kabul edilmeyecek; satın alma gününde tekrar d
 - BQ24610: https://www.ti.com/lit/ds/symlink/bq24610.pdf
 - BQ25792: https://www.ti.com/lit/ds/symlink/bq25792.pdf
 - MP1584: https://pdf.direnc.net/upload/mp1584en-lf-z-datasheet.pdf
+- XL4015: https://www.xlsemi.com/datasheet/XL4015%20datasheet.pdf
 - INA226: https://www.ti.com/lit/ds/symlink/ina226.pdf
