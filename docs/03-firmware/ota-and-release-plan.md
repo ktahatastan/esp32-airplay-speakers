@@ -39,7 +39,7 @@ flowchart LR
 - Oynatma sırasında indirme/yazma başlatılmaz. Aktif ses bittiğinde uygun pencereye ertelenir.
 - Düşük batarya, yüksek sıcaklık, kararsız Wi-Fi veya başka OTA devam ediyorsa güncelleme ertelenir.
 - OTA boyunca RGB LED camgöbeği yanıp söner; hata halinde hızlı kırmızı, başarılı yeniden açılışta üç saniye yeşil gösterir.
-- Kullanıcı ayarları ve `factory_calibration` app slotlarından ayrı NVS bölümlerinde tutulur; şema göçleri geriye uyumlu ve testli olur.
+- Kullanıcı ayarları ve `factory_cal` app slotlarından ayrı NVS bölümlerinde tutulur; şema göçleri geriye uyumlu ve testli olur.
 - İlk sürümde bootloader ve partition table uzaktan güncellenmez; yalnız uygulama imajı OTA edilir.
 - USB/UART fiziksel kurtarma yolu her sürümde korunur.
 
@@ -63,7 +63,7 @@ Kesin boyutlar firmware, ses kütüphaneleri ve seçilen flash kapasitesi ölç�
 
 - `nvs`: kullanıcı ayarları.
 - `nvs_keys`: NVS encryption anahtarları kullanılırsa.
-- `factory_calibration`: sürücü koruma ve donanım kalibrasyonu; kullanıcı reseti silmez.
+- `factory_cal`: sürücü koruma ve donanım kalibrasyonu; kullanıcı reseti silmez. Ad 11 karakterdir: ESP-IDF partition etiketini 16, NVS namespace adını 15 karakterle sınırlar, bu yüzden daha uzun bir ad sessizce kırpılır.
 - Flash bütçesi [[../07-decisions/ADR-0010-esp32-s3-n16r8-board|ADR-0010]] ile 16 MB varsayımına dayanır.
 - `otadata`: ESP-IDF OTA seçimi için `0x2000` veri bölümü.
 - `ota_0` ve `ota_1`: eşit boyutlu iki uygulama slotu.

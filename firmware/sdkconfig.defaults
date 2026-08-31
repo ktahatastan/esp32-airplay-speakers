@@ -1,0 +1,37 @@
+# Harman Kardom build defaults. Everything here is a project decision, not a
+# preference: changing a line usually means a document or an ADR changes too.
+
+# --- Target and module: ESP32-S3 N16R8, 16 MB flash + 8 MB octal PSRAM (ADR-0010)
+CONFIG_IDF_TARGET="esp32s3"
+CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
+CONFIG_ESPTOOLPY_FLASHMODE_QIO=y
+CONFIG_ESPTOOLPY_FLASHFREQ_80M=y
+CONFIG_SPIRAM=y
+CONFIG_SPIRAM_MODE_OCT=y
+CONFIG_SPIRAM_SPEED_80M=y
+
+# --- Partition layout (ADR-0008 needs two equal app slots)
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+
+# --- OTA rollback stays OFF until F7.
+#     With rollback enabled an image is pending until the application calls
+#     esp_ota_mark_app_valid_cancel_rollback(). F0 has no first-boot health
+#     check to base that call on, so enabling it now would mean the first OTA
+#     rolls back every time. It is turned on together with the health check
+#     described in docs/03-firmware/ota-and-release-plan.md.
+CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=n
+
+# --- Audio is the real-time path. Keep the tick fast enough to schedule it and
+#     leave both cores available; the final task/core placement is decided by
+#     measurement in F2, not here.
+CONFIG_FREERTOS_HZ=1000
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=8192
+
+# --- Build hygiene: warnings that hide real defects are errors.
+CONFIG_COMPILER_WARN_WRITE_STRINGS=y
+CONFIG_COMPILER_OPTIMIZATION_SIZE=y
+
+# --- Diagnostics must never carry credentials (docs/03-firmware/security-and-recovery.md)
+CONFIG_LOG_DEFAULT_LEVEL_INFO=y
+CONFIG_LOG_MAXIMUM_LEVEL_DEBUG=y

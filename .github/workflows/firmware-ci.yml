@@ -1,0 +1,115 @@
+# Harman Kardom continuous integration.
+#
+# This is the pull-request gate from docs/03-firmware/firmware-plan.md stage F0.
+# It proves the repository is internally consistent and that the firmware builds
+# and its logic behaves. It proves nothing about hardware: every physical gate
+# (G0-G8) needs recorded operator measurements and cannot run here.
+
+name: firmware-ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # Pinned deliberately. A floating toolchain would make a build that passed
+  # yesterday fail today for reasons unrelated to the change under review.
+  IDF_VERSION: v5.5.1
+
+jobs:
+  documentation:
+    name: documentation integrity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: check_docs
+        run: python3 scripts/check_docs.py
+
+  host-tests:
+    name: host unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: configure
+        run: cmake -S firmware/test -B build/host-tests -DCMAKE_BUILD_TYPE=Debug
+      - name: build
+        run: cmake --build build/host-tests
+      - name: test
+        run: ctest --test-dir build/host-tests --output-on-failure
+
+  partition-layout:
+    name: partition layout
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: check partition table
+        run: python3 firmware/tools/check_partitions.py
+      - name: test the partition validator itself
+        run: python3 firmware/tools/test_check_partitions.py
+
+  drawings:
+    name: generated drawings are in sync
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      # The documentation sheet is generated. If the generator changed but the
+      # committed SVG did not, the drawing in the vault is stale.
+      - name: regenerate schematic
+        run: python3 hardware/diagrams/generate_schematic_svg.py
+      - name: fail if the committed sheet is out of date
+        run: |
+          if ! git diff --quiet -- docs/02-hardware/assets/harman-kardom-schematic.svg; then
+            echo "The committed schematic does not match its generator."
+            echo "Run: python3 hardware/diagrams/generate_schematic_svg.py"
+            git --no-pager diff --stat -- docs/02-hardware/assets/harman-kardom-schematic.svg
+            exit 1
+          fi
+      # The KiCad sheet is not regenerated here: it needs KiCad's symbol
+      # libraries, which are not installed on the runner. Run
+      # `python3 hardware/kicad/generate_harman_kardom.py --validate` locally.
+
+  firmware-build:
+    name: firmware build and size gate
+    runs-on: ubuntu-latest
+    container: espressif/idf:v5.5.1
+    steps:
+      - uses: actions/checkout@v4
+      - name: build
+        shell: bash
+        run: |
+          . $IDF_PATH/export.sh
+          idf.py -C firmware build
+      - name: partition layout and size gate
+        shell: bash
+        run: |
+          python3 firmware/tools/check_partitions.py \
+            --app-size firmware/build/harman-kardom.bin
+      - name: image size summary
+        shell: bash
+        run: |
+          . $IDF_PATH/export.sh
+          idf.py -C firmware size
+      - uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-ci-build
+          # Unsigned and not a release. Release artefacts are produced only by
+          # the tag pipeline described in docs/03-firmware/ota-and-release-plan.md.
+          path: |
+            firmware/build/harman-kardom.bin
+            firmware/build/harman-kardom.elf
+            firmware/build/partition_table/partition-table.bin
+          retention-days: 14

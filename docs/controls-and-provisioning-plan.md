@@ -94,7 +94,7 @@ Buton aktif-low çalışacak; seçilecek normal GPIO ile GND arasına bağlanaca
 | 5 sn basılı tut | Yalnız Wi-Fi kimlik bilgilerini sil ve provisioning'e yeniden başlat | Sarı geri sayım, sonra mavi |
 | 12 sn basılı tut | Kullanıcı ayarlarını fabrika değerine döndür | Kırmızı hızlı yanıp sönme, bırakınca beyaz |
 
-Fabrika sıfırlama sürücü koruma profili, maksimum güvenli limiter, crossover güvenlik sınırları veya donanım kalibrasyonunu silmeyecek. NVS alanları `factory_calibration` ve `user_settings` olarak ayrılacak.
+Fabrika sıfırlama sürücü koruma profili, maksimum güvenli limiter, crossover güvenlik sınırları veya donanım kalibrasyonunu silmeyecek. NVS alanları `factory_cal` ve `user_settings` olarak ayrılacak.
 
 Buton yazılım gereksinimleri:
 

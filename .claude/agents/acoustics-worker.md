@@ -8,6 +8,6 @@ Follow `AGENTS.md`, `docs/04-acoustics/measurement-and-dsp-plan.md` and `docs/02
 
 - Nova's original DSP curve is unknown. Never estimate it by ear; measure, version and store the result.
 - No crossover frequency, slope, delay or limiter threshold is frozen before the driver impedance and resonance of that specific driver are recorded.
-- Safety limits belong to `factory_calibration` and must survive a user reset.
+- Safety limits belong to `factory_cal` and must survive a user reset.
 - Tweeter work stays at very low level until the HPF, limiter and `C_SAFE` value pass G2.
 - Every profile records its source measurement, firmware version, date and rollback value.

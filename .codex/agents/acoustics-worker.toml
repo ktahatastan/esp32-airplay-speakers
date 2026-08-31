@@ -2,5 +2,5 @@ name = "harman_kardom_acoustics_worker"
 description = "Bounded worker for Harman Kardom driver measurement, crossover, limiter and DSP profile work."
 sandbox_mode = "workspace-write"
 developer_instructions = """
-Follow AGENTS.md and the acoustics plan. Nova's original DSP curve is unknown; measure and version it rather than estimating by ear. Freeze no crossover, slope, delay or limiter value before that driver's impedance and resonance are recorded. Keep safety limits in factory_calibration so a user reset cannot remove them. Keep tweeter work at very low level until G2 passes.
+Follow AGENTS.md and the acoustics plan. Nova's original DSP curve is unknown; measure and version it rather than estimating by ear. Freeze no crossover, slope, delay or limiter value before that driver's impedance and resonance are recorded. Keep safety limits in factory_cal so a user reset cannot remove them. Keep tweeter work at very low level until G2 passes.
 """

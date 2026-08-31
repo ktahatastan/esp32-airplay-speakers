@@ -76,7 +76,8 @@ Kilitli kararlar `AGENTS.md` içindedir ve yalnız supersede eden ADR ile deği�
 
 Ayrıntı, önkoşul ve kabul ölçütleri: [[docs/03-firmware/firmware-plan|firmware planı]].
 
-- [ ] `F0` iskelet: ESP-IDF sürüm kilidi, partition CSV, boyut bütçesi, host testi, PR CI.
+- [x] `F0` iskelet: ESP-IDF `v5.5.1` kilidi, partition CSV, boyut/partition doğrulayıcısı, host testi, PR CI.
+- [ ] `F0` kalan: satın alınan kartla `idf.py flash monitor` ile açılış raporunu doğrula ve GPIO tablosunu `accepted` yap.
 - [ ] `F1` AirPlay yığını fizibilite spike'ı ve ADR-0007'nin kapatılması.
 - [ ] `F2` I2S/DAC/bi-amp ses yolu bring-up (G1 sonrası).
 - [ ] `F3` HPF, crossover ve limiter zinciri (G0 kapandıktan sonra).
@@ -88,7 +89,7 @@ Ayrıntı, önkoşul ve kabul ölçütleri: [[docs/03-firmware/firmware-plan|fir
 
 ## P6b - Firmware güvenliği ve kurtarma
 
-- [ ] `factory_calibration` ile `user_settings` NVS şemasını ve migration testlerini yaz.
+- [ ] `factory_cal` ile `user_settings` NVS şemasını ve migration testlerini yaz.
 - [ ] Cihaz başına benzersiz PoP/QR üretim, seri eşleme ve güvenli yedekleme prosedürünü tanımla.
 - [ ] ESP-IDF sürümünü kilitle; `esp_ghota` uyumluluk/kaynak kullanımı spike'ını tamamla.
 - [ ] `otadata`, `ota_0`, `ota_1` ve kalibrasyon/NVS alanlarını içeren partition CSV ve size budget oluştur.

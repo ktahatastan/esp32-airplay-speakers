@@ -10,7 +10,7 @@ tags: [firmware, plan, roadmap, esp32]
 
 Bu belge firmware'in **ne olduğunu** ve **hangi sırayla yapıldığını** birlikte tanımlar. Aşama sırası keyfi değildir: her aşama kendinden öncekinin kanıtına ve gerektiğinde bir donanım kapısına bağlıdır.
 
-Depoda henüz firmware kaynağı yoktur. `F0` ilk yazılacak iştir.
+`F0` iskeleti `firmware/` altında kuruldu ve ESP-IDF `v5.5.1` ile derleniyor. `F0`'ın kalan işi, satın alınan kartta açılış raporunu doğrulayıp GPIO tablosunu `accepted` yapmaktır. Kurulum ve doğrulama komutları `firmware/README.md` dosyasındadır.
 
 ## Kilitli girdiler
 
@@ -32,7 +32,7 @@ Depoda henüz firmware kaynağı yoktur. `F0` ilk yazılacak iştir.
 | `audio` | AirPlay alıcı, saat/buffer yönetimi, I2S sürücü, DSP zinciri, limiter |
 | `network` | Wi-Fi istemci, mDNS, SoftAP captive portal, BLE provisioning |
 | `ui` | Buton durum makinesi, RGB LED animatörü |
-| `storage` | `factory_calibration` ve `user_settings` NVS ayrımı, şema migrasyonu |
+| `storage` | `factory_cal` ve `user_settings` NVS ayrımı, şema migrasyonu |
 | `power` | Paket gerilimi, NTC, düşük gerilim politikası, güvenli kapanış |
 | `update` | Sürüm kontrolü, manifest doğrulama, A/B OTA, sağlık kontrolü, rollback |
 | `diagnostics` | Parolasız, kişisel veri içermeyen log ve sayaçlar |
@@ -60,12 +60,14 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
 ### F0 — İskelet ve araç zinciri
 
 - **Önkoşul:** yok. Donanım gerekmez.
-- **Çıktı:** `firmware/` ESP-IDF projesi, sabitlenmiş IDF sürümü, `sdkconfig.defaults`, partition CSV taslağı, host birim testi hedefi, `PROJECT_VER` üretimi, PR CI iş akışı.
+- **Çıktı:** `firmware/` ESP-IDF projesi, sabitlenmiş IDF sürümü (`v5.5.1`), `sdkconfig.defaults`, partition CSV, host birim testi hedefi, `PROJECT_VER` üretimi, partition/boyut doğrulayıcısı ve PR CI iş akışı.
 - **Kabul ölçütü:**
-  - Temiz checkout'ta `idf.py build` geçiyor ve tekrarlanabilir.
-  - IDF sürümü tek yerde sabit; sürüm dosyada yazılı.
-  - 16 MB flash için `nvs`, `nvs_keys`, `factory_calibration`, `otadata`, `ota_0`, `ota_1` bölümleri tanımlı ve boyut bütçesi tabloda.
-  - PR CI: format + statik analiz + host testleri + build + boyut kapısı.
+  - Temiz checkout'ta `idf.py -C firmware build` geçiyor ve tekrarlanabilir.
+  - IDF sürümü tek yerde sabit; sürüm `firmware/README.md` ve CI'da aynı değerde yazılı.
+  - 16 MB flash için `nvs`, `nvs_keys`, `factory_cal`, `otadata`, `ota_0`, `ota_1` bölümleri tanımlı; `tools/check_partitions.py` çakışma, hizalama, eşit slot boyutu, zorunlu bölümler ve serbest alan payını denetliyor.
+  - GPIO ataması derleme zamanında zorlanıyor: aynı pini iki işlev paylaşamaz, strapping (`GPIO0/3/45/46`) ve native USB (`GPIO19/20`) pinleri kullanılamaz.
+  - Host birim testleri ESP-IDF olmadan çalışıyor ve pin tablosunu devre planındaki tabloyla işlev işlev karşılaştırıyor.
+  - PR CI: belge bütünlüğü + host testleri + partition kapısı + üretilen çizimlerin güncelliği + firmware build + boyut kapısı.
 - **Gate:** yok. `G6`'nın ön koşuludur.
 
 ### F1 — AirPlay yığını fizibilite spike'ı
@@ -98,7 +100,7 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
 ### F3 — DSP koruma zinciri
 
 - **Önkoşul:** F2. Donanım tarafında `G0` (sürücü empedansı) **kapanmış** olmalı.
-- **Çıktı:** woofer HPF, aktif crossover, kanal gain/delay, RMS ve tepe limiter, clipping davranışı, `factory_calibration` profil formatı.
+- **Çıktı:** woofer HPF, aktif crossover, kanal gain/delay, RMS ve tepe limiter, clipping davranışı, `factory_cal` profil formatı.
 - **Kabul ölçütü:**
   - Filtre katsayıları ölçülmüş sürücü empedansından türetildi; tahmin yok.
   - Tweeter yolu HPF'i ölçümle doğrulandı; `C_SAFE` değeri G2 raporundan geldi.
@@ -129,14 +131,14 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
 - **Kabul ölçütü:**
   - Üç eşik ayrı ayrı doğrulandı; 12 sn işlemi **yalnız buton bırakılınca** onaylanıyor.
   - Yanlışlıkla kısa dokunma kayıtlı Wi-Fi'yi silmiyor.
-  - Kullanıcı reseti `factory_calibration`'a dokunmuyor (PRD-008 testi).
+  - Kullanıcı reseti `factory_cal`'a dokunmuyor (PRD-008 testi).
   - LED PWM'inin I2S zamanlamasına ve analog dip gürültüsüne etkisi ölçüldü.
 - **Gate:** `PRD-005`, `G3` katkı.
 
 ### F6 — Depolama ve güç telemetrisi
 
 - **Önkoşul:** F4. Donanım tarafında `G4` (batarya/BMS/şarj) geçmiş olmalı.
-- **Çıktı:** `factory_calibration` / `user_settings` NVS şeması ve migrasyon, paket gerilimi ve NTC okuma, düşük gerilim politikası, güvenli kapanış sıralaması, şarj durumunda amfi kilidi.
+- **Çıktı:** `factory_cal` / `user_settings` NVS şeması ve migrasyon, paket gerilimi ve NTC okuma, düşük gerilim politikası, güvenli kapanış sıralaması, şarj durumunda amfi kilidi.
 - **Kabul ölçütü:**
   - Şema migrasyonu ileri ve geri testli; bozuk NVS'te cihaz açılıyor.
   - `OTA_MIN_PACK_MV` eşiği G3/G4 ölçümünden türetildi; ölçüm yoksa OTA başlamıyor.
@@ -181,23 +183,31 @@ Paralel çalıştırılabilir: `F4` ve `F5` ile `F2`/`F3`. Aynı anda tek yazma 
 
 ```text
 firmware/
-  CMakeLists.txt
-  sdkconfig.defaults
-  partitions.csv
-  version.txt
-  main/
+  CMakeLists.txt       proje tanımı; PROJECT_VER version.txt'ten gelir      [F0 · var]
+  sdkconfig.defaults   kart, partition, PSRAM ve rollback ayarları          [F0 · var]
+  partitions.csv       16 MB yerleşimi: çift OTA slotu + ayrı kalibrasyon   [F0 · var]
+  version.txt          katı SemVer                                          [F0 · var]
+  main/                app_main; F0'da yalnız açılış raporu                  [F0 · var]
   components/
-    hk_audio/          I2S, DSP, limiter
-    hk_airplay/        seçilen yığının sarmalayıcısı
-    hk_network/        Wi-Fi, mDNS, portal, BLE provisioning
-    hk_ui/             buton, LED
-    hk_storage/        NVS şeması ve migrasyon
-    hk_power/          telemetri, kapanış politikası
-    hk_update/         manifest, OTA, sağlık kontrolü
-  test/                host tarafı birim testleri
+    hk_pins/           GPIO ataması; kısıtları derleyici zorlar             [F0 · var]
+    hk_identity/       MAC'ten türetilen tüm yüzey adları                   [F0 · var]
+    hk_version/        SemVer ayrıştırma ve OTA güncelleme kararı           [F0 · var]
+    hk_audio/          I2S, DSP, limiter                                    [F2-F3]
+    hk_airplay/        seçilen yığının sarmalayıcısı                        [F1]
+    hk_network/        Wi-Fi, mDNS, portal, BLE provisioning                [F4]
+    hk_ui/             buton, LED                                           [F5]
+    hk_storage/        NVS şeması ve migrasyon                              [F6]
+    hk_power/          telemetri, kapanış politikası                        [F6]
+    hk_update/         manifest, OTA, sağlık kontrolü                       [F7]
+  test/                host tarafı birim testleri                           [F0 · var]
+  tools/               partition ve boyut doğrulaması                       [F0 · var]
 ```
 
 Her bileşen kendi başlık dosyasında açık bir arayüz sunar; modüller birbirinin iç durumuna erişmez.
+
+ESP-IDF bağımlılığı olmayan bileşenler bilerek saf C yazılır. Test edilebilirliğin kaynağı budur: mantık, hiçbir sürücüye enerji vermek güvenli olmadan yıllar önce bir dizüstünde doğrulanabilir.
+
+Kurulum, derleme ve doğrulama komutları için `firmware/README.md`.
 
 ## Tamamlanma tanımı
 

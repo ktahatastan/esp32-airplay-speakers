@@ -20,3 +20,6 @@ Thumbs.db
 # Obsidian is intentionally versioned for the shared project vault.
 !.obsidian/
 !.obsidian/**
+
+# Host test builds
+build/host-tests/

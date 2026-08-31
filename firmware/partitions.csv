@@ -1,0 +1,20 @@
+# Harman Kardom partition table - ESP32-S3 N16R8, 16 MB flash (ADR-0010).
+#
+# Layout rules this table has to satisfy, from docs/03-firmware/ota-and-release-plan.md:
+#   - two equally sized application slots so an OTA can be rolled back (ADR-0008)
+#   - otadata exactly 0x2000
+#   - factory calibration in its own partition, so a user reset cannot erase it (PRD-008)
+#   - nvs_keys reserved now: enabling NVS encryption later must not need a repartition
+#
+# tools/check_partitions.py enforces all of the above plus alignment, overlap and
+# total size. Do not hand-tune an offset without re-running it.
+#
+# Name,         Type, SubType,  Offset,    Size,      Flags
+nvs,            data, nvs,      0x9000,    0x6000,
+otadata,        data, ota,      0xf000,    0x2000,
+phy_init,       data, phy,      0x11000,   0x1000,
+nvs_keys,       data, nvs_keys, 0x12000,   0x1000,    encrypted
+factory_cal,    data, nvs,      0x13000,   0xd000,
+ota_0,          app,  ota_0,    0x20000,   0x6e0000,
+ota_1,          app,  ota_1,    0x700000,  0x6e0000,
+storage,        data, spiffs,   0xde0000,  0x220000,

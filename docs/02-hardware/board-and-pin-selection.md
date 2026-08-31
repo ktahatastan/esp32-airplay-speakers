@@ -12,7 +12,7 @@ tags: [esp32, pins, board]
 
 Kanonik kart **ESP32-S3, 16 MB flash + 8 MB PSRAM (`N16R8` sınıfı)**. Karar ve gerekçe: [[../07-decisions/ADR-0010-esp32-s3-n16r8-board|ADR-0010]].
 
-Gerekçenin özeti: [[../07-decisions/ADR-0008-github-releases-ota|ADR-0008]] eşit boyutlu `ota_0` / `ota_1` slotları ile ayrı `factory_calibration` ve `nvs` bölümleri istiyor. AirPlay yığını, DSP ve TLS birlikte 8 MB flashta bu bütçeyi daraltır.
+Gerekçenin özeti: [[../07-decisions/ADR-0008-github-releases-ota|ADR-0008]] eşit boyutlu `ota_0` / `ota_1` slotları ile ayrı `factory_cal` ve `nvs` bölümleri istiyor. AirPlay yığını, DSP ve TLS birlikte 8 MB flashta bu bütçeyi daraltır.
 
 N8R8 yalnız ikincil yedektir; partition bütçesi ölçülüp 8 MB'a sığdığı kanıtlanır ve yeni bir ADR açılırsa değerlendirilir.
 

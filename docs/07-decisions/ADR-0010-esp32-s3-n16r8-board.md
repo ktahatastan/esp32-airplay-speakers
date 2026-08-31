@@ -21,7 +21,7 @@ OTA donanım kimliği: `hw_revision = "prototype-n16r8"`, release asset adı `ha
 
 ## Gerekçe
 
-- [[ADR-0008-github-releases-ota|ADR-0008]] eşit boyutlu iki uygulama slotu (`ota_0` / `ota_1`), ayrı `factory_calibration` ve `nvs` bölümleri gerektirir.
+- [[ADR-0008-github-releases-ota|ADR-0008]] eşit boyutlu iki uygulama slotu (`ota_0` / `ota_1`), ayrı `factory_cal` ve `nvs` bölümleri gerektirir.
 - AirPlay yığını, DSP ve TLS birlikte 8 MB flashta çift slot bütçesini daraltır; 16 MB bu riski erken aşamada ortadan kaldırır.
 - Fiyatlandırılmış ve stokta görünen aday zaten N16R8'dir; ek maliyet dört cihaz için sınırlıdır.
 - PSRAM her iki varyantta da 8 MB olduğundan ses buffer bütçesi kart seçiminden etkilenmez.

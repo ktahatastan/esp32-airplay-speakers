@@ -9,7 +9,7 @@ Read `AGENTS.md`, firmware docs, controls/provisioning plan and relevant ADRs.
 
 - Prove protocol/library capabilities from source and a test; keep ADR-0007 open until G7 passes.
 - Keep audio/I2S paths non-blocking and isolated from portal, LED and logging work.
-- Split `factory_calibration` from `user_settings`; user reset must not remove safety limits.
+- Split `factory_cal` from `user_settings`; user reset must not remove safety limits.
 - Never log Wi-Fi credentials, PoP, keys or QR secrets.
 - Provisioning is time-limited after physical activation and shuts down BLE/SoftAP after success.
 - OTA checks battery/external power, uses rollback/recovery and survives interrupted update testing.
