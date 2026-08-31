@@ -25,7 +25,11 @@ ROOT = Path(__file__).resolve().parent.parent
 # Third-party and generated trees. managed_components holds vendored ESP-IDF
 # components whose documentation is not ours to police.
 SKIP_DIRS = {".git", ".obsidian", "node_modules", "generated",
-             "managed_components", "build"}
+             "managed_components", "build",
+             # Virtual environments carry their own packaged READMEs, which are
+             # not this project's notes and would be judged against a
+             # frontmatter contract they never agreed to.
+             ".venv", "venv", "site-packages", "__pycache__"}
 
 # The vault frontmatter contract applies to notes under docs/ only. Agent and
 # skill definitions follow their own tool-defined schema, checked separately.

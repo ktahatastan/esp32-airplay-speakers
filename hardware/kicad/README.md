@@ -1,3 +1,18 @@
+> **Üretilmiş şema şu an depoda yok — bilerek.**
+>
+> `generated/harman-kardom.kicad_sch` 2026-08-31'de kaldırıldı. Sebebi: ses tarafı pinleri eklendiğinde üreteç değişti (ADR-0011) ve bu makinede KiCad sembol kütüphaneleri kurulu olmadığı için şema yeniden üretilemedi. Elde kalan dosya artık **yanlış** pin atamasını gösteriyordu.
+>
+> Yanlış bir şemayı depoda tutmak, hiç tutmamaktan kötüdür: bayat olduğu anlaşılamayan bir çizimden birisi lehim yapar. Üreteç kaynaktır, `.kicad_sch` türevdir.
+>
+> KiCad kurulu bir makinede geri getirmek iki komut:
+>
+> ```bash
+> hardware/kicad/.venv/bin/python hardware/kicad/generate_harman_kardom.py --validate
+> python3 scripts/check_generated_kicad.py --record
+> ```
+>
+> `scripts/check_generated_kicad.py` bundan sonra şemanın üretecine uyup uymadığını CI'da denetler; üreteç değişip çıktı değişmezse durur.
+
 # Harman Kardom KiCad şeması
 
 Bu klasör tek hoparlörün modül seviyesi **elektriksel kaynağını** tutar. Dört hoparlörde aynı şema tekrarlanır. Belgelerde kullanılan okunabilir tek sayfalık pafta ayrı bir çıktıdır: `hardware/diagrams/`.

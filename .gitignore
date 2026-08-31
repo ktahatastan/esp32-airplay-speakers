@@ -40,3 +40,4 @@ __pycache__/
 # Generated provisioning credentials. The label files hold the only copy of
 # each password; they must never be committed.
 build/provisioning/
+hardware/kicad/.venv/

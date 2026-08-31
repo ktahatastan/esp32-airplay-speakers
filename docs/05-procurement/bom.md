@@ -72,6 +72,7 @@ updated: 2026-08-31
 | Referans / kalem | Değer veya tip | Bir ünite | İlk prototip satın alımı | Dört ünite için toplam | Durum |
 |---|---|---:|---:|---:|---|
 | `R_PU` | 10 kΩ, 1/4 W | 1 | 10'lu paket | 4 | Buton pull-up; aday. |
+| `R_MUTE` | 10 kΩ, 1/4 W | 2 | 10'lu paket | 8 | Amfi `SD` ve DAC `XSMT` pull-down. **Opsiyonel değil**: susturmayı tutan şey bu, GPIO değil (ADR-0011). |
 | `R_LED_R` | 680 Ω, 1/4 W | 1 | 10'lu paket | 4 | Yalnız çıplak RGB LED'de; modül üzerinde direnç varsa `DNP`. |
 | `R_LED_G`, `R_LED_B` | 330 Ω, 1/4 W | 2 | 10'lu paket | 8 | Yalnız çıplak RGB LED'de; modül üzerinde direnç varsa `DNP`. |
 | `C_DB` | 100 nF seramik | 1 isteğe bağlı | 10'lu paket | 4 | Donanım debounce/bypass adayı; firmware testiyle karar verilecek. |

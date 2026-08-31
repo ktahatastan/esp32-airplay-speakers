@@ -151,8 +151,18 @@ Bu GPIO tablosu [[../07-decisions/ADR-0010-esp32-s3-n16r8-board|ADR-0010]] ile k
 | RGB mavi | GPIO10 | `R_B` -> LED B | PWM |
 | I2C SDA | GPIO11 | INA226 SDA | Opsiyonel |
 | I2C SCL | GPIO12 | INA226 SCL | Opsiyonel |
+| Amfi susturma | GPIO21 | TPA3110 `SD` | **Aktif düşük.** 10 kΩ pull-down zorunlu. Rezervasyon: `SD` pad erişimi henüz doğrulanmadı |
+| DAC susturma | GPIO13 | PCM5102A `XSMT` | **Aktif düşük.** 10 kΩ pull-down zorunlu |
+| Paket gerilimi | GPIO1 | Bölücü -> ADC1_CH0 | Bölücü oranı `G3`/`G4`'ten gelir |
+| Hücre sıcaklığı | GPIO2 | NTC ağı -> ADC1_CH1 | Ağ ve eşikler `G4`'ten gelir |
 
-Kaçınılan pinler: boot/strapping için `GPIO0/3/45/46`, native USB için `GPIO19/20`. Kesin kart farklıysa tablo yeniden hazırlanır.
+Tablo [[../07-decisions/ADR-0011-audio-side-gpio-reservation|ADR-0011]] ile genişletildi.
+
+**Susturma hatlarındaki pull-down opsiyonel değildir; susturma mekanizmasının kendisidir.** Bu parçadaki her GPIO reset'ten yüksek empedanslı çıkar ve ROM, bootloader ve uygulama başlangıcı boyunca öyle kalır — yüzlerce milisaniye. O pencerede amfiyi susturan tek şey harici dirençtir. Yazılımın işi susturmayı **bırakmaktır**; firmware hiç çalışmazsa hoparlörler sessiz kalır.
+
+`GPIO18/19/20` susturma hattı olamaz: silikon bunları açılışta HIGH sürer. `GPIO0/39/43/44` de olamaz: zayıf dahili pull-up ile açılırlar. İkisi de yazılım var olmadan amfiyi serbest bırakırdı.
+
+Kaçınılan pinler: boot/strapping `GPIO0/3/45/46`, native USB `GPIO19/20`, SPI flash `GPIO26-32`, **oktal PSRAM `GPIO33-37`** (N16R8'in R8'i), UART0 konsolu `GPIO43/44`, ve S3 die'ında var olmayan `GPIO22-25`. Tamamı `hk_pins.h` içinde derleme zamanında reddedilir — ESP-IDF bu kart yapılandırmasında `GPIO33-37`'yi rezerve **etmez**, gerekçesi ADR-0011'de. Kesin kart farklıysa tablo yeniden hazırlanır.
 
 ### 3.2 I2S ve analog bağlantı
 

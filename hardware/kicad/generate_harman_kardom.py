@@ -106,7 +106,8 @@ MODULES: tuple[Module, ...] = (
     Module("U4", "MP1584 BUCK / SET 5.10 V UNLOADED", (56, 104), ("VBAT_SW", "POWER_GND", "V5_SYS", "STAR_GND")),
     Module("U5", "ESP32-S3 DEVKIT N16R8 / 16 MB FLASH + 8 MB PSRAM", (140, 100), (
         "V5_LOGIC", "STAR_GND", "ESP_3V3", "BUTTON_N", "LED_R", "LED_G", "LED_B",
-        "I2S_BCLK", "I2S_LRCLK", "I2S_DATA", "I2C_SDA", "I2C_SCL", "AMP_MUTE_TBD",
+        "I2S_BCLK", "I2S_LRCLK", "I2S_DATA", "I2C_SDA", "I2C_SCL",
+        "AMP_MUTE", "DAC_XSMT", "BATT_SENSE", "NTC_SENSE",
     )),
     Module("U6", "PCM5102A I2S DAC MODULE / 3-WIRE PLL", (218, 100), (
         "I2S_BCLK", "I2S_LRCLK", "I2S_DATA", "STAR_GND", "V5_LOGIC", "STAR_GND",
@@ -143,7 +144,10 @@ TEST_POINTS: tuple[tuple[int, str], ...] = (
 #: appearing with one pin is a wiring mistake, not an intentional stub.
 EXPECTED_OPEN_NETS: frozenset[str] = frozenset({
     "AMP_SD_TBD",    # XH-A232 shutdown pad; access not confirmed on the board
-    "AMP_MUTE_TBD",  # candidate ESP32 mute line, pending the pop-suppression decision
+    "AMP_MUTE",      # GPIO21 reservation; its far end is AMP_SD_TBD, still unconfirmed
+    "DAC_XSMT",      # GPIO13 reservation; PCM5102A XSMT, external pull-down holds mute
+    "BATT_SENSE",    # GPIO1 reservation; divider ratio comes from G3/G4
+    "NTC_SENSE",     # GPIO2 reservation; thermistor network comes from G4
     "I2C_SDA",       # optional INA226 telemetry
     "I2C_SCL",
 })

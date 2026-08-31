@@ -286,8 +286,11 @@ def build() -> Sheet:
     sheet.zone(680, 630, 510, 800, "D", "ESP32-S3 N16R8 — ADR-0010")
     u5 = sheet.block("U5", "ESP32-S3 DEVKIT", "16 MB flash + 8 MB PSRAM", 830, 700, 330,
                      left=["5V / VBUS", "GND", "3V3", "GPIO7  BUTTON", "GPIO8  LED_R",
-                           "GPIO9  LED_G", "GPIO10 LED_B"],
-                     right=["GPIO4  BCLK", "GPIO5  LRCLK", "GPIO6  DATA"],
+                           "GPIO9  LED_G", "GPIO10 LED_B", "GPIO1  BATT_SENSE",
+                           "GPIO2  NTC_SENSE"],
+                     right=["GPIO4  BCLK", "GPIO5  LRCLK", "GPIO6  DATA",
+                            "GPIO11 SDA", "GPIO12 SCL", "GPIO21 AMP_MUTE",
+                            "GPIO13 DAC_XSMT"],
                      note="GPIO ataması ADAY · kart şeması ve boot testi olmadan accepted değil")
     v5 = u5.pin("5V / VBUS")
     sheet.net_flag(v5[0] - 30, v5[1], "+5V_LOGIC", "L")

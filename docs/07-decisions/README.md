@@ -19,3 +19,4 @@ Durumlar: `proposed`, `accepted`, `superseded`, `rejected`.
 - [[ADR-0008-github-releases-ota|ADR-0008 — Otomatik OTA ve GitHub Releases]]
 - [[ADR-0009-usb-c-pd-charge-chain|ADR-0009 — USB-C PD tabanlı 16,8 V CC/CV şarj zinciri]]
 - [[ADR-0010-esp32-s3-n16r8-board|ADR-0010 — Kanonik ESP32-S3 kartı N16R8]]
+- [[ADR-0011-audio-side-gpio-reservation|ADR-0011 — Ses tarafı GPIO rezervasyonu ve yasak pin maskesi]]

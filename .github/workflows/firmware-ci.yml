@@ -92,9 +92,14 @@ jobs:
             git --no-pager diff --stat -- docs/02-hardware/assets/harman-kardom-schematic.svg
             exit 1
           fi
-      # The KiCad sheet is not regenerated here: it needs KiCad's symbol
-      # libraries, which are not installed on the runner. Run
-      # `python3 hardware/kicad/generate_harman_kardom.py --validate` locally.
+      # The KiCad sheet cannot be regenerated here — it needs KiCad's symbol
+      # libraries, which are not on the runner. What CAN be checked is whether
+      # the committed sheet still matches the generator that produced it,
+      # because the generator is editable on machines that cannot regenerate
+      # the output. A schematic nobody can tell is stale is one someone will
+      # solder from.
+      - name: the generated KiCad sheet must match its generator
+        run: python3 scripts/check_generated_kicad.py
 
   firmware-build:
     name: firmware build and size gate

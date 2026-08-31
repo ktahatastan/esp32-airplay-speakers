@@ -280,7 +280,7 @@
 <line class="w rail" x1="600" y1="778.0" x2="600" y2="762.0"/><line class="rail-bar" x1="584" y1="762.0" x2="616" y2="762.0"/><text class="rail-name" text-anchor="middle" x="600" y="754.0">+5V_LOGIC</text>
 <line class="w gnd" x1="502" y1="810.0" x2="502" y2="824.0"/><line class="gnd-bar" x1="487" y1="824.0" x2="517" y2="824.0"/><line class="gnd-bar" x1="493" y1="830.0" x2="511" y2="830.0"/><line class="gnd-bar" x1="498" y1="836.0" x2="506" y2="836.0"/>
 <text class="gnd-name" text-anchor="middle" x="502" y="852.0">STAR_GND</text>
-<rect class="blk" x="830" y="700" width="330" height="304" rx="6"/><line class="blk-div" x1="830" y1="752" x2="1160" y2="752"/>
+<rect class="blk" x="830" y="700" width="330" height="368" rx="6"/><line class="blk-div" x1="830" y1="752" x2="1160" y2="752"/>
 <text class="blk-ref" x="830" y="691">U5</text><text class="blk-title" x="995.0" y="726">ESP32-S3 DEVKIT</text><text class="blk-sub" x="995.0" y="743">16 MB flash + 8 MB PSRAM</text>
 <line class="pin" x1="830" y1="778.0" x2="808" y2="778.0"/>
 <text class="pin-name" text-anchor="start" x="840" y="782.0">5V / VBUS</text>
@@ -296,13 +296,25 @@
 <text class="pin-name" text-anchor="start" x="840" y="942.0">GPIO9  LED_G</text>
 <line class="pin" x1="830" y1="970.0" x2="808" y2="970.0"/>
 <text class="pin-name" text-anchor="start" x="840" y="974.0">GPIO10 LED_B</text>
+<line class="pin" x1="830" y1="1002.0" x2="808" y2="1002.0"/>
+<text class="pin-name" text-anchor="start" x="840" y="1006.0">GPIO1  BATT_SENSE</text>
+<line class="pin" x1="830" y1="1034.0" x2="808" y2="1034.0"/>
+<text class="pin-name" text-anchor="start" x="840" y="1038.0">GPIO2  NTC_SENSE</text>
 <line class="pin" x1="1160" y1="778.0" x2="1182" y2="778.0"/>
 <text class="pin-name" text-anchor="end" x="1150" y="782.0">GPIO4  BCLK</text>
 <line class="pin" x1="1160" y1="810.0" x2="1182" y2="810.0"/>
 <text class="pin-name" text-anchor="end" x="1150" y="814.0">GPIO5  LRCLK</text>
 <line class="pin" x1="1160" y1="842.0" x2="1182" y2="842.0"/>
 <text class="pin-name" text-anchor="end" x="1150" y="846.0">GPIO6  DATA</text>
-<text class="blk-note" x="995.0" y="1022">GPIO ataması ADAY · kart şeması ve boot testi olmadan accepted değil</text>
+<line class="pin" x1="1160" y1="874.0" x2="1182" y2="874.0"/>
+<text class="pin-name" text-anchor="end" x="1150" y="878.0">GPIO11 SDA</text>
+<line class="pin" x1="1160" y1="906.0" x2="1182" y2="906.0"/>
+<text class="pin-name" text-anchor="end" x="1150" y="910.0">GPIO12 SCL</text>
+<line class="pin" x1="1160" y1="938.0" x2="1182" y2="938.0"/>
+<text class="pin-name" text-anchor="end" x="1150" y="942.0">GPIO21 AMP_MUTE</text>
+<line class="pin" x1="1160" y1="970.0" x2="1182" y2="970.0"/>
+<text class="pin-name" text-anchor="end" x="1150" y="974.0">GPIO13 DAC_XSMT</text>
+<text class="blk-note" x="995.0" y="1086">GPIO ataması ADAY · kart şeması ve boot testi olmadan accepted değil</text>
 <path class="flag" d="M 778 778.0 l -12 -13 h -91.60000000000001 v 26 h 91.60000000000001 Z"/>
 <text class="flag-name" text-anchor="end" x="758" y="783.0">+5V_LOGIC</text>
 <line class="w gnd" x1="660" y1="810.0" x2="660" y2="824.0"/><line class="gnd-bar" x1="645" y1="824.0" x2="675" y2="824.0"/><line class="gnd-bar" x1="651" y1="830.0" x2="669" y2="830.0"/><line class="gnd-bar" x1="656" y1="836.0" x2="664" y2="836.0"/>
