@@ -8,10 +8,10 @@ idf_component_register(SRCS "hk_main.c"
                                 hk_led
                                 hk_pins
                                 hk_provision
+                                hk_storage
                                 hk_network
                                 hk_ui
                                 hk_version
-                                nvs_flash
                                 app_update
                                 esp_system
                                 esp_hw_support

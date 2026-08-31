@@ -13,7 +13,7 @@
  *   F4  Wi-Fi, mDNS and SoftAP provisioning are live; per-device credentials
  *       must be written before provisioning can open
  *   F5  button and LED are live; storage-backed reset actions wait for F6
- *   F6  storage and power telemetry, needs G4
+ *   F6  user and calibration stores exist; power telemetry needs G4
  *   F7  OTA, needs G6
  *
  * Nothing below may grow into driving a real driver without the matching gate.
@@ -33,7 +33,6 @@
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "nvs_flash.h"
 
 #include "hk_button.h"
 #include "hk_identity.h"
@@ -41,6 +40,7 @@
 #include "hk_network.h"
 #include "hk_pins.h"
 #include "hk_provision.h"
+#include "hk_storage.h"
 #include "hk_ui.h"
 #include "hk_version.h"
 
@@ -184,9 +184,17 @@ static void on_button(hk_button_event_t event, void *context)
         }
         break;
     case HK_BUTTON_EVENT_FACTORY_RESET:
-        ESP_LOGW(TAG, "button: factory reset requested; storage layer is F6, nothing erased. "
-                      "When it exists it restores user settings only and never touches "
-                      "factory_cal (PRD-008)");
+        ESP_LOGW(TAG, "button: restoring user settings to defaults");
+        hk_prov_handle(&s_provisioning, HK_PROV_EV_FACTORY_RESET, 0);
+        /* User settings first, then credentials. Calibration is in another
+         * partition that this firmware opens read-only, so neither call can
+         * reach it (PRD-008). */
+        if (hk_storage_user_reset() != ESP_OK) {
+            ESP_LOGE(TAG, "could not restore user settings");
+        }
+        if (hk_network_forget_credentials() != ESP_OK) {
+            ESP_LOGE(TAG, "could not clear credentials");
+        }
         break;
     case HK_BUTTON_EVENT_NONE:
     default:
@@ -239,21 +247,23 @@ static void start_network(void)
 
 void app_main(void)
 {
-    esp_err_t err = nvs_flash_init();
-    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        /* Erasing here only affects the user settings partition. Factory
-         * calibration lives in its own partition and is never touched (PRD-008). */
-        ESP_LOGW(TAG, "nvs needs erasing: %s", esp_err_to_name(err));
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        err = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK(err);
+    /* Opens both stores and works out what state each is in. Never fatal: an
+     * unusable store is reported, because a speaker that will not boot cannot
+     * tell anyone why. */
+    ESP_ERROR_CHECK(hk_storage_init());
 
-    ESP_LOGI(TAG, "%s -- stage F0 skeleton", HK_PRODUCT_FAMILY);
+    ESP_LOGI(TAG, "%s", HK_PRODUCT_FAMILY);
     report_build();
     report_hardware();
     ESP_ERROR_CHECK(report_identity());
     report_pins();
+    ESP_LOGI(TAG, "storage     user=%s calibration=%s",
+             hk_schema_action_name(hk_storage_user_action()),
+             hk_schema_action_name(hk_storage_factory_action()));
+    if (!hk_storage_audio_permitted()) {
+        ESP_LOGE(TAG, "audio is NOT permitted: this device has no trustworthy driver "
+                      "protection profile. No default profile is invented (G0/G2).");
+    }
 
     /* The UI is the one subsystem whose hardware layer exists, so it really
      * runs: the button is read and the LED is driven. */

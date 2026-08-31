@@ -64,7 +64,10 @@ python3 firmware/tools/check_partitions.py --app-size firmware/build/harman-kard
 #    cannot pass unnoticed
 python3 firmware/tools/test_check_partitions.py
 
-# 4. Documentation integrity
+# 4. A user reset must not be able to erase the calibration store (PRD-008)
+python3 firmware/tools/check_storage_isolation.py
+
+# 5. Documentation integrity
 python3 scripts/check_docs.py
 ```
 
@@ -109,6 +112,8 @@ firmware/
     hk_provision/       when the setup radios are open, and when they shut
     hk_ui/              button GPIO and RGB PWM, on its own low-priority task
     hk_network/         Wi-Fi, mDNS and the provisioning transport
+    hk_schema/          what to do when stored data does not match this build
+    hk_storage/         the two stores, and the wall between them
   test/                 host unit tests, built with plain CMake
   tools/                partition and size validation
 ```
@@ -140,7 +145,8 @@ impedance has not been measured. Until the relevant gate passes:
 
 - no code path may raise output level on a real driver (G0, G2)
 - the tweeter path stays muted without a verified high-pass and limiter
-- a user reset must never erase `factory_cal`
+- a user reset must never erase `factory_cal`: enforced by a partition boundary,
+  a read-only open, and `tools/check_storage_isolation.py` in CI
 - OTA must not start on low battery, high temperature or during playback
 
 An automated test can show that logic behaves. It cannot show that a gate

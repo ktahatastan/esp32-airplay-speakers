@@ -149,11 +149,13 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
 - **Önkoşul:** F4. Donanım tarafında `G4` (batarya/BMS/şarj) geçmiş olmalı.
 - **Çıktı:** `factory_cal` / `user_settings` NVS şeması ve migrasyon, paket gerilimi ve NTC okuma, düşük gerilim politikası, güvenli kapanış sıralaması, şarj durumunda amfi kilidi.
 - **Kabul ölçütü:**
-  - Şema migrasyonu ileri ve geri testli; bozuk NVS'te cihaz açılıyor.
-  - `OTA_MIN_PACK_MV` eşiği G3/G4 ölçümünden türetildi; ölçüm yoksa OTA başlamıyor.
-  - Düşük gerilimde kontrollü kapanış: önce mute, sonra amfi, sonra sistem.
-  - Şarj algılandığında amfi ADR-0004 uyarınca kapalı.
-  - Batarya yüzdesi yalnız açık devre geriliminden hesaplanmıyor; yöntem belgelendi.
+  - [x] Şema kararları saf mantık olarak yazıldı ve test edildi (`hk_schema`): eksik, eski, **yeni** (rollback) ve bozuk durumların her biri iki depo için ayrı ayrı çözülüyor.
+  - [x] Bozuk veya eksik depoda cihaz açılıyor; hiçbir depo hatası ölümcül değil.
+  - [x] Kullanıcı reseti `factory_cal`'a ulaşamıyor. Garanti yapısal: ayrı partition, salt-okunur açılış ve `tools/check_storage_isolation.py` ile CI'da denetleniyor (PRD-008).
+  - [x] Kalibrasyon yoksa veya okunamıyorsa ses **izinli değil**; uydurma bir varsayılan profil yazılmıyor.
+  - [ ] `OTA_MIN_PACK_MV` eşiği G3/G4 ölçümünden türetilecek — donanım gerekir.
+  - [ ] Paket gerilimi ve NTC okuma, düşük gerilimde kontrollü kapanış — donanım gerekir.
+  - [ ] Şarj algılandığında amfi kilidi (ADR-0004) — amfi kontrolü `F2`, algılama donanım gerektirir.
 - **Gate:** `G4` girdi, `G8` katkı.
 
 ### F7 — OTA ve release hattı
@@ -208,7 +210,8 @@ firmware/
     hk_button/         buton durum makinesi (saf, testli)                  [F5 · var]
     hk_led/            LED durum önceliği ve deseni (saf, testli)          [F5 · var]
     hk_ui/             buton GPIO ve RGB PWM sürücüsü                       [F5 · var]
-    hk_storage/        NVS şeması ve migrasyon                              [F6]
+    hk_schema/         hangi durumda ne yapılacağı (saf, testli)            [F6 · var]
+    hk_storage/        iki NVS deposu ve aralarındaki duvar                 [F6 · var]
     hk_power/          telemetri, kapanış politikası                        [F6]
     hk_update/         manifest, OTA, sağlık kontrolü                       [F7]
   test/                host tarafı birim testleri                           [F0 · var]
