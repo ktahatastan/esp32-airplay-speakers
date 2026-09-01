@@ -35,6 +35,7 @@ add_executable(hk_host_tests
     test_health.c
     test_power.c
     test_audio.c
+    test_limiter.c
     ${HK_COMPONENTS}/hk_pins/hk_pins.c
     ${HK_COMPONENTS}/hk_identity/hk_identity.c
     ${HK_COMPONENTS}/hk_version/hk_version.c
@@ -48,6 +49,7 @@ add_executable(hk_host_tests
     ${HK_COMPONENTS}/hk_health/hk_health.c
     ${HK_COMPONENTS}/hk_power/hk_power.c
     ${HK_COMPONENTS}/hk_audio/hk_audio.c
+    ${HK_COMPONENTS}/hk_audio/hk_limiter.c
 )
 
 target_include_directories(hk_host_tests PRIVATE
@@ -69,3 +71,6 @@ target_include_directories(hk_host_tests PRIVATE
 
 enable_testing()
 add_test(NAME hk_host_tests COMMAND hk_host_tests)
+
+# libm for the limiter's exponential recovery.
+target_link_libraries(hk_host_tests PRIVATE m)

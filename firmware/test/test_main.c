@@ -19,6 +19,7 @@ int main(void)
     HK_RUN(test_health);
     HK_RUN(test_power);
     HK_RUN(test_audio);
+    HK_RUN(test_limiter);
     printf("%d checks, %d failures\n", hk_test_checks, hk_test_failures);
     return hk_test_failures == 0 ? 0 : 1;
 }
