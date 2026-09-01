@@ -180,7 +180,7 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
   - [x] İlk-boot sağlık kontrolü politikası (`hk_health`) — planın beş ölçütü, enjekte edilen girdilerle host'ta test edildi. Çağrının kendisi ve alt sistem raporlamaları açık.
   - [ ] `esp_ota_mark_app_valid_cancel_rollback()` çağrısı ve alt sistem raporlayıcıları. Bunlar yazılana kadar `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` kapalı kalır; yayın hattı bu eşleşmeyi denetliyor.
   - [ ] Güncelleme zamanlayıcısı ve LED entegrasyonu.
-  - [ ] USB/UART recovery prosedürü.
+  - [x] USB/UART kurtarma prosedürü ve betiği ([[usb-recovery]]). Donanımda çalıştırılmadı.
   - [ ] `G6` matrisinin on iki satırı — **donanım gerekir**, hiçbiri çalıştırılmadı.
 
 ### F8 — Çoklu cihaz ve dayanıklılık

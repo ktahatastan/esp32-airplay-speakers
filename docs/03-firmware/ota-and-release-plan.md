@@ -241,7 +241,7 @@ Açık:
 - [ ] İlk-boot health check ve `esp_ota_mark_app_valid_cancel_rollback()` çağrısı. `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` bu çağrı yazılana kadar **kapalı** kalır; açık olsaydı yayımlanan her imaj ilk yeniden başlatmada geri döner ve güncelleme hiç tutmazdı. İkisi aynı değişiklikte açılır ve yayın hattı bunu denetler.
 - [x] Güncelleme zamanlayıcısı (`hk_sched`): rastgele ilk gecikme, günlük aralık + jitter, ikiye katlanan ve tavanlanan backoff. Rastgelelik **enjekte**, üretici çağrılmıyor; 32-bit milisaniye sarması işaretli farkla ele alınıyor.
 - [ ] Canary/stable kanal politikasının işletilmesi.
-- [ ] USB/UART recovery prosedürünün yazılması.
+- [x] USB/UART kurtarma prosedürü ve betiği ([[usb-recovery]], `firmware/tools/recover.py`). Tam silme yerine cerrahi yazma: ofsetler `partitions.csv`'den okunuyor ve korunan bölüme taşma denetleniyor. Cihazda **çalıştırılmadı**; `G6`'nın son satırı.
 - [x] Depo `ktahatastan`'a taşındı ve `private` yapıldı.
 - [x] Gerçek `HK_SIGNING_KEY` çevrimdışı üretildi, açık yarısı `firmware/certs/hk-signing-key.pub.bin` olarak sabitlendi, özel yarısı `release` **ortam** secret'ında. İlk anahtar yandı ve `burned-keys.txt` ile kalıcı reddediliyor.
 - [ ] `release` ortamına zorunlu inceleyici — private depoda ücretli plan istiyor (`HTTP 422`). Onay kapısı yok; risk kaydında.
