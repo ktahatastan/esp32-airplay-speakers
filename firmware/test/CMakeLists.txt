@@ -34,6 +34,7 @@ add_executable(hk_host_tests
     test_ota.c
     test_health.c
     test_power.c
+    test_audio.c
     ${HK_COMPONENTS}/hk_pins/hk_pins.c
     ${HK_COMPONENTS}/hk_identity/hk_identity.c
     ${HK_COMPONENTS}/hk_version/hk_version.c
@@ -46,6 +47,7 @@ add_executable(hk_host_tests
     ${HK_COMPONENTS}/hk_ota/hk_ota.c
     ${HK_COMPONENTS}/hk_health/hk_health.c
     ${HK_COMPONENTS}/hk_power/hk_power.c
+    ${HK_COMPONENTS}/hk_audio/hk_audio.c
 )
 
 target_include_directories(hk_host_tests PRIVATE
@@ -62,6 +64,7 @@ target_include_directories(hk_host_tests PRIVATE
     ${HK_COMPONENTS}/hk_ota/include
     ${HK_COMPONENTS}/hk_health/include
     ${HK_COMPONENTS}/hk_power/include
+    ${HK_COMPONENTS}/hk_audio/include
 )
 
 enable_testing()

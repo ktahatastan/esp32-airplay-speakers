@@ -236,6 +236,7 @@ firmware/
     hk_ota/            inen görüntü manifest ile uyuşuyor mu + istemci      [F7 · var]
     hk_health/         ilk açılış imajı onaylanmalı mı (saf, testli)        [F7 · var]
     hk_power/          gerilim/sıcaklık politikası (saf, testli)            [F6 · var]
+    hk_audio/          açılış/kapanış susturma sıralayıcısı (saf, testli)   [F2 · var]
   test/                host tarafı birim testleri                           [F0 · var]
   tools/               partition ve boyut doğrulaması                       [F0 · var]
 ```

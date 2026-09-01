@@ -69,5 +69,6 @@ void test_gate(void);
 void test_ota(void);
 void test_health(void);
 void test_power(void);
+void test_audio(void);
 
 #endif /* HK_TEST_H */
