@@ -71,5 +71,6 @@ void test_health(void);
 void test_power(void);
 void test_audio(void);
 void test_limiter(void);
+void test_biquad(void);
 
 #endif /* HK_TEST_H */

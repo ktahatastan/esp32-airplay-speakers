@@ -32,6 +32,12 @@ Bedeli dürüstçe: anlık kazanç değişimi bozulmadır. Normal kullanımda du
 
 `G2` bu sayıları ürettiğinde değişecek tek şey yapılandırma olacak; mantık değişmeyecek.
 
-### Henüz yazılmayan
+## Crossover: matematik yazıldı, köşeler bekliyor
 
-Crossover ve HPF katsayı matematiği (biquad, Linkwitz-Riley) hâlâ yok. Köşe frekansları `G0`/`G2`'yi bekliyor ama matematiğin kendisi beklemiyor; sıradaki iş bu.
+`firmware/components/hk_audio/hk_biquad.c`: ikinci derece bölümler ve onlardan kurulan 4. derece Linkwitz-Riley çifti. Köşe frekansı her fonksiyonda **argüman**; `G0`/`G2` gelmeden hiçbir sayı gömülmedi.
+
+**Direct Form II transposed, Direct Form I değil.** Kâğıt üstünde aynı filtre; tek duyarlıklı `float`'ta değil. DF2T durumunu sinyalle aynı büyüklük aralığında tutar; DF1 birbirine çok yakın iki büyük sayının farkını biriktirir ve düşük köşe frekanslarında bit kaybeder — yani tam olarak tweeter'ın koruma yüksek-geçireninin yaşadığı yerde.
+
+**LR4, Butterworth çifti değil.** Sebep tek bir özellik: iki dal **düz toplanır**. Butterworth çifti köşede 3 dB yukarı çıkar; LR4'te her dal 6 dB aşağıdadır ve toplamları bire döner. Ayrıca LR2'nin aksine LR4'ün iki dalı aynı fazdadır, yani hiçbirinin polaritesi ters çevrilmez. Bu bir tuzak: yine de çevrilirse köşede derin bir çentik oluşur ve bu, kablolama hatası gibi değil "crossover sorunu" gibi ölçülür.
+
+Doğrulama katsayı tablosuna değil **frekans yanıtına** bakıyor — yanlış formül tutarlı biçimde yazıldığında bir tablo mutlu mutlu geçerdi, yanıt geçmez. İki dalın toplamının düzlüğü tüm spektrum boyunca 2000 noktada denetleniyor, ve eğim ayrıca gerçek işleme yolundan sinüsle ölçülüyor.
