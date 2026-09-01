@@ -149,10 +149,20 @@ jobs:
           ./build/host-idf/hk_host_tests
       - name: generator and validator must agree on values, not just names
         shell: bash
+        env:
+          HK_MANIFEST_E2E: ${{ github.workspace }}/build/host-idf/manifest_e2e
         run: |
           cmake --build build/host-idf --target manifest_e2e
-          ln -sfn "$PWD/build/host-idf" build/host-tests
-          python3 firmware/tools/test_make_manifest.py
+          # The end-to-end class skips itself when the harness is absent, which
+          # reads as a green run. This is the only job that runs it, so a skip
+          # here means it ran nowhere.
+          python3 firmware/tools/test_make_manifest.py -v 2>&1 | tee /tmp/e2e.log
+          if grep -q "skipped" /tmp/e2e.log; then
+            echo "the end-to-end tests were skipped; the harness was not found"
+            exit 1
+          fi
+          grep -q "TestEndToEnd" /tmp/e2e.log || {
+            echo "no end-to-end tests ran at all"; exit 1; }
       - name: image size summary
         shell: bash
         run: |

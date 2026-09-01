@@ -7,6 +7,7 @@ disagreement anyway.
 """
 import hashlib
 import json
+import os
 import re
 import struct
 import subprocess
@@ -205,7 +206,13 @@ class TestGeneratorAgreesWithFirmware(unittest.TestCase):
         self.assertEqual(set(expected.values()), self._generated_keys())
 
 
-HARNESS = Path(__file__).resolve().parents[2] / "build/host-tests/manifest_e2e"
+#: Where the end-to-end harness lives. Overridable because CI builds it in a
+#: different directory, and because a symlink shuffle to make one path look
+#: like another is the kind of trick that works until the directory it is
+#: pretending to be already exists.
+HARNESS = Path(os.environ.get(
+    "HK_MANIFEST_E2E",
+    str(Path(__file__).resolve().parents[2] / "build/host-tests/manifest_e2e")))
 
 
 @unittest.skipUnless(HARNESS.exists(),
