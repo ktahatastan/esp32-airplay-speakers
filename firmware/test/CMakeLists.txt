@@ -71,6 +71,43 @@ target_include_directories(hk_host_tests PRIVATE
     ${HK_COMPONENTS}/hk_audio/include
 )
 
+# ---------------------------------------------------------------------------
+# The manifest parser needs cJSON, which ESP-IDF vendors as plain C99 with no
+# ESP dependencies. It is optional here on purpose: the pure modules above must
+# stay testable on a machine that has never seen ESP-IDF, so a missing cJSON
+# skips the parser tests rather than breaking the suite.
+set(CJSON_DIR "$ENV{IDF_PATH}/components/json/cJSON")
+if(NOT EXISTS "${CJSON_DIR}/cJSON.c")
+    set(CJSON_DIR "$ENV{HOME}/esp/esp-idf/components/json/cJSON")
+endif()
+
+if(EXISTS "${CJSON_DIR}/cJSON.c")
+    message(STATUS "cJSON found: manifest parser tests enabled")
+
+    target_sources(hk_host_tests PRIVATE
+        test_manifest_json.c
+        ${HK_COMPONENTS}/hk_ota/hk_manifest_json.c
+        ${CJSON_DIR}/cJSON.c)
+    target_include_directories(hk_host_tests PRIVATE ${CJSON_DIR})
+    target_compile_definitions(hk_host_tests PRIVATE HK_HAVE_CJSON=1)
+
+    # The end-to-end harness the release tooling tests drive.
+    add_executable(manifest_e2e
+        manifest_e2e.c
+        ${HK_COMPONENTS}/hk_ota/hk_manifest_json.c
+        ${HK_COMPONENTS}/hk_ota/hk_ota.c
+        ${HK_COMPONENTS}/hk_manifest/hk_manifest.c
+        ${HK_COMPONENTS}/hk_version/hk_version.c
+        ${CJSON_DIR}/cJSON.c)
+    target_include_directories(manifest_e2e PRIVATE
+        ${HK_COMPONENTS}/hk_ota/include
+        ${HK_COMPONENTS}/hk_manifest/include
+        ${HK_COMPONENTS}/hk_version/include
+        ${CJSON_DIR})
+else()
+    message(WARNING "cJSON not found; manifest parser tests skipped")
+endif()
+
 enable_testing()
 add_test(NAME hk_host_tests COMMAND hk_host_tests)
 

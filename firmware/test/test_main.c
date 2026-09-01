@@ -21,6 +21,9 @@ int main(void)
     HK_RUN(test_audio);
     HK_RUN(test_limiter);
     HK_RUN(test_biquad);
+#ifdef HK_HAVE_CJSON
+    HK_RUN(test_manifest_json);
+#endif
     printf("%d checks, %d failures\n", hk_test_checks, hk_test_failures);
     return hk_test_failures == 0 ? 0 : 1;
 }

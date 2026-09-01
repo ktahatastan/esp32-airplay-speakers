@@ -112,6 +112,10 @@ Bu, `release` ortamının **korunmuş olmasına** bağlıdır ve şu an değildi
 1. Anahtarın açık yarısı `docs/credentials/` altındaki bir anahtarla eşleşiyorsa **reddeder** — o anahtar depoda, yani herkeste.
 2. Sabitlenmiş `firmware/certs/hk-signing-key.pub.bin` ile eşleşmiyorsa **reddeder**. İmzayı imzalayan anahtarla doğrulamak hiçbir şey kanıtlamaz; her geçerli RSA-3072 anahtarı o denetimden geçer. Önemli olan cihazların **zaten güvendiği** anahtar olup olmadığıdır, çünkü güven çıpası çalışan uygulamanın kendi imza bloğudur. Yanlış ama geçerli bir anahtarla yayımlanan sürümü dört hoparlör de sessizce reddeder ve kurtarma yolu dört cihazı USB'den yeniden yazmaktır.
 
+Üretici ile aygıt yazılımının **değerler** üzerinde anlaştığı ayrıca doğrulanıyor. Önceden yalnız alan **adları** karşılaştırılıyordu; bir değer uyuşmazlığı (ayrıştırıcının farklı yazdığı bir sürüm, yanlış kutuda bir özet, taşan bir boyut, tampona sığmayan bir URL) tüm test paketinden geçer ve dört hoparlörün her sürümü reddetmesiyle keşfedilirdi.
+
+Bunun için JSON ayrıştırma ESP-IDF katmanından çıkarılıp saf C'ye taşındı (`hk_manifest_json.c`); cJSON zaten bağımsız C99. Artık `build/host-tests/manifest_e2e` gerçek üretilmiş bir manifest'i gerçek ayrıştırıcıdan ve gerçek doğrulayıcıdan geçiriyor ve cihazın ne karar vereceğini yazdırıyor.
+
 Manifest'in imzalı dosyadan üretilmesi zorunludur: imzalama görüntüyü sektör sınırına doldurur ve 4096 baytlık imza sektörü ekler, yani imzasız ikiliden üretilen manifest yanlış boyut ve özet taşır ve her cihaz reddeder.
 
 `prerelease` canary doğrulamasından sonra **aynı imzalı asset** stable'a terfi ettirilir; yeniden derlenmez.

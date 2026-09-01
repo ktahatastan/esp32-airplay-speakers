@@ -72,5 +72,8 @@ void test_power(void);
 void test_audio(void);
 void test_limiter(void);
 void test_biquad(void);
+#ifdef HK_HAVE_CJSON
+void test_manifest_json(void);
+#endif
 
 #endif /* HK_TEST_H */

@@ -49,6 +49,19 @@ jobs:
         run: cmake --build build/host-tests
       - name: test
         run: ctest --test-dir build/host-tests --output-on-failure
+      # This job deliberately runs WITHOUT ESP-IDF, which proves the pure
+      # modules stay compilable on a machine that has never seen it. The
+      # consequence is that cJSON is absent, so the manifest parser and the
+      # end-to-end harness are skipped here and run in the firmware-build job
+      # instead. Assert the skip is the only thing missing, so a day when the
+      # whole suite silently stops running does not look like this one.
+      - name: the pure suite must not depend on ESP-IDF
+        run: |
+          if [ -x build/host-tests/manifest_e2e ]; then
+            echo "manifest_e2e built without ESP-IDF; the cJSON guard is wrong"
+            exit 1
+          fi
+          echo "as expected: parser tests deferred to the ESP-IDF job"
 
   partition-layout:
     name: partition layout
@@ -117,6 +130,24 @@ jobs:
         run: |
           python3 firmware/tools/check_partitions.py \
             --app-size firmware/build/harman-kardom.bin
+      # The host suite again, this time with ESP-IDF present so cJSON exists
+      # and the manifest parser plus the generator/validator bridge actually
+      # run. Without this the parser would be tested nowhere.
+      - name: host tests including the manifest parser
+        shell: bash
+        run: |
+          . $IDF_PATH/export.sh
+          cmake -S firmware/test -B build/host-idf -DCMAKE_BUILD_TYPE=Debug
+          cmake --build build/host-idf
+          test -x build/host-idf/manifest_e2e || {
+            echo "manifest_e2e was not built: cJSON was not found"; exit 1; }
+          ./build/host-idf/hk_host_tests
+      - name: generator and validator must agree on values, not just names
+        shell: bash
+        run: |
+          cmake --build build/host-idf --target manifest_e2e
+          ln -sfn "$PWD/build/host-idf" build/host-tests
+          python3 firmware/tools/test_make_manifest.py
       - name: image size summary
         shell: bash
         run: |

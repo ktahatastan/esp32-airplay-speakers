@@ -149,7 +149,7 @@ class TestBuildManifest(unittest.TestCase):
 class TestGeneratorAgreesWithFirmware(unittest.TestCase):
     """The two ends of the contract, checked against each other.
 
-    hk_ota_client.c names every field it will read; hk_manifest.h says all of
+    hk_manifest_json.c names every field it will read; hk_manifest.h says all of
     them are required and a missing one is refused. If this generator spells
     one differently — hw_rev for hw_revision, say — nothing fails at build
     time, nothing fails in CI, and every device refuses every update forever
@@ -174,9 +174,9 @@ class TestGeneratorAgreesWithFirmware(unittest.TestCase):
         return set(json.loads(out.read_text()))
 
     def _keys_the_client_reads(self):
-        source = (self.firmware / "components/hk_ota/hk_ota_client.c").read_text()
+        source = (self.firmware / "components/hk_ota/hk_manifest_json.c").read_text()
         keys = set(re.findall(r'take_(?:string|u32)\(root, "([a-z0-9_]+)"', source))
-        self.assertTrue(keys, "found no manifest keys in hk_ota_client.c")
+        self.assertTrue(keys, "found no manifest keys in hk_manifest_json.c")
         return keys
 
     def test_every_field_the_client_reads_is_generated(self):
@@ -203,6 +203,104 @@ class TestGeneratorAgreesWithFirmware(unittest.TestCase):
         self.assertEqual(bits, set(expected),
                          "HK_MANIFEST_REQUIRED_FIELDS changed; update the generator")
         self.assertEqual(set(expected.values()), self._generated_keys())
+
+
+HARNESS = Path(__file__).resolve().parents[2] / "build/host-tests/manifest_e2e"
+
+
+@unittest.skipUnless(HARNESS.exists(),
+                     f"{HARNESS} not built; run cmake --build build/host-tests")
+class TestEndToEnd(unittest.TestCase):
+    """A generated manifest, through the firmware's own parser and validator.
+
+    Every other test compares the two ends by field NAME. This one compares
+    them by VALUE, which is the half that was never checked: a version the
+    parser spells differently, a digest in the wrong case, a size that
+    overflows, a URL longer than the buffer — each of those would have passed
+    the whole suite and been discovered by four speakers refusing every
+    release.
+    """
+
+    DEVICE = ("harman-kardom", "esp32s3", "prototype-n16r8", "stable")
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+
+    def _manifest(self, version="0.2.0", url=None, extra=()):
+        image = Path(self.tmp.name) / "image.bin"
+        image.write_bytes(make_image(version=version))
+        out = Path(self.tmp.name) / "manifest.json"
+        url = url or ("https://github.com/ktahatastan/esp32-airplay-speakers"
+                      f"/releases/download/v{version}/harman-kardom.bin")
+        result = subprocess.run(
+            [sys.executable, str(TOOL), "--image", str(image), "--tag", f"v{version}",
+             "--asset-url", url, "--out", str(out), *extra],
+            capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return out
+
+    def _judge(self, manifest, running="0.1.0", secure="0", slot="0x6e0000",
+               device=None):
+        product, target, hw, channel = device or self.DEVICE
+        return subprocess.run(
+            [str(HARNESS), str(manifest), product, target, hw, channel,
+             running, secure, slot],
+            capture_output=True, text=True)
+
+    def test_a_generated_manifest_is_accepted(self):
+        """The case that must work, or nothing else matters."""
+        result = self._judge(self._manifest())
+        self.assertIn("\nok\n", result.stdout, result.stdout)
+        self.assertEqual(result.returncode, 0, result.stdout)
+
+    def test_every_required_field_survives_the_round_trip(self):
+        """0x3ff is all ten required bits. A field the generator writes under a
+        name the parser does not read would show up here as a missing bit."""
+        result = self._judge(self._manifest())
+        self.assertIn("present=0x3ff", result.stdout, result.stdout)
+
+    def test_the_real_asset_url_fits_the_firmware_buffer(self):
+        """HK_MANIFEST_ASSET_MAX was 96 once, and this repository's own URL is
+        97. The parser drops a field it cannot hold, so a URL that is too long
+        arrives as a missing asset rather than as a truncated one."""
+        result = self._judge(self._manifest())
+        self.assertIn("asset_len=", result.stdout)
+        length = int(result.stdout.split("asset_len=")[1].split("\n")[0])
+        self.assertGreater(length, 80)
+        self.assertIn("present=0x3ff", result.stdout)
+
+    def test_a_very_long_url_is_refused_not_truncated(self):
+        long_url = ("https://github.com/ktahatastan/esp32-airplay-speakers"
+                    "/releases/download/v0.2.0/" + "a" * 300 + ".bin")
+        result = self._judge(self._manifest(url=long_url))
+        self.assertIn("field_missing", result.stdout, result.stdout)
+        self.assertNotEqual(result.returncode, 0)
+
+    def test_another_product_is_refused(self):
+        result = self._judge(self._manifest(),
+                             device=("something-else", "esp32s3",
+                                     "prototype-n16r8", "stable"))
+        self.assertIn("wrong_product", result.stdout, result.stdout)
+
+    def test_other_hardware_is_refused(self):
+        result = self._judge(self._manifest(),
+                             device=("harman-kardom", "esp32s3",
+                                     "rev-b", "stable"))
+        self.assertIn("wrong_hardware", result.stdout, result.stdout)
+
+    def test_a_release_that_is_not_newer_is_refused(self):
+        result = self._judge(self._manifest(version="0.2.0"), running="0.2.0")
+        self.assertIn("not_newer", result.stdout, result.stdout)
+
+    def test_an_image_larger_than_the_slot_is_refused(self):
+        result = self._judge(self._manifest(), slot="4096")
+        self.assertIn("bad_size", result.stdout, result.stdout)
+
+    def test_a_channel_the_device_does_not_follow_is_refused(self):
+        manifest = self._manifest(extra=("--channel", "beta"))
+        result = self._judge(manifest)
+        self.assertIn("wrong_channel", result.stdout, result.stdout)
 
 
 if __name__ == "__main__":

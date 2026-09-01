@@ -93,4 +93,18 @@ const char *hk_ota_image_err_name(hk_ota_image_err_t error);
  */
 bool hk_ota_asset_url_ok(const char *url);
 
+/**
+ * Parse a release manifest into the struct hk_manifest_validate() judges.
+ *
+ * Deliberately separate from the HTTPS client so that the whole chain —
+ * generator output, parser, validator — can be exercised on a host with no
+ * chip. Missing or unusable fields are simply left out of @c out->present
+ * rather than guessed at, so the validator sees exactly which ones arrived.
+ *
+ * @return false only when @p json is not valid JSON at all. A manifest that
+ *         parses but is missing fields returns true; judging that is
+ *         hk_manifest_validate()'s job, not this one's.
+ */
+bool hk_manifest_parse(const char *json, hk_manifest_t *out);
+
 #endif /* HK_OTA_H */
