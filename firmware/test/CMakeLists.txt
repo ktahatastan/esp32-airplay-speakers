@@ -37,6 +37,7 @@ add_executable(hk_host_tests
     test_audio.c
     test_limiter.c
     test_biquad.c
+    test_sched.c
     ${HK_COMPONENTS}/hk_pins/hk_pins.c
     ${HK_COMPONENTS}/hk_identity/hk_identity.c
     ${HK_COMPONENTS}/hk_version/hk_version.c
@@ -52,6 +53,7 @@ add_executable(hk_host_tests
     ${HK_COMPONENTS}/hk_audio/hk_audio.c
     ${HK_COMPONENTS}/hk_audio/hk_limiter.c
     ${HK_COMPONENTS}/hk_audio/hk_biquad.c
+    ${HK_COMPONENTS}/hk_sched/hk_sched.c
 )
 
 target_include_directories(hk_host_tests PRIVATE
@@ -69,6 +71,7 @@ target_include_directories(hk_host_tests PRIVATE
     ${HK_COMPONENTS}/hk_health/include
     ${HK_COMPONENTS}/hk_power/include
     ${HK_COMPONENTS}/hk_audio/include
+    ${HK_COMPONENTS}/hk_sched/include
 )
 
 # ---------------------------------------------------------------------------

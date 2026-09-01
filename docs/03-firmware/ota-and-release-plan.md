@@ -239,7 +239,7 @@ Açık:
 
 - [ ] Progress event ve LED entegrasyonu (`hk_led` OTA durumu tanımlı, istemciye bağlanmadı).
 - [ ] İlk-boot health check ve `esp_ota_mark_app_valid_cancel_rollback()` çağrısı. `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` bu çağrı yazılana kadar **kapalı** kalır; açık olsaydı yayımlanan her imaj ilk yeniden başlatmada geri döner ve güncelleme hiç tutmazdı. İkisi aynı değişiklikte açılır ve yayın hattı bunu denetler.
-- [ ] Güncelleme zamanlayıcısı: rastgele gecikme, günde en fazla bir kontrol, backoff.
+- [x] Güncelleme zamanlayıcısı (`hk_sched`): rastgele ilk gecikme, günlük aralık + jitter, ikiye katlanan ve tavanlanan backoff. Rastgelelik **enjekte**, üretici çağrılmıyor; 32-bit milisaniye sarması işaretli farkla ele alınıyor.
 - [ ] Canary/stable kanal politikasının işletilmesi.
 - [ ] USB/UART recovery prosedürünün yazılması.
 - [x] Depo `ktahatastan`'a taşındı ve `private` yapıldı.
