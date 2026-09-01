@@ -37,6 +37,21 @@ typedef struct {
     uint32_t backoff_max_ms;  /**< Ceiling the backoff doubles up to */
 } hk_sched_limits_t;
 
+/**
+ * The cadence from docs/03-firmware/ota-and-release-plan.md.
+ *
+ * These are product decisions taken from the plan — "a random delay after
+ * Wi-Fi is ready, then at most one check a day" — not measurements, so unlike
+ * a battery threshold they can be argued about and changed in a line. They are
+ * named here rather than left to each caller so four speakers cannot end up
+ * with three different ideas of a day.
+ */
+#define HK_SCHED_INTERVAL_MS_DEFAULT    86400000u  /* 24 h */
+#define HK_SCHED_FIRST_DELAY_MS_DEFAULT  3600000u  /* up to 1 h after boot */
+#define HK_SCHED_JITTER_MS_DEFAULT        600000u  /* +/- 10 min around a check */
+#define HK_SCHED_BACKOFF_MS_DEFAULT        60000u  /* 1 min after one failure */
+#define HK_SCHED_BACKOFF_MAX_MS_DEFAULT  3600000u  /* never slower than hourly */
+
 /** Scheduler state, owned by the caller. */
 typedef struct {
     uint32_t due_ms;      /**< When the next check may happen */

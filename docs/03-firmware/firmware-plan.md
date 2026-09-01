@@ -245,6 +245,8 @@ firmware/
 
 Her bileşen kendi başlık dosyasında açık bir arayüz sunar; modüller birbirinin iç durumuna erişmez.
 
+Politika modülleri açılışta gerçekten **çalıştırılıyor**: `hk_main.c` içindeki `report_policies()` her birini cihazın o an bildiği duruma karşı işletip sonucu basıyor. Bu süs değil — arkasında sürücüsü olmayan bir politika, çalışmayanla ayırt edilemez. Bugün açılış günlüğünün söylemesi gereken şey, sesin izinli **olmadığı**, imajın onaylanamadığı ve hiçbir ayarın depodan gelmediği; çünkü bunların hiçbiri henüz doğru değil.
+
 ESP-IDF bağımlılığı olmayan bileşenler bilerek saf C yazılır. Test edilebilirliğin kaynağı budur: mantık, hiçbir sürücüye enerji vermek güvenli olmadan yıllar önce bir dizüstünde doğrulanabilir.
 
 Kurulum, derleme ve doğrulama komutları için `firmware/README.md`.

@@ -184,18 +184,18 @@ esp_err_t hk_storage_user_reset(void)
     return err;
 }
 
-uint32_t hk_storage_user_get_u32(const char *key, uint32_t fallback)
+bool hk_storage_user_read_u32(const char *key, uint32_t *out)
 {
+    if (key == NULL || out == NULL) {
+        return false;
+    }
     nvs_handle_t handle;
     if (nvs_open(HK_STORAGE_USER_NAMESPACE, NVS_READONLY, &handle) != ESP_OK) {
-        return fallback;
+        return false;
     }
-    uint32_t value = fallback;
-    if (nvs_get_u32(handle, key, &value) != ESP_OK) {
-        value = fallback;
-    }
+    const bool read = nvs_get_u32(handle, key, out) == ESP_OK;
     nvs_close(handle);
-    return value;
+    return read;
 }
 
 esp_err_t hk_storage_user_set_u32(const char *key, uint32_t value)

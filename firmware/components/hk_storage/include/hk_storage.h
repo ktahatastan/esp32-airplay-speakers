@@ -65,8 +65,18 @@ bool hk_storage_audio_permitted(void);
  */
 esp_err_t hk_storage_user_reset(void);
 
-/** Read a user setting. Returns the fallback when it is absent. */
-uint32_t hk_storage_user_get_u32(const char *key, uint32_t fallback);
+/**
+ * Read one user setting.
+ *
+ * @return true when a value was actually read.
+ *
+ * This used to take a fallback and return it on any failure, which folded
+ * "nothing is stored", "the store is unusable" and "here is your value" into
+ * one answer. hk_settings_resolve() needs those apart: a fresh device and a
+ * device whose settings went bad both end up on the default, and only the
+ * second one is worth a line in the log.
+ */
+bool hk_storage_user_read_u32(const char *key, uint32_t *out);
 
 /** Write a user setting. */
 esp_err_t hk_storage_user_set_u32(const char *key, uint32_t value);
