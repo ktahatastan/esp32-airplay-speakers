@@ -1,5 +1,7 @@
 #include "hk_schema.h"
 
+#include <stddef.h>
+
 hk_schema_found_t hk_schema_classify(bool present, uint32_t found, uint16_t current)
 {
     if (!present) {
@@ -59,6 +61,77 @@ hk_schema_action_t hk_schema_resolve(hk_store_t store, hk_schema_found_t found)
          * defaults beats refusing to start. */
         return HK_SCHEMA_WRITE_DEFAULTS;
     }
+}
+
+/**
+ * Conversions this build knows how to perform.
+ *
+ * Deliberately empty. There is one schema version, so there is nothing to
+ * convert from; an entry here is a promise that a converter exists, and an
+ * empty table is an honest statement that none does. Adding a version means
+ * adding a row AND the code that performs it — the row alone would restore
+ * exactly the silent failure this table was added to prevent.
+ */
+typedef struct {
+    hk_store_t store;
+    uint32_t   from_version;
+    uint32_t   to_version;
+} hk_schema_migration_t;
+
+static const hk_schema_migration_t k_migrations[] = {
+    /* { HK_STORE_USER, 1u, 2u },  <- with the converter, not before it */
+    {HK_STORE_USER, 0u, 0u},  /* placeholder so the array is never zero-length */
+};
+
+static bool can_migrate_to(hk_store_t store, uint32_t from_version, uint32_t current)
+{
+    for (size_t i = 0; i < sizeof(k_migrations) / sizeof(k_migrations[0]); i++) {
+        const hk_schema_migration_t *m = &k_migrations[i];
+        if (m->from_version == 0u && m->to_version == 0u) {
+            continue;   /* the placeholder */
+        }
+        if (m->store == store && m->from_version == from_version &&
+            m->to_version == current) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool hk_schema_can_migrate(hk_store_t store, uint32_t from_version)
+{
+    const uint32_t current = (store == HK_STORE_FACTORY) ? HK_SCHEMA_FACTORY_VERSION
+                                                         : HK_SCHEMA_USER_VERSION;
+    return can_migrate_to(store, from_version, current);
+}
+
+hk_schema_action_t hk_schema_without_migration(hk_store_t store)
+{
+    /* Losing a volume setting costs the owner a minute. Misreading a driver
+     * protection profile costs a tweeter. */
+    return (store == HK_STORE_FACTORY) ? HK_SCHEMA_FAIL_SAFE
+                                       : HK_SCHEMA_WRITE_DEFAULTS;
+}
+
+hk_schema_action_t hk_schema_plan_with(hk_store_t store, bool present,
+                                       uint32_t found_version, uint16_t current)
+{
+    const hk_schema_found_t found = hk_schema_classify(present, found_version, current);
+    const hk_schema_action_t action = hk_schema_resolve(store, found);
+
+    if (action == HK_SCHEMA_MIGRATE &&
+        !can_migrate_to(store, found_version, current)) {
+        return hk_schema_without_migration(store);
+    }
+    return action;
+}
+
+hk_schema_action_t hk_schema_plan(hk_store_t store, bool present, uint32_t found_version)
+{
+    const uint16_t current = (store == HK_STORE_FACTORY)
+                             ? (uint16_t)HK_SCHEMA_FACTORY_VERSION
+                             : (uint16_t)HK_SCHEMA_USER_VERSION;
+    return hk_schema_plan_with(store, present, found_version, current);
 }
 
 bool hk_schema_audio_permitted(hk_schema_action_t factory_action)

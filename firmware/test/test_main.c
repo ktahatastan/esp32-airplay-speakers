@@ -22,6 +22,7 @@ int main(void)
     HK_RUN(test_limiter);
     HK_RUN(test_biquad);
     HK_RUN(test_sched);
+    HK_RUN(test_settings);
 #ifdef HK_HAVE_CJSON
     HK_RUN(test_manifest_json);
 #endif

@@ -17,6 +17,7 @@ idf_component_register(SRCS "hk_main.c"
                                 hk_power
                                 hk_audio
                                 hk_sched
+                                hk_settings
                                 app_update
                                 esp_system
                                 esp_hw_support

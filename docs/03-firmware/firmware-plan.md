@@ -238,6 +238,7 @@ firmware/
     hk_power/          gerilim/sıcaklık politikası (saf, testli)            [F6 · var]
     hk_audio/          susturma sırası, limiter, biquad/LR4 (saf, testli)   [F2-F3 · var]
     hk_sched/          güncelleme zamanlaması ve backoff (saf, testli)      [F7 · var]
+    hk_settings/       kullanıcı ayarı tablosu, varsayılan ve aralık        [F6 · var]
   test/                host tarafı birim testleri                           [F0 · var]
   tools/               partition ve boyut doğrulaması                       [F0 · var]
 ```

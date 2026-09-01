@@ -15,18 +15,51 @@ static hk_schema_action_t s_user_action = HK_SCHEMA_WRITE_DEFAULTS;
 static hk_schema_action_t s_factory_action = HK_SCHEMA_FAIL_SAFE;
 
 /** Read a store's schema version, distinguishing absent from unreadable. */
-static hk_schema_found_t read_version(nvs_handle_t handle, uint16_t current)
+/**
+ * Read the stored schema version.
+ *
+ * Returns the raw number as well as whether one was there, because deciding
+ * what to do needs the version itself: "convert this store" is only a usable
+ * answer if a converter for THAT version exists, and hk_schema_plan() cannot
+ * check that from a classification alone.
+ *
+ * @param corrupt set when the key exists but could not be read; the caller
+ *                must treat that as unreadable rather than as absent.
+ */
+static bool read_version(nvs_handle_t handle, uint32_t *out_version, bool *corrupt)
 {
     uint32_t stored = 0;
+    *corrupt = false;
     esp_err_t err = nvs_get_u32(handle, HK_STORAGE_VERSION_KEY, &stored);
     if (err == ESP_ERR_NVS_NOT_FOUND) {
-        return hk_schema_classify(false, 0, current);
+        return false;
     }
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "reading %s: %s", HK_STORAGE_VERSION_KEY, esp_err_to_name(err));
-        return HK_SCHEMA_FOUND_CORRUPT;
+        *corrupt = true;
+        return false;
     }
-    return hk_schema_classify(true, stored, current);
+    *out_version = stored;
+    return true;
+}
+
+/** Plan for one store, treating an unreadable version as corrupt. */
+static hk_schema_action_t plan_for(nvs_handle_t handle, hk_store_t store,
+                                   uint16_t current, hk_schema_found_t *found_out)
+{
+    uint32_t version = 0;
+    bool corrupt = false;
+    const bool present = read_version(handle, &version, &corrupt);
+
+    if (corrupt) {
+        *found_out = HK_SCHEMA_FOUND_CORRUPT;
+        return hk_schema_resolve(store, HK_SCHEMA_FOUND_CORRUPT);
+    }
+    *found_out = hk_schema_classify(present, version, current);
+    /* hk_schema_plan(), not hk_schema_resolve(): resolve can answer MIGRATE,
+     * and nothing here knows how to convert anything. Acting on MIGRATE would
+     * read an old layout as though it were the current one. */
+    return hk_schema_plan(store, present, version);
 }
 
 static esp_err_t init_user_store(void)
@@ -51,8 +84,9 @@ static esp_err_t init_user_store(void)
         return err;
     }
 
-    hk_schema_found_t found = read_version(handle, HK_SCHEMA_USER_VERSION);
-    s_user_action = hk_schema_resolve(HK_STORE_USER, found);
+    hk_schema_found_t found;
+    s_user_action = plan_for(handle, HK_STORE_USER,
+                             (uint16_t)HK_SCHEMA_USER_VERSION, &found);
     ESP_LOGI(TAG, "user store: %s -> %s",
              hk_schema_found_name(found), hk_schema_action_name(s_user_action));
 
@@ -97,8 +131,9 @@ static void init_factory_store(void)
         return;
     }
 
-    hk_schema_found_t found = read_version(handle, HK_SCHEMA_FACTORY_VERSION);
-    s_factory_action = hk_schema_resolve(HK_STORE_FACTORY, found);
+    hk_schema_found_t found;
+    s_factory_action = plan_for(handle, HK_STORE_FACTORY,
+                                (uint16_t)HK_SCHEMA_FACTORY_VERSION, &found);
     nvs_close(handle);
 
     ESP_LOGI(TAG, "calibration store: %s -> %s",

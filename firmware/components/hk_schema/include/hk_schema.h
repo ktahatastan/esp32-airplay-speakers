@@ -81,6 +81,51 @@ hk_schema_found_t hk_schema_classify(bool present, uint32_t found, uint16_t curr
 hk_schema_action_t hk_schema_resolve(hk_store_t store, hk_schema_found_t found);
 
 /**
+ * Whether this build can convert a store written at @p from_version.
+ *
+ * hk_schema_resolve() answers HK_SCHEMA_MIGRATE for anything older, which is
+ * the right decision and only half an answer: deciding to convert is not the
+ * same as having a converter. Today there is exactly one schema version and
+ * therefore no conversions, so this returns false for everything — and that is
+ * the point. The moment someone bumps HK_SCHEMA_USER_VERSION to 2, every
+ * existing device resolves to MIGRATE, and without this check the old store
+ * would be read as though it were the new layout. Silently, on all four.
+ */
+bool hk_schema_can_migrate(hk_store_t store, uint32_t from_version);
+
+/**
+ * What to do when a conversion was called for and none exists.
+ *
+ * The two stores degrade differently, for the same reasons they always do:
+ * user settings fall back to defaults, because losing a volume setting is a
+ * minute of the owner's time; calibration goes fail-safe, because a profile
+ * this build cannot convert is a profile it must not pretend to understand.
+ */
+hk_schema_action_t hk_schema_without_migration(hk_store_t store);
+
+/**
+ * Classify, resolve, and check that any conversion asked for actually exists.
+ *
+ * This is what callers should use. hk_schema_resolve() can return MIGRATE on
+ * its own, and a caller that treats that as "carry on" gets a store read
+ * through the wrong layout. This one cannot return MIGRATE unless a converter
+ * is genuinely present, so the dangerous case has to be reached deliberately.
+ */
+hk_schema_action_t hk_schema_plan(hk_store_t store, bool present, uint32_t found_version);
+
+/**
+ * hk_schema_plan() with the current version supplied rather than compiled in.
+ *
+ * This exists so the migration path can be reached at all. With one schema
+ * version there is no valid older one — version 0 classifies as corrupt, not
+ * as older — so hk_schema_plan() cannot produce MIGRATE today and the guard
+ * against acting on it would sit untested until the first version bump, which
+ * is exactly when it has to work.
+ */
+hk_schema_action_t hk_schema_plan_with(hk_store_t store, bool present,
+                                       uint32_t found_version, uint16_t current);
+
+/**
  * Whether an action allows driving audio at normal levels.
  *
  * False means the driver protection profile is unavailable or untrusted, and
