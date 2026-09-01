@@ -40,4 +40,6 @@ Bedeli dürüstçe: anlık kazanç değişimi bozulmadır. Normal kullanımda du
 
 **LR4, Butterworth çifti değil.** Sebep tek bir özellik: iki dal **düz toplanır**. Butterworth çifti köşede 3 dB yukarı çıkar; LR4'te her dal 6 dB aşağıdadır ve toplamları bire döner. Ayrıca LR2'nin aksine LR4'ün iki dalı aynı fazdadır, yani hiçbirinin polaritesi ters çevrilmez. Bu bir tuzak: yine de çevrilirse köşede derin bir çentik oluşur ve bu, kablolama hatası gibi değil "crossover sorunu" gibi ölçülür.
 
+Bir sınır fuzz'lamayla bulundu: `fc/fs` oranı yaklaşık **4,83e-5**'in altında katsayılar tek duyarlıkta kararlı bir filtre tanımlamayı bırakıyor — `a2` bire yaklaşıyor ve yuvarlama kutupları birim çemberin üstüne ya da dışına itiyor. Katsayılar yine de üretiliyor ve yine filtre gibi görünüyor. Modül artık bu oranın altını **reddediyor** (sınır ölçülenin iki katı, 48 kHz'de 4,8 Hz). Projenin ihtiyacı olan her değer çok yukarıda: 2 kHz crossover 0,042; tweeter'ın 80 Hz koruma yüksek-geçireni 0,0017; 20 Hz subsonic 4,2e-4.
+
 Doğrulama katsayı tablosuna değil **frekans yanıtına** bakıyor — yanlış formül tutarlı biçimde yazıldığında bir tablo mutlu mutlu geçerdi, yanıt geçmez. İki dalın toplamının düzlüğü tüm spektrum boyunca 2000 noktada denetleniyor, ve eğim ayrıca gerçek işleme yolundan sinüsle ölçülüyor.

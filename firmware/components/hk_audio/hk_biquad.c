@@ -16,6 +16,14 @@ static bool request_valid(float fc_hz, float fs_hz, float q)
     if (fc_hz >= fs_hz / 2.0f) {
         return false;
     }
+    /* And below a certain fraction of the sample rate there is no such filter
+     * to design IN FLOAT. The coefficients still come out, and they still look
+     * like a filter, but a2 has rounded to where the poles are no longer
+     * inside the unit circle. Returning them would hand the caller a section
+     * that rings rather than settles, on the tweeter protection path. */
+    if (fc_hz < fs_hz * HK_BIQUAD_MIN_FC_RATIO) {
+        return false;
+    }
     return true;
 }
 

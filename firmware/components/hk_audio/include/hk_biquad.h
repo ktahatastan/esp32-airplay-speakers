@@ -42,6 +42,23 @@ typedef struct {
     float z1, z2;
 } hk_biquad_state_t;
 
+/**
+ * Lowest corner this design will produce, as a fraction of the sample rate.
+ *
+ * Below roughly fc/fs = 4.83e-5 the coefficients stop describing a stable
+ * filter in single precision: a2 approaches 1 from below, and the rounding
+ * pushes the poles onto or outside the unit circle. Measured by bisection at
+ * 44.1, 48, 96 and 192 kHz, which all break at the same ratio because it is a
+ * ratio.
+ *
+ * The limit here is about twice that, which is 4.8 Hz at 48 kHz. Everything
+ * this project needs sits far above it — a 2 kHz crossover is 0.042, a
+ * tweeter's 80 Hz protection high-pass is 0.0017, a 20 Hz subsonic filter is
+ * 4.2e-4 — so the margin costs nothing and the alternative is a filter that
+ * quietly rings instead of one that was never built.
+ */
+#define HK_BIQUAD_MIN_FC_RATIO 1.0e-4f
+
 /** Butterworth-family Q. Both Linkwitz-Riley sections use it. */
 #define HK_BIQUAD_Q_BUTTERWORTH 0.70710678f
 
@@ -49,10 +66,12 @@ typedef struct {
  * Design a second-order low-pass.
  *
  * @return false if the request cannot be met: a corner at or above Nyquist has
- *         no meaning, and a non-positive frequency, sample rate or Q produces
- *         coefficients that are not a filter. Refused rather than approximated,
- *         because a filter that quietly became something else is worse than one
- *         that was never built.
+ *         no meaning, a corner below ::HK_BIQUAD_MIN_FC_RATIO cannot be
+ *         represented stably in single precision, and a non-positive
+ *         frequency, sample rate or Q produces coefficients that are not a
+ *         filter. Refused rather than approximated, because a filter that
+ *         quietly became something else is worse than one that was never
+ *         built.
  */
 bool hk_biquad_lowpass(hk_biquad_coeffs_t *coeffs, float fc_hz, float fs_hz, float q);
 

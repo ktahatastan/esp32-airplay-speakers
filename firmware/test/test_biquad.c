@@ -63,6 +63,44 @@ void test_biquad(void)
     HK_CHECK(!hk_biquad_lowpass(&lp, FC, FS, 0.0f));         /* no Q */
     HK_CHECK(!hk_biquad_lowpass(&lp, FC, FS, -1.0f));
     HK_CHECK(!hk_biquad_lowpass(&lp, NAN, FS, 0.7f));
+    /* ===== a corner too low to represent in float =====
+     * Found by fuzzing: below about fc/fs = 4.83e-5 the coefficients still
+     * come out and still look like a filter, but a2 has rounded to where the
+     * poles are no longer inside the unit circle. Handing that back would put
+     * a section that rings instead of settling on the tweeter protection path.
+     * The limit is set at twice the measured boundary. */
+    HK_CHECK(!hk_biquad_lowpass(&lp, 1.0f, 192000.0f, HK_BIQUAD_Q_BUTTERWORTH));
+    HK_CHECK(!hk_biquad_highpass(&hp, 1.0f, 192000.0f, HK_BIQUAD_Q_BUTTERWORTH));
+    HK_CHECK(!hk_lr4_lowpass(&lr_lo, 1.0f, 192000.0f));
+    HK_CHECK(!hk_biquad_lowpass(&lp, FS * (HK_BIQUAD_MIN_FC_RATIO / 2.0f), FS, 0.7f));
+
+    /* Just above the limit is still built, and is stable. */
+    HK_CHECK(hk_biquad_lowpass(&lp, FS * HK_BIQUAD_MIN_FC_RATIO * 1.01f, FS, 0.7f));
+    HK_CHECK(hk_biquad_stable(&lp));
+
+    /* Everything this project actually needs is far above it: a 2 kHz
+     * crossover, an 80 Hz tweeter high-pass, a 20 Hz subsonic filter. */
+    HK_CHECK(hk_biquad_lowpass(&lp, 2000.0f, 48000.0f, HK_BIQUAD_Q_BUTTERWORTH));
+    HK_CHECK(hk_biquad_stable(&lp));
+    HK_CHECK(hk_biquad_highpass(&hp, 80.0f, 48000.0f, HK_BIQUAD_Q_BUTTERWORTH));
+    HK_CHECK(hk_biquad_stable(&hp));
+    HK_CHECK(hk_biquad_highpass(&hp, 20.0f, 48000.0f, HK_BIQUAD_Q_BUTTERWORTH));
+    HK_CHECK(hk_biquad_stable(&hp));
+
+    /* ===== every filter this module agrees to build is stable =====
+     * The property the refusal exists to protect, swept rather than sampled. */
+    for (int i = 1; i <= 2000; i++) {
+        const float fs_hz = 48000.0f;
+        const float fc_hz = fs_hz * 0.499f * (float)i / 2000.0f;
+        hk_biquad_coeffs_t c;
+        if (hk_biquad_lowpass(&c, fc_hz, fs_hz, HK_BIQUAD_Q_BUTTERWORTH)) {
+            HK_CHECK(hk_biquad_stable(&c));
+        }
+        if (hk_biquad_highpass(&c, fc_hz, fs_hz, HK_BIQUAD_Q_BUTTERWORTH)) {
+            HK_CHECK(hk_biquad_stable(&c));
+        }
+    }
+
     /* At or above Nyquist there is no such filter. */
     HK_CHECK(!hk_biquad_lowpass(&lp, FS / 2.0f, FS, 0.7f));
     HK_CHECK(!hk_biquad_lowpass(&lp, FS, FS, 0.7f));
