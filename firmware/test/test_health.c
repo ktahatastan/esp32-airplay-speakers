@@ -253,6 +253,48 @@ void test_health(void)
         HK_CHECK_EQ_INT(why, HK_HEALTH_REASON_BAD_LIMITS);
     }
 
+    /* ===== the posture the firmware actually starts from =====
+     * hk_health_monitor begins with storage and network unknown and audio and
+     * telemetry skipped, because those two subsystems do not exist yet. If
+     * that combination could never reach CONFIRM, every OTA would roll back
+     * and the only symptom would be updates that quietly never stick. */
+    {
+        hk_health_inputs_t wired = {
+            .storage = HK_HEALTH_UNKNOWN,
+            .network = HK_HEALTH_UNKNOWN,
+            .audio = HK_HEALTH_SKIP,
+            .telemetry = HK_HEALTH_SKIP,
+            .uptime_ms = 0,
+            .critical_fault = false,
+        };
+        /* Nothing has reported yet: wait, do not decide. */
+        HK_CHECK_EQ_INT(hk_health_evaluate(&wired, &lim, &why), HK_HEALTH_WAIT);
+        HK_CHECK_EQ_INT(why, HK_HEALTH_REASON_INCOMPLETE);
+
+        /* Storage reports first, from hk_storage_init(). */
+        wired.storage = HK_HEALTH_PASS;
+        HK_CHECK_EQ_INT(hk_health_evaluate(&wired, &lim, &why), HK_HEALTH_WAIT);
+
+        /* Then the network, from the status callback or the start failure. */
+        wired.network = HK_HEALTH_PASS;
+        wired.uptime_ms = HK_HEALTH_SETTLE_MS_DEFAULT;
+        HK_CHECK_EQ_INT(hk_health_evaluate(&wired, &lim, &why), HK_HEALTH_CONFIRM);
+
+        /* And a device that opened provisioning instead of joining still
+         * confirms — that is a working speaker waiting for its owner. */
+        wired.network = HK_HEALTH_PASS;
+        HK_CHECK_EQ_INT(hk_health_evaluate(&wired, &lim, &why), HK_HEALTH_CONFIRM);
+
+        /* A network stack that failed to start does not. */
+        wired.network = HK_HEALTH_FAIL;
+        HK_CHECK_EQ_INT(hk_health_evaluate(&wired, &lim, &why), HK_HEALTH_ROLLBACK);
+
+        /* Nor does storage that could not be brought up. */
+        wired.network = HK_HEALTH_PASS;
+        wired.storage = HK_HEALTH_FAIL;
+        HK_CHECK_EQ_INT(hk_health_evaluate(&wired, &lim, &why), HK_HEALTH_ROLLBACK);
+    }
+
     /* --- names, so a boot log is readable --- */
     HK_CHECK(strcmp(hk_health_verdict_name(HK_HEALTH_CONFIRM), "CONFIRM") == 0);
     HK_CHECK(strcmp(hk_health_verdict_name(HK_HEALTH_ROLLBACK), "ROLLBACK") == 0);

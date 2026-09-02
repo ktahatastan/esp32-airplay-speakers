@@ -238,7 +238,7 @@ Yazıldı ve ana makinede doğrulandı:
 Açık:
 
 - [ ] Progress event ve LED entegrasyonu (`hk_led` OTA durumu tanımlı, istemciye bağlanmadı).
-- [ ] İlk-boot health check ve `esp_ota_mark_app_valid_cancel_rollback()` çağrısı. `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` bu çağrı yazılana kadar **kapalı** kalır; açık olsaydı yayımlanan her imaj ilk yeniden başlatmada geri döner ve güncelleme hiç tutmazdı. İkisi aynı değişiklikte açılır ve yayın hattı bunu denetler.
+- [x] İlk-boot health check ve `esp_ota_mark_app_valid_cancel_rollback()` çağrısı (`hk_health_monitor`); rollback bayrağı aynı değişiklikte açıldı. Ses ve telemetri, sürücüleri olmadığı için `SKIP` ile geçiliyor — "bu yapıya uygulanmaz" ile "henüz cevap vermedi" arasındaki fark, ilki imajı onaylatır ikincisi geri aldırır.
 - [x] Güncelleme zamanlayıcısı (`hk_sched`): rastgele ilk gecikme, günlük aralık + jitter, ikiye katlanan ve tavanlanan backoff. Rastgelelik **enjekte**, üretici çağrılmıyor; 32-bit milisaniye sarması işaretli farkla ele alınıyor.
 - [ ] Canary/stable kanal politikasının işletilmesi.
 - [x] USB/UART kurtarma prosedürü ve betiği ([[usb-recovery]], `firmware/tools/recover.py`). Tam silme yerine cerrahi yazma: ofsetler `partitions.csv`'den okunuyor ve korunan bölüme taşma denetleniyor. Cihazda **çalıştırılmadı**; `G6`'nın son satırı.

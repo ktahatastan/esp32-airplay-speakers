@@ -128,8 +128,41 @@ hk_health_verdict_t hk_health_evaluate(const hk_health_inputs_t *inputs,
                                        const hk_health_limits_t *limits,
                                        hk_health_reason_t *reason);
 
+/** Which criterion a reporter is speaking for. */
+typedef enum {
+    HK_HEALTH_CRITERION_STORAGE = 0,
+    HK_HEALTH_CRITERION_NETWORK,
+    HK_HEALTH_CRITERION_AUDIO,
+    HK_HEALTH_CRITERION_TELEMETRY,
+} hk_health_criterion_t;
+
 /** Short names, for logs and tests. */
 const char *hk_health_verdict_name(hk_health_verdict_t verdict);
 const char *hk_health_reason_name(hk_health_reason_t reason);
+
+/*
+ * The ESP-IDF half. Declared here, implemented in hk_health_monitor.c, which
+ * the host test build does not compile.
+ */
+
+/**
+ * Work out whether this image is awaiting judgement, and note any fault the
+ * previous run ended in.
+ *
+ * @return true when the running image is PENDING_VERIFY. When it is not — a
+ *         USB flash, or an image confirmed long ago — the monitor does nothing
+ *         at all, because there is nothing to confirm and rolling back would
+ *         reboot a working speaker for no reason.
+ */
+bool hk_health_monitor_begin(void);
+
+/** Report what one subsystem has concluded about itself. */
+void hk_health_report(hk_health_criterion_t which, hk_health_state_t state);
+
+/** Record that the firmware misbehaved: panics outrank every other input. */
+void hk_health_report_fault(void);
+
+/** Ask, and carry out the answer. Acts at most once. */
+void hk_health_monitor_tick(uint32_t now_ms);
 
 #endif /* HK_HEALTH_H */

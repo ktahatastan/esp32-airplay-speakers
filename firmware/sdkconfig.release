@@ -34,15 +34,17 @@ CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES=n
 #     icinde yalnizca YAZILIMSAL olarak karsilastirilir; eFuse yakilmaz.
 CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK=n
 
-# --- OTA geri donusu HENUZ KAPALI, sdkconfig.defaults ile ayni gerekcyle.
-#     Acikken yeni imaj "pending verify" olarak acilir ve uygulama
+# --- OTA geri donusu ACIK.
+#     Yeni imaj "pending verify" olarak acilir; uygulama
 #     esp_ota_mark_app_valid_cancel_rollback() cagirmazsa bootloader onceki
-#     yuvaya doner. O cagriyi yapacak ilk-acilis saglik denetimi henuz
-#     yazilmadi, dolayisiyla bunu simdi acmak her OTA'nin her seferinde geri
-#     donmesi demek olurdu -- guncelleme hic tutmazdi.
-#     Bu satir ve saglik denetimi AYNI degisiklikte acilir. Ayri acilirlarsa
-#     ya guncelleme tutmaz (denetim yok, bayrak var) ya da bozuk bir imaj
-#     kalici olur (denetim var, bayrak yok).
-#     Kabul kosulu: docs/03-firmware/ota-and-release-plan.md icindeki bes
-#     maddelik ilk-acilis listesi kodda karsiligini bulduktan sonra.
-CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=n
+#     yuvaya doner. O cagriyi hk_health_monitor yapiyor ve bayrakla ayni
+#     degisiklikte geldi -- ayri gelselerdi ya guncelleme hic tutmazdi
+#     (bayrak var, cagri yok) ya da bozuk bir imaj kalici olurdu (cagri var,
+#     bayrak yok). Yayin hatti bu eslesmeyi denetliyor.
+#
+#     Bunu donanim olmadan acmanin riski su: saglik denetimi bir kosulda hic
+#     onaylamazsa her guncelleme geri doner. Kabul edilebilir olmasinin sebebi
+#     zamanlama -- monitor YALNIZ imaj PENDING_VERIFY iken is yapar, ve o
+#     duruma ancak gercek bir OTA ile gelinir. USB'den yazilan bir imaj bu
+#     yolun disindadir. Yani ilk kez G6'da, operator basindayken devreye girer.
+CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y

@@ -356,6 +356,17 @@ static void on_network_status(const hk_net_status_t *network, void *context)
     (void)context;
     hk_ui_set_network(network->provisioning, network->connecting, network->connected);
     hk_ui_set_fault(HK_UI_FAULT_NETWORK, network->error);
+
+    /* For the first-boot check. Joined, or provisioning open on purpose, both
+     * count as working: a speaker whose owner changed their Wi-Fi password has
+     * a network problem, not a firmware problem, and rolling back would not
+     * help because the previous image cannot connect either. Only the stack
+     * itself failing is a failure. */
+    if (network->error) {
+        hk_health_report(HK_HEALTH_CRITERION_NETWORK, HK_HEALTH_FAIL);
+    } else if (network->connected || network->provisioning) {
+        hk_health_report(HK_HEALTH_CRITERION_NETWORK, HK_HEALTH_PASS);
+    }
 }
 
 /**
@@ -390,7 +401,11 @@ static void start_network(void)
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "network did not start: %s", esp_err_to_name(err));
         hk_ui_set_fault(HK_UI_FAULT_NETWORK, true);
+        hk_health_report(HK_HEALTH_CRITERION_NETWORK, HK_HEALTH_FAIL);
     }
+    /* Deliberately not waiting for the first status event to decide. If the
+     * stack came up but no event ever arrived, the criterion would sit unknown
+     * until the deadline and roll a working image back. */
 
     ESP_LOGI(TAG, "button       short %u-%u ms, network reset %u ms, factory reset %u ms",
              (unsigned)HK_BUTTON_SHORT_MIN_MS, (unsigned)HK_BUTTON_SHORT_MAX_MS,
@@ -402,7 +417,14 @@ void app_main(void)
     /* Opens both stores and works out what state each is in. Never fatal: an
      * unusable store is reported, because a speaker that will not boot cannot
      * tell anyone why. */
-    ESP_ERROR_CHECK(hk_storage_init());
+    /* Before anything else: is this image awaiting judgement at all? On a
+     * USB-flashed build the answer is no and the monitor stays silent. */
+    (void)hk_health_monitor_begin();
+
+    const esp_err_t storage_err = hk_storage_init();
+    hk_health_report(HK_HEALTH_CRITERION_STORAGE,
+                     storage_err == ESP_OK ? HK_HEALTH_PASS : HK_HEALTH_FAIL);
+    ESP_ERROR_CHECK(storage_err);
 
     ESP_LOGI(TAG, "%s", HK_PRODUCT_FAMILY);
     report_build();
@@ -434,6 +456,9 @@ void app_main(void)
     bool radios_were_open = false;
     while (true) {
         vTaskDelay(pdMS_TO_TICKS(1000));
+
+        /* Confirm or roll back this image, once, when the evidence is in. */
+        hk_health_monitor_tick(now_ms());
 
         prov_event(HK_PROV_EV_TICK);
 

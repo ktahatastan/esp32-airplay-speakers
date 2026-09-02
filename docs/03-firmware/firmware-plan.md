@@ -178,7 +178,7 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
   - [x] `make_manifest.py` — manifest imzalı ikiliden üretiliyor, alan adları aygıt yazılımıyla CI'da çapraz denetleniyor.
   - [x] ISRG Root YR sertifikası pakete eklendi ve üretilen pakette doğrulandı.
   - [x] İlk-boot sağlık kontrolü politikası (`hk_health`) — planın beş ölçütü, enjekte edilen girdilerle host'ta test edildi. Çağrının kendisi ve alt sistem raporlamaları açık.
-  - [ ] `esp_ota_mark_app_valid_cancel_rollback()` çağrısı ve alt sistem raporlayıcıları. Bunlar yazılana kadar `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` kapalı kalır; yayın hattı bu eşleşmeyi denetliyor.
+  - [x] `esp_ota_mark_app_valid_cancel_rollback()` çağrısı ve alt sistem raporlayıcıları (`hk_health_monitor`). `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` aynı değişiklikte açıldı; yayın hattı eşleşmeyi denetliyor. Monitor **yalnız imaj `PENDING_VERIFY`** iken iş yapar, yani USB'den yazılan bir yapı bu yolun dışındadır ve ilk kez `G6`'da devreye girer.
   - [ ] Güncelleme zamanlayıcısı ve LED entegrasyonu.
   - [x] USB/UART kurtarma prosedürü ve betiği ([[usb-recovery]]). Donanımda çalıştırılmadı.
   - [ ] `G6` matrisinin on iki satırı — **donanım gerekir**, hiçbiri çalıştırılmadı.
