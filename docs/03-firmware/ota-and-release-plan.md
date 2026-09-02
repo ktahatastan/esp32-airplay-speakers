@@ -237,7 +237,7 @@ Yazıldı ve ana makinede doğrulandı:
 
 Açık:
 
-- [ ] Progress event ve LED entegrasyonu (`hk_led` OTA durumu tanımlı, istemciye bağlanmadı).
+- [x] Güncelleme döngüsü ve LED entegrasyonu `hk_main` gözetim döngüsünde: `hk_sched` zamanlar, `hk_ota_client` çalışır, `hk_ui_set_ota()` LED'i sürer. **Kaynak URL'si `NULL`** — depo private ve varlıkları tokensiz 404 dönüyor (ADR-0008 §7). Güncelleme yolu, çalışamayacak bir yere işaret etmek yerine kapalı duruyor ve sebebini bir kez logluyor.
 - [x] İlk-boot health check ve `esp_ota_mark_app_valid_cancel_rollback()` çağrısı (`hk_health_monitor`); rollback bayrağı aynı değişiklikte açıldı. Ses ve telemetri, sürücüleri olmadığı için `SKIP` ile geçiliyor — "bu yapıya uygulanmaz" ile "henüz cevap vermedi" arasındaki fark, ilki imajı onaylatır ikincisi geri aldırır.
 - [x] Güncelleme zamanlayıcısı (`hk_sched`): rastgele ilk gecikme, günlük aralık + jitter, ikiye katlanan ve tavanlanan backoff. Rastgelelik **enjekte**, üretici çağrılmıyor; 32-bit milisaniye sarması işaretli farkla ele alınıyor.
 - [ ] Canary/stable kanal politikasının işletilmesi.

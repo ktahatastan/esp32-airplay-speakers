@@ -45,7 +45,10 @@
 #include "hk_identity.h"
 #include "hk_led.h"
 #include "hk_network.h"
+#include "hk_gate.h"
 #include "hk_health.h"
+#include "hk_ota.h"
+#include "hk_ota_client.h"
 #include "hk_pins.h"
 #include "hk_power.h"
 #include "hk_sched.h"
@@ -84,6 +87,31 @@ static esp_err_t report_identity(void)
 
 /** Log the GPIO assignment so a bring-up session can compare it to the sheet. */
 static hk_sched_t s_update_schedule;
+
+/**
+ * Where releases are published.
+ *
+ * NULL, and that is not an oversight. The repository is private, and a private
+ * repository's release assets return 404 without a credential — measured, both
+ * through the download path and the API. ADR-0008 assumes assets are fetched
+ * over plain HTTPS and the OTA plan forbids a token on the device, so there is
+ * currently nowhere a speaker is allowed to fetch from. ADR-0008 section 7
+ * records the options; until one is chosen the update path stays shut rather
+ * than pointing somewhere that cannot work.
+ */
+static const char *const k_manifest_url = NULL;
+
+/** Announced once, so the log says why nothing ever updates. */
+static bool s_update_source_reported;
+
+/** The cadence from the OTA plan: a random first delay, then daily. */
+static const hk_sched_limits_t s_sched_limits = {
+    .interval_ms = HK_SCHED_INTERVAL_MS_DEFAULT,
+    .first_delay_ms = HK_SCHED_FIRST_DELAY_MS_DEFAULT,
+    .jitter_ms = HK_SCHED_JITTER_MS_DEFAULT,
+    .backoff_ms = HK_SCHED_BACKOFF_MS_DEFAULT,
+    .backoff_max_ms = HK_SCHED_BACKOFF_MAX_MS_DEFAULT,
+};
 
 /**
  * Milliseconds since boot.
@@ -170,16 +198,80 @@ static void report_policies(void)
      * The delay is drawn per device so four of them on the same mains circuit
      * do not come back from a power cut and ask the same server at the same
      * instant, every day, forever. */
-    const hk_sched_limits_t sched_limits = {
-        .interval_ms = HK_SCHED_INTERVAL_MS_DEFAULT,
-        .first_delay_ms = HK_SCHED_FIRST_DELAY_MS_DEFAULT,
-        .jitter_ms = HK_SCHED_JITTER_MS_DEFAULT,
-        .backoff_ms = HK_SCHED_BACKOFF_MS_DEFAULT,
-        .backoff_max_ms = HK_SCHED_BACKOFF_MAX_MS_DEFAULT,
-    };
-    hk_sched_init(&s_update_schedule, now_ms(), esp_random(), &sched_limits);
+    hk_sched_init(&s_update_schedule, now_ms(), esp_random(), &s_sched_limits);
     ESP_LOGI(TAG, "update      first check in %" PRIu32 " s (no release source configured yet)",
              hk_sched_remaining(&s_update_schedule, now_ms()) / 1000u);
+}
+
+/**
+ * One turn of the update loop.
+ *
+ * Kept here rather than inside hk_ota because it is application wiring: which
+ * product this is, which channel it follows, where its calibration limits come
+ * from. hk_ota stays a component that judges a manifest and writes a slot.
+ */
+static void run_update_check(void)
+{
+    if (k_manifest_url == NULL) {
+        if (!s_update_source_reported) {
+            s_update_source_reported = true;
+            ESP_LOGW(TAG, "no release source: the repository is private and its "
+                          "assets need a credential this firmware must not carry "
+                          "(ADR-0008 section 7). Updates are off.");
+        }
+        return;
+    }
+
+    if (!hk_sched_due(&s_update_schedule, now_ms())) {
+        return;
+    }
+
+    /* The gate limits come from the calibration store, and there are none:
+     * G3/G4 have not been run. hk_gate answers HK_GATE_NO_LIMITS for a NULL,
+     * so a device that cannot judge its own battery does not start an update.
+     * That is the intended behaviour, not a placeholder. */
+    const hk_gate_limits_t *limits = NULL;
+
+    const esp_app_desc_t *app = esp_app_get_description();
+    const esp_partition_t *inactive = esp_ota_get_next_update_partition(NULL);
+
+    hk_ota_request_t request = {
+        .manifest_url = k_manifest_url,
+        .device = {
+            .product = app->project_name,
+            .target = "esp32s3",
+            .hw_revision = HK_HW_REVISION,
+            .channel = "stable",
+            .running_version = app->version,
+            .running_secure_version = app->secure_version,
+            .slot_size = inactive != NULL ? inactive->size : 0u,
+        },
+        .gate_inputs = {
+            .audio_active = false,
+            .wifi_connected = true,
+            .update_in_progress = false,
+            .charging = false,
+            .battery_mv = HK_GATE_BATTERY_UNKNOWN,
+            .temperature_c = HK_GATE_TEMPERATURE_UNKNOWN,
+        },
+        .gate_limits = limits,
+    };
+
+    hk_ui_set_ota(true);
+    const esp_err_t err = hk_ota_client_run(&request);
+    hk_ui_set_ota(false);
+
+    if (err == ESP_OK) {
+        ESP_LOGI(TAG, "update written; it boots on the next restart");
+        hk_sched_success(&s_update_schedule, now_ms(), esp_random(), &s_sched_limits);
+    } else if (err == ESP_ERR_NOT_FOUND) {
+        /* Nothing newer is a successful check, not a failure. Backing off here
+         * would slow a healthy speaker down for doing the right thing. */
+        hk_sched_success(&s_update_schedule, now_ms(), esp_random(), &s_sched_limits);
+    } else {
+        ESP_LOGW(TAG, "update check failed: %s", esp_err_to_name(err));
+        hk_sched_failure(&s_update_schedule, now_ms(), esp_random(), &s_sched_limits);
+    }
 }
 
 static void report_pins(void)
@@ -459,6 +551,8 @@ void app_main(void)
 
         /* Confirm or roll back this image, once, when the evidence is in. */
         hk_health_monitor_tick(now_ms());
+
+        run_update_check();
 
         prov_event(HK_PROV_EV_TICK);
 

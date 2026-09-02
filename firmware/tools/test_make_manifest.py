@@ -190,6 +190,21 @@ class TestGeneratorAgreesWithFirmware(unittest.TestCase):
         self.assertEqual(extra, set(),
                          f"generator writes fields the firmware never reads: {extra}")
 
+    def test_the_hardware_revision_matches_the_firmware(self):
+        """The device refuses a manifest whose hw_revision is not its own, so
+        two spellings produce a speaker that rejects every release with a
+        message about hardware — which reads like a hardware fault."""
+        header = (self.firmware / "components/hk_identity/include/hk_identity.h").read_text()
+        match = re.search(r'#define\s+HK_HW_REVISION\s+"([^"]+)"', header)
+        self.assertIsNotNone(match, "HK_HW_REVISION not found in hk_identity.h")
+        firmware_revision = match.group(1)
+
+        tool = TOOL.read_text()
+        default = re.search(
+            r'--hw-revision"[^)]*?default="([^"]+)"', tool, re.S)
+        self.assertIsNotNone(default, "no --hw-revision default in make_manifest.py")
+        self.assertEqual(default.group(1), firmware_revision)
+
     def test_the_field_list_matches_hk_manifest_required(self):
         """And both match the bitmask the validator insists on."""
         header = (self.firmware / "components/hk_manifest/include/hk_manifest.h").read_text()

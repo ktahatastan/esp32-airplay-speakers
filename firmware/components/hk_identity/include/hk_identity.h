@@ -16,6 +16,17 @@
 /** Product family name. The user may rename the AirPlay surface; this stays. */
 #define HK_PRODUCT_FAMILY "Harman Kardom"
 
+/**
+ * Hardware revision, from ADR-0010.
+ *
+ * The manifest carries the revision a release was built for and the device
+ * refuses anything that does not match, so this string and the one
+ * make_manifest.py writes have to agree exactly. Defined once here rather than
+ * typed at each use: two spellings would produce a device that refuses every
+ * release with a message about hardware, which reads like a hardware problem.
+ */
+#define HK_HW_REVISION "prototype-n16r8"
+
 /** Captive portal page title. */
 #define HK_PORTAL_TITLE "Harman Kardom Kurulum"
 
