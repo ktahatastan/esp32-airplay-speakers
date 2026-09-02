@@ -12,6 +12,14 @@ const hk_setting_def_t hk_settings_table[] = {
     {"led_bright", "status LED brightness, percent", 60u, 0u, 100u},
     {"auto_update", "check for updates automatically", 1u, 0u, 1u},
     {"standby_min", "idle minutes before power save; 0 disables", 30u, 0u, 240u},
+    /* Which release channel this speaker follows. Stored rather than compiled
+     * in, because the canary step in the OTA plan puts ONE device on the
+     * candidate channel — and rebuilding a different image for it would mean
+     * the canary is not testing the image the others will get. */
+    {"channel", "0 = stable, 1 = canary", 0u, 0u, 1u},
+    /* How many times an update has been rolled back. Survives the reboot a
+     * rollback causes, which is the only reason it is in storage at all. */
+    {"rollbacks", "consecutive rolled-back updates", 0u, 0u, 255u},
     {NULL, NULL, 0u, 0u, 0u},
 };
 

@@ -40,6 +40,12 @@ static hk_health_inputs_t s_inputs = {
 static portMUX_TYPE s_lock = portMUX_INITIALIZER_UNLOCKED;
 static bool s_settled;      /**< A verdict has been carried out; stop asking. */
 static bool s_pending;      /**< This image is awaiting judgement. */
+static void (*s_persist)(bool confirmed);
+
+void hk_health_monitor_set_persist(void (*persist)(bool confirmed))
+{
+    s_persist = persist;
+}
 
 void hk_health_report(hk_health_criterion_t which, hk_health_state_t state)
 {
@@ -116,6 +122,9 @@ void hk_health_monitor_tick(uint32_t now_ms)
     case HK_HEALTH_CONFIRM:
         s_settled = true;
         ESP_LOGI(TAG, "confirming this image after %" PRIu32 " ms", now_ms);
+        if (s_persist != NULL) {
+            s_persist(true);
+        }
         if (esp_ota_mark_app_valid_cancel_rollback() != ESP_OK) {
             ESP_LOGE(TAG, "could not confirm the image; it will roll back");
         }
@@ -124,6 +133,10 @@ void hk_health_monitor_tick(uint32_t now_ms)
     case HK_HEALTH_ROLLBACK:
         s_settled = true;
         ESP_LOGE(TAG, "rolling back: %s", hk_health_reason_name(why));
+        /* Before the reboot, not after: there is no after. */
+        if (s_persist != NULL) {
+            s_persist(false);
+        }
         /* Does not return: it reboots into the previous slot. */
         (void)esp_ota_mark_app_invalid_rollback_and_reboot();
         ESP_LOGE(TAG, "rollback refused; the previous image may be missing");

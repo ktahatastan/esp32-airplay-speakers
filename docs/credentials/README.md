@@ -25,20 +25,22 @@ git config core.hooksPath .githooks
 | | |
 |---|---|
 | Depo | `ktahatastan/esp32-airplay-speakers` |
-| Görünürlük | **private** |
+| Görünürlük | **public** |
 | Yetki | sahibi, `admin` |
-| `release` ortamı | var |
+| `release` ortamı | var, **1 koruma kuralı** |
 | `HK_SIGNING_KEY` | **ortam** secret'ı olarak saklı |
 | Depo secret'ı | **0 adet** |
-| Zorunlu inceleyici | **yok** — aşağıya bakın |
+| Zorunlu inceleyici | **var** |
 
 Depo secret'ının sıfır olması tesadüf değil, tasarımın kendisi: ortam secret'ını yalnız `environment: release` diyen iş okuyabilir, `build` işi okuyamaz. Anahtarı depo secret'ı yapmak hattı çalıştırırdı ve tam da bu özelliği silerdi. Yapmayın.
 
-**Zorunlu inceleyici eklenemedi.** Private bir depoda ortam koruma kuralları ücretli plan istiyor; API `HTTP 422` ile reddediyor. Yani bir etiket push'u insan onayı olmadan yayımlar. Ortam kapsamı geçerli, onay kapısı değil. Risk kaydında satırı var.
+**Zorunlu inceleyici var.** Depo public olduğu için ortam koruma kuralları ücretsiz; private'ken API `HTTP 422` ile reddediyordu. Bir etiket push'u artık insan onayı bekliyor.
 
 ## Anahtar geçmişi
 
-İlk anahtar **yandı**. 2026-08-31'de üretilip depoya konmuştu ve o sırada depo public'ti (`9afd991`, 15:33 UTC). Depo artık private ve dosya kaldırıldı, ama bir süre herkese okunabilirdi — GitHub'ın genel olay akışı dakikalar içinde taranıyor. Sonradan private yapmak bunu geri almaz.
+İlk anahtar **yandı**. 2026-08-31'de üretilip depoya konmuştu (`9afd991`) ve o commit hâlâ geçmişte duruyor — depo bir süre private kaldıktan sonra 2026-09-02'de yeniden public yapıldı, yani o dosya yine herkese açık. Bu bilinçli: anahtar zaten ifşa olmuştu ve sonradan private yapmak onu geri çağırmıyordu. Geçmişi yeniden yazmak da geri çağırmaz.
+
+Önemli olan onun bir daha imzalayamaması, ve bu konumla değil parmak iziyle sağlanıyor: dosyayı silmek anahtarı ifşa edilmemiş yapmaz, çünkü geçmişte durur.
 
 Parmak izi `burned-keys.txt` içinde ve yayın hattı o anahtarla imzalamayı **kalıcı olarak** reddediyor. Git geçmişinden geri getirilse bile: bu sınandı.
 

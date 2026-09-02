@@ -162,6 +162,18 @@ void hk_health_report(hk_health_criterion_t which, hk_health_state_t state);
 /** Record that the firmware misbehaved: panics outrank every other input. */
 void hk_health_report_fault(void);
 
+/**
+ * Register a callback invoked with the verdict just before it is carried out.
+ *
+ * The rollback path reboots and does not return, so anything that has to
+ * survive it must be written first. The callback exists so hk_health does not
+ * have to know about storage: keeping that dependency out is what lets the
+ * decision stay pure C and be exercised on a host.
+ *
+ * @param persist called with true to confirm, false to roll back; may be NULL
+ */
+void hk_health_monitor_set_persist(void (*persist)(bool confirmed));
+
 /** Ask, and carry out the answer. Acts at most once. */
 void hk_health_monitor_tick(uint32_t now_ms);
 

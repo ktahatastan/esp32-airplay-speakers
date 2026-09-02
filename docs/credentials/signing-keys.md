@@ -31,7 +31,7 @@ shasum -a 256 firmware/certs/hk-signing-key.pub.bin
 
 | Parmak izi | Ne oldu |
 |---|---|
-| `a568a512…78bad2` | 2026-08-31'de üretildi ve depo public'ken depoya kondu (`9afd991`, 15:33 UTC). Depo sonradan private yapıldı ve dosya kaldırıldı, ama ifşa geri alınamaz. |
+| `a568a512…78bad2` | 2026-08-31'de üretildi ve depoya kondu (`9afd991`). Dosya kaldırıldı ama commit geçmişte duruyor ve depo public. İfşa geri alınamaz; önemli olan bir daha imzalayamaması. |
 
 Liste `burned-keys.txt` içinde ve yayın hattı imzalamadan **önce** okuyor. Sınandı: yanmış anahtar git geçmişinden geri getirilip verilse bile reddediliyor.
 
@@ -78,4 +78,4 @@ gh secret set HK_SIGNING_KEY --env release \
   --repo ktahatastan/esp32-airplay-speakers < ~/.harman-kardom/hk_signing_key.pem
 ```
 
-Zorunlu inceleyici eklenemedi: private depoda ortam koruma kuralları ücretli plan istiyor, API `HTTP 422` döndürüyor. Depo tekrar public yapılırsa koruma kuralları ücretsiz olur — ama o zaman da başka şeyler değişir, o yüzden bu bilinçli bir takas olarak risk kaydında duruyor.
+Zorunlu inceleyici eklendi (2026-09-02, koruma kuralı sayısı 1). Private'ken API `HTTP 422` ile reddediyordu; koruma kuralları public depolarda ücretsiz. Bir etiket push'u artık onay bekliyor.

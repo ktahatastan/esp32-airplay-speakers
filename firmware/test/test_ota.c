@@ -115,6 +115,18 @@ void test_ota(void)
     HK_CHECK(strcmp(hk_ota_image_err_name(HK_OTA_IMAGE_ERR_NO_DESC), "NO_DESC") == 0);
     HK_CHECK(strcmp(hk_ota_image_err_name((hk_ota_image_err_t)99), "UNKNOWN") == 0);
 
+    /* ===== the address this firmware actually ships with =====
+     * Pinned so a typo in it cannot reach a device. A URL the validator
+     * refuses would leave every speaker checking nothing, silently, and a URL
+     * too long for the buffer would arrive as a missing field. */
+    {
+        static const char k_shipped[] =
+            "https://github.com/ktahatastan/esp32-airplay-speakers"
+            "/releases/latest/download/manifest.json";
+        HK_CHECK(hk_ota_asset_url_ok(k_shipped));
+        HK_CHECK(sizeof(k_shipped) <= HK_MANIFEST_ASSET_MAX);
+    }
+
     /* ================= asset URL ================= */
 
     /* --- what a real GitHub release link looks like --- */

@@ -21,9 +21,9 @@ different failure with a different guard: the publish job in
 docs/credentials/burned-keys.txt, and any key that does not match the pinned
 public half in firmware/certs/.
 
-The repository was public until 2026-08-31 and is private now. Being private is
-not a reason to relax this: history is permanent, visibility can change back,
-and the first signing key was burned by exactly that sequence.
+The repository is public. It was private for one day and is public again, which
+is exactly why this does not relax: history is permanent, visibility changes,
+and the first signing key was burned by that sequence.
 
 Usage:
     check_no_private_keys.py              # every tracked file

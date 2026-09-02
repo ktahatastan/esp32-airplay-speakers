@@ -139,3 +139,21 @@ bool hk_ota_asset_url_ok(const char *url)
     }
     return false;
 }
+
+const char *hk_ota_channel_name(uint32_t channel)
+{
+    switch ((hk_ota_channel_t)channel) {
+    case HK_OTA_CHANNEL_CANARY:
+        return "canary";
+    case HK_OTA_CHANNEL_STABLE:
+    default:
+        /* Anything unrecognised falls back to stable. A byte that went bad
+         * should not move a speaker onto candidate builds. */
+        return "stable";
+    }
+}
+
+bool hk_ota_updates_allowed(uint32_t consecutive_rollbacks)
+{
+    return consecutive_rollbacks < HK_OTA_MAX_ROLLBACKS;
+}

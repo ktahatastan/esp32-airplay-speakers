@@ -95,7 +95,7 @@ Kritik öz-test hatasında `esp_ota_mark_app_invalid_rollback_and_reboot()` kull
 
 1. **verify** — `check_docs`, ana makine birim testleri, araç testleri ve depo değişmezleri (`check_partitions`, `check_storage_isolation`, `check_no_credential_logs`).
 2. **build** — `sdkconfig.defaults` + `sdkconfig.release` ile derler. **İmzalama anahtarını görmez.** Ayrıca sürüm profilinin gerçekten imza istediğini ve anti-rollback'in kapalı kaldığını üretilen `sdkconfig` üzerinden doğrular; bu seçenek sessizce kapansaydı başka hiçbir şey fark etmezdi. Boyut kapısı burada çalışır.
-3. **publish** — `release` ortamına bağlıdır ve `contents: write` iznini yalnız bu iş alır. Ortam **kapsamı** gerçek: `HK_SIGNING_KEY` ortam secret'ıdır ve depo secret'ı sayısı sıfırdır, yani `build` işi anahtarı okuyamaz. Ortamda **zorunlu inceleyici yoktur** — private depoda koruma kuralları ücretli plan istiyor — dolayısıyla etiket push'u insan onayı olmadan yayımlar. Görüntüyü `espsecure.py sign_data --version 2` ile imzalar, imzayı geri doğrular, manifest'i **imzalanmış** dosyadan üretir, manifest ile ikilinin uyuştuğunu bir kez daha okuyup karşılaştırır, sonra release'i oluşturur.
+3. **publish** — `release` ortamına bağlıdır ve `contents: write` iznini yalnız bu iş alır. Ortam kapsamı gerçek: `HK_SIGNING_KEY` ortam secret'ıdır ve depo secret'ı sayısı sıfırdır, yani `build` işi anahtarı okuyamaz. **Zorunlu inceleyici de eklendi** (2026-09-02), yani etiket push'u onay bekler. Görüntüyü `espsecure.py sign_data --version 2` ile imzalar, imzayı geri doğrular, manifest'i **imzalanmış** dosyadan üretir, manifest ile ikilinin uyuştuğunu bir kez daha okuyup karşılaştırır, sonra release'i oluşturur.
 
 Anahtar yönetiminin tamamı [[../credentials/signing-keys|imzalama anahtarları kaydında]]. Özeti:
 
@@ -237,14 +237,17 @@ Yazıldı ve ana makinede doğrulandı:
 
 Açık:
 
-- [x] Güncelleme döngüsü ve LED entegrasyonu `hk_main` gözetim döngüsünde: `hk_sched` zamanlar, `hk_ota_client` çalışır, `hk_ui_set_ota()` LED'i sürer. **Kaynak URL'si `NULL`** — depo private ve varlıkları tokensiz 404 dönüyor (ADR-0008 §7). Güncelleme yolu, çalışamayacak bir yere işaret etmek yerine kapalı duruyor ve sebebini bir kez logluyor.
+- [x] Güncelleme döngüsü ve LED entegrasyonu `hk_main` gözetim döngüsünde: `hk_sched` zamanlar, `hk_ota_client` çalışır, `hk_ui_set_ota()` LED'i sürer. Kaynak `releases/latest/download/manifest.json`; depo public olduğu için tokensiz erişilebilir.
+- [x] Kanal saklanan bir ayar (`channel`: 0 stable, 1 canary), yani canary adımı **tek** hoparlörü aday kanala alabilir. Ona farklı bir imaj derlemek, canary'nin diğerlerinin alacağı sürümü test etmemesi demek olurdu.
+- [x] Geri alma sayacı (`rollbacks`) NVS'de tutuluyor ve üç ardışık geri almadan sonra otomatik güncelleme duruyor. Geri alma yeniden başlatıyor, o yüzden sayaç açılışı aşmak zorunda.
+- [ ] Canary kanalı için erişilebilir bir manifest adresi. `releases/latest` prerelease'i atladığı için canary'ye ulaşmıyor (ADR-0008 §7).
 - [x] İlk-boot health check ve `esp_ota_mark_app_valid_cancel_rollback()` çağrısı (`hk_health_monitor`); rollback bayrağı aynı değişiklikte açıldı. Ses ve telemetri, sürücüleri olmadığı için `SKIP` ile geçiliyor — "bu yapıya uygulanmaz" ile "henüz cevap vermedi" arasındaki fark, ilki imajı onaylatır ikincisi geri aldırır.
 - [x] Güncelleme zamanlayıcısı (`hk_sched`): rastgele ilk gecikme, günlük aralık + jitter, ikiye katlanan ve tavanlanan backoff. Rastgelelik **enjekte**, üretici çağrılmıyor; 32-bit milisaniye sarması işaretli farkla ele alınıyor.
-- [ ] Canary/stable kanal politikasının işletilmesi.
+- [ ] Canary/stable terfi akışının işletilmesi: aynı imzalı asset'in yeniden derlenmeden stable'a taşınması.
 - [x] USB/UART kurtarma prosedürü ve betiği ([[usb-recovery]], `firmware/tools/recover.py`). Tam silme yerine cerrahi yazma: ofsetler `partitions.csv`'den okunuyor ve korunan bölüme taşma denetleniyor. Cihazda **çalıştırılmadı**; `G6`'nın son satırı.
 - [x] Depo `ktahatastan`'a taşındı ve `private` yapıldı.
 - [x] Gerçek `HK_SIGNING_KEY` çevrimdışı üretildi, açık yarısı `firmware/certs/hk-signing-key.pub.bin` olarak sabitlendi, özel yarısı `release` **ortam** secret'ında. İlk anahtar yandı ve `burned-keys.txt` ile kalıcı reddediliyor.
-- [ ] `release` ortamına zorunlu inceleyici — private depoda ücretli plan istiyor (`HTTP 422`). Onay kapısı yok; risk kaydında.
+- [x] `release` ortamına zorunlu inceleyici eklendi (2026-09-02).
 - [ ] G6 enerji kesintisi ve rollback testleri — **donanım bekliyor**.
 
 ## Kaynaklar

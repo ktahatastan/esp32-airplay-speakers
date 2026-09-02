@@ -91,15 +91,22 @@ static hk_sched_t s_update_schedule;
 /**
  * Where releases are published.
  *
- * NULL, and that is not an oversight. The repository is private, and a private
- * repository's release assets return 404 without a credential — measured, both
- * through the download path and the API. ADR-0008 assumes assets are fetched
- * over plain HTTPS and the OTA plan forbids a token on the device, so there is
- * currently nowhere a speaker is allowed to fetch from. ADR-0008 section 7
- * records the options; until one is chosen the update path stays shut rather
- * than pointing somewhere that cannot work.
+ * A public repository's release assets are fetchable over plain HTTPS with no
+ * credential, which is what lets this device carry no token — the OTA plan
+ * forbids one, and a device that needs a secret to update is a device whose
+ * secret is in its flash. The repository was briefly private and this had to
+ * be NULL, because a private repository answers 404 to an anonymous request.
+ *
+ * `releases/latest` resolves to the newest release that is NOT a prerelease,
+ * so this address serves the stable channel and only the stable channel. A
+ * device set to canary will fetch this manifest, find a channel it does not
+ * follow, and correctly refuse it — which is safe and useless. Reaching a
+ * canary build needs an address that `latest` does not skip; that is an open
+ * item in the OTA plan rather than something this line can solve.
  */
-static const char *const k_manifest_url = NULL;
+static const char *const k_manifest_url =
+    "https://github.com/ktahatastan/esp32-airplay-speakers"
+    "/releases/latest/download/manifest.json";
 
 /** Announced once, so the log says why nothing ever updates. */
 static bool s_update_source_reported;
@@ -210,8 +217,48 @@ static void report_policies(void)
  * product this is, which channel it follows, where its calibration limits come
  * from. hk_ota stays a component that judges a manifest and writes a slot.
  */
+/** Read a user setting through its definition, so the range is applied. */
+static uint32_t setting_u32(const char *key)
+{
+    const hk_setting_def_t *def = hk_settings_find(key);
+    uint32_t stored = 0;
+    const bool present = def != NULL && hk_storage_user_read_u32(key, &stored);
+    return hk_settings_resolve(def, stored, present, NULL);
+}
+
+/**
+ * Remember how the last pending image was judged.
+ *
+ * Called from the health monitor immediately before it acts, because the
+ * rollback path reboots and never comes back. A device that rolls back, fetches
+ * the same release again and rolls back again is spending its battery and its
+ * flash on one mistake nightly; the counter is what stops that.
+ */
+static void persist_health_verdict(bool confirmed)
+{
+    if (confirmed) {
+        (void)hk_storage_user_set_u32("rollbacks", 0);
+        return;
+    }
+    const uint32_t previous = setting_u32("rollbacks");
+    const uint32_t next = (previous < 255u) ? previous + 1u : previous;
+    (void)hk_storage_user_set_u32("rollbacks", next);
+    ESP_LOGE(TAG, "consecutive rollbacks: %" PRIu32, next);
+}
+
 static void run_update_check(void)
 {
+    const uint32_t rollbacks = setting_u32("rollbacks");
+    if (!hk_ota_updates_allowed(rollbacks)) {
+        if (!s_update_source_reported) {
+            s_update_source_reported = true;
+            ESP_LOGE(TAG, "updates stopped after %" PRIu32 " consecutive rollbacks. "
+                          "This needs a person: a release that fixes it, over USB, "
+                          "or the counter cleared deliberately.", rollbacks);
+        }
+        return;
+    }
+
     if (k_manifest_url == NULL) {
         if (!s_update_source_reported) {
             s_update_source_reported = true;
@@ -241,7 +288,11 @@ static void run_update_check(void)
             .product = app->project_name,
             .target = "esp32s3",
             .hw_revision = HK_HW_REVISION,
-            .channel = "stable",
+            /* From storage, so the canary step can put ONE speaker on the
+             * candidate channel without building it a different image — a
+             * canary running different firmware is not testing the release the
+             * others will get. */
+            .channel = hk_ota_channel_name(setting_u32("channel")),
             .running_version = app->version,
             .running_secure_version = app->secure_version,
             .slot_size = inactive != NULL ? inactive->size : 0u,
@@ -511,6 +562,7 @@ void app_main(void)
      * tell anyone why. */
     /* Before anything else: is this image awaiting judgement at all? On a
      * USB-flashed build the answer is no and the monitor stays silent. */
+    hk_health_monitor_set_persist(persist_health_verdict);
     (void)hk_health_monitor_begin();
 
     const esp_err_t storage_err = hk_storage_init();

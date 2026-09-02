@@ -15,11 +15,10 @@
 # job cannot, which is the property this split exists to create. Verified
 # 2026-08-31: the repository has zero repository-level secrets.
 #
-# What is NOT in place, stated plainly rather than assumed: there is no
-# required-reviewer rule on that environment. Adding one to a PRIVATE
-# repository needs a paid plan, and the API refuses it with HTTP 422 on this
-# account. So a tag push publishes without a human approval step. The
-# environment scoping still holds; the approval gate does not.
+# The environment also carries a required-reviewer rule, so a tag push waits
+# for a human. That was impossible while the repository was private — the API
+# refuses protection rules with HTTP 422 there — and became free again when it
+# went back to public.
 #
 # Do NOT work around any of this by storing HK_SIGNING_KEY as a repository
 # secret. That would hand the key to every job in the repository — deleting the

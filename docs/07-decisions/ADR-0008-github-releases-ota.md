@@ -69,31 +69,29 @@ GitHub iki ayrı hiyerarşi sunar. `api.github.com` Sectigo'ya, sürüm varlık 
 
 **Bu bölümün ilk hâli fazla iddialıydı, düzeltildi ve sonra gerçekten kuruldu.** İlk yazımda "korumalı `release` ortamına bağlı" demiştim; ölçüldüğünde ortam mevcut değildi ve oluşturacak yetki yoktu. Depo 2026-08-31'de `ktahatastan`'a taşınıp **private** yapıldıktan sonra ortam oluşturuldu ve `HK_SIGNING_KEY` **ortam** secret'ı olarak saklandı. Depo secret'ı sayısı **0**: yani `build` işi anahtarı gerçekten okuyamıyor ve bölünme artık bir tasarım niyeti değil, doğrulanmış bir özellik.
 
-Hâlâ eksik olan tek şey, olduğu gibi yazılıyor: **zorunlu inceleyici yok.** Private bir depoda ortam koruma kuralları ücretli plan istiyor ve API `HTTP 422` ile reddediyor. Yani bir etiket push'u insan onayı olmadan yayımlar. Ortam kapsamı geçerli, onay kapısı değil. Risk kaydında satırı var.
+**Zorunlu inceleyici de eklendi** (2026-09-02, koruma kuralı sayısı 1). Private'ken API `HTTP 422` ile reddediyordu; koruma kuralları public depolarda ücretsiz. Bir etiket push'u artık onay bekliyor.
 
 Bunun etrafından `HK_SIGNING_KEY`'i **depo** secret'ı yaparak dolaşmak yasaktır. Hattı çalıştırırdı, ama anahtarı `build` dahil her işe okutarak — yani bölmenin tek sebebini ortadan kaldırarak. Doğrusu `release` ortamına bağlı **ortam** secret'ıdır.
 
 Ayrıca `publish` işi iki şeyi imzalamadan önce denetler: anahtarın açık yarısının parmak izi `docs/credentials/burned-keys.txt` içindeyse reddeder — liste konuma değil parmak izine bakar, çünkü bir anahtar dosyasını silmek onu ifşa edilmemiş yapmaz; ve `firmware/certs/hk-signing-key.pub.bin` ile sabitlenmiş açık anahtarla eşleşmiyorsa reddeder. İkincisi olmadan, geçerli ama **yanlış** bir RSA-3072 anahtarı her denetimden geçer ve dört hoparlörün de sessizce reddedeceği bir sürüm yayımlanırdı; kurtarma yolu dört cihazı USB'den yeniden yazmaktır.
 
-### 7. Açık kalan: private depo dağıtımı kırıyor
+### 7. Dağıtım: depo public
 
-2026-09-02'de ölçüldü. Depo private yapıldıktan sonra sürüm varlıkları kimlik doğrulamasız erişilemiyor:
+2026-09-02'de ölçüldü ve karara bağlandı. Depo private'ken sürüm varlıkları kimlik doğrulamasız erişilemiyordu:
 
 | Hedef | Tokensiz sonuç |
 |---|---|
 | Herhangi bir public depo, `releases/latest` | `HTTP 200` |
-| `ktahatastan/esp32-airplay-speakers`, `releases/latest` | `HTTP 404` |
+| Bu depo, private iken | `HTTP 404` |
 | Aynısı API üzerinden | `HTTP 404` |
 
-Bu ADR varlıkların HTTPS üzerinden düz çekilmesini varsayıyor ve [[../03-firmware/ota-and-release-plan|OTA planı]] cihazların token taşımamasını şart koşuyor. İkisi birlikte, private bir depodan OTA'yı imkânsız kılıyor — firmware'e gömülü bir token tam olarak yasaklanan şey.
+Bu ADR varlıkların düz HTTPS ile çekilmesini varsayıyor ve [[../03-firmware/ota-and-release-plan|OTA planı]] cihazların token taşımasını yasaklıyor. İkisi birlikte private bir depodan OTA'yı imkânsız kılıyordu.
 
-Seçenekler, karar verilmedi:
+Depo yeniden **public** yapıldı. Private olmasının sebebi imzalama anahtarının depoda olmasıydı; o sebep ortadan kalkmıştı — anahtar `release` ortam secret'ında ve depoda hiçbir özel anahtar yok. Public yapmak üç şeyi birden çözdü: varlıklar `HTTP 200` döndü, ortam koruma kuralları ücretsiz hâle geldiği için zorunlu inceleyici eklenebildi, ve gizlilik dağıtımın işi olmadığı için kaybedilen bir şey olmadı — özgünlüğü imza sağlıyor.
 
-1. **Ayrı public sürüm deposu.** Kaynak private kalır; yalnız imzalı ikili ve manifest public bir depoda yayımlanır. Özgünlüğü imza sağlar, gizlilik zaten dağıtımın işi değil. Standart çözüm.
-2. **Depoyu yeniden public yapmak.** Private olmasının sebebi imzalama anahtarının depoda olmasıydı; o sebep ortadan kalktı — anahtar artık `release` ortam secret'ında ve depoda hiçbir özel anahtar yok. Bu durumda ayrıca ortam koruma kuralları da ücretsiz hâle gelir.
-3. Başka bir barındırıcı — daha fazla altyapı, bu ölçek için gereksiz.
+Yanmış anahtarın commit'i geçmişte duruyor ve yine herkese açık. Bu kabul edildi: anahtar zaten ifşa olmuştu, sonradan private yapmak onu geri çağırmamıştı ve geçmişi yeniden yazmak da çağırmaz. Bir daha imzalayamaması konumla değil parmak iziyle sağlanıyor.
 
-Seçim yapılana kadar `hk_ota_client` çalıştırılamaz: yapılandırılmış bir sürüm kaynağı yok.
+**Açık kalan:** `releases/latest` prerelease olmayan en son sürümü çözer, yani yalnız stable kanalı sunar. Canary kanalına ayarlı bir cihaz bu manifest'i çeker, takip etmediği bir kanal görür ve doğru şekilde reddeder — güvenli ama işe yaramaz. Canary'ye ulaşmak `latest`'in atlamadığı bir adres ister.
 
 ## Gerekçe
 

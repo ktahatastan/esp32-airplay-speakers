@@ -107,4 +107,41 @@ bool hk_ota_asset_url_ok(const char *url);
  */
 bool hk_manifest_parse(const char *json, hk_manifest_t *out);
 
+/* ===================== release channels ===================== */
+
+/** Channel values as stored in user settings. */
+typedef enum {
+    HK_OTA_CHANNEL_STABLE = 0,
+    HK_OTA_CHANNEL_CANARY = 1,
+} hk_ota_channel_t;
+
+/**
+ * How many consecutive rollbacks before this device stops updating itself.
+ *
+ * A speaker that rolls back, downloads the same release again, rolls back
+ * again and repeats is not being cautious — it is spending its battery and its
+ * flash write cycles on the same mistake, nightly. Three attempts is enough to
+ * distinguish a transient failure from a release this device cannot run.
+ */
+#define HK_OTA_MAX_ROLLBACKS 3u
+
+/**
+ * The channel name a manifest must carry for this device to accept it.
+ *
+ * Returns the stable channel for any value it does not recognise. A corrupted
+ * setting should leave a speaker on the conservative channel rather than
+ * silently promote it to candidate builds.
+ */
+const char *hk_ota_channel_name(uint32_t channel);
+
+/**
+ * Whether this device should still be looking for updates.
+ *
+ * False once it has rolled back too many times in a row. Recovering needs a
+ * person: either a release that fixes whatever is wrong, installed over USB,
+ * or the counter cleared deliberately. That is the right cost — the
+ * alternative is a device that keeps trying forever and never says so.
+ */
+bool hk_ota_updates_allowed(uint32_t consecutive_rollbacks);
+
 #endif /* HK_OTA_H */
