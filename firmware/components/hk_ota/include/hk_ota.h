@@ -27,6 +27,7 @@
 #define HK_OTA_H
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #include "hk_manifest.h"
@@ -143,5 +144,25 @@ const char *hk_ota_channel_name(uint32_t channel);
  * alternative is a device that keeps trying forever and never says so.
  */
 bool hk_ota_updates_allowed(uint32_t consecutive_rollbacks);
+
+/** Longest manifest address this builder can produce, including the NUL. */
+#define HK_OTA_URL_MAX 160u
+
+/**
+ * Build the manifest address for a channel.
+ *
+ * Each channel has its own fixed address rather than sharing one, because
+ * GitHub's `releases/latest` resolves to the newest NON-prerelease and so can
+ * only ever serve stable. A canary device pointed at it would fetch a manifest
+ * for a channel it does not follow and correctly refuse it — safe, and useless.
+ *
+ * The addresses point at two pointer releases whose tags never change, so the
+ * device's address never changes either; publishing moves what those tags
+ * carry, not where the device looks.
+ *
+ * @return false if @p out is NULL or too small, leaving nothing written. A
+ *         truncated URL would be a device quietly checking the wrong place.
+ */
+bool hk_ota_manifest_url(char *out, size_t size, uint32_t channel);
 
 #endif /* HK_OTA_H */

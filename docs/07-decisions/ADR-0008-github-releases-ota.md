@@ -91,7 +91,13 @@ Depo yeniden **public** yapıldı. Private olmasının sebebi imzalama anahtarı
 
 Yanmış anahtarın commit'i geçmişte duruyor ve yine herkese açık. Bu kabul edildi: anahtar zaten ifşa olmuştu, sonradan private yapmak onu geri çağırmamıştı ve geçmişi yeniden yazmak da çağırmaz. Bir daha imzalayamaması konumla değil parmak iziyle sağlanıyor.
 
-**Açık kalan:** `releases/latest` prerelease olmayan en son sürümü çözer, yani yalnız stable kanalı sunar. Canary kanalına ayarlı bir cihaz bu manifest'i çeker, takip etmediği bir kanal görür ve doğru şekilde reddeder — güvenli ama işe yaramaz. Canary'ye ulaşmak `latest`'in atlamadığı bir adres ister.
+**Kanal adresleri.** `releases/latest` prerelease'i atladığı için yalnız stable sunuyordu; canary'ye ayarlı bir cihaz onu çeker, takip etmediği kanalı görür ve doğru şekilde reddederdi — güvenli ama işe yaramaz.
+
+Her kanalın kendi **sabit etiketli işaretçi sürümü** var: `channel-stable` ve `channel-canary`. Cihazın adresi hiç değişmiyor; yayımlama, o etiketin **ne taşıdığını** değiştiriyor. Adres kanal ayarından `hk_ota_manifest_url()` ile kuruluyor ve kırpılma sessizce geçmiyor, hata olarak dönüyor — kısalmış bir adres, cihazın var olmayan bir yeri nazikçe kontrol etmesi demek.
+
+**Yeni sürüm aday olarak doğar.** `release.yml` sürümü prerelease yayımlıyor, manifest'i `canary` kanalıyla üretiyor ve `channel-canary` işaretçisini taşıyor. Diğer üç hoparlöre hiçbir şey ulaşmıyor. Varsayılanın tersi olması, canary adımını pratikte isteğe bağlı yapardı.
+
+**Terfi yeniden derlemez.** `promote.yml` yayımlanmış ikiliyi indiriyor, manifest'i ondan `stable` kanalıyla yeniden üretiyor ve yalnız manifest'i yayımlıyor. Yeniden derleme farklı bir imaj üretirdi — tek başına derleme zamanı bile baytları değiştirir — ve canary hoparlörün gerçekten çalıştırdığı şey kimseye ulaşmazdı. Ölçüldü: canary ve stable manifest'leri arasında **yalnız `channel` alanı** farklı; `sha256`, `size` ve `asset` aynı.
 
 ## Gerekçe
 

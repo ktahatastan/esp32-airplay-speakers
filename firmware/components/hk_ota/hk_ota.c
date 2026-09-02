@@ -1,6 +1,7 @@
 #include "hk_ota.h"
 
 #include <stddef.h>
+#include <stdio.h>
 #include <string.h>
 
 /**
@@ -156,4 +157,26 @@ const char *hk_ota_channel_name(uint32_t channel)
 bool hk_ota_updates_allowed(uint32_t consecutive_rollbacks)
 {
     return consecutive_rollbacks < HK_OTA_MAX_ROLLBACKS;
+}
+
+bool hk_ota_manifest_url(char *out, size_t size, uint32_t channel)
+{
+    if (out == NULL || size == 0u) {
+        return false;
+    }
+    out[0] = '\0';
+
+    const int written = snprintf(
+        out, size,
+        "https://github.com/ktahatastan/esp32-airplay-speakers"
+        "/releases/download/channel-%s/manifest.json",
+        hk_ota_channel_name(channel));
+
+    /* snprintf truncates rather than failing, and a truncated address is a
+     * device politely checking somewhere that does not exist. Report it. */
+    if (written < 0 || (size_t)written >= size) {
+        out[0] = '\0';
+        return false;
+    }
+    return true;
 }

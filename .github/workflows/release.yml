@@ -269,6 +269,7 @@ jobs:
             --image harman-kardom-signed.bin \
             --tag "${{ steps.tag.outputs.value }}" \
             --asset-url "https://github.com/${{ github.repository }}/releases/download/${{ steps.tag.outputs.value }}/harman-kardom.bin" \
+            --channel canary \
             --out manifest.json
           cat manifest.json
 
@@ -299,11 +300,32 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           cp harman-kardom-signed.bin harman-kardom.bin
+          # A new release is a CANDIDATE. Nothing reaches the other three
+          # speakers until one of them has run it and someone promoted it —
+          # that is the canary step, and defaulting the other way would make it
+          # optional in practice.
           gh release create "${{ steps.tag.outputs.value }}" \
             --repo "${{ github.repository }}" \
             --title "${{ steps.tag.outputs.value }}" \
             --generate-notes \
             --verify-tag \
+            --prerelease \
             harman-kardom.bin manifest.json \
             artifacts/bootloader/bootloader.bin \
             artifacts/partition_table/partition-table.bin
+
+      - name: point the canary channel at it
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Devices look at a fixed address per channel, so publishing moves
+          # what a tag carries rather than where a device looks. The tag never
+          # changes; a speaker's URL never changes with it.
+          gh release view channel-canary --repo "${{ github.repository }}" >/dev/null 2>&1 || \
+            gh release create channel-canary \
+              --repo "${{ github.repository }}" \
+              --title "Canary channel pointer" \
+              --notes "Carries the manifest.json that devices on the canary channel fetch. Moved by the release workflow; not a release in itself." \
+              --prerelease
+          gh release upload channel-canary manifest.json \
+            --repo "${{ github.repository }}" --clobber

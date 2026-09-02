@@ -88,25 +88,13 @@ static esp_err_t report_identity(void)
 /** Log the GPIO assignment so a bring-up session can compare it to the sheet. */
 static hk_sched_t s_update_schedule;
 
-/**
- * Where releases are published.
- *
- * A public repository's release assets are fetchable over plain HTTPS with no
- * credential, which is what lets this device carry no token — the OTA plan
- * forbids one, and a device that needs a secret to update is a device whose
- * secret is in its flash. The repository was briefly private and this had to
- * be NULL, because a private repository answers 404 to an anonymous request.
- *
- * `releases/latest` resolves to the newest release that is NOT a prerelease,
- * so this address serves the stable channel and only the stable channel. A
- * device set to canary will fetch this manifest, find a channel it does not
- * follow, and correctly refuse it — which is safe and useless. Reaching a
- * canary build needs an address that `latest` does not skip; that is an open
- * item in the OTA plan rather than something this line can solve.
+/*
+ * The manifest address is built from the channel setting rather than fixed
+ * here; see hk_ota_manifest_url(). A public repository's release assets are
+ * fetchable over plain HTTPS with no credential, which is what lets this device
+ * carry no token — the OTA plan forbids one, and a device that needs a secret
+ * to update is a device whose secret is in its flash.
  */
-static const char *const k_manifest_url =
-    "https://github.com/ktahatastan/esp32-airplay-speakers"
-    "/releases/latest/download/manifest.json";
 
 /** Announced once, so the log says why nothing ever updates. */
 static bool s_update_source_reported;
@@ -259,12 +247,12 @@ static void run_update_check(void)
         return;
     }
 
-    if (k_manifest_url == NULL) {
+    char manifest_url[HK_OTA_URL_MAX];
+    if (!hk_ota_manifest_url(manifest_url, sizeof(manifest_url),
+                             setting_u32("channel"))) {
         if (!s_update_source_reported) {
             s_update_source_reported = true;
-            ESP_LOGW(TAG, "no release source: the repository is private and its "
-                          "assets need a credential this firmware must not carry "
-                          "(ADR-0008 section 7). Updates are off.");
+            ESP_LOGE(TAG, "could not build a manifest address; updates are off");
         }
         return;
     }
@@ -283,7 +271,7 @@ static void run_update_check(void)
     const esp_partition_t *inactive = esp_ota_get_next_update_partition(NULL);
 
     hk_ota_request_t request = {
-        .manifest_url = k_manifest_url,
+        .manifest_url = manifest_url,
         .device = {
             .product = app->project_name,
             .target = "esp32s3",

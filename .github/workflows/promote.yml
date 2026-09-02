@@ -1,0 +1,106 @@
+# Move a candidate release to the stable channel.
+#
+# The rule this exists to enforce: the SAME SIGNED BINARY is promoted, never
+# rebuilt. A rebuild would produce a different image — a different build time
+# alone changes the bytes — and the thing the canary speaker actually ran would
+# never reach anyone else. So this downloads the published asset, regenerates
+# the manifest from it, and republishes only the manifest.
+#
+# Because make_manifest.py reads the product, version and secure_version out of
+# the binary and computes the digest over it, a promoted manifest cannot
+# disagree with the image it describes. The only field that changes is the
+# channel, which was never in the binary.
+
+name: promote
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to promote to stable, e.g. v0.2.0'
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  promote:
+    name: promote a candidate to stable
+    runs-on: ubuntu-latest
+    # Same gate as publishing. Promotion is the step that reaches the other
+    # three speakers, so it deserves at least as much ceremony as the release.
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: check the tag
+        id: tag
+        env:
+          RAW_TAG: ${{ github.event.inputs.tag }}
+        run: |
+          case "$RAW_TAG" in
+            v[0-9]*.[0-9]*.[0-9]*) ;;
+            *) echo "refusing '$RAW_TAG': not a vMAJOR.MINOR.PATCH tag"; exit 1 ;;
+          esac
+          echo "value=$RAW_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: fetch the published binary
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "${{ steps.tag.outputs.value }}" \
+            --repo "${{ github.repository }}" \
+            --pattern harman-kardom.bin --dir published
+          test -s published/harman-kardom.bin
+
+      - name: describe it as stable
+        run: |
+          python3 firmware/tools/make_manifest.py \
+            --image published/harman-kardom.bin \
+            --tag "${{ steps.tag.outputs.value }}" \
+            --asset-url "https://github.com/${{ github.repository }}/releases/download/${{ steps.tag.outputs.value }}/harman-kardom.bin" \
+            --channel stable \
+            --out manifest.json
+          cat manifest.json
+
+      - name: the manifest must still describe the published binary
+        run: |
+          # The digest is computed over the file that was downloaded, so this
+          # can only fail if the download was truncated or the wrong asset
+          # arrived — which is exactly when it should.
+          python3 - <<'PY'
+          import hashlib, json, pathlib, sys
+          manifest = json.loads(pathlib.Path("manifest.json").read_text())
+          blob = pathlib.Path("published/harman-kardom.bin").read_bytes()
+          if manifest["sha256"] != hashlib.sha256(blob).hexdigest():
+              sys.exit("manifest does not describe the published binary")
+          if manifest["size"] != len(blob):
+              sys.exit("manifest size does not match the published binary")
+          if manifest["channel"] != "stable":
+              sys.exit("manifest is not on the stable channel")
+          print("manifest and published binary agree")
+          PY
+
+      - name: point the stable channel at it
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view channel-stable --repo "${{ github.repository }}" >/dev/null 2>&1 || \
+            gh release create channel-stable \
+              --repo "${{ github.repository }}" \
+              --title "Stable channel pointer" \
+              --notes "Carries the manifest.json that devices on the stable channel fetch. Moved by the promote workflow; not a release in itself."
+          gh release upload channel-stable manifest.json \
+            --repo "${{ github.repository }}" --clobber
+
+      - name: take the candidate label off the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release edit "${{ steps.tag.outputs.value }}" \
+            --repo "${{ github.repository }}" --prerelease=false

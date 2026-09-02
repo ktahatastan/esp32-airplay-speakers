@@ -115,16 +115,54 @@ void test_ota(void)
     HK_CHECK(strcmp(hk_ota_image_err_name(HK_OTA_IMAGE_ERR_NO_DESC), "NO_DESC") == 0);
     HK_CHECK(strcmp(hk_ota_image_err_name((hk_ota_image_err_t)99), "UNKNOWN") == 0);
 
-    /* ===== the address this firmware actually ships with =====
-     * Pinned so a typo in it cannot reach a device. A URL the validator
-     * refuses would leave every speaker checking nothing, silently, and a URL
-     * too long for the buffer would arrive as a missing field. */
+    /* ===== channels ===== */
+    HK_CHECK(strcmp(hk_ota_channel_name(HK_OTA_CHANNEL_STABLE), "stable") == 0);
+    HK_CHECK(strcmp(hk_ota_channel_name(HK_OTA_CHANNEL_CANARY), "canary") == 0);
+    /* A byte that went bad must not promote a speaker onto candidate builds. */
+    HK_CHECK(strcmp(hk_ota_channel_name(2u), "stable") == 0);
+    HK_CHECK(strcmp(hk_ota_channel_name(0xFFFFFFFFu), "stable") == 0);
+
+    /* Three consecutive rollbacks and this device stops trying: one that keeps
+     * fetching the same broken release spends its battery and its flash on the
+     * same mistake, nightly. */
+    HK_CHECK(hk_ota_updates_allowed(0u));
+    HK_CHECK(hk_ota_updates_allowed(HK_OTA_MAX_ROLLBACKS - 1u));
+    HK_CHECK(!hk_ota_updates_allowed(HK_OTA_MAX_ROLLBACKS));
+    HK_CHECK(!hk_ota_updates_allowed(255u));
+
+    /* ===== the address this firmware actually builds =====
+     * Pinned so a typo cannot reach a device: an address the validator refuses
+     * would leave every speaker checking nothing, silently, and one too long
+     * for the manifest buffer would arrive as a missing field. */
     {
-        static const char k_shipped[] =
-            "https://github.com/ktahatastan/esp32-airplay-speakers"
-            "/releases/latest/download/manifest.json";
-        HK_CHECK(hk_ota_asset_url_ok(k_shipped));
-        HK_CHECK(sizeof(k_shipped) <= HK_MANIFEST_ASSET_MAX);
+        char url[HK_OTA_URL_MAX];
+
+        HK_CHECK(hk_ota_manifest_url(url, sizeof(url), HK_OTA_CHANNEL_STABLE));
+        HK_CHECK(strstr(url, "channel-stable") != NULL);
+        HK_CHECK(hk_ota_asset_url_ok(url));
+        HK_CHECK(strlen(url) + 1u <= HK_MANIFEST_ASSET_MAX);
+
+        HK_CHECK(hk_ota_manifest_url(url, sizeof(url), HK_OTA_CHANNEL_CANARY));
+        HK_CHECK(strstr(url, "channel-canary") != NULL);
+        HK_CHECK(hk_ota_asset_url_ok(url));
+
+        /* Each channel has its OWN address. Sharing one is what made a canary
+         * device fetch a stable manifest and refuse it — safe and useless. */
+        char stable[HK_OTA_URL_MAX];
+        HK_CHECK(hk_ota_manifest_url(stable, sizeof(stable), HK_OTA_CHANNEL_STABLE));
+        HK_CHECK(strcmp(stable, url) != 0);
+
+        /* An unrecognised channel lands on stable, address included. */
+        HK_CHECK(hk_ota_manifest_url(url, sizeof(url), 99u));
+        HK_CHECK(strstr(url, "channel-stable") != NULL);
+
+        /* Truncation is reported, not returned. A shortened address is a
+         * device politely checking somewhere that does not exist. */
+        char small[20];
+        HK_CHECK(!hk_ota_manifest_url(small, sizeof(small), HK_OTA_CHANNEL_STABLE));
+        HK_CHECK(small[0] == '\0');
+        HK_CHECK(!hk_ota_manifest_url(NULL, 100, HK_OTA_CHANNEL_STABLE));
+        HK_CHECK(!hk_ota_manifest_url(url, 0, HK_OTA_CHANNEL_STABLE));
     }
 
     /* ================= asset URL ================= */
