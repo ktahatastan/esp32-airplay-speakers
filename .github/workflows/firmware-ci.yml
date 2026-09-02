@@ -152,7 +152,10 @@ jobs:
         env:
           HK_MANIFEST_E2E: ${{ github.workspace }}/build/host-idf/manifest_e2e
         run: |
-          cmake --build build/host-idf --target manifest_e2e
+          # No cmake call here: in the espressif/idf container cmake only
+          # reaches PATH after export.sh, and this step does not source it.
+          # The previous step already built every target in build/host-idf,
+          # manifest_e2e among them, and asserted it exists.
           # The end-to-end class skips itself when the harness is absent, which
           # reads as a green run. This is the only job that runs it, so a skip
           # here means it ran nowhere.

@@ -44,6 +44,29 @@ void test_audio(void)
      * exhaustively rather than along one happy path. A state added later that
      * breaks the ordering fails here without anyone having to remember why. */
     {
+        /* The full triple for every state, in one table. The implications
+         * below are one-way and a mutation that turned an output ON where it
+         * should be off could satisfy all of them — the audit found exactly
+         * that gap. Pinning the expected value of all three lines closes it,
+         * and keeping them in a single table means the expectations cannot
+         * drift apart from each other. */
+        const struct {
+            hk_audio_state_t state;
+            bool i2s, dac, amp;
+        } expected[] = {
+            {HK_AUDIO_SILENT,   false, false, false},
+            {HK_AUDIO_CLOCKING, true,  false, false},
+            {HK_AUDIO_DAC_LIVE, true,  true,  false},
+            {HK_AUDIO_PLAYING,  true,  true,  true },
+            {HK_AUDIO_MUTING,   true,  true,  false},
+        };
+        for (unsigned i = 0; i < sizeof(expected) / sizeof(expected[0]); i++) {
+            hk_audio_outputs_t got = hk_audio_outputs(expected[i].state);
+            HK_CHECK_EQ_INT(got.i2s_running, expected[i].i2s);
+            HK_CHECK_EQ_INT(got.dac_unmuted, expected[i].dac);
+            HK_CHECK_EQ_INT(got.amp_enabled, expected[i].amp);
+        }
+
         const hk_audio_state_t all[] = {HK_AUDIO_SILENT, HK_AUDIO_CLOCKING,
                                         HK_AUDIO_DAC_LIVE, HK_AUDIO_PLAYING,
                                         HK_AUDIO_MUTING};

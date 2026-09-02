@@ -95,7 +95,7 @@ Kritik öz-test hatasında `esp_ota_mark_app_invalid_rollback_and_reboot()` kull
 
 1. **verify** — `check_docs`, ana makine birim testleri, araç testleri ve depo değişmezleri (`check_partitions`, `check_storage_isolation`, `check_no_credential_logs`).
 2. **build** — `sdkconfig.defaults` + `sdkconfig.release` ile derler. **İmzalama anahtarını görmez.** Ayrıca sürüm profilinin gerçekten imza istediğini ve anti-rollback'in kapalı kaldığını üretilen `sdkconfig` üzerinden doğrular; bu seçenek sessizce kapansaydı başka hiçbir şey fark etmezdi. Boyut kapısı burada çalışır.
-3. **publish** — korumalı `release` ortamına bağlıdır ve `contents: write` iznini yalnız bu iş alır. Görüntüyü `espsecure.py sign_data --version 2` ile imzalar, imzayı geri doğrular, manifest'i **imzalanmış** dosyadan üretir, manifest ile ikilinin uyuştuğunu bir kez daha okuyup karşılaştırır, sonra release'i oluşturur.
+3. **publish** — `release` ortamına bağlıdır ve `contents: write` iznini yalnız bu iş alır. Ortam **kapsamı** gerçek: `HK_SIGNING_KEY` ortam secret'ıdır ve depo secret'ı sayısı sıfırdır, yani `build` işi anahtarı okuyamaz. Ortamda **zorunlu inceleyici yoktur** — private depoda koruma kuralları ücretli plan istiyor — dolayısıyla etiket push'u insan onayı olmadan yayımlar. Görüntüyü `espsecure.py sign_data --version 2` ile imzalar, imzayı geri doğrular, manifest'i **imzalanmış** dosyadan üretir, manifest ile ikilinin uyuştuğunu bir kez daha okuyup karşılaştırır, sonra release'i oluşturur.
 
 Anahtar yönetiminin tamamı [[../credentials/signing-keys|imzalama anahtarları kaydında]]. Özeti:
 
@@ -109,7 +109,7 @@ Bu, `release` ortamının **korunmuş olmasına** bağlıdır ve şu an değildi
 
 `publish` işi imzalamadan önce iki şeyi denetler:
 
-1. Anahtarın açık yarısı `docs/credentials/` altındaki bir anahtarla eşleşiyorsa **reddeder** — o anahtar depoda, yani herkeste.
+1. Anahtarın açık yarısının parmak izi `docs/credentials/burned-keys.txt` içindeyse **reddeder**. Liste konum değil parmak izi üzerinden çalışır: bir anahtar dosyasını silmek onu ifşa edilmemiş yapmaz, çünkü geçmişte durur.
 2. Sabitlenmiş `firmware/certs/hk-signing-key.pub.bin` ile eşleşmiyorsa **reddeder**. İmzayı imzalayan anahtarla doğrulamak hiçbir şey kanıtlamaz; her geçerli RSA-3072 anahtarı o denetimden geçer. Önemli olan cihazların **zaten güvendiği** anahtar olup olmadığıdır, çünkü güven çıpası çalışan uygulamanın kendi imza bloğudur. Yanlış ama geçerli bir anahtarla yayımlanan sürümü dört hoparlör de sessizce reddeder ve kurtarma yolu dört cihazı USB'den yeniden yazmaktır.
 
 Üretici ile aygıt yazılımının **değerler** üzerinde anlaştığı ayrıca doğrulanıyor. Önceden yalnız alan **adları** karşılaştırılıyordu; bir değer uyuşmazlığı (ayrıştırıcının farklı yazdığı bir sürüm, yanlış kutuda bir özet, taşan bir boyut, tampona sığmayan bir URL) tüm test paketinden geçer ve dört hoparlörün her sürümü reddetmesiyle keşfedilirdi.

@@ -62,6 +62,15 @@ typedef struct {
     uint32_t shutdown_mv;    /**< Shut down below this */
     uint32_t recover_margin_mv;
     int16_t  max_cell_c;     /**< Above this, treat as a thermal fault */
+    /**
+     * The pack must cool to at or below this before the fault clears.
+     *
+     * Temperature needs the same treatment as voltage and did not have it: a
+     * bare comparison against max_cell_c makes a thermistor sitting on the
+     * limit report OVERHEAT and NORMAL on alternate readings, and every one of
+     * those transitions runs the mute sequencer. Must be below max_cell_c.
+     */
+    int16_t  recover_cell_c;
 } hk_power_limits_t;
 
 /** How the device is doing on power. Ordered: later is worse. */

@@ -2,21 +2,25 @@
  * @file hk_main.c
  * @brief Harman Kardom application entry point.
  *
- * Stage F0 of docs/03-firmware/firmware-plan.md. This build does exactly one
- * thing: come up, report what it is, and prove the skeleton links. It plays no
- * audio, joins no network and drives no GPIO, because every one of those needs
- * a hardware gate that has not been measured yet:
+ * What this build actually does: come up, report what it is, drive the button
+ * and the LED, run the provisioning policy with real radios, and print what
+ * every other policy concludes about the state the device is in.
  *
- *   F1  AirPlay stack is not chosen (ADR-0007 is still open)
+ * What it does not do, and why — each of these waits on a measurement, not on
+ * someone finding the time:
+ *
+ *   F1  AirPlay stack chosen (ADR-0007) but not vendored; the integration is
+ *       an architectural decision deferred until there is hardware to test on
  *   F2  audio path needs G1, the amplifier on a dummy load
- *   F3  DSP protection needs G0, the driver impedance measurement
- *   F4  Wi-Fi, mDNS and SoftAP provisioning are live; per-device credentials
- *       must be written before provisioning can open
- *   F5  button and LED are live; storage-backed reset actions wait for F6
- *   F6  user and calibration stores exist; power telemetry needs G4
- *   F7  OTA, needs G6
+ *   F3  DSP coefficients need G0, the driver impedance measurement
+ *   F6  power telemetry needs an ADC driver and the G3/G4 thresholds
+ *   F7  OTA client compiles but nothing runs it; needs G6
  *
- * Nothing below may grow into driving a real driver without the matching gate.
+ * The policy modules below are pure logic with no driver behind them yet, so
+ * report_policies() runs each one and prints its verdict. A policy nobody
+ * calls is indistinguishable from one that does not work.
+ *
+ * Nothing here may grow into driving a real driver without the matching gate.
  */
 
 #include <inttypes.h>
@@ -260,38 +264,76 @@ static void report_hardware(void)
 }
 
 /** Provisioning policy for this boot. Nothing drives the radios yet. */
-static hk_prov_t s_provisioning;
+/*
+ * The provisioning state is touched from two tasks: on_button() runs in the
+ * hk_ui task, and the supervisory loop below runs in app_main. Both cores are
+ * enabled, so those are genuinely concurrent, and hk_prov_t is several fields
+ * that have to change together — a button press landing between the loop's
+ * read of `state` and its read of `opened_ms` would act on half of each.
+ *
+ * The lock lives here rather than in hk_provision, which is deliberately pure
+ * C with no RTOS dependency so it can be host-tested. A module that took a
+ * FreeRTOS mutex could not be run on a laptop.
+ */
+static hk_prov_t    s_provisioning;
+static portMUX_TYPE s_prov_lock = portMUX_INITIALIZER_UNLOCKED;
+static bool         s_prov_ready;
+
+/** Apply one provisioning event under the lock. */
+static void prov_event(hk_prov_event_t event)
+{
+    const uint32_t at = now_ms();
+    portENTER_CRITICAL(&s_prov_lock);
+    if (s_prov_ready) {
+        hk_prov_handle(&s_provisioning, event, at);
+    }
+    portEXIT_CRITICAL(&s_prov_lock);
+}
+
+/** A consistent copy, so callers never read a half-updated struct. */
+static hk_prov_t prov_snapshot(void)
+{
+    hk_prov_t copy;
+    portENTER_CRITICAL(&s_prov_lock);
+    copy = s_provisioning;
+    portEXIT_CRITICAL(&s_prov_lock);
+    return copy;
+}
 
 /**
  * Act on a committed button gesture.
  *
- * Runs in the UI task, so it stays short. The destructive branches log their
- * intent rather than performing it: the storage layer that would carry them out
- * is F6 work, and wiring a half-built erase path to a physical button is how a
- * user loses their calibration by accident.
+ * Runs in the UI task, so it stays short, and touches the provisioning state
+ * only through prov_event() because app_main's loop touches it too.
+ *
+ * The destructive branches really do erase: a network reset clears the stored
+ * Wi-Fi credentials, and a factory reset restores user settings as well. What
+ * neither can reach is the calibration partition — hk_storage opens it
+ * read-only and names it in no erase call, which is the structural half of
+ * PRD-008 that tools/check_storage_isolation.py checks in CI.
  */
 static void on_button(hk_button_event_t event, void *context)
 {
     (void)context;
     switch (event) {
     case HK_BUTTON_EVENT_SHORT_PRESS:
-        hk_prov_handle(&s_provisioning, HK_PROV_EV_BUTTON_SHORT, now_ms());
+        prov_event(HK_PROV_EV_BUTTON_SHORT);
         ESP_LOGI(TAG, "button: opening provisioning -> %s",
-                 hk_prov_state_name(s_provisioning.state));
+                 hk_prov_state_name(prov_snapshot().state));
         if (hk_network_open_provisioning() != ESP_OK) {
             ESP_LOGE(TAG, "could not open provisioning");
         }
         break;
     case HK_BUTTON_EVENT_NETWORK_RESET:
         ESP_LOGW(TAG, "button: forgetting Wi-Fi credentials");
-        hk_prov_handle(&s_provisioning, HK_PROV_EV_NETWORK_RESET, now_ms());
+        prov_event(HK_PROV_EV_NETWORK_RESET);
         if (hk_network_forget_credentials() != ESP_OK) {
             ESP_LOGE(TAG, "could not clear credentials");
         }
         break;
     case HK_BUTTON_EVENT_FACTORY_RESET:
         ESP_LOGW(TAG, "button: restoring user settings to defaults");
-        hk_prov_handle(&s_provisioning, HK_PROV_EV_FACTORY_RESET, now_ms());
+        prov_event(HK_PROV_EV_FACTORY_RESET);
         /* User settings first, then credentials. Calibration is in another
          * partition that this firmware opens read-only, so neither call can
          * reach it (PRD-008). */
@@ -326,10 +368,20 @@ static void on_network_status(const hk_net_status_t *network, void *context)
  */
 static void start_network(void)
 {
-    hk_prov_init(&s_provisioning, hk_network_is_provisioned(),
-                 hk_ui_recovery_requested(), now_ms());
+    /* The UI task is already running by now, so a press could arrive during
+     * this call. Publishing readiness under the same lock means such a press
+     * is dropped rather than applied to a half-built state. */
+    const bool provisioned = hk_network_is_provisioned();
+    const bool recovery = hk_ui_recovery_requested();
+    const uint32_t at = now_ms();
+    portENTER_CRITICAL(&s_prov_lock);
+    hk_prov_init(&s_provisioning, provisioned, recovery, at);
+    s_prov_ready = true;
+    portEXIT_CRITICAL(&s_prov_lock);
+
+    const hk_prov_t started = prov_snapshot();
     ESP_LOGI(TAG, "provisioning policy: %s, bounded=%d",
-             hk_prov_state_name(s_provisioning.state), s_provisioning.bounded);
+             hk_prov_state_name(started.state), started.bounded);
 
     /* The transport follows the situation rather than a choice made here:
      * SoftAP with nothing stored, BLE from a button press on a configured
@@ -383,13 +435,14 @@ void app_main(void)
     while (true) {
         vTaskDelay(pdMS_TO_TICKS(1000));
 
-        hk_prov_handle(&s_provisioning, HK_PROV_EV_TICK, now_ms());
+        prov_event(HK_PROV_EV_TICK);
 
-        const hk_prov_radios_t want = hk_prov_radios(&s_provisioning);
+        const hk_prov_t now = prov_snapshot();
+        const hk_prov_radios_t want = hk_prov_radios(&now);
         const bool radios_open = want.ble || want.softap;
         if (radios_were_open && !radios_open) {
             ESP_LOGI(TAG, "provisioning window closed after %s",
-                     s_provisioning.bounded ? "its bounded timeout" : "success");
+                     now.bounded ? "its bounded timeout" : "success");
             if (hk_network_close_provisioning() != ESP_OK) {
                 ESP_LOGE(TAG, "could not close provisioning");
             }

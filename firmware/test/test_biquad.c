@@ -63,6 +63,16 @@ void test_biquad(void)
     HK_CHECK(!hk_biquad_lowpass(&lp, FC, FS, 0.0f));         /* no Q */
     HK_CHECK(!hk_biquad_lowpass(&lp, FC, FS, -1.0f));
     HK_CHECK(!hk_biquad_lowpass(&lp, NAN, FS, 0.7f));
+    /* Infinities too, which the NaN check alone let through. An infinite Q
+     * makes alpha vanish and a2 come out exactly 1 — poles on the unit circle,
+     * which hk_biquad_stable() in the same file then rejects. Returning
+     * coefficients the module itself calls unstable is worse than refusing. */
+    HK_CHECK(!hk_biquad_lowpass(&lp, INFINITY, FS, 0.7f));
+    HK_CHECK(!hk_biquad_lowpass(&lp, FC, INFINITY, 0.7f));
+    HK_CHECK(!hk_biquad_lowpass(&lp, FC, FS, INFINITY));
+    HK_CHECK(!hk_biquad_highpass(&hp, FC, FS, INFINITY));
+    HK_CHECK(!hk_biquad_highpass(&hp, FC, FS, NAN));
+    HK_CHECK(!hk_biquad_lowpass(&lp, -INFINITY, FS, 0.7f));
     /* ===== a corner too low to represent in float =====
      * Found by fuzzing: below about fc/fs = 4.83e-5 the coefficients still
      * come out and still look like a filter, but a2 has rounded to where the

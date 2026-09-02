@@ -42,7 +42,21 @@ void test_sched(void)
         bad = limits(); bad.interval_ms = 0;
         hk_sched_init(&s, 1000u, 12345u, &bad);
         HK_CHECK(!s.armed);
+        /* 0xFFFFFFFF is 1001 ms BEFORE due_ms=1000 under this module's own
+         * wraparound arithmetic, so that timestamp alone proves nothing about
+         * the armed guard — the audit caught the assertion passing for the
+         * wrong reason. These two are decidable. */
         HK_CHECK(!hk_sched_due(&s, 0xFFFFFFFFu));
+        HK_CHECK(!hk_sched_due(&s, 2000u));        /* clearly after due_ms */
+        HK_CHECK_EQ_INT(hk_sched_remaining(&s, 500u), 0);  /* and clearly before */
+
+        /* backoff_max + jitter must not overflow the signed comparison either;
+         * guarding only interval + jitter left a "sane" configuration that
+         * produced a due time read as already past. */
+        bad = limits();
+        bad.jitter_ms = 1000u;
+        bad.backoff_max_ms = 0x7FFFFFFFu;
+        HK_CHECK(!hk_sched_limits_sane(&bad));
     }
 
     /* ===== the first check is spread, not immediate ===== */

@@ -70,11 +70,16 @@ float hk_limiter_step(hk_limiter_t *limiter, float peak)
         return 1.0f;
     }
 
-    /* A NaN sample must not become a NaN gain that then multiplies every
-     * subsequent sample. Treat it as needing no reduction and leave the state
-     * alone; the sample itself is already broken and this stage is not the
-     * place to repair it. */
-    if (isnan(peak)) {
+    /* A broken sample must not become a broken gain that then multiplies every
+     * sample after it. This guard used to test isnan alone, which let an
+     * infinity through: fabsf(INFINITY) exceeds any ceiling, so the reduction
+     * ran and set gain = ceiling / INFINITY = 0, and the hold kept it there.
+     * One bad sample silenced the output for the whole hold time — measured at
+     * about 10 ms — which is the opposite of the guarantee this module makes.
+     *
+     * Leave the state alone instead. The sample itself is already broken and
+     * this stage is not the place to repair it. */
+    if (!isfinite(peak)) {
         return limiter->gain;
     }
 

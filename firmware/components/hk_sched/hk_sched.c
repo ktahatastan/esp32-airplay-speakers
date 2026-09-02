@@ -34,6 +34,13 @@ bool hk_sched_limits_sane(const hk_sched_limits_t *limits)
     if (limits->interval_ms > HK_SCHED_MAX_INTERVAL_MS - limits->jitter_ms) {
         return false;
     }
+    /* The same sum is formed on the failure path, and feeds the same signed
+     * comparison. Guarding only the interval left a configuration this
+     * function called sane that could still produce a due time the comparison
+     * reads as already past. */
+    if (limits->backoff_max_ms > HK_SCHED_MAX_INTERVAL_MS - limits->jitter_ms) {
+        return false;
+    }
     return true;
 }
 

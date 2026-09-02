@@ -53,6 +53,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Pinned to the tag. A workflow_dispatch run defaults its ref to the
+          # default branch, so without this the pipeline would verify, build
+          # and publish whatever main happens to contain while naming the
+          # release after a tag that points somewhere else.
+          ref: ${{ github.event.inputs.tag || github.ref }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -82,6 +88,8 @@ jobs:
     container: espressif/idf:v5.5.1
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
       - name: build with sdkconfig.release
         shell: bash
         run: |
@@ -120,8 +128,11 @@ jobs:
           # the two are tied together here rather than in a comment.
           if grep -qx 'CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y' \
                firmware/build-release/sdkconfig; then
-            if ! grep -rq 'esp_ota_mark_app_valid_cancel_rollback' \
-                   firmware/main firmware/components; then
+            # Match a CALL, not the name. The old grep also matched the two
+            # places hk_health.h mentions the function in prose, so the guard
+            # would have passed while nothing called it.
+            if ! grep -rqE 'esp_ota_mark_app_valid_cancel_rollback[[:space:]]*\(' \
+                   --include='*.c' firmware/main firmware/components; then
               echo "Rollback is enabled but nothing calls"
               echo "esp_ota_mark_app_valid_cancel_rollback(). Every update"
               echo "would revert on the first restart."
@@ -155,6 +166,8 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -164,9 +177,19 @@ jobs:
           path: artifacts
       - name: resolve the tag
         id: tag
+        env:
+          # Through the environment rather than interpolated into the script.
+          # workflow_dispatch's `tag` is free text, and a value containing a
+          # quote or a backtick would otherwise be pasted straight into a
+          # shell line by the expression expander.
+          RAW_TAG: ${{ github.event.inputs.tag || github.ref_name }}
         run: |
-          TAG="${{ github.event.inputs.tag || github.ref_name }}"
-          echo "value=$TAG" >> "$GITHUB_OUTPUT"
+          case "$RAW_TAG" in
+            v[0-9]*.[0-9]*.[0-9]*) ;;
+            *) echo "refusing to publish '$RAW_TAG': not a vMAJOR.MINOR.PATCH tag"
+               exit 1 ;;
+          esac
+          echo "value=$RAW_TAG" >> "$GITHUB_OUTPUT"
 
       - name: install esptool
         run: pip install --disable-pip-version-check 'esptool==4.12.0'

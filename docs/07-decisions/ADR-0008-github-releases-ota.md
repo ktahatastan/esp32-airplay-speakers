@@ -73,7 +73,7 @@ Hâlâ eksik olan tek şey, olduğu gibi yazılıyor: **zorunlu inceleyici yok.*
 
 Bunun etrafından `HK_SIGNING_KEY`'i **depo** secret'ı yaparak dolaşmak yasaktır. Hattı çalıştırırdı, ama anahtarı `build` dahil her işe okutarak — yani bölmenin tek sebebini ortadan kaldırarak. Doğrusu `release` ortamına bağlı **ortam** secret'ıdır.
 
-Ayrıca `publish` işi iki şeyi imzalamadan önce denetler: anahtarın açık yarısı `docs/credentials/` altında duran bir anahtarla eşleşiyorsa (yani depoda, yani açıksa) reddeder; ve `firmware/certs/hk-signing-key.pub.bin` ile sabitlenmiş açık anahtarla eşleşmiyorsa reddeder. İkincisi olmadan, geçerli ama **yanlış** bir RSA-3072 anahtarı her denetimden geçer ve dört hoparlörün de sessizce reddedeceği bir sürüm yayımlanırdı; kurtarma yolu dört cihazı USB'den yeniden yazmaktır.
+Ayrıca `publish` işi iki şeyi imzalamadan önce denetler: anahtarın açık yarısının parmak izi `docs/credentials/burned-keys.txt` içindeyse reddeder — liste konuma değil parmak izine bakar, çünkü bir anahtar dosyasını silmek onu ifşa edilmemiş yapmaz; ve `firmware/certs/hk-signing-key.pub.bin` ile sabitlenmiş açık anahtarla eşleşmiyorsa reddeder. İkincisi olmadan, geçerli ama **yanlış** bir RSA-3072 anahtarı her denetimden geçer ve dört hoparlörün de sessizce reddedeceği bir sürüm yayımlanırdı; kurtarma yolu dört cihazı USB'den yeniden yazmaktır.
 
 ## Gerekçe
 

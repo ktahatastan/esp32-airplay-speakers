@@ -6,7 +6,12 @@
 /** Shared refusals: a request that cannot describe a filter. */
 static bool request_valid(float fc_hz, float fs_hz, float q)
 {
-    if (isnan(fc_hz) || isnan(fs_hz) || isnan(q)) {
+    /* isfinite rather than isnan: an infinite Q passed the old check, and
+     * sinf(w0)/(2*INFINITY) is zero, so alpha vanished and a2 came out exactly
+     * 1 — a section with its poles on the unit circle, which the stability
+     * check in this same file then rejects. Refusing the request is better
+     * than returning coefficients the module itself calls unstable. */
+    if (!isfinite(fc_hz) || !isfinite(fs_hz) || !isfinite(q)) {
         return false;
     }
     if (!(fs_hz > 0.0f) || !(q > 0.0f) || !(fc_hz > 0.0f)) {

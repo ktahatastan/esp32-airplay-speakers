@@ -27,6 +27,10 @@ bool hk_power_limits_sane(const hk_power_limits_t *limits)
     if (limits->recover_margin_mv == 0u) {
         return false;
     }
+    /* And the same for temperature: equal thresholds are no hysteresis. */
+    if (limits->recover_cell_c >= limits->max_cell_c) {
+        return false;
+    }
     return true;
 }
 
@@ -66,8 +70,23 @@ hk_power_state_t hk_power_evaluate(hk_power_state_t previous,
 
     /* Temperature outranks voltage. A hot pack is a hazard whatever its charge
      * state, and it is the one condition where continuing to draw current is
-     * the wrong answer even on a full battery. */
-    if (inputs->cell_c != HK_POWER_C_UNKNOWN && inputs->cell_c > limits->max_cell_c) {
+     * the wrong answer even on a full battery.
+     *
+     * It gets the same asymmetry as voltage, and for the same reason: going
+     * over the limit is immediate, coming back has to be earned. Without that,
+     * a thermistor resting on the threshold alternates between OVERHEAT and
+     * NORMAL every reading, and each of those transitions drives the mute
+     * sequencer. */
+    if (inputs->cell_c != HK_POWER_C_UNKNOWN) {
+        if (inputs->cell_c > limits->max_cell_c) {
+            return HK_POWER_OVERHEAT;
+        }
+        if (previous == HK_POWER_OVERHEAT && inputs->cell_c > limits->recover_cell_c) {
+            return HK_POWER_OVERHEAT;
+        }
+    } else if (previous == HK_POWER_OVERHEAT) {
+        /* The thermistor stopped reporting while the pack was hot. That is not
+         * evidence it cooled down. */
         return HK_POWER_OVERHEAT;
     }
 

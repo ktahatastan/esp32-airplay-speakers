@@ -171,4 +171,10 @@ void test_ota(void)
     /* --- the query and fragment are not part of the host --- */
     HK_CHECK(hk_ota_asset_url_ok("https://github.com/x.bin?token=abc"));
     HK_CHECK(!hk_ota_asset_url_ok("https://evil.example/x?host=github.com"));
+    /* The authority ends at the first '/', '?' or '#'. Without the last two a
+     * host could be smuggled past the allow-list in a query or a fragment. */
+    HK_CHECK(!hk_ota_asset_url_ok("https://evil.example?.github.com/x"));
+    HK_CHECK(!hk_ota_asset_url_ok("https://evil.example#.github.com/x"));
+    HK_CHECK(hk_ota_asset_url_ok("https://github.com?a=1"));
+    HK_CHECK(hk_ota_asset_url_ok("https://github.com#frag"));
 }

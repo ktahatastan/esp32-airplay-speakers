@@ -19,6 +19,7 @@ static hk_power_limits_t limits(void)
         .shutdown_mv = 12000,
         .recover_margin_mv = 300,
         .max_cell_c = 45,
+        .recover_cell_c = 40,
     };
     return l;
 }
@@ -119,6 +120,50 @@ void test_power(void)
     HK_CHECK_EQ_INT(hk_power_evaluate(HK_POWER_NORMAL, &in, &lim), HK_POWER_NORMAL);
     in.cell_c = 46;
     HK_CHECK_EQ_INT(hk_power_evaluate(HK_POWER_NORMAL, &in, &lim), HK_POWER_OVERHEAT);
+    /* ===== temperature is earned back too =====
+     * Found by audit: a bare comparison made a thermistor resting on the limit
+     * report OVERHEAT and NORMAL on alternate readings, and every one of those
+     * transitions drives the mute sequencer. Voltage had hysteresis from the
+     * start; temperature did not, in the module whose stated premise is that
+     * better must be earned. */
+    in = at(16000); in.cell_c = 46;
+    HK_CHECK_EQ_INT(hk_power_evaluate(HK_POWER_NORMAL, &in, &lim), HK_POWER_OVERHEAT);
+    in.cell_c = 45;      /* back at the limit: not cool enough yet */
+    HK_CHECK_EQ_INT(hk_power_evaluate(HK_POWER_OVERHEAT, &in, &lim), HK_POWER_OVERHEAT);
+    in.cell_c = 41;      /* still above the recovery point */
+    HK_CHECK_EQ_INT(hk_power_evaluate(HK_POWER_OVERHEAT, &in, &lim), HK_POWER_OVERHEAT);
+    in.cell_c = 40;      /* at it: clears */
+    HK_CHECK_EQ_INT(hk_power_evaluate(HK_POWER_OVERHEAT, &in, &lim), HK_POWER_NORMAL);
+
+    /* the oscillation itself: alternating 45/46 must settle, not flap */
+    {
+        hk_power_state_t s = HK_POWER_NORMAL;
+        int transitions = 0;
+        for (int i = 0; i < 40; i++) {
+            hk_power_inputs_t osc = at(16000);
+            osc.cell_c = (int16_t)(45 + (i % 2));
+            const hk_power_state_t next = hk_power_evaluate(s, &osc, &lim);
+            if (next != s) { transitions++; }
+            s = next;
+        }
+        HK_CHECK_EQ_INT(transitions, 1);   /* one, into OVERHEAT, and it stays */
+        HK_CHECK_EQ_INT(s, HK_POWER_OVERHEAT);
+    }
+
+    /* a thermistor that stops reporting while the pack is hot is not evidence
+     * that it cooled down */
+    in = at(16000); in.cell_c = HK_POWER_C_UNKNOWN;
+    HK_CHECK_EQ_INT(hk_power_evaluate(HK_POWER_OVERHEAT, &in, &lim), HK_POWER_OVERHEAT);
+
+    /* equal thresholds are no hysteresis at all */
+    {
+        hk_power_limits_t bad = limits();
+        bad.recover_cell_c = bad.max_cell_c;
+        HK_CHECK(!hk_power_limits_sane(&bad));
+        bad.recover_cell_c = (int16_t)(bad.max_cell_c + 1);
+        HK_CHECK(!hk_power_limits_sane(&bad));
+    }
+
     /* an unread thermistor is not an overheat */
     in = at(16000); in.cell_c = HK_POWER_C_UNKNOWN;
     HK_CHECK_EQ_INT(hk_power_evaluate(HK_POWER_NORMAL, &in, &lim), HK_POWER_NORMAL);

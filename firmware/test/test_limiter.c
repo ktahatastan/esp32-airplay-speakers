@@ -181,6 +181,46 @@ void test_limiter(void)
         HK_CHECK(fabsf(value) <= cfg.ceiling + 1e-6f);
     }
 
+    /* ===== an infinite sample must not silence what follows =====
+     * Found by audit. The guard used to test isnan alone, so an infinity got
+     * through: fabsf(INFINITY) exceeds any ceiling, the reduction ran, and
+     * gain became ceiling/INFINITY = 0 with the hold pinning it there. One bad
+     * sample muted the output for the whole hold time — about 10 ms at these
+     * settings — which is the opposite of what a protection stage is for. */
+    HK_CHECK(hk_limiter_init(&lim, &cfg));
+    {
+        float buf[4] = {0.1f, INFINITY, 0.1f, 0.1f};
+        HK_CHECK(hk_limiter_process(&lim, buf, 4));
+        HK_CHECK(buf[0] == 0.1f);
+        /* the broken sample stays broken; this stage does not repair it */
+        HK_CHECK(!isfinite(buf[1]));
+        /* but the ones after it are untouched */
+        HK_CHECK(buf[2] == 0.1f);
+        HK_CHECK(buf[3] == 0.1f);
+        HK_CHECK(lim.gain == 1.0f);
+        HK_CHECK(lim.held == 0u);
+    }
+    /* the negative infinity behaves the same way */
+    HK_CHECK(hk_limiter_init(&lim, &cfg));
+    {
+        float buf[2] = {-INFINITY, 0.2f};
+        HK_CHECK(hk_limiter_process(&lim, buf, 2));
+        HK_CHECK(buf[1] == 0.2f);
+        HK_CHECK(lim.gain == 1.0f);
+    }
+    /* and a stream of them does not accumulate anything */
+    HK_CHECK(hk_limiter_init(&lim, &cfg));
+    for (int i = 0; i < 500; i++) {
+        float v = (i % 2) ? INFINITY : NAN;
+        (void)hk_limiter_process(&lim, &v, 1);
+    }
+    HK_CHECK(lim.gain == 1.0f);
+    {
+        float after = 1.0f;
+        HK_CHECK(hk_limiter_process(&lim, &after, 1));
+        HK_CHECK(fabsf(after - cfg.ceiling) < 1e-6f);
+    }
+
     /* ===== degenerate calls ===== */
     HK_CHECK(!hk_limiter_process(NULL, NULL, 0));
     HK_CHECK(!hk_limiter_init(NULL, &cfg));

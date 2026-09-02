@@ -23,7 +23,7 @@ Pafta `hardware/diagrams/generate_schematic_svg.py` ile üretilir ve elle düzen
 
 ### Düzenlenebilir KiCad paftası
 
-Netlist, ERC ve ileride PCB için elektriksel kaynak KiCad projesidir: [[kicad-schematic|KiCad şeması ve üretim scripti]]. Script ve üretilen `.kicad_pro` / `.kicad_sch` kaynakları `hardware/kicad/` altında Git'e alınır.
+Netlist, ERC ve ileride PCB için elektriksel kaynak KiCad projesidir: [[kicad-schematic|KiCad şeması ve üretim scripti]]. Script ve `.kicad_pro` `hardware/kicad/` altında Git'te tutulur. Üretilen `.kicad_sch` **şu an depoda yok**: ADR-0011 ile üreteç değişti ve bu makinede KiCad sembol kütüphaneleri kurulu olmadığı için çıktı yenilenemedi, eldeki dosya da artık yanlış pin atamasını gösteriyordu. `scripts/check_generated_kicad.py` üreteç ile çıktının ayrışmasını CI'da yakalar; geri getirme komutları `hardware/kicad/README.md` içinde.
 
 İki çıktı bilerek ayrıdır: SVG paftası okunabilirlik ve bring-up prosedürü için, KiCad paftası elektriksel doğrulama için tutulur. İkisi de aynı net adlarını ve aynı `TP0-TP27` numaralandırmasını kullanır.
 
