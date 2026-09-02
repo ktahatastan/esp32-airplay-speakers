@@ -142,7 +142,7 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
   - [x] Yanlışlıkla kısa dokunma kayıtlı Wi-Fi'yi silmiyor. Kısa basış ile ağ sıfırlama arasındaki aralık bilerek ölüdür: orada bırakmak hiçbir şey yapmaz.
   - [x] LED durum önceliği yazıldı ve test edildi (`hk_led`): hata > OTA > buton geri bildirimi > düşük batarya > etkinlik.
   - [x] Buton GPIO ve RGB PWM sürücüsü yazıldı; ayrı düşük öncelikli görevde çalışıyor, ses görevinden bağımsız.
-  - [ ] Kullanıcı resetinin `factory_cal`'a dokunmadığı NVS testiyle gösterilmedi (`F6` deposunu bekliyor).
+  - [x] Kullanıcı resetinin `factory_cal`'a dokunmadığı **gerçek NVS ile gösterildi**: `firmware/test/nvs_host/`, ESP-IDF'in `linux` hedefinde, `partitions.csv`'den üretilmiş gerçek bölüm tablosu ve gerçek `hk_storage.c` ile. 113 kontrol; 21 ardışık reset ve bir tam `nvs_flash_erase()` sonrası kalibrasyon duruyor ve ses hâlâ izinli. Kart gerekmiyor.
   - [x] LED durum alanlarının sahipliği ayrıldı. Önceki `hk_ui_set_status()` tüm yapıyı değiştiriyordu ve her çağıran alanların yalnız bir kısmını dolduruyordu; OTA göstergesi sıradaki Wi-Fi olayında sessizce sönerdi.
   - [ ] LED PWM'inin I2S zamanlamasına ve analog dip gürültüsüne etkisi ölçülmedi — donanım gerekir.
 - **Gate:** `PRD-005`, `G3` katkı.

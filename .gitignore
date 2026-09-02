@@ -1,6 +1,9 @@
 # Build and tool output
 build/
 build-release/
+firmware/test/nvs_host/build/
+firmware/test/nvs_host/sdkconfig
+firmware/test/nvs_host/sdkconfig.old
 dist/
 .pio/
 .cache/

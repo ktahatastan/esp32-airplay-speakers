@@ -166,6 +166,18 @@ jobs:
           fi
           grep -q "TestEndToEnd" /tmp/e2e.log || {
             echo "no end-to-end tests ran at all"; exit 1; }
+      # The calibration wall (PRD-008) was only ever argued structurally: a
+      # separate partition, a read-only open, and a source scanner. This runs
+      # it — real NVS, the real partition table generated from partitions.csv,
+      # and the real hk_storage.c — on ESP-IDF's linux target, with no board.
+      - name: the calibration wall, executed on real NVS
+        shell: bash
+        run: |
+          . $IDF_PATH/export.sh
+          idf.py -C firmware/test/nvs_host --preview set-target linux
+          idf.py -C firmware/test/nvs_host build
+          cd firmware/test/nvs_host/build
+          ./hk_nvs_host.elf
       - name: image size summary
         shell: bash
         run: |
