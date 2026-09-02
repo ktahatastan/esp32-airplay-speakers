@@ -39,11 +39,34 @@ DESTRUCTIVE = re.compile(
 FACTORY_OPEN = re.compile(r"nvs_open_from_partition\s*\(([^;]*?)\)", re.DOTALL)
 
 
+#: The directories whose contents run on the device. The rule this script
+#: enforces is about firmware, so those are what it reads.
+#:
+#: firmware/test/ is deliberately outside that. A host test may open the
+#: calibration partition for writing and may call nvs_flash_erase, because it
+#: has to seed a calibration and then prove a reset cannot reach it — doing
+#: neither would leave nothing to protect and nothing to protect it from. Those
+#: files never run on a speaker, so nothing they do can lose a measurement.
+#:
+#: The two checks are complementary rather than overlapping: this one proves
+#: the shipped source CANNOT reach the calibration store, and
+#: firmware/test/nvs_host proves at run time that it DOES NOT.
+SHIPPED_DIRS = ("main", "components")
+
+
 def sources() -> list[Path]:
-    return sorted(
-        path for path in FIRMWARE.rglob("*.c")
-        if "build" not in path.parts and "managed_components" not in path.parts
-    )
+    found: list[Path] = []
+    for directory in SHIPPED_DIRS:
+        root = FIRMWARE / directory
+        found.extend(
+            path for path in root.rglob("*.c")
+            if "build" not in path.parts and "managed_components" not in path.parts
+        )
+    if not found:
+        # Scanning nothing passes every check, which would look exactly like
+        # scanning everything and finding nothing wrong.
+        raise SystemExit(f"error: no sources found under {SHIPPED_DIRS}")
+    return sorted(found)
 
 
 def check() -> list[str]:
