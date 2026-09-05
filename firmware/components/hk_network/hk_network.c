@@ -71,6 +71,17 @@ static hk_net_status_cb_t s_callback;
 static void              *s_context;
 static hk_net_status_t    s_status;
 static int                s_retries;
+
+/**
+ * Setup has the radio, so nothing else may fight it for it.
+ *
+ * Set when provisioning is about to start and cleared when it ends -- not the
+ * same span as s_status.provisioning, which only becomes true once the manager
+ * reports WIFI_PROV_START. The gap between the two is exactly where the bug
+ * lived: the station goes down during it, the retry branch fires, and the
+ * connect it starts is still in flight when the manager asks for a scan.
+ */
+static bool               s_setup_owns_radio;
 static uint8_t            s_salt[HK_PROV_SALT_MAX];
 static uint8_t            s_verifier[HK_PROV_VERIFIER_MAX];
 static size_t             s_salt_len;
@@ -149,7 +160,20 @@ static void on_wifi_event(void *arg, esp_event_base_t base, int32_t id, void *da
 
     case WIFI_EVENT_STA_DISCONNECTED:
         s_status.connected = false;
-        if (s_retries < HK_NET_RETRY_LIMIT) {
+        if (s_setup_owns_radio) {
+            /* Deliberately not reconnecting.
+             *
+             * Opening provisioning drops the station, and the reflex is to
+             * reconnect. That reflex is what broke setup: the manager's first
+             * act is to scan for networks to offer the user, esp_wifi_scan_start
+             * is refused while a connect is in progress, and the app shows an
+             * empty list. So while the window is open the radio is left free
+             * for the thing the window exists to do. The station comes back
+             * when provisioning ends. */
+            s_status.connecting = false;
+            ESP_LOGI(TAG, "station down while setup is open; the radio stays free "
+                          "for the scan the setup app asks for");
+        } else if (s_retries < HK_NET_RETRY_LIMIT) {
             s_retries++;
             s_status.connecting = true;
             ESP_LOGW(TAG, "disconnected, retry %d of %d", s_retries, HK_NET_RETRY_LIMIT);
@@ -231,6 +255,26 @@ static void on_prov_event(void *arg, esp_event_base_t base, int32_t id, void *da
         s_status.provisioning = false;
         publish_status();
         ESP_LOGI(TAG, "provisioning closed and its memory released");
+
+        /* Go back to the network the speaker was on.
+         *
+         * The flag is cleared above first, on purpose: the disconnect handler
+         * reads it, and a connect attempted while it still said "provisioning"
+         * would be dropped by the very branch that keeps the radio free.
+         *
+         * Only when not already connected. A window that closed because the
+         * user finished setting the speaker up ends with the manager having
+         * joined the new network, and a second connect there would tear down
+         * the one thing that just started working. */
+        s_setup_owns_radio = false;
+        if (!s_status.connected) {
+            s_retries = 0;
+            const esp_err_t rejoin = esp_wifi_connect();
+            if (rejoin != ESP_OK) {
+                ESP_LOGW(TAG, "could not rejoin after setup closed: %s",
+                         esp_err_to_name(rejoin));
+            }
+        }
         break;
 
     default:
@@ -250,6 +294,18 @@ static esp_err_t start_provisioning(void)
                       "security mode");
         return ESP_ERR_NOT_FOUND;
     }
+
+    /* Setup takes the radio from here until WIFI_PROV_END.
+     *
+     * The station is put down deliberately instead of being knocked down by
+     * the manager underneath itself, and the reconnect reflex is disarmed
+     * first: the manager's opening move is to scan for networks to offer, and
+     * esp_wifi_scan_start is refused while a connect is in progress. Left
+     * alone, the app shows an empty network list -- the button breaks the very
+     * flow it was pressed to start. Harmless when nothing was connected, which
+     * is the first-boot case. */
+    s_setup_owns_radio = true;
+    (void)esp_wifi_disconnect();
 
     /* The stored lengths, not the buffer sizes. Passing sizeof() here would
      * hand protocomm trailing zero bytes that were never part of the salt. */

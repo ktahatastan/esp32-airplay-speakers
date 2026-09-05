@@ -39,7 +39,8 @@ Plan duruyor. Değişen, ilk kez bir geliştirme kartında denenmiş olması —
 | SoftAP'a bağlanan telefonda kurulum sayfası açılıyor | **Yok.** O sayfayı sunan hiçbir şey yazılmadı. |
 | BLE yayını, Security 2 / SRP6a, QR ile kurulum | **Var ve uçtan uca çalışıyor.** Bir iPhone'dan ağa katılındı. |
 | LED desenleri | **Kısmen görüldü.** Kartta harici RGB LED yok, ama `hk_ui` aynı render geçişini kartın kendi adreslenebilir LED'ine aynalıyor; `ready` (yeşil) ve `playing` (mor nefes) sahibi tarafından doğrulandı. `ota`, `battery_low` ve buton geri sayımları görülmedi. |
-| Butonla açılan 10 dakikalık pencere, güç anahtarı | **Denenmedi.** Kartta buton ve anahtar yok; buton `GPIO7`-`GND` köprüsüyle ayrıca sınanacak. |
+| Butonla açılan pencere | **Kısa basış ve 5 sn doğrulandı** (`GPIO7`-`GND` köprüsüyle), çökme yok. 12 sn fabrika sıfırlaması henüz üretilmedi. Pencerenin 10 dakikada kendi kendine kapanması ölçülmedi. |
+| Güç anahtarı | **Denenmedi.** Kartta yok. |
 
 ### Uygulamasız yol bir tasarım, henüz bir yol değil
 

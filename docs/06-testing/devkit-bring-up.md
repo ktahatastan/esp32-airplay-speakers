@@ -227,6 +227,40 @@ Donanım sınır değil. S/PDIF taşıma hızı 44,1 kHz'de 5,645 Mbit/s; 192 kH
 
 Yığın 48 kHz'e ayarlanabilir (yeniden örnekleyici var) ama bu **yukarı örnekleme** olur: 44,1'de olmayan bilgiyi eklemez, CPU harcar. Bu üründe duyulanı belirleyen şey sürücü, kabin, crossover ve amfidir; 44,1 ile 176,4 arasındaki fark değil.
 
+## Buton senaryoları — ve açtıkları kusur
+
+Kartta buton yok. `GPIO7` dahili pull-up'lı ve firmware basışı LOW okuduğu için `GPIO7`-`GND` köprüsü gerçek bir basıştır; devrede fark yoktur.
+
+| Senaryo | Sonuç |
+|---|---|
+| Kısa basış (~0,3 sn) | **PASS** — `button: opening provisioning` → `BLE_INIT` → `protocomm_nimble: BLE Host Task Started` → `NimBLE: advertise` → `Provisioning started with service name : HarmanKardom-06C4`. Panik, `Guru Meditation` veya yığın uyarısı yok. |
+| 5 sn basılı | **PASS** — `button: forgetting Wi-Fi credentials` → `hk_net: forgetting stored Wi-Fi credentials`, ardından `provisioning is already open; leaving it alone`. Açık pencereyi bozmama koruması çalıştı. |
+| 12 sn basılı | **YAPILMADI** — basış olay üretmedi, muhtemelen köprü teması kesilip debounce sayacı sıfırlandı. Tekrar denenecek. |
+
+Kısa basış senaryosunun ayrı bir anlamı var: 2026-09-03 tezgâh oturumunda çökme **tam olarak burada** olmuştu (çalarken basış → BLE init → `hk_ui` yığın taşması). Düzeltme aynı gün yapısal olarak yapılmış ama "kartta GPIO7'ye basacak bir şey yok" diye doğrulanamamıştı. Artık doğrudan doğrulandı.
+
+### Bulunan kusur: kurulum penceresi kendi akışını bozuyordu
+
+Basıştan sonra kart ağdan düştü ve **geri dönmedi**: 45 saniye sonra ping %100 kayıp, RTSP portu üç denemede cevapsız. Ardından kullanıcı BLE'den kurmayı denediğinde ikinci yüzü çıktı — panel açıldı ama **ağ listesi hiç gelmedi**, cihaz tarafında karşılığı `E wifi_prov_mgr: Failed to start scan`.
+
+Tek kök neden. Provisioning açılınca istasyon düşüyor ve kod hemen yeniden bağlanmaya çalışıyordu. Refleks doğru görünüyor ama yöneticinin ilk işi ağları taramaktır ve `esp_wifi_scan_start` devam eden bir bağlanma varken reddedilir. Yani buton, başlatmak için basıldığı akışın kendisini bozuyordu.
+
+Kritik ayrıntı: `s_status.provisioning` yalnız yönetici `WIFI_PROV_START` bildirdiğinde açılıyor, oysa istasyon ondan **önce** düşüyor. Hata tam o boşlukta yaşıyordu, dolayısıyla o bayrağa bakmak yetmezdi.
+
+Düzeltme radyonun sahibini açıkça belirliyor: pencere boyunca istasyon bilerek kapalı, yeniden bağlanma refleksi devre dışı, pencere kapanınca cihaz eski ağına dönüyor — ama yalnız bağlı değilse, çünkü kurulum başarıyla bittiyse yönetici zaten katılmıştır ve ikinci bir çağrı yeni çalışmaya başlayanı bozardı.
+
+Düzeltmeden sonra ölçülen, uçtan uca:
+
+```text
+hk_net: credentials received → joined, address 192.168.68.74
+wifi_prov_mgr: STA Got IP → hk_net: provisioning succeeded
+hk_airplay: receiver ready; audio leaves as S/PDIF on gpio6
+wifi_prov_mgr: Provisioning stopped → BTDM memory released
+hk_net: provisioning closed and its memory released
+```
+
+`BTDM memory released` ayrıca ADR-0005'in "BLE normal çalışmada ayakta kalmaz" şartının karşılandığını gösteriyor. Dışarıdan doğrulama: ping 2/2, mDNS'te görünüyor, RTSP `200 OK`.
+
 ## Bu kartta kanıtlanamayacak olanlar
 
 - `G7` dört cihaz senkronu: tek kart var.
