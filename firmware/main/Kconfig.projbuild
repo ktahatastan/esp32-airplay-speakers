@@ -46,6 +46,17 @@ config HK_ONBOARD_STATUS_LED_GPIO
         It must not collide with the assignment in hk_pins; nothing enforces that
         here, because a Kconfig integer cannot see that table.
 
+config HK_DISPLAY_SELF_TEST
+    bool "Show a colour self test for three seconds at boot"
+    default n
+    help
+        Four flat colours and a cross, before the status screen. It answers a
+        question the serial log cannot: 4-wire SPI has no readback, so a panel
+        that received nothing and a panel showing another firmware's leftovers
+        look identical from the device's side.
+
+        Off in a product: nobody wants their speaker to flash colours at them.
+
 config HK_BENCH_AUDIO_WITHOUT_PROFILE
     bool "Permit audio on a board that has no driver-protection profile"
     default n

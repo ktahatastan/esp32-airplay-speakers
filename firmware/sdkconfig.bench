@@ -10,3 +10,4 @@
 #     -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.bench" \
 #     -D SDKCONFIG="$PWD/firmware/build-bench/sdkconfig" build
 CONFIG_HK_BENCH_AUDIO_WITHOUT_PROFILE=y
+CONFIG_HK_DISPLAY_SELF_TEST=y

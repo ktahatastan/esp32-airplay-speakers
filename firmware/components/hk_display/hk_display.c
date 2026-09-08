@@ -1,5 +1,6 @@
 #include "hk_display.h"
 
+#include <stdio.h>
 #include <string.h>
 
 #include "driver/spi_master.h"
@@ -16,10 +17,15 @@
 #include "freertos/task.h"
 
 #include "hk_draw.h"
+#include "hk_gfx.h"
 #include "hk_identity.h"
+#include "hk_palette.h"
 #include "hk_pins.h"
+#include "hk_screen.h"
+#include "hk_sky.h"
 #include "hk_storage.h"
 #include "hk_ui.h"
+#include "hk_view.h"
 
 static const char *TAG = "hk_lcd";
 
@@ -27,11 +33,17 @@ static const char *TAG = "hk_lcd";
  * advantage is unreachable here; SPI3 has no IO_MUX pads to lose. ADR-0017. */
 #define HK_LCD_HOST SPI3_HOST
 
-/* 40 MHz to start. The part will take more and esp_lcd routes through the GPIO
- * matrix, which on the S3 behaves like IO_MUX up to 80 MHz -- but the first
- * number to trust is one measured on this wiring, not one taken from a
- * datasheet, and flying leads are the least favourable case. */
-#define HK_LCD_CLOCK_HZ (40 * 1000 * 1000)
+/* 80 MHz, and the frame budget is why.
+ *
+ * One full frame is 240*240*2 = 115,200 bytes. At 40 MHz that transfer alone is
+ * 23 ms of a 42 ms frame, which leaves the galaxy and the foreground about as
+ * much time as they need and no margin at all. At 80 MHz it is 11.5 ms. The S3
+ * routes SPI3 through the GPIO matrix, which the datasheet says behaves like
+ * IO_MUX up to 80 MHz, so this is the ceiling rather than a guess -- but it is
+ * a ceiling on flying leads, and the measured per-frame time logged below is
+ * what decides whether it holds. If frames start failing, this is the first
+ * number to halve. */
+#define HK_LCD_CLOCK_HZ (80 * 1000 * 1000)
 
 /* Lowest of anything that draws. Audio and the network both pre-empt it, and
  * ADR-0007's one-millisecond synchronisation budget is the reason. */
@@ -40,121 +52,200 @@ static const char *TAG = "hk_lcd";
 #define HK_LCD_FRAME_MS   42          /* ~24 fps */
 #define HK_LCD_STRIP_ROWS 40          /* rows per SPI transfer */
 
+/* How long both setup codes stay up before swapping. Both transports are
+ * open at once (ADR-0016) and the owner picks; the screen offers each in
+ * turn rather than making them choose from a menu. Long enough to scan. */
+#define HK_LCD_PAIR_SWAP_MS 6000u
+
 static esp_lcd_panel_handle_t s_panel;
 static uint16_t              *s_frame;
 static hk_identity_t          s_identity;
-static char                   s_pin[HK_DISPLAY_PIN_MAX + 1];
-static bool                   s_have_pin;
 static TaskHandle_t           s_task;
 
 /**
- * Load the setup PIN so the screen can show it.
+ * What is on screen, and how it got there.
  *
- * This is the whole reason ADR-0015 stores the key as itself: a WPA2 network
- * needs a passphrase the owner can type, and reading it off the speaker is what
- * removes the friction that decision otherwise imposed. It is shown only while
- * the setup window is open, and it is never logged.
+ * This is the ONLY state the display layer keeps, and it is all derived: the
+ * screen id comes from hk_screen_choose() every frame, and the timestamps exist
+ * so an entry animation can start from zero. Nothing here can be left stale,
+ * because nothing here is authoritative -- if this struct were wrong, the next
+ * frame would correct it.
  */
-static void load_pin(void)
-{
-    size_t length = HK_DISPLAY_PIN_MAX;
-    s_have_pin = false;
-    memset(s_pin, 0, sizeof(s_pin));
-    if (hk_storage_factory_get_blob("ap_pass", s_pin, &length) != ESP_OK) {
-        return;
-    }
-    s_pin[length] = '\0';
-    s_have_pin = (length > 0 && strlen(s_pin) == length);
-}
+static struct {
+    hk_screen_id_t current;
+    hk_screen_id_t previous;
+    uint32_t       entered_ms;
+    uint32_t       previous_entered_ms;
+    uint32_t       transition_began_ms;   /**< 0 when settled */
+} s_scene;
 
-/** Centre a string of `count` glyphs of this geometry. */
-static int centred_x(int glyph_w, int thickness, int count)
+/**
+ * Which screen to be on, including the one rule the state machine cannot hold.
+ *
+ * Both provisioning transports are open at the same time (ADR-0016) and the
+ * owner chooses; hk_screen_choose() cannot express "offer each in turn" because
+ * it is a pure function of the view and has no clock. So the cadence lives
+ * here, where the clock already is, and stays out of the decision itself.
+ */
+static hk_screen_id_t wanted_screen(const hk_view_t *view, uint32_t now_ms)
 {
-    return (HK_DRAW_WIDTH - hk_draw_text_width(glyph_w, thickness, count)) / 2;
+    hk_screen_id_t id = hk_screen_choose(view);
+    if (id == HK_SCREEN_PAIR_BLE && (view->have_wifi_qr || view->have_pin)) {
+        if (((now_ms / HK_LCD_PAIR_SWAP_MS) & 1u) != 0u) {
+            id = HK_SCREEN_PAIR_AP;
+        }
+    }
+    return id;
 }
 
 /**
- * One frame, from state alone.
+ * One frame: the screen, the transition it may be in, and the volume overlay.
  *
- * Deliberately a pure function of (state, phase): given the same inputs it
- * draws the same pixels, which is what makes the screen impossible to leave
- * stuck. `phase` only drives the animation the state already asked for.
+ * The transition is an iris rather than a cross-fade. Two lit screens mixed
+ * together pass through a brighter middle than either of them, which reads as a
+ * flash on a panel this small; collapsing one and expanding the other never
+ * shows both at once, so there is no middle to be wrong.
  */
-static void render(const hk_led_inputs_t *inputs, uint32_t phase_ms)
+static void compose(const hk_view_t *view, uint32_t now_ms)
 {
-    const hk_led_state_t state = hk_led_resolve(inputs);
-    const hk_led_pattern_t *pattern = hk_led_pattern(state);
+    const uint32_t half = HK_SCREEN_TRANSITION_MS / 2u;
 
-    /* The same brightness curve the LED uses, so the two read as one device. */
-    uint8_t level = (uint8_t)((unsigned)pattern->brightness * 255u / 100u);
-    if (pattern->animation == HK_LED_ANIM_BREATHE && pattern->period_ms > 0) {
-        const uint32_t p = phase_ms % pattern->period_ms;
-        const uint32_t half = pattern->period_ms / 2;
-        const uint32_t up = (p < half) ? p : (pattern->period_ms - p);
-        const uint32_t span = 255u - HK_LED_BREATHE_FLOOR;
-        const uint32_t lit = HK_LED_BREATHE_FLOOR + (span * up) / (half ? half : 1);
-        level = (uint8_t)((unsigned)level * lit / 255u);
-    } else if ((pattern->animation == HK_LED_ANIM_BLINK_SLOW ||
-                pattern->animation == HK_LED_ANIM_BLINK_FAST) &&
-               pattern->period_ms > 0) {
-        if ((phase_ms % pattern->period_ms) >= pattern->period_ms / 2) {
-            level = 0;
+    if (s_scene.transition_began_ms != 0u) {
+        const uint32_t age = now_ms - s_scene.transition_began_ms;
+        if (age < half) {
+            hk_screen_render(s_frame, s_scene.previous, view, now_ms,
+                             s_scene.previous_entered_ms, 255);
+            const int radius = 120 - (int)((120u * age) / half);
+            hk_gfx_iris(s_frame, 120, 120, HK_Q4(radius), HK_Q4(14), HK_C_SHELL, true);
+        } else if (age < HK_SCREEN_TRANSITION_MS) {
+            hk_screen_render(s_frame, s_scene.current, view, now_ms,
+                             s_scene.entered_ms, 255);
+            const int radius = (int)((120u * (age - half)) / half);
+            hk_gfx_iris(s_frame, 120, 120, HK_Q4(radius), HK_Q4(14), HK_C_SHELL, true);
+        } else {
+            s_scene.transition_began_ms = 0u;
+            hk_screen_render(s_frame, s_scene.current, view, now_ms,
+                             s_scene.entered_ms, 255);
+        }
+    } else {
+        hk_screen_render(s_frame, s_scene.current, view, now_ms, s_scene.entered_ms, 255);
+    }
+
+    /* Over the top of whatever that was, including a transition: volume changes
+     * while something else is happening, and the owner turned the knob because
+     * they were listening to the thing underneath. */
+    if (view->volume_changed_ms != 0u && now_ms >= view->volume_changed_ms) {
+        const uint32_t age = now_ms - view->volume_changed_ms;
+        if (age < HK_SCREEN_VOLUME_MS) {
+            hk_screen_volume_overlay(s_frame, view, age);
         }
     }
+}
 
-    const uint16_t ink = hk_rgb_scaled(pattern->red, pattern->green, pattern->blue, level);
-    const uint16_t dim = hk_rgb_scaled(pattern->red, pattern->green, pattern->blue,
-                                       (uint8_t)(level / 6));
-
-    hk_draw_fill(s_frame, hk_rgb(4, 5, 12));
-    /* Backgrounds may reach the edge; content may not. The corners of this
-     * buffer are never visible on a round panel. */
-    hk_draw_disc(s_frame, 120, 120, 118, hk_rgb(7, 9, 20));
-    hk_draw_ring(s_frame, 120, 120, 116, 110, dim);
-    hk_draw_ring(s_frame, 120, 120, 116, 110, ink);
-
-    /* The device id, always: four hex characters is what tells four speakers
-     * apart, and it is the one thing worth reading from across a room. */
-    const int gw = 26, gh = 44, th = 5;
-    hk_draw_text(s_frame, centred_x(gw, th, 4), 78, gw, gh, th, s_identity.suffix, ink);
-
-    /* The setup PIN, only while the window is open. */
-    if (inputs->provisioning && s_have_pin) {
-        const int pw = 16, ph = 26, pt = 3;
-        const int count = (int)strlen(s_pin);
-        hk_draw_text(s_frame, centred_x(pw, pt, count), 140, pw, ph, pt, s_pin,
-                     hk_rgb_scaled(247, 207, 134, 255));
+/**
+ * Three seconds of something no other firmware would draw.
+ *
+ * "Is the panel wired?" and "is our image reaching it?" are different questions
+ * and a status screen answers neither: a dark panel and a panel showing
+ * somebody else's demo look the same from here, because 4-wire SPI has no
+ * readback. Four flat colours in a fixed order and a shape nothing else draws
+ * settle it from across the room.
+ */
+static void self_test(void)
+{
+    static const struct { uint8_t r, g, b; const char *name; } steps[] = {
+        {255,   0,   0, "red"},
+        {  0, 255,   0, "green"},
+        {  0,   0, 255, "blue"},
+        {255, 255, 255, "white"},
+    };
+    for (size_t i = 0; i < sizeof(steps) / sizeof(steps[0]); i++) {
+        hk_draw_fill(s_frame, hk_rgb(steps[i].r, steps[i].g, steps[i].b));
+        /* A cross, so a rotated or offset panel shows it off-centre rather than
+         * looking correct by accident. */
+        hk_draw_rect(s_frame, 0, 116, HK_DRAW_WIDTH, 8, hk_rgb(0, 0, 0));
+        hk_draw_rect(s_frame, 116, 0, 8, HK_DRAW_HEIGHT, hk_rgb(0, 0, 0));
+        ESP_LOGI(TAG, "self test: %s", steps[i].name);
+        (void)esp_lcd_panel_draw_bitmap(s_panel, 0, 0, HK_DRAW_WIDTH, HK_DRAW_HEIGHT, s_frame);
+        vTaskDelay(pdMS_TO_TICKS(700));
     }
+    ESP_LOGI(TAG, "self test done. If the panel showed red, green, blue and white "
+                  "with a black cross, our pixels reach it.");
 }
 
 static void display_task(void *arg)
 {
     (void)arg;
+#if CONFIG_HK_DISPLAY_SELF_TEST
+    self_test();
+#else
+    (void)self_test;
+#endif
     const uint32_t start = (uint32_t)(esp_timer_get_time() / 1000);
     bool reported = false;
+    uint32_t slow_frames = 0;
+    uint32_t frames = 0;
+
+    s_scene.current = HK_SCREEN_BOOT;
+    s_scene.previous = HK_SCREEN_BOOT;
 
     for (;;) {
-        /* Straight from the LED's own inputs. Not a copy kept in step by hand:
-         * the screen renders the same struct the light does, so they cannot
-         * disagree about what the device is doing. */
-        hk_led_inputs_t snapshot;
-        hk_ui_snapshot(&snapshot);
+        hk_view_t view;
+        hk_view_snapshot(&view);
 
         const int64_t began = esp_timer_get_time();
-        render(&snapshot, (uint32_t)(began / 1000) - start);
+        const uint32_t now = (uint32_t)(began / 1000) - start;
+
+        const hk_screen_id_t wanted = wanted_screen(&view, now);
+        if (wanted != s_scene.current) {
+            ESP_LOGI(TAG, "%s -> %s", hk_screen_name(s_scene.current),
+                     hk_screen_name(wanted));
+            s_scene.previous = s_scene.current;
+            s_scene.previous_entered_ms = s_scene.entered_ms;
+            s_scene.current = wanted;
+            s_scene.entered_ms = now;
+            s_scene.transition_began_ms = now;
+        }
+
+        compose(&view, now);
+        const int64_t drawn = esp_timer_get_time();
         const esp_err_t sent = esp_lcd_panel_draw_bitmap(s_panel, 0, 0,
                                                          HK_DRAW_WIDTH, HK_DRAW_HEIGHT,
                                                          s_frame);
+        const int64_t finished = esp_timer_get_time();
+
+        frames++;
         if (!reported) {
-            /* One measurement, once: how long a full frame costs on this
-             * wiring. G3 will want it, and a number nobody printed is a number
-             * nobody has. */
-            ESP_LOGI(TAG, "first frame %s in %lld us",
+            /* After the first frame, not before it. The earlier per-step
+             * measurement was taken before any transfer and reported 2,272 B;
+             * the SPI path allocates its DMA buffers lazily, so the real cost
+             * only exists once something has actually been sent. */
+            ESP_LOGI(TAG, "first frame %s: render %lld us, transfer %lld us, "
+                          "sky %u us; internal free %u B (largest block %u B)",
                      sent == ESP_OK ? "sent" : "FAILED",
-                     esp_timer_get_time() - began);
+                     drawn - began, finished - drawn,
+                     (unsigned)hk_sky_last_us(),
+                     (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
+                     (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL));
             reported = true;
         }
-        vTaskDelay(pdMS_TO_TICKS(HK_LCD_FRAME_MS));
+
+        /* A frame that misses its slot is not a crash and must not be treated
+         * as one, but a screen that quietly runs at half speed is a screen
+         * nobody knows is slow. Count them and say so periodically. */
+        const uint32_t cost_ms = (uint32_t)((finished - began) / 1000);
+        if (cost_ms > HK_LCD_FRAME_MS) {
+            slow_frames++;
+        }
+        if ((frames % 600u) == 0u) {
+            ESP_LOGI(TAG, "%u frames, %u over %u ms; last %u ms (sky %u us)",
+                     (unsigned)frames, (unsigned)slow_frames,
+                     (unsigned)HK_LCD_FRAME_MS, (unsigned)cost_ms,
+                     (unsigned)hk_sky_last_us());
+        }
+
+        const uint32_t spent = cost_ms;
+        vTaskDelay(pdMS_TO_TICKS(spent >= HK_LCD_FRAME_MS ? 1 : HK_LCD_FRAME_MS - spent));
     }
 }
 
@@ -172,7 +263,13 @@ esp_err_t hk_display_start(void)
         ESP_LOGE(TAG, "no device identity; the panel stays dark");
         return ESP_ERR_INVALID_STATE;
     }
-    load_pin();
+    /* The identity is the one thing the screen needs before its first frame.
+     * Everything else -- the setup codes, the metadata, the signal -- is
+     * published by whoever owns it, when it happens. The setup codes in
+     * particular are hk_network's: it already holds the only copy of that
+     * secret, and a second reader here would be a second place to forget to
+     * wipe it. */
+    hk_view_set_identity(s_identity.airplay, s_identity.suffix);
 
     const spi_bus_config_t bus = {
         .sclk_io_num = HK_PIN_LCD_SCK,
@@ -207,7 +304,11 @@ esp_err_t hk_display_start(void)
         .dc_gpio_num = HK_PIN_LCD_DC,
         .spi_mode = 0,
         .pclk_hz = HK_LCD_CLOCK_HZ,
-        .trans_queue_depth = 10,
+        /* Two, not ten. Each queued transfer of a PSRAM source needs its own
+           DMA-capable buffer in INTERNAL memory, so the depth multiplies the
+           strip size by the scarcest resource on the part. Two is enough to
+           keep the bus busy while the next strip is prepared. */
+        .trans_queue_depth = 2,
         .lcd_cmd_bits = 8,
         .lcd_param_bits = 8,
     };
@@ -229,7 +330,26 @@ esp_err_t hk_display_start(void)
 
     ESP_RETURN_ON_ERROR(esp_lcd_panel_reset(s_panel), TAG, "reset");
     ESP_RETURN_ON_ERROR(esp_lcd_panel_init(s_panel), TAG, "init");
-    ESP_RETURN_ON_ERROR(esp_lcd_panel_invert_color(s_panel, true), TAG, "invert");
+    /* INVOFF, not INVON.
+     *
+     * Most GC9A01 examples set this true, and the vendor init table in
+     * managed_components/espressif__esp_lcd_gc9a01 issues neither command, so
+     * whatever we pass here is what the panel gets. On this module true is
+     * wrong, and the bench photograph settles it: every colour came back as its
+     * exact complement. The near-black #04050C ground rendered as a pale field,
+     * the provisioning blue (0,80,255) rendered orange -- (255,175,0) -- for
+     * both the ring and the device id, and the amber PIN (247,207,134) rendered
+     * as the deep blue-violet (8,48,121). Three independent colours, three
+     * exact complements. */
+    ESP_RETURN_ON_ERROR(esp_lcd_panel_invert_color(s_panel, false), TAG, "invert");
+    /* Half a turn.
+     *
+     * Mirroring both axes is a 180 degree rotation, which is the difference
+     * between the panel's native scan order and the module's own top -- the
+     * seven-pin header. The same photograph shows it: the device id, drawn
+     * above the PIN, appeared below it, and its glyphs read mirrored. With the
+     * header up, this puts our up on the module's up. */
+    ESP_RETURN_ON_ERROR(esp_lcd_panel_mirror(s_panel, true, true), TAG, "mirror");
     ESP_RETURN_ON_ERROR(esp_lcd_panel_disp_on_off(s_panel, true), TAG, "display on");
     after = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
     ESP_LOGI(TAG, "internal cost: panel %d B", (int)(before - after));
@@ -256,8 +376,8 @@ esp_err_t hk_display_start(void)
     }
 
     ESP_LOGI(TAG, "panel up on spi3: sck %d, mosi %d, cs %d, dc %d, rst %d; "
-                  "pin %s", HK_PIN_LCD_SCK, HK_PIN_LCD_MOSI, HK_PIN_LCD_CS,
-             HK_PIN_LCD_DC, HK_PIN_LCD_RST, s_have_pin ? "loaded" : "absent");
+                  "%d MHz", HK_PIN_LCD_SCK, HK_PIN_LCD_MOSI, HK_PIN_LCD_CS,
+             HK_PIN_LCD_DC, HK_PIN_LCD_RST, HK_LCD_CLOCK_HZ / 1000000);
     return ESP_OK;
 }
 
