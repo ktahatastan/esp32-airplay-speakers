@@ -1,7 +1,7 @@
 ---
 status: active
 owner: qa-engineer
-updated: 2026-09-05
+updated: 2026-09-08
 tags: [testing, log]
 ---
 
@@ -12,3 +12,4 @@ Yeni rapor için [[../templates/test-report|test raporu şablonunu]] kullanın.
 | Tarih | Gate | Cihaz | Sonuç | Rapor |
 |---|---|---|---|---|
 | 2026-09-05 | yok (kapı değil) | N8R2 geliştirme kartı | PASS | [[devkit-bring-up|Geliştirme kartı bring-up kaydı]] |
+| 2026-09-08 | yok (kapı değil) | N16R8 **ürün kartı** | PASS | [[product-board-bring-up|Ürün kartı bring-up kaydı]] |

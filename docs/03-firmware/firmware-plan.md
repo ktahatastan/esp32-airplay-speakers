@@ -10,7 +10,9 @@ tags: [firmware, plan, roadmap, esp32]
 
 Bu belge firmware'in **ne olduğunu** ve **hangi sırayla yapıldığını** birlikte tanımlar. Aşama sırası keyfi değildir: her aşama kendinden öncekinin kanıtına ve gerektiğinde bir donanım kapısına bağlıdır.
 
-`F0` iskeleti `firmware/` altında kuruldu ve ESP-IDF `v5.5.1` ile derleniyor. 2026-09-05'te bu depodan derlenen imaj ilk kez gerçek silikonda çalıştı — ama **ürün kartında değil**, ADR-0012'nin tanımladığı geliştirme kartında ([[../06-testing/devkit-bring-up|bring-up kaydı]]). `F0`'ın kalan işi bu yüzden aynen duruyor: satın alınan **ürün** kartında açılış raporunu doğrulayıp GPIO tablosunu `accepted` yapmak. Geliştirme kartında ölçülen hiçbir sayı o kartın yerine geçmez. Kurulum ve doğrulama komutları `firmware/README.md` dosyasındadır.
+`F0` iskeleti `firmware/` altında kuruldu ve ESP-IDF `v5.5.1` ile derleniyor. 2026-09-05'te imaj geliştirme kartında ([[../06-testing/devkit-bring-up|kayıt]]), 2026-09-08'de **ürün kartında** çalıştı ([[../06-testing/product-board-bring-up|kayıt]]): oktal PSRAM açıldı, 16 MB bölüm tablosu yüklendi, kimlik MAC'ten türedi, kalibrasyon yokken ses izinli olmadı.
+
+`F0`'ın kalan işi bu yüzden **ikiye ayrıldı** ve yarısı hâlâ açık: açılış raporu doğrulandı, ama GPIO tablosu `candidate` kaldı. Açılan bir kart pin tablosunu kanıtlamaz — firmware o pinleri sürmedi, ve pinlerin ucunda ne olduğu kartın özelliğidir, imajın değil. [[../07-decisions/ADR-0011-audio-side-gpio-reservation|ADR-0011]] `accepted` için satın alınan kartın **kendi şemasını** istiyor. Kurulum ve doğrulama komutları `firmware/README.md` dosyasındadır.
 
 ## Kilitli girdiler
 

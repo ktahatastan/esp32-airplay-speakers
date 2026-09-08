@@ -57,7 +57,8 @@ Kilitli kararlar `AGENTS.md` içindedir ve yalnız supersede eden ADR ile deği�
 
 - [x] Proje, AirPlay, BLE, SoftAP, mDNS ve QR yüzeylerinde Harman Kardom adlandırmasını uygula. (Captive portal yüzeyi yok; aşağıya bakın.)
 - [x] Kanonik ESP32-S3 kartını seç (ADR-0010: N16R8).
-- [ ] Satın alınan kartın şemasıyla aday GPIO tablosunu doğrula ve boot testinden geçir.
+- [x] Satın alınan kartı boot testinden geçir (2026-09-08, ürün kartı bring-up kaydı).
+- [ ] Aday GPIO tablosunu satın alınan kartın şemasıyla doğrula — `accepted` için gereken bu.
 - [x] Tek buton için kısa basış, 5 sn ağ sıfırlama ve 12 sn kullanıcı fabrika sıfırlama durum makinesini geliştir.
 - [ ] 12 sn fabrika sıfırlamayı **donanımda** doğrula; 2026-09-05'te basış olay üretmedi (köprü teması).
 - [x] Fabrika sürücü koruma/limiter kalibrasyonunu kullanıcı resetinden ayrı NVS alanında tut (ayrı partition; gerçek NVS ile test edildi).
@@ -84,7 +85,8 @@ Kilitli kararlar `AGENTS.md` içindedir ve yalnız supersede eden ADR ile deği�
 Ayrıntı, önkoşul ve kabul ölçütleri: [[docs/03-firmware/firmware-plan|firmware planı]].
 
 - [x] `F0` iskelet: ESP-IDF `v5.5.1` kilidi, partition CSV, boyut/partition doğrulayıcısı, host testi, PR CI.
-- [ ] `F0` kalan: satın alınan kartla `idf.py flash monitor` ile açılış raporunu doğrula ve GPIO tablosunu `accepted` yap.
+- [x] `F0` kalan, birinci yarı: ürün kartına yazıldı ve açılış raporu doğrulandı (2026-09-08).
+- [ ] `F0` kalan, ikinci yarı: GPIO tablosunu satın alınan kartın **şemasıyla** karşılaştır ve `accepted` yap. Açılış testi tek başına yetmiyor (ADR-0011).
 - [x] `F1` araştırma yarısı: yığın seçildi, derlendi, lisans incelendi, ADR-0007 kabul edildi.
 - [x] `F1` ölçüm yarısı, tek kartlık kısmı: yığın vendor edildi, karta yüklendi, bir Apple cihazı bağlandı, PTP kilitlendi, ses duyuldu.
 - [ ] `F1` kalan: dört hedefin birlikte seçilebildiğini ve **akış sırasındaki** kaynak kullanımını ölç — dört kart ister.

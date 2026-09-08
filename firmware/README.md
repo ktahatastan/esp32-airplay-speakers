@@ -200,11 +200,17 @@ only copy of the password; it is written owner-only and must not be committed. T
 nothing stored, BLE from a button press on a configured device. ADR-0005
 option C, because ESP-IDF cannot run both in one session.
 
-**Not verified: nothing has run on the product board.** The devkit is an N8R2
-with 8 MB flash and 2 MB quad PSRAM; the product is an N16R8 with 16 MB and 8 MB
-octal (ADR-0010, ADR-0012). No timing or memory number measured on the devkit
-carries over, and the GPIO assignment stays a *candidate* until the purchased
-board's own schematic and a boot test confirm it.
+Verified on the PRODUCT board on 2026-09-08 — an N16R8 with 16 MB flash and
+8 MB octal PSRAM, the board ADR-0010 locks. Octal PSRAM comes up and passes its
+memory test, the 16 MB partition table loads, the identity derives from the MAC,
+and with no calibration written the device refuses audio and refuses to open
+provisioning rather than weaken it. Two boots were identical down to the free-heap
+byte. Record: [docs/06-testing/product-board-bring-up.md](../docs/06-testing/product-board-bring-up.md).
+
+**The GPIO assignment is still a *candidate*.** A board that boots has not proved
+its pin table: the firmware has not driven those pins, and what sits on them is a
+property of the board, not of the image. ADR-0011 wants the purchased board's own
+schematic before the table is `accepted`, and it has not been checked against one.
 
 **No physical gate is open.** No driver, amplifier, DAC or battery has been
 attached to anything, so `G0`-`G8` are all untouched, and neither the

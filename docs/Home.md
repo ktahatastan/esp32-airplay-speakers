@@ -16,7 +16,7 @@ Bu sayfa ortak Obsidian kasasının ana haritasıdır.
 - [[01-planning/work-breakdown|İş kırılımı]]
 - [[01-planning/risk-register|Risk kaydı]]
 - [[06-testing/test-strategy|Test stratejisi ve kabul kapıları]]
-- [[08-development-log/2026-09-08-portal-username-and-profile|Son geliştirme günlüğü]]
+- [[08-development-log/2026-09-08-product-board-first-flash|Son geliştirme günlüğü]]
 
 ## Ürün ve mimari
 
