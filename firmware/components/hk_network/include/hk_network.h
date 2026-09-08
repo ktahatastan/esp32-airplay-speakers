@@ -40,10 +40,12 @@
  * NOT YET MEASURED: none of that has been exercised on a board. It compiles and
  * its parsing is tested; that a phone opens the sheet is a claim for a bench.
  *
- * The bring-up devkit has no button, so under the rule above its BLE transport
- * can never be reached, and a transport nothing can reach is one nothing can
- * test. CONFIG_HK_DEVKIT_FIRST_BOOT_BLE opens BLE there instead. It changes
- * nothing on the product board.
+ * CONFIG_HK_FIRST_BOOT_BLE overrides that first row and opens BLE on a device
+ * with nothing stored. It is INTERIM: the owner sets these speakers up over BLE
+ * with a QR, so BLE is what a new device should offer -- but whether the two
+ * transports can be open at once, and which one a new device leads with, is a
+ * decision, and the ADR that supersedes ADR-0005/0015 on this point is not
+ * written yet.
  *
  * Security
  * --------

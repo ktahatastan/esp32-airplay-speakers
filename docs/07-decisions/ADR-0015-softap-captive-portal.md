@@ -1,14 +1,18 @@
 ---
-status: accepted
-decision: accepted
+status: superseded
+decision: superseded
 owner: firmware-engineer
 reviewers: [orchestrator, verifier]
 updated: 2026-09-08
 supersedes: ADR-0005
+superseded_by: ADR-0016
 tags: [adr, provisioning, softap, captive-portal, security, wpa2]
 ---
 
 # ADR-0015: Kurulum ağı WPA2 olur ve portalı kendimiz sunarız
+
+> [!warning] Taşıma kuralı [[ADR-0016-simultaneous-dual-transport|ADR-0016]] ile aşıldı.
+> WPA2 kurulum ağı, `hk_portal` ve `wifi_prov_mgr_configure_sta()` seçimleri aynen geçerlidir. Aşılan tek şey "hangi taşıma ne zaman açılır" sorusudur: ikisi artık birlikte açılıyor. İronik olan, bunu mümkün kılanın bu kararın kendisi olması — portalı protocomm'dan çıkarmak, tek-scheme sınırını SoftAP ayağının üstünden kaldırdı.
 
 [[ADR-0005-dual-provisioning|ADR-0005]]'in yerine geçer. Onun **taşıma seçimi** aynen korunur; değişen, SoftAP ayağının içinin ne olduğudur.
 

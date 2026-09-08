@@ -19,7 +19,7 @@ Her hoparlörde üç kullanıcı arayüzü öğesi bulunacak:
 
 Wi-Fi kurulumu iki yöntemle sunulacak:
 
-- Uygulamasız: WPA2 korumalı SoftAP + kendi captive portal'ımız ([[07-decisions/ADR-0015-softap-captive-portal|ADR-0015]]).
+- Uygulamasız: WPA2 korumalı SoftAP + kendi captive portal'ımız ([[07-decisions/ADR-0015-softap-captive-portal|ADR-0015]]). İkisi **aynı anda** açılır ve seçimi telefon yapar ([[07-decisions/ADR-0016-simultaneous-dual-transport|ADR-0016]]).
 - Bluetooth LE: ESP-IDF Unified Provisioning. Espressif uygulaması veya ileride hazırlanacak özel iOS/Android uygulaması kullanılacak.
 
 > [!note] İkisi sırayla sunulur, aynı anda değil

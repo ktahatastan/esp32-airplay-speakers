@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "esp_check.h"
+#include "esp_heap_caps.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_mac.h"
@@ -334,6 +335,11 @@ static void on_prov_event(void *arg, esp_event_base_t base, int32_t id, void *da
         /* After the manager, not before: it holds the server this stops, and
          * pulling it out from under protocomm's own teardown is a crash. */
         hk_portal_stop();
+#if CONFIG_HK_DUAL_TRANSPORT
+        /* The access point was ours, so taking it down is ours too. Nothing else
+         * does it: the manager only ever knew about BLE. */
+        (void)esp_wifi_set_mode(WIFI_MODE_STA);
+#endif
         s_status.provisioning = false;
         publish_status();
         ESP_LOGI(TAG, "provisioning closed and its memory released");
@@ -363,6 +369,55 @@ static void on_prov_event(void *arg, esp_event_base_t base, int32_t id, void *da
         break;
     }
 }
+
+#if CONFIG_HK_DUAL_TRANSPORT
+/**
+ * Bring up the setup access point ourselves.
+ *
+ * Transcribed from ESP-IDF's own scheme_softap.c, because with dual transport
+ * the manager is running the BLE scheme and no scheme is left to do this. The
+ * portal does not need one: since ADR-0015 it hands credentials over through
+ * wifi_prov_mgr_configure_sta(), so the SoftAP leg needs an interface and a
+ * server, not a provisioning scheme.
+ */
+static esp_err_t start_setup_ap(void)
+{
+    wifi_config_t ap = {
+        .ap = {
+            .max_connection = 4,
+            /* WPA2 rather than the mixed WPA/WPA2 upstream uses. ADR-0015 chose
+             * WPA2 deliberately; every phone this product targets speaks it. */
+            .authmode = WIFI_AUTH_WPA2_PSK,
+        },
+    };
+
+    /* An SSID is bytes with a length, not a C string -- 32 characters is legal
+     * and would leave no room for a terminator. The bound is the SOURCE's size,
+     * not the field's: bounding by the 32-byte destination lets the read run off
+     * a 24-byte identity, which is what the compiler objected to and it was
+     * right. The clamp then keeps a longer name from overrunning the field. */
+    size_t ssid_len = strnlen(s_identity.softap, sizeof(s_identity.softap));
+    if (ssid_len > sizeof(ap.ap.ssid)) {
+        ssid_len = sizeof(ap.ap.ssid);
+    }
+    memcpy(ap.ap.ssid, s_identity.softap, ssid_len);
+    ap.ap.ssid_len = (uint8_t)ssid_len;
+    strlcpy((char *)ap.ap.password, s_ap_password, sizeof(ap.ap.password));
+
+    esp_err_t err = esp_wifi_set_mode(WIFI_MODE_APSTA);
+    if (err == ESP_OK) {
+        err = esp_wifi_set_config(WIFI_IF_AP, &ap);
+    }
+    /* The key was on the stack. It goes before this frame does, rather than
+     * being left for whatever reuses the memory. */
+    memset(&ap, 0, sizeof(ap));
+
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "the setup network did not come up: %s", esp_err_to_name(err));
+    }
+    return err;
+}
+#endif /* CONFIG_HK_DUAL_TRANSPORT */
 
 /** Start provisioning with Security 2, or refuse. */
 static esp_err_t start_provisioning(void)
@@ -403,8 +458,70 @@ static esp_err_t start_provisioning(void)
      * are also written into the QR codes the provisioning apps scan, so passing
      * one where the other belongs does not fail loudly -- it produces a QR that
      * searches for a device nobody is advertising. */
-    const bool over_ble = (s_scheme == HK_NET_SCHEME_BLE);
-    const char *service_name = over_ble ? s_identity.ble : s_identity.softap;
+#if CONFIG_HK_DUAL_TRANSPORT
+    /* Both legs need their own credential, and neither is optional: the manager
+     * refuses without Security 2, and an access point without a key is the open
+     * network ADR-0015 exists to avoid. Refusing here names which one is
+     * missing, rather than half-opening a window. */
+    if (!s_have_ap_password) {
+        ESP_LOGE(TAG, "no setup network key in the calibration store; refusing to open "
+                      "an unprotected setup network rather than accept a Wi-Fi password "
+                      "over one");
+        s_setup_owns_radio = false;
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    /* What the manager is told to advertise is the BLE name. The access point
+     * carries the other name and is not the manager's business at all. */
+    wifi_config_t saved_sta;
+    const bool have_saved = (esp_wifi_get_config(WIFI_IF_STA, &saved_sta) == ESP_OK);
+
+    const esp_err_t opened =
+        wifi_prov_mgr_start_provisioning(WIFI_PROV_SECURITY_2, &security_params,
+                                         s_identity.ble, NULL);
+    if (opened != ESP_OK) {
+        s_setup_owns_radio = false;
+        return opened;
+    }
+
+    /* wifi_prov_mgr_start_provisioning() empties the station config in RAM and
+     * puts it back only when it fails. On the success path it stays empty, so
+     * wifi_prov_mgr_is_provisioned() -- which reads that live config -- answers
+     * "no" for the rest of the boot, and the rejoin at WIFI_PROV_END has nothing
+     * to connect to. Putting it back is safe here because the reconnect reflex
+     * is disarmed for the length of the window. */
+    if (have_saved && saved_sta.sta.ssid[0] != '\0') {
+        (void)esp_wifi_set_config(WIFI_IF_STA, &saved_sta);
+    }
+    memset(&saved_sta, 0, sizeof(saved_sta));
+
+    /* Now the other half. Order matters: the manager has just forced STA, so the
+     * access point goes up after it, not before. */
+    esp_err_t second = start_setup_ap();
+    if (second == ESP_OK) {
+        second = hk_portal_start();
+    }
+    if (second != ESP_OK) {
+        /* One leg is not both. Rather than leave a window that some phones can
+         * see and others cannot, close it and say so. */
+        ESP_LOGE(TAG, "the app-less leg did not come up (%s); closing the window",
+                 esp_err_to_name(second));
+        hk_portal_stop();
+        wifi_prov_mgr_stop_provisioning();
+        return second;
+    }
+
+    /* The number that decides whether this is affordable, taken where it means
+     * something: after NimBLE is advertising, the access point is up and the
+     * HTTP server is listening. The boot report's figure is measured before any
+     * of that and cannot answer the question. */
+    ESP_LOGI(TAG, "provisioning open on both: ble \"%s\" and softap \"%s\"; "
+                  "free %u B internal (largest block %u B)",
+             s_identity.ble, s_identity.softap,
+             (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
+             (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL));
+    return ESP_OK;
+#else
 
     /* service_key is the setup network's Wi-Fi password, and meaningless for
      * BLE. It used to be NULL, which left that network open and put the whole
@@ -412,6 +529,8 @@ static esp_err_t start_provisioning(void)
      * all to a browser: a captive portal page cannot borrow the browser's
      * crypto over cleartext HTTP. ADR-0015 moves the secrecy down to WPA2 so
      * the app-less path can be an ordinary form. */
+    const bool over_ble = (s_scheme == HK_NET_SCHEME_BLE);
+    const char *service_name = over_ble ? s_identity.ble : s_identity.softap;
     const char *service_key = NULL;
     if (!over_ble) {
         if (!s_have_ap_password) {
@@ -445,6 +564,7 @@ static esp_err_t start_provisioning(void)
         hk_portal_stop();
     }
     return started;
+#endif /* CONFIG_HK_DUAL_TRANSPORT */
 }
 
 hk_net_scheme_t hk_network_scheme_for(bool has_credentials)
@@ -454,10 +574,15 @@ hk_net_scheme_t hk_network_scheme_for(bool has_credentials)
      * opens BLE, because a SoftAP would push the user's phone off the network
      * they are on. Clearing credentials with a 5 s hold returns them to the
      * SoftAP case, which is how the app-less route stays available. */
-#if CONFIG_HK_DEVKIT_FIRST_BOOT_BLE
-    /* Bench only, and not a change to that rule. The devkit has no button, so
-     * the transport a press would open cannot be reached on it any other way --
-     * and a transport nothing can reach is a transport nothing can test. */
+#if CONFIG_HK_DUAL_TRANSPORT
+    /* There is nothing left to derive. Both transports open together and the
+     * phone picks, so this only answers which one the MANAGER drives -- and that
+     * is always BLE, because the other leg no longer needs it. */
+    (void)has_credentials;
+    return HK_NET_SCHEME_BLE;
+#elif CONFIG_HK_FIRST_BOOT_BLE
+    /* Interim, and it does change that rule: the owner sets these speakers up
+     * over BLE with a QR, so BLE is the transport a new device should offer. */
     (void)has_credentials;
     return HK_NET_SCHEME_BLE;
 #else
@@ -476,6 +601,15 @@ static esp_err_t init_provisioning_manager(void)
             .scheme = wifi_prov_scheme_ble,
             .scheme_event_handler = WIFI_PROV_SCHEME_BLE_EVENT_HANDLER_FREE_BTDM,
         };
+#if CONFIG_HK_DUAL_TRANSPORT
+        /* The BLE scheme declares WIFI_MODE_STA, and the manager re-applies that
+         * declaration when credentials arrive -- which would drop the access
+         * point mid-setup, from a code path we do not own. The scheme travels by
+         * value into the manager's config, so changing the copy is enough: it
+         * tells the manager to leave us in APSTA rather than fighting it back
+         * afterwards, which is a race we would lose sometimes. */
+        config.scheme.wifi_mode = WIFI_MODE_APSTA;
+#endif
         return wifi_prov_mgr_init(config);
 #else
         ESP_LOGE(TAG, "the BLE provisioning scheme needs CONFIG_BT_ENABLED, which this "

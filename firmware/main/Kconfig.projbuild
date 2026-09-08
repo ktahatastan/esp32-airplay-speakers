@@ -46,18 +46,46 @@ config HK_ONBOARD_STATUS_LED_GPIO
         It must not collide with the assignment in hk_pins; nothing enforces that
         here, because a Kconfig integer cannot see that table.
 
-config HK_DEVKIT_FIRST_BOOT_BLE
-    bool "Open BLE instead of SoftAP when the devkit has no credentials"
-    depends on HK_BOARD_DEVKIT_N8R2
+config HK_DUAL_TRANSPORT
+    bool "Offer BLE and SoftAP provisioning at the same time"
     default y
     help
-        ADR-0005 sends a device with nothing stored to SoftAP, and one that
-        already works to BLE on a button press. The devkit has no button, so
-        under that rule its BLE transport can never be reached, and a transport
-        that cannot be reached cannot be tested.
+        ADR-0005 offered one transport at a time because ESP-IDF's provisioning
+        manager takes one scheme. That is still true of the MANAGER -- but since
+        ADR-0015 the SoftAP leg no longer goes through it: the captive portal
+        hands credentials over with wifi_prov_mgr_configure_sta(), so it needs no
+        scheme, no protocomm instance and no second manager. The singleton only
+        has to serve BLE.
 
-        Turn this off to exercise the SoftAP path on the devkit instead. It
-        changes nothing on the product board.
+        So both are offered from the first second of a factory-fresh boot and the
+        phone picks. The manager runs BLE; the access point and the portal are
+        brought up alongside it by hk_network.
+
+        One honest limit: WIFI_PROV_SCHEME_BLE_EVENT_HANDLER_FREE_BTDM releases
+        the Bluetooth stack when the window closes, and that release cannot be
+        undone without a reboot. The product statement is therefore "both at
+        first boot, BLE until that window closes".
+
+        Turn this off to fall back to one transport at a time.
+
+config HK_FIRST_BOOT_BLE
+    bool "Open BLE instead of SoftAP when the device has no credentials"
+    default y
+    help
+        ADR-0005 sent a device with nothing stored to SoftAP, on the reasoning
+        that the app-less path must always be reachable. The owner's stated
+        priority is the opposite: BLE provisioning with a QR is the setup path
+        they actually use, and on 2026-09-08 it was the one they went looking
+        for on a new board and could not find.
+
+        INTERIM. This contradicts an accepted decision, so the policy is not
+        settled here -- it is settled by the ADR that supersedes ADR-0005/0015's
+        transport rule, once it is known whether both transports can be open at
+        once. What this switch does today is make BLE reachable on a board that
+        has no credentials, so it can be tested at all.
+
+        With this off, the ADR-0005 rule applies: no credentials opens SoftAP,
+        and BLE waits for a button press on a configured device.
 
 config HK_DEVKIT_WIFI_SSID
     string "Bench Wi-Fi SSID to preload (empty: do not preload)"

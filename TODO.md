@@ -66,6 +66,10 @@ Kilitli kararlar `AGENTS.md` içindedir ve yalnız supersede eden ADR ile deği�
 - [x] RGB LED durum sürücüsünü audio task'tan bağımsız düşük öncelikli görev olarak geliştir.
 - [x] Captive portalı yaz (ADR-0015: WPA2 kurulum ağı + `hk_portal`).
 - [ ] Portalı donanımda dene: iOS ve Android kurulum sayfasını kendiliğinden açıyor mu, ağ listesi doluyor mu, kimlik bilgisiyle katılıyor mu?
+- [x] İki taşımayı aynı anda aç (ADR-0016). Ürün kartında ölçüldü: tek pencerede BLE advertise + SoftAP + portal, 148.007 B dahili boş.
+- [ ] Her iki taşımayla ayrı ayrı kurulumu tamamla, diğeri ayaktayken.
+- [ ] Pencere kapandıktan sonra dahili belleğin geri geldiğini ölç (`FREE_BTDM`).
+- [ ] Pencere kapanıp yeniden açıldığında yalnız SoftAP sunulduğunu ve logun BLE iddia etmediğini doğrula.
 - [ ] WPA2 kurulum ağının BLE + Security 2 yolunu bozmadığını donanımda doğrula.
 - [x] ESP-IDF Unified Provisioning BLE transport ve Security 2 / benzersiz PoP ekle.
 - [x] SRP6a kullanıcı adına karar ver — ADR-0014: `wifiprov`, çünkü ad sır değil ve özel bir ad yalnız QR'sız yolu kırıyor.

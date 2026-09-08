@@ -24,3 +24,4 @@ Durumlar: `proposed`, `accepted`, `superseded`, `rejected`.
 - [[ADR-0013-airplay-integration-shape|ADR-0013 — AirPlay yığınının entegrasyon biçimi]]
 - [[ADR-0014-srp6a-username|ADR-0014 — SRP6a kullanıcı adı `wifiprov`]]
 - [[ADR-0015-softap-captive-portal|ADR-0015 — Kurulum ağı WPA2 ve kendi captive portal'ımız]]
+- [[ADR-0016-simultaneous-dual-transport|ADR-0016 — İki taşıma aynı anda]]
