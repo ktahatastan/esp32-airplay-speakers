@@ -25,6 +25,7 @@
 #include "hk_gfx.h"
 #include "hk_icons.h"
 #include "hk_palette.h"
+#include "hk_provision.h"
 #include "hk_qr.h"
 #include "hk_sky.h"
 
@@ -188,6 +189,11 @@ hk_screen_id_t hk_screen_choose(const hk_view_t *view)
         break;
     }
 
+    /* Above everything except the holds, because the owner is standing there
+     * having just pressed, and five seconds is all they get to decide. */
+    if (view->confirm_setup) {
+        return HK_SCREEN_CONFIRM_SETUP;
+    }
     if (view->led.error) {
         return HK_SCREEN_ERROR;
     }
@@ -232,6 +238,7 @@ const char *hk_screen_name(hk_screen_id_t id)
     case HK_SCREEN_OTA:          return "ota";
     case HK_SCREEN_HOLD_NETWORK: return "hold_network";
     case HK_SCREEN_HOLD_FACTORY: return "hold_factory";
+    case HK_SCREEN_CONFIRM_SETUP: return "confirm_setup";
     case HK_SCREEN_AUDIO_LOCKED: return "audio_locked";
     case HK_SCREEN_ERROR:        return "error";
     case HK_SCREEN_COUNT:        break;
@@ -249,6 +256,7 @@ static hk_sky_mood_t mood_for(hk_screen_id_t id)
     case HK_SCREEN_CHARGING:     return HK_SKY_EMBER;
     case HK_SCREEN_HOLD_NETWORK:
     case HK_SCREEN_HOLD_FACTORY:
+    case HK_SCREEN_CONFIRM_SETUP:
     case HK_SCREEN_BATTERY_LOW:
     case HK_SCREEN_ERROR:        return HK_SKY_ALERT;
     default:                     return HK_SKY_CALM;
@@ -821,6 +829,14 @@ void hk_screen_render(uint16_t *buf, hk_screen_id_t id, const hk_view_t *view,
     case HK_SCREEN_AUDIO_LOCKED:
         screen_notice(buf, t_ms, entered_ms, level, HK_ICON_LOCK, HK_C_WAIT,
                       "ses kilitli", "kalibrasyon yok · G0", 0, true);
+        break;
+    case HK_SCREEN_CONFIRM_SETUP:
+        /* The ring EMPTIES rather than fills. Every other countdown on this
+         * screen is a thing being earned by waiting; this one is a chance being
+         * lost, and a ring that drains says that without a word. */
+        screen_notice(buf, t_ms, entered_ms, level, HK_ICON_REFRESH, HK_C_WAIT,
+                      "tekrar bas", "kurulum açılır · ağ kesilir",
+                      1000 - progress(entered_ms, HK_PROV_CONFIRM_MS), false);
         break;
     case HK_SCREEN_ERROR:
     case HK_SCREEN_COUNT:

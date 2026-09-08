@@ -35,4 +35,8 @@
 #     -D SDKCONFIG="$PWD/firmware/build-bench/sdkconfig" build
 CONFIG_HK_BENCH_AUDIO_WITHOUT_PROFILE=y
 CONFIG_HK_BENCH_AUDIO_WITHOUT_POWER_TELEMETRY=y
-CONFIG_HK_DISPLAY_SELF_TEST=y
+# The panel is compiled OUT for now, at the owner's request, while the audio
+# path is brought up. Not a blank screen: no SPI bus, no transfers, no pins
+# driven. It is the single largest source of periodic switching on this board
+# and removing it entirely is the cleanest way to stop it being a variable.
+CONFIG_HK_DISPLAY=n

@@ -53,7 +53,9 @@
 #include "hk_tone.h"
 #endif
 #include "hk_button.h"
+#if CONFIG_HK_DISPLAY
 #include "hk_display.h"
+#endif
 #include "hk_identity.h"
 #include "hk_led.h"
 #include "hk_network.h"
@@ -638,6 +640,19 @@ static void button_request(hk_prov_event_t event, uint32_t actions)
     portENTER_CRITICAL(&s_prov_lock);
     if (s_prov_ready) {
         hk_prov_handle(&s_provisioning, event, at);
+        /* Queue only the work the policy actually decided on.
+         *
+         * A short press on a speaker that is already online now ARMS a
+         * confirmation rather than opening a window, and the difference has to
+         * survive this far: opening the radios calls esp_wifi_disconnect(), so
+         * queueing the action anyway would drop the network on exactly the
+         * press the policy just declined to act on. Asking hk_prov_radios()
+         * what it wants is the check -- it is the same function the supervisory
+         * loop already trusts, so there is no second opinion to keep in step. */
+        const hk_prov_radios_t want = hk_prov_radios(&s_provisioning);
+        if (!want.ble && !want.softap) {
+            actions &= ~HK_ACTION_OPEN_PROVISIONING;
+        }
         s_pending_actions |= actions;
         accepted = true;
     }
@@ -703,11 +718,22 @@ static void on_button(hk_button_event_t event, void *context)
 {
     (void)context;
     switch (event) {
-    case HK_BUTTON_EVENT_SHORT_PRESS:
+    case HK_BUTTON_EVENT_SHORT_PRESS: {
         button_request(HK_PROV_EV_BUTTON_SHORT, HK_ACTION_OPEN_PROVISIONING);
-        ESP_LOGI(TAG, "button: opening provisioning -> %s",
-                 hk_prov_state_name(prov_snapshot().state));
+        /* Say which of the two things happened. The old line claimed to be
+         * opening provisioning on every press, which became a lie the moment
+         * the first press on an online speaker started only arming. */
+        const hk_prov_t after = prov_snapshot();
+        if (hk_prov_confirm_pending(&after, now_ms())) {
+            ESP_LOGI(TAG, "button: armed -- press again within %u ms to open setup "
+                          "(this speaker is online, and opening it drops the network)",
+                     (unsigned)HK_PROV_CONFIRM_MS);
+        } else {
+            ESP_LOGI(TAG, "button: opening provisioning -> %s",
+                     hk_prov_state_name(after.state));
+        }
         break;
+    }
     case HK_BUTTON_EVENT_NETWORK_RESET:
         ESP_LOGW(TAG, "button: forgetting Wi-Fi credentials");
         button_request(HK_PROV_EV_NETWORK_RESET, HK_ACTION_FORGET_CREDENTIALS);
@@ -932,6 +958,7 @@ void app_main(void)
     /* Started after the UI, because it renders the UI's inputs. Never fatal: a
      * speaker with a dead screen is still a speaker, and the failure is named
      * here rather than left as a panel that stays dark for no stated reason. */
+#if CONFIG_HK_DISPLAY
     {
         const esp_err_t screen = hk_display_start();
         if (screen != ESP_OK) {
@@ -939,6 +966,13 @@ void app_main(void)
                      esp_err_to_name(screen));
         }
     }
+#else
+    /* Not merely idle -- not built. The SPI bus is never initialised and its
+     * pins are never driven, which is the whole reason the switch exists while
+     * the audio path is being brought up. */
+    ESP_LOGW(TAG, "display compiled out (CONFIG_HK_DISPLAY=n): no panel, and no "
+                  "SPI3 bus on gpio%d/%d at all.", HK_PIN_LCD_SCK, HK_PIN_LCD_MOSI);
+#endif
     start_network();
     hk_ui_clear_booting();
 #if CONFIG_HK_BENCH_TONE_INSTEAD_OF_AIRPLAY
@@ -1030,6 +1064,13 @@ void app_main(void)
         const bool audio_ok = audio_permitted_now();
         hk_audio_hw_set_permitted(audio_ok);
         hk_view_set_audio_locked(!audio_ok);
+        /* The arm expires on its own, so this is polled rather than pushed:
+         * nothing happens at the moment it lapses, and a prompt left on screen
+         * after the chance has gone is worse than one that never appeared. */
+        {
+            const hk_prov_t prov_now = prov_snapshot();
+            hk_view_set_confirm_setup(hk_prov_confirm_pending(&prov_now, now_ms()));
+        }
 
         /* Confirm or roll back this image, once, when the evidence is in. */
         hk_health_monitor_tick(now_ms());

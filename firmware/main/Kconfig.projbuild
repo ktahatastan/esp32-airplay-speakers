@@ -57,6 +57,23 @@ config HK_DISPLAY_SELF_TEST
 
         Off in a product: nobody wants their speaker to flash colours at them.
 
+config HK_DISPLAY
+    bool "Round GC9A01 display"
+    default y
+    help
+        Compile and run the panel. Off removes the SPI bus entirely -- not a
+        blank screen, no peripheral at all.
+
+        That is the point of having the switch. The panel moves 115,200 bytes at
+        80 MHz thirty times a second, which is a large periodic burst of
+        switching next to an analogue audio pair, and while the audio path is
+        being brought up it is the loudest thing in the room that is not the
+        speaker. Turning it off makes "is the display the noise source?" a
+        question the build answers rather than one the listener guesses at.
+
+        On means the product build. Off is for bench sessions that are chasing
+        something else.
+
 config HK_BENCH_AUDIO_WITHOUT_PROFILE
     bool "Permit audio on a board that has no driver-protection profile"
     default n

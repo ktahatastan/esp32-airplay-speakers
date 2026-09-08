@@ -32,6 +32,7 @@ typedef enum {
     HK_SCREEN_OTA,
     HK_SCREEN_HOLD_NETWORK, /**< the button is being held: network reset armed */
     HK_SCREEN_HOLD_FACTORY, /**< held further: factory reset armed */
+    HK_SCREEN_CONFIRM_SETUP,/**< a short press armed setup; asking for the second */
     HK_SCREEN_AUDIO_LOCKED, /**< no calibration profile, so audio is refused */
     HK_SCREEN_ERROR,
     HK_SCREEN_COUNT

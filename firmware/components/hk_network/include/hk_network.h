@@ -77,7 +77,16 @@ typedef enum {
                                    silently using another transport. */
 } hk_net_scheme_t;
 
-/** The transport that a given situation opens. See the note above for why. */
+/**
+ * The transport that a given situation opens. See the note above for why.
+ *
+ * One answer overrides every rule in that note: once a provisioning window that
+ * used BLE has closed, FREE_BTDM has handed the Bluetooth controller's memory
+ * back and no reboot-free path exists to get it again. From that point this
+ * returns HK_NET_SCHEME_SOFTAP whatever the situation, which is what ADR-0016
+ * already said the product does -- both transports at first boot, BLE only
+ * until that window closes.
+ */
 hk_net_scheme_t hk_network_scheme_for(bool has_credentials);
 
 /** What the network layer is doing, for the status LED. */
@@ -103,9 +112,19 @@ esp_err_t hk_network_start(hk_net_status_cb_t callback, void *context);
 /**
  * Open a provisioning window from a button press.
  *
- * On a configured device this opens BLE. On one with no credentials
- * provisioning is already open over SoftAP and this does nothing, so a stray
+ * On a configured device this opens BLE, unless an earlier window already
+ * released the BLE stack this boot -- see hk_network_scheme_for(). On one with
+ * no credentials provisioning is already open and this does nothing, so a stray
  * press cannot tear down a setup session the user is in the middle of.
+ *
+ * Opening is not free: the station is disconnected first so the provisioning
+ * manager can run its opening scan, which on a joined speaker means leaving the
+ * house network and stopping playback. hk_provision decides whether a press
+ * gets this far, and on a working speaker it requires two (HK_PROV_CONFIRM_MS).
+ *
+ * If the window fails to open, the station is reconnected before returning: the
+ * disconnect has already happened by then, and a failure that left the speaker
+ * off the network with no way in would be worse than the press doing nothing.
  */
 esp_err_t hk_network_open_provisioning(void);
 

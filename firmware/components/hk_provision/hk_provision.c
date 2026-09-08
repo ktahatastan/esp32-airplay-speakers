@@ -7,6 +7,19 @@ static uint32_t elapsed(uint32_t now, uint32_t since)
     return now - since;  /* unsigned: correct across the 32-bit wrap */
 }
 
+/** Forget a pending confirmation. Any change of state cancels it. */
+static void clear_confirm(hk_prov_t *prov)
+{
+    prov->confirm_armed = false;
+}
+
+/** True while a short press has armed the gate and the arm has not expired. */
+static bool confirm_pending(const hk_prov_t *prov, uint32_t now_ms)
+{
+    return prov->confirm_armed &&
+           elapsed(now_ms, prov->confirm_armed_ms) < HK_PROV_CONFIRM_MS;
+}
+
 /** Open provisioning. `bounded` false means it stays open until setup finishes. */
 static void open_provisioning(hk_prov_t *prov, bool bounded, uint32_t now_ms)
 {
@@ -14,12 +27,16 @@ static void open_provisioning(hk_prov_t *prov, bool bounded, uint32_t now_ms)
     prov->radios_open = true;
     prov->bounded = bounded;
     prov->opened_ms = now_ms;
+    /* The window is open; there is nothing left to confirm. */
+    clear_confirm(prov);
 }
 
 void hk_prov_init(hk_prov_t *prov, bool has_credentials, bool recovery, uint32_t now_ms)
 {
     prov->has_credentials = has_credentials;
     prov->consecutive_failures = 0;
+    prov->confirm_armed = false;
+    prov->confirm_armed_ms = now_ms;
 
     if (recovery || !has_credentials) {
         /* Two different situations reach this branch, and they need different
@@ -68,13 +85,41 @@ void hk_prov_handle(hk_prov_t *prov, hk_prov_event_t event, uint32_t now_ms)
             if (prov->bounded) {
                 prov->opened_ms = now_ms;
             }
-        } else {
-            /* Deliberately opened on a configured device, so it is bounded. */
-            open_provisioning(prov, true, now_ms);
+            return;
         }
+
+        if (prov->state == HK_PROV_ONLINE) {
+            /* The only press that costs something, so the only one that has to
+             * be asked for twice.
+             *
+             * Opening a window is not a passive act on a speaker that is
+             * working: hk_network puts the station down so the provisioning
+             * manager can run its opening scan, which on a joined, playing
+             * device means the music stops and the speaker leaves the house
+             * network until the window closes. The owner met that on the bench
+             * from one accidental tap. The disconnect itself is correct and
+             * stays -- what was missing is a precondition on getting here.
+             *
+             * So the first press only arms, and the LED and the screen say so
+             * (hk_prov_confirm_pending). The second press, inside
+             * HK_PROV_CONFIRM_MS, opens exactly the window today's code opens.
+             * A press that arrives after the arm expired is not a confirmation
+             * of anything: it becomes the new first press. */
+            if (!confirm_pending(prov, now_ms)) {
+                prov->confirm_armed = true;
+                prov->confirm_armed_ms = now_ms;
+                return;
+            }
+        }
+
+        /* Confirmed, or a state where nothing is at stake -- CONNECTING has no
+         * join to lose and no audio to cut. Deliberately opened on a configured
+         * device, so it is bounded. */
+        open_provisioning(prov, true, now_ms);
         return;
 
     case HK_PROV_EV_CREDENTIALS:
+        clear_confirm(prov);
         prov->has_credentials = true;
         prov->consecutive_failures = 0;
         prov->state = HK_PROV_CONNECTING;
@@ -84,6 +129,7 @@ void hk_prov_handle(hk_prov_t *prov, hk_prov_event_t event, uint32_t now_ms)
         return;
 
     case HK_PROV_EV_CONNECT_OK:
+        clear_confirm(prov);
         prov->state = HK_PROV_ONLINE;
         prov->radios_open = false;
         prov->bounded = false;
@@ -91,6 +137,7 @@ void hk_prov_handle(hk_prov_t *prov, hk_prov_event_t event, uint32_t now_ms)
         return;
 
     case HK_PROV_EV_CONNECT_FAIL:
+        clear_confirm(prov);
         if (prov->consecutive_failures < 0xFFu) {
             prov->consecutive_failures++;
         }
@@ -114,6 +161,13 @@ void hk_prov_handle(hk_prov_t *prov, hk_prov_event_t event, uint32_t now_ms)
         break;
     }
 
+    if (prov->confirm_armed && elapsed(now_ms, prov->confirm_armed_ms) >= HK_PROV_CONFIRM_MS) {
+        /* Nobody confirmed. Dropping the flag here rather than only inside the
+         * press keeps what the LED shows honest: the prompt goes away by
+         * itself, within one tick of the arm expiring. */
+        clear_confirm(prov);
+    }
+
     if (prov->state == HK_PROV_PROVISIONING && prov->bounded &&
         elapsed(now_ms, prov->opened_ms) >= HK_PROV_WINDOW_MS) {
         /* The window expired. Shut the radios and go back to using the
@@ -132,6 +186,11 @@ hk_prov_radios_t hk_prov_radios(const hk_prov_t *prov)
         radios.softap = true;
     }
     return radios;
+}
+
+bool hk_prov_confirm_pending(const hk_prov_t *prov, uint32_t now_ms)
+{
+    return prov != NULL && confirm_pending(prov, now_ms);
 }
 
 bool hk_prov_ble_releasable(const hk_prov_t *prov)

@@ -71,6 +71,11 @@ typedef struct {
      * and one that is silent because nothing is playing are different things,
      * and only one of them is waiting on the owner. */
     bool            audio_locked;
+    /* A short press on an online speaker armed a confirmation rather than
+     * opening a setup window. True only while that arm is live, so the screen
+     * can ask for the second press instead of leaving the first one looking
+     * like a button that does nothing. */
+    bool            confirm_setup;
     bool            have_metadata;
     hk_view_media_t media;
     int             volume_percent;   /**< 0-100 */
@@ -108,6 +113,7 @@ void hk_view_clear_setup(void);
 void hk_view_set_rssi(int dbm);
 void hk_view_clear_rssi(void);
 void hk_view_set_audio_locked(bool locked);
+void hk_view_set_confirm_setup(bool pending);
 void hk_view_set_metadata(const hk_view_media_t *media);
 void hk_view_clear_metadata(void);
 void hk_view_set_volume(int percent, bool muted);

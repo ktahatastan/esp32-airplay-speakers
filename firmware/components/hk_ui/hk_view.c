@@ -136,6 +136,13 @@ void hk_view_set_audio_locked(bool locked)
     taskEXIT_CRITICAL(&s_lock);
 }
 
+void hk_view_set_confirm_setup(bool pending)
+{
+    taskENTER_CRITICAL(&s_lock);
+    s_view.confirm_setup = pending;
+    taskEXIT_CRITICAL(&s_lock);
+}
+
 void hk_view_set_metadata(const hk_view_media_t *media)
 {
     if (media == NULL) {

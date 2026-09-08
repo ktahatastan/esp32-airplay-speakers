@@ -103,6 +103,29 @@ static int                s_retries;
  * connect it starts is still in flight when the manager asks for a scan.
  */
 static bool               s_setup_owns_radio;
+
+/**
+ * The transport the manager that is currently initialised was bound to.
+ *
+ * Not the same thing as s_scheme, which is the transport the NEXT window should
+ * use. They differ for as long as one window is being torn down while the
+ * decision for the following one has already been taken -- which is exactly the
+ * moment the flag below is set, so keying off s_scheme there would record the
+ * release of a stack that was never up.
+ */
+static hk_net_scheme_t    s_mgr_scheme;
+
+/**
+ * The Bluetooth controller's memory has been handed back, and is not coming
+ * back before a reboot.
+ *
+ * WIFI_PROV_SCHEME_BLE_EVENT_HANDLER_FREE_BTDM calls esp_bt_mem_release() when
+ * the manager is deinitialised (ESP-IDF v5.5.1, scheme_ble.c, WIFI_PROV_DEINIT).
+ * ADR-0016 states the consequence as a product sentence: both transports at
+ * first boot, BLE only until that window closes.
+ */
+static bool               s_ble_released;
+
 static uint8_t            s_salt[HK_PROV_SALT_MAX];
 static uint8_t            s_verifier[HK_PROV_VERIFIER_MAX];
 static size_t             s_salt_len;
@@ -111,6 +134,24 @@ static bool               s_have_security2;
 static char               s_ap_password[HK_AP_PASSWORD_MAX + 1];
 static size_t             s_ap_password_len;
 static bool               s_have_ap_password;
+
+/**
+ * Release the provisioning manager, and record what that cost.
+ *
+ * Every deinit goes through here, because one of them is irreversible: with the
+ * BLE scheme bound, the manager's teardown releases the Bluetooth controller's
+ * memory and this boot has no way to get it back. Nothing else in the file has
+ * to remember that; it asks hk_network_scheme_for() instead.
+ */
+static void prov_mgr_deinit(void)
+{
+    wifi_prov_mgr_deinit();
+    if (s_mgr_scheme == HK_NET_SCHEME_BLE && !s_ble_released) {
+        s_ble_released = true;
+        ESP_LOGI(TAG, "the ble stack went back to the heap; setup reopened later this "
+                      "boot will offer the access point only");
+    }
+}
 
 static void publish_status(void)
 {
@@ -392,7 +433,7 @@ static void on_prov_event(void *arg, esp_event_base_t base, int32_t id, void *da
         /* Everything the manager allocated goes back, including the BLE stack
          * when the BLE scheme was used. ADR-0005 requires that it not be left
          * running during normal operation. */
-        wifi_prov_mgr_deinit();
+        prov_mgr_deinit();
         /* After the manager, not before: it holds the server this stops, and
          * pulling it out from under protocomm's own teardown is a crash. */
         hk_portal_stop();
@@ -484,6 +525,61 @@ static esp_err_t start_setup_ap(void)
 }
 #endif /* CONFIG_HK_DUAL_TRANSPORT */
 
+/**
+ * Open the app-less leg on its own, with the manager driving it.
+ *
+ * This is the SoftAP scheme's ordinary path, and it is reached from two
+ * directions: a build with one transport at a time that has decided on SoftAP,
+ * and a dual-transport build reopening setup after the BLE stack has already
+ * gone back to the heap (ADR-0016). Neither is a degraded window -- it is the
+ * app-less route, whole.
+ *
+ * service_key is the setup network's Wi-Fi password, and it is not optional. It
+ * used to be NULL, which left that network open and put the whole burden on
+ * Security 2 -- fine for an app speaking protocomm, and no use at all to a
+ * browser: a captive portal page cannot borrow the browser's crypto over
+ * cleartext HTTP. ADR-0015 moves the secrecy down to WPA2 so the app-less path
+ * can be an ordinary form.
+ *
+ * Every failure path hands the radio back. The caller disconnected the station
+ * before calling, so a leg that does not come up must not also leave setup
+ * owning a radio it is not using: that flag is what suppresses the reconnect,
+ * and stuck true it keeps the speaker off the network until the next reboot.
+ */
+static esp_err_t start_softap_only(const wifi_prov_security2_params_t *security_params)
+{
+    if (!s_have_ap_password) {
+        ESP_LOGE(TAG, "no setup network key in the calibration store; refusing to "
+                      "open an unprotected setup network rather than accept a "
+                      "Wi-Fi password over one");
+        s_setup_owns_radio = false;
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    /* Before the manager starts, not after: protocomm publishes the app
+     * path's endpoints on whatever server it is given here, and given none
+     * it starts a second one on the same port. */
+    const esp_err_t portal = hk_portal_start();
+    if (portal != ESP_OK) {
+        ESP_LOGE(TAG, "the setup page did not come up: %s", esp_err_to_name(portal));
+        s_setup_owns_radio = false;
+        return portal;
+    }
+    /* The ADDRESS of the portal's handle, not the handle. protocomm
+     * dereferences what it is given and keeps the pointer for the life of
+     * the window; see hk_portal_server_slot(). */
+    wifi_prov_scheme_softap_set_httpd_handle(hk_portal_server_slot());
+
+    const esp_err_t started =
+        wifi_prov_mgr_start_provisioning(WIFI_PROV_SECURITY_2, security_params,
+                                         s_identity.softap, s_ap_password);
+    if (started != ESP_OK) {
+        hk_portal_stop();
+        s_setup_owns_radio = false;
+    }
+    return started;
+}
+
 /** Start provisioning with Security 2, or refuse. */
 static esp_err_t start_provisioning(void)
 {
@@ -524,6 +620,15 @@ static esp_err_t start_provisioning(void)
      * one where the other belongs does not fail loudly -- it produces a QR that
      * searches for a device nobody is advertising. */
 #if CONFIG_HK_DUAL_TRANSPORT
+    if (s_scheme != HK_NET_SCHEME_BLE) {
+        /* The BLE stack went back to the heap when an earlier window closed, so
+         * there is one leg left and the manager drives it. Asking for the other
+         * one here is what turned a second button press into a speaker that had
+         * left the network and opened nothing. */
+        ESP_LOGI(TAG, "ble is gone for this boot; opening the app-less leg alone");
+        return start_softap_only(&security_params);
+    }
+
     /* Both legs need their own credential, and neither is optional: the manager
      * refuses without Security 2, and an access point without a key is the open
      * network ADR-0015 exists to avoid. Refusing here names which one is
@@ -587,46 +692,19 @@ static esp_err_t start_provisioning(void)
              (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL));
     return ESP_OK;
 #else
-
-    /* service_key is the setup network's Wi-Fi password, and meaningless for
-     * BLE. It used to be NULL, which left that network open and put the whole
-     * burden on Security 2 -- fine for an app speaking protocomm, and no use at
-     * all to a browser: a captive portal page cannot borrow the browser's
-     * crypto over cleartext HTTP. ADR-0015 moves the secrecy down to WPA2 so
-     * the app-less path can be an ordinary form. */
-    const bool over_ble = (s_scheme == HK_NET_SCHEME_BLE);
-    const char *service_name = over_ble ? s_identity.ble : s_identity.softap;
-    const char *service_key = NULL;
-    if (!over_ble) {
-        if (!s_have_ap_password) {
-            ESP_LOGE(TAG, "no setup network key in the calibration store; refusing to "
-                          "open an unprotected setup network rather than accept a "
-                          "Wi-Fi password over one");
-            s_setup_owns_radio = false;
-            return ESP_ERR_NOT_FOUND;
-        }
-        service_key = s_ap_password;
-
-        /* Before the manager starts, not after: protocomm publishes the app
-         * path's endpoints on whatever server it is given here, and given none
-         * it starts a second one on the same port. */
-        const esp_err_t portal = hk_portal_start();
-        if (portal != ESP_OK) {
-            ESP_LOGE(TAG, "the setup page did not come up: %s", esp_err_to_name(portal));
-            s_setup_owns_radio = false;
-            return portal;
-        }
-        /* The ADDRESS of the portal's handle, not the handle. protocomm
-         * dereferences what it is given and keeps the pointer for the life of
-         * the window; see hk_portal_server_slot(). */
-        wifi_prov_scheme_softap_set_httpd_handle(hk_portal_server_slot());
+    if (s_scheme != HK_NET_SCHEME_BLE) {
+        return start_softap_only(&security_params);
     }
 
+    /* BLE carries no service key: the pairing secret is the SRP6a proof of
+     * possession, not a Wi-Fi passphrase. */
     const esp_err_t started =
         wifi_prov_mgr_start_provisioning(WIFI_PROV_SECURITY_2, &security_params,
-                                         service_name, service_key);
-    if (started != ESP_OK && !over_ble) {
-        hk_portal_stop();
+                                         s_identity.ble, NULL);
+    if (started != ESP_OK) {
+        /* The station was put down for a window that did not open. Leaving the
+         * flag set would suppress the reconnect for the rest of the boot. */
+        s_setup_owns_radio = false;
     }
     return started;
 #endif /* CONFIG_HK_DUAL_TRANSPORT */
@@ -634,6 +712,28 @@ static esp_err_t start_provisioning(void)
 
 hk_net_scheme_t hk_network_scheme_for(bool has_credentials)
 {
+    /* Before any preference: one of the two transports may not exist any more.
+     *
+     * ADR-0016 says it plainly -- "Pencere kapandıktan sonra yeniden açılan bir
+     * kurulum yalnız SoftAP sunar": a setup reopened after that window has
+     * closed offers only SoftAP. The reason is FREE_BTDM, which hands the
+     * Bluetooth controller's memory back at manager teardown and cannot be
+     * undone before a reboot.
+     *
+     * The code did not say it. Every branch below hands back BLE for a device
+     * that already holds credentials, so the second window a user opens asked
+     * the manager for a transport that was gone. That failure arrives AFTER
+     * start_provisioning() has put the station down for the manager's scan, and
+     * the caller treats it as fatal -- so the press took the speaker off the
+     * network and opened nothing at all. The ADR was right and this function was
+     * wrong; this is the line that makes them agree.
+     *
+     * has_credentials is not consulted here on purpose. It is not a preference
+     * being overridden, it is the only transport there is. */
+    if (s_ble_released) {
+        return HK_NET_SCHEME_SOFTAP;
+    }
+
     /* ADR-0005 option C. The app-less path must always be reachable, so a
      * device with nothing stored opens SoftAP; a device that already works
      * opens BLE, because a SoftAP would push the user's phone off the network
@@ -657,6 +757,12 @@ hk_net_scheme_t hk_network_scheme_for(bool has_credentials)
 
 static esp_err_t init_provisioning_manager(void)
 {
+    /* What is about to be bound, so prov_mgr_deinit() knows whether the teardown
+     * takes the BLE stack with it. Recorded before the call rather than after:
+     * wifi_prov_mgr_init() invokes the scheme's WIFI_PROV_INIT handler on the
+     * way in, and a failure part-way through still leaves a bound scheme. */
+    s_mgr_scheme = s_scheme;
+
     if (s_scheme == HK_NET_SCHEME_BLE) {
 #ifdef CONFIG_BT_ENABLED
         /* FREE_BTDM releases the whole Bluetooth stack once provisioning ends,
@@ -824,13 +930,13 @@ esp_err_t hk_network_start(hk_net_status_cb_t callback, void *context)
     s_scheme = hk_network_scheme_for(provisioned);
 
     if (!provisioned && s_scheme != query_scheme) {
-        wifi_prov_mgr_deinit();
+        prov_mgr_deinit();
         ESP_RETURN_ON_ERROR(init_provisioning_manager(), TAG, "prov mgr reinit");
     }
 
     if (provisioned) {
         /* Nothing to set up. Release the manager and just join. */
-        wifi_prov_mgr_deinit();
+        prov_mgr_deinit();
         ESP_LOGI(TAG, "credentials found, joining as %s", s_identity.mdns);
         ESP_RETURN_ON_ERROR(esp_wifi_set_mode(WIFI_MODE_STA), TAG, "sta mode");
         ESP_RETURN_ON_ERROR(esp_wifi_start(), TAG, "wifi start");
@@ -839,7 +945,7 @@ esp_err_t hk_network_start(hk_net_status_cb_t callback, void *context)
 
     esp_err_t err = start_provisioning();
     if (err != ESP_OK) {
-        wifi_prov_mgr_deinit();
+        prov_mgr_deinit();
     }
     return err;
 }
@@ -860,7 +966,27 @@ esp_err_t hk_network_open_provisioning(void)
     ESP_RETURN_ON_ERROR(init_provisioning_manager(), TAG, "prov mgr init");
     esp_err_t err = start_provisioning();
     if (err != ESP_OK) {
-        wifi_prov_mgr_deinit();
+        prov_mgr_deinit();
+
+        /* The press already cost the station its connection: start_provisioning()
+         * puts it down before it opens anything, so the manager can scan. The
+         * window it was spent on did not open, and the STA_DISCONNECTED that
+         * fired in between was swallowed by the branch that keeps the radio free
+         * for setup -- so nothing else is going to bring the station back.
+         *
+         * Without this the failure is worse than doing nothing: the speaker
+         * leaves the network, opens no way in, and stays that way until it is
+         * power-cycled. */
+        s_setup_owns_radio = false;
+        s_retries = 0;
+        const esp_err_t rejoin = esp_wifi_connect();
+        if (rejoin == ESP_OK) {
+            ESP_LOGW(TAG, "setup did not open (%s); rejoining the network the press left",
+                     esp_err_to_name(err));
+        } else {
+            ESP_LOGW(TAG, "setup did not open (%s) and the rejoin did not start "
+                          "either (%s)", esp_err_to_name(err), esp_err_to_name(rejoin));
+        }
     }
     return err;
 }
@@ -874,7 +1000,7 @@ esp_err_t hk_network_close_provisioning(void)
     /* stop_provisioning() before deinit(): ESP-IDF's own documentation warns
      * that deinit alone leaves the transport running. */
     wifi_prov_mgr_stop_provisioning();
-    wifi_prov_mgr_deinit();
+    prov_mgr_deinit();
     s_status.provisioning = false;
     publish_status();
     return ESP_OK;
