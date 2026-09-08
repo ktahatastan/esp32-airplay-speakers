@@ -72,6 +72,29 @@ static const char *TAG = "hk_lcd";
  * turn rather than making them choose from a menu. Long enough to scan. */
 #define HK_LCD_PAIR_SWAP_MS 6000u
 
+/*
+ * The noise probe. TEMPORARY, and off unless someone sets it to 1.
+ *
+ * The owner reports audible noise that appears when the firmware boots and is
+ * near-silent before it. The panel is the first suspect and the reason is its
+ * shape: 115,200 bytes at 80 MHz is a 9.5 ms burst of high-frequency switching
+ * thirty times a second, on flying leads running alongside an analogue audio
+ * pair. Raising the clock to 240 MHz and the frame rate to 30 fps earlier today
+ * would both have made it worse.
+ *
+ * Suspicion is not evidence, and a listener cannot A/B something that never
+ * stops. So this alternates between drawing normally and sending NOTHING to the
+ * panel at all -- not a dimmer picture, no transfers whatsoever -- and logs
+ * which half it is in. If the noise follows the cycle, it is the display bus.
+ * If it does not, the display is exonerated and the next suspects are the radio
+ * and the shared 5 V rail.
+ *
+ * Delete this once the question is answered. A diagnostic left in the tree
+ * becomes a feature nobody dares remove.
+ */
+#define HK_LCD_NOISE_PROBE   1
+#define HK_LCD_PROBE_HALF_MS 8000u
+
 static esp_lcd_panel_handle_t s_panel;
 static uint16_t              *s_frame;
 static hk_identity_t          s_identity;
@@ -312,6 +335,22 @@ static void display_task(void *arg)
             s_scene.transition_began_ms = now;
         }
 
+#if HK_LCD_NOISE_PROBE
+        /* Quiet halves send nothing and draw nothing: the point is to remove
+         * the bus entirely, not to reduce it. A half-rate frame would still be
+         * switching 80 MHz down the same wires. */
+        static bool probe_quiet;
+        const bool quiet_now = ((now / HK_LCD_PROBE_HALF_MS) & 1u) != 0u;
+        if (quiet_now != probe_quiet) {
+            probe_quiet = quiet_now;
+            ESP_LOGW(TAG, "noise probe: panel bus %s -- listen now",
+                     quiet_now ? "SILENT (no transfers at all)" : "ACTIVE (30 fps)");
+        }
+        if (quiet_now) {
+            vTaskDelay(pdMS_TO_TICKS(HK_LCD_FRAME_MS));
+            continue;
+        }
+#endif
         compose(&view, now);
         const int64_t drawn = esp_timer_get_time();
         const esp_err_t sent = esp_lcd_panel_draw_bitmap(s_panel, 0, 0,
