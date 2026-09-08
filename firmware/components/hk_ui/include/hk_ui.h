@@ -103,6 +103,16 @@ void hk_ui_set_battery_low(bool low);
 void hk_ui_clear_booting(void);
 
 /**
+ * The inputs the LED is rendering from, right now.
+ *
+ * Published so a second surface -- the round panel -- can render from the same
+ * struct rather than from its own copy assembled out of the same setters. Two
+ * copies is how two indicators end up disagreeing about what the device is
+ * doing, and the one that is wrong is whichever the user happens to look at.
+ */
+void hk_ui_snapshot(hk_led_inputs_t *out);
+
+/**
  * Whether the button was already held when hk_ui_start() ran.
  *
  * Valid only after hk_ui_start() returns ESP_OK.

@@ -44,6 +44,7 @@
 #include "hk_airplay.h"
 #include "hk_audio.h"
 #include "hk_button.h"
+#include "hk_display.h"
 #include "hk_identity.h"
 #include "hk_led.h"
 #include "hk_network.h"
@@ -751,6 +752,17 @@ void app_main(void)
      * to send its work. */
     s_main_task = xTaskGetCurrentTaskHandle();
     ESP_ERROR_CHECK(hk_ui_start(on_button, NULL));
+
+    /* Started after the UI, because it renders the UI's inputs. Never fatal: a
+     * speaker with a dead screen is still a speaker, and the failure is named
+     * here rather than left as a panel that stays dark for no stated reason. */
+    {
+        const esp_err_t screen = hk_display_start();
+        if (screen != ESP_OK) {
+            ESP_LOGW(TAG, "display did not start: %s. Everything else continues.",
+                     esp_err_to_name(screen));
+        }
+    }
     start_network();
     hk_ui_clear_booting();
 #if CONFIG_HK_AIRPLAY

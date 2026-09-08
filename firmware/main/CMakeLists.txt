@@ -12,6 +12,7 @@ idf_component_register(SRCS "hk_main.c"
                                 hk_storage
                                 hk_network
                                 hk_ui
+                                hk_display
                                 hk_version
                                 hk_ota
                                 hk_gate

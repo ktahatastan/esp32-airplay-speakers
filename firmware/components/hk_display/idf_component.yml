@@ -1,0 +1,5 @@
+dependencies:
+  # GC9A01 panel driver. Not in the ESP-IDF tree; pinned to a minor version so a
+  # build that passed yesterday cannot break today, the same rule the mDNS
+  # dependency follows.
+  espressif/esp_lcd_gc9a01: "^2.0.0"
