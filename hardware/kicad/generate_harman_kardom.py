@@ -148,7 +148,7 @@ EXPECTED_OPEN_NETS: frozenset[str] = frozenset({
     "DAC_XSMT",      # GPIO13 reservation; PCM5102A XSMT, external pull-down holds mute
     "BATT_SENSE",    # GPIO1 reservation; divider ratio comes from G3/G4
     "NTC_SENSE",     # GPIO2 reservation; thermistor network comes from G4
-    "I2C_SDA",       # optional INA226 telemetry
+    "I2C_SDA",       # INA219 charge-current telemetry (ADR-0018)
     "I2C_SCL",
 })
 

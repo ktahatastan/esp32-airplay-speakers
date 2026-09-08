@@ -43,8 +43,34 @@
 #define HK_PIN_LED_B     10  /**< PWM */
 
 /* --- Optional telemetry --------------------------------------------------- */
-#define HK_PIN_I2C_SDA   11  /**< INA226, optional */
-#define HK_PIN_I2C_SCL   12  /**< INA226, optional */
+#define HK_PIN_I2C_SDA   11  /**< INA219 current sensor (ADR-0018) */
+#define HK_PIN_I2C_SCL   12  /**< INA219 current sensor (ADR-0018) */
+
+/* --- Round display, GC9A01 240x240 over SPI (ADR-0017) -------------------
+ * Six signals, and the cost is stated where it is paid: GPIO39-42 are MTCK,
+ * MTDO, MTDI and MTMS, so taking them spends pad-JTAG entirely. USB
+ * Serial/JTAG on GPIO19/20 survives and is already this build's secondary
+ * console, so what is lost is the external probe, not the debugger.
+ *
+ * GPIO14-17 are deliberately NOT used here. They are the only free pins that
+ * are both RTC-capable and free of any strapping, USB, UART0 or JTAG role,
+ * which makes them the mute lines' fallback pool. Spending them on a display
+ * would trade a safety reserve for a convenience.
+ *
+ * Two pins are chosen for what the silicon does before any firmware runs:
+ *   - CS on 39, which comes up with a weak internal pull-up, so the panel sees
+ *     its chip select deasserted through ROM and bootloader. An external 10 k
+ *     pull-up makes that guaranteed rather than inherited.
+ *   - RST on 18, which the silicon drives HIGH at power-up. For an active-low
+ *     reset that is the safe level, and it is the one place where GPIO18's
+ *     defect -- the reason it is barred from mute duty -- is an asset.
+ */
+#define HK_PIN_LCD_SCK   47  /**< SPI clock, 33 R series at the ESP end */
+#define HK_PIN_LCD_MOSI  41  /**< SPI data to the panel; nothing reads back */
+#define HK_PIN_LCD_CS    39  /**< Active low. External 10 k pull-up to 3V3 */
+#define HK_PIN_LCD_DC    40  /**< Data/command select */
+#define HK_PIN_LCD_RST   18  /**< Active low. Silicon drives this high at reset */
+#define HK_PIN_LCD_BL    42  /**< Backlight, through a 2N7002; LEDC timer 1 */
 
 /* --- Mute lines ----------------------------------------------------------
  * Both are active low, and both are held in their SAFE state by an external
@@ -96,12 +122,15 @@
 
 /**
  * Number of GPIOs this design claims:
- * 3 I2S + 1 button + 3 RGB + 2 I2C + 2 mute + 2 analogue.
+ * 3 I2S + 1 button + 3 RGB + 2 I2C + 2 mute + 2 analogue + 6 display.
  */
-#define HK_PIN_COUNT 13
+#define HK_PIN_COUNT 19
 
 /** Every assigned pin, as a bit mask. */
 #define HK_PIN_MASK ( \
+      (1ULL << HK_PIN_LCD_SCK)   | (1ULL << HK_PIN_LCD_MOSI)  | \
+      (1ULL << HK_PIN_LCD_CS)    | (1ULL << HK_PIN_LCD_DC)    | \
+      (1ULL << HK_PIN_LCD_RST)   | (1ULL << HK_PIN_LCD_BL)    | \
       (1ULL << HK_PIN_I2S_BCLK)  | (1ULL << HK_PIN_I2S_LRCLK) | \
       (1ULL << HK_PIN_I2S_DATA)  | (1ULL << HK_PIN_BUTTON)    | \
       (1ULL << HK_PIN_LED_R)     | (1ULL << HK_PIN_LED_G)     | \

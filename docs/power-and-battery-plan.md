@@ -80,7 +80,7 @@ USB-C PD adaptör (65 W sınıfı)
 | Sigorta | 1 | DC uygun, batarya artısına çok yakın | 5 A veya 7,5 A; yük testinden sonra seçilecek |
 | USB-C şarj girişi | 1 | USB-C soketi veya PD tetikleyici üzerindeki hazır giriş; 20 V / 3,25 A taşıyabilmeli | ADR-0009 zincirinin tek girişi. Ayrı DC jak V1'de kullanılmaz; yedek adaptör yoluna geçilirse jak ölçüsü ve polaritesi ayrıca kararlaştırılır. |
 | Sıcaklık sensörü | 1 | 10k NTC, orta hücreye temas | BMS destekliyorsa zorunlu bağlanacak |
-| Güç ölçümü | 1, opsiyonel | 36 V'a kadar çift yönlü akım/gerilim | INA226 modülü prototip telemetrisi için |
+| Güç ölçümü | 1, opsiyonel | 36 V'a kadar çift yönlü akım/gerilim | INA219 modülü prototip telemetrisi için |
 | Fonksiyon butonu | 1 | Anlık, normalde açık | Provisioning ve reset; aktif-low GPIO |
 | RGB durum LED'i | 1 | Ortak katot, 3 kanal | Her renge seri direnç ve PWM GPIO |
 | Fiziksel güç anahtarı | 1 | Kilitlemeli, en az 24 V DC / 5 A kontak hedefi | KM103 / DC-132A seçilen mekanik aday; kontak değeri belgelenmediği ve dahili LED yalnız 12 V olduğu için 16,8 V hatta G3 öncesi bağlanmaz |
@@ -97,7 +97,7 @@ USB-C PD adaptör (65 W sınıfı)
 - XL4015 CC/CV şarj katı adayı: https://www.robotistan.com/xl4015-lipo-sarj-modulu
 - Yedek 16,8 V / 3 A hazır adaptör: https://www.pilpaketi.com/lion-sarj-aleti-4s-16.8-volt-3a-2.1-mm-soket
 - MP1584EN buck modülü: https://www.robotistan.com/3a-mini-ayarlanabilir-voltaj-dusurucu-regulator-karti-step-down
-- INA226 güç ölçüm modülü: https://www.robotistan.com/ina226-i2c-akim-sensoru
+- INA219 güç ölçüm modülü: https://www.robotistan.com/ina226-i2c-akim-sensoru
 
 Fiyat ve stok bilgisi kalıcı kabul edilmeyecek; satın alma gününde tekrar doğrulanacaktır. BMS ilanındaki `20 A` ifadesi gerçek sürekli akım anlamına gelmeyebilir. Kart üzerindeki MOSFET, bakır kalınlığı, balans dirençleri ve sıcaklık koruması görsel/veri sayfasıyla kontrol edilmeden satın alma kesinleştirilmeyecektir.
 
@@ -145,4 +145,4 @@ Fiyat ve stok bilgisi kalıcı kabul edilmeyecek; satın alma gününde tekrar d
 - BQ25792: https://www.ti.com/lit/ds/symlink/bq25792.pdf
 - MP1584: https://pdf.direnc.net/upload/mp1584en-lf-z-datasheet.pdf
 - XL4015: https://www.xlsemi.com/datasheet/XL4015%20datasheet.pdf
-- INA226: https://www.ti.com/lit/ds/symlink/ina226.pdf
+- INA219: https://www.ti.com/lit/ds/symlink/ina226.pdf

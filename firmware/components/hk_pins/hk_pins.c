@@ -16,6 +16,12 @@ const hk_pin_entry_t hk_pin_table[] = {
     {"dac_xsmt",  HK_PIN_DAC_XSMT},
     {"batt_sense", HK_PIN_BATT_SENSE},
     {"ntc_sense", HK_PIN_NTC_SENSE},
+    {"lcd_sck",   HK_PIN_LCD_SCK},
+    {"lcd_mosi",  HK_PIN_LCD_MOSI},
+    {"lcd_cs",    HK_PIN_LCD_CS},
+    {"lcd_dc",    HK_PIN_LCD_DC},
+    {"lcd_rst",   HK_PIN_LCD_RST},
+    {"lcd_bl",    HK_PIN_LCD_BL},
     {NULL, -1},
 };
 

@@ -149,14 +149,25 @@ Bu GPIO tablosu [[../07-decisions/ADR-0010-esp32-s3-n16r8-board|ADR-0010]] ile k
 | RGB kırmızı | GPIO8 | `R_R` -> LED R | PWM |
 | RGB yeşil | GPIO9 | `R_G` -> LED G | PWM |
 | RGB mavi | GPIO10 | `R_B` -> LED B | PWM |
-| I2C SDA | GPIO11 | INA226 SDA | Opsiyonel |
-| I2C SCL | GPIO12 | INA226 SCL | Opsiyonel |
+| I2C SDA | GPIO11 | INA219 `SDA` | Şarj akımı; [[../07-decisions/ADR-0018-ina219-current-sensor\|ADR-0018]] |
+| I2C SCL | GPIO12 | INA219 `SCL` | Aynı veri yolu |
 | Amfi susturma | GPIO21 | TPA3110 `SD` | **Aktif düşük.** 10 kΩ pull-down zorunlu. Rezervasyon: `SD` pad erişimi henüz doğrulanmadı |
 | DAC susturma | GPIO13 | PCM5102A `XSMT` | **Aktif düşük.** 10 kΩ pull-down zorunlu |
 | Paket gerilimi | GPIO1 | Bölücü -> ADC1_CH0 | Bölücü oranı `G3`/`G4`'ten gelir |
 | Hücre sıcaklığı | GPIO2 | NTC ağı -> ADC1_CH1 | Ağ ve eşikler `G4`'ten gelir |
+| Ekran SPI saat | GPIO47 | GC9A01 `SCL` | 33 Ω seri, ESP ucunda; [[../07-decisions/ADR-0017-round-display\|ADR-0017]] |
+| Ekran SPI veri | GPIO41 | GC9A01 `SDA` | 33 Ω seri. Geri okuma yok, `SDO` bağlanmaz |
+| Ekran CS | GPIO39 | GC9A01 `CS` | 33 Ω seri **+ 10 kΩ pull-up**. Açılışta boşta kalmalı |
+| Ekran D/C | GPIO40 | GC9A01 `DC` | 33 Ω seri |
+| Ekran reset | GPIO18 | GC9A01 `RST` | Doğrudan. Silikon bu pini açılışta **yüksek** sürüyor, aktif-düşük reset için güvenli seviye |
+| Ekran arka ışık | GPIO42 | 2N7002 kapısı | 100 Ω kapı direnci, 10 kΩ kapı-GND pull-down. LEDC timer 1 |
 
-Tablo [[../07-decisions/ADR-0011-audio-side-gpio-reservation|ADR-0011]] ile genişletildi.
+Tablo [[../07-decisions/ADR-0011-audio-side-gpio-reservation|ADR-0011]] ile genişletildi, ekran satırları [[../07-decisions/ADR-0017-round-display|ADR-0017]] ile eklendi.
+
+> [!warning] Ekran pinlerinin bedeli: pad-JTAG
+> `GPIO39-42` sırasıyla `MTCK`, `MTDO`, `MTDI`, `MTMS`'tir. Ekran bunları alınca **harici JTAG probu ile hata ayıklama kalmıyor.** `GPIO19/20` üzerindeki USB Serial/JTAG duruyor ve zaten bu yapının ikincil konsolu; kaybedilen prob, hata ayıklayıcının kendisi değil. Bedel burada yazıyor çünkü tezgâhta fark edilmesi kötü bir sürpriz olurdu.
+>
+> `GPIO14-17` bilerek boş bırakıldı. Serbest pinler arasında hem RTC yetenekli hem de strapping/USB/UART0/JTAG rolü olmayan tek dörtlü onlar, yani susturma hatlarının yedek havuzu. Ekrana verilmeleri bir güvenlik yedeğini bir kolaylığa çevirirdi.
 
 `GPIO6` ürünün dışında ikinci bir işe daha koşuluyor: tezgâhtaki geliştirme kartında S/PDIF çıkışı aynı pinden sürülüyor, bkz. 3.5. Ürün kablolamasında bu pin yalnız `DIN`'e gider.
 
@@ -465,7 +476,7 @@ Her adım için [[../templates/test-report|test raporu]] oluşturulur. Fiziksel 
 - [ ] Common-port veya separate-port, NTC'li kesin BMS modeli.
 - [ ] F1/F_CHG değeri, kablo kesiti ve konnektör akım sınıfı.
 - [ ] USB ile harici 5 V arasında jumper, Schottky OR veya load-switch seçimi.
-- [ ] INA226'nın yalnız prototip ölçümü mü yoksa kalıcı telemetri mi olacağı.
+- [ ] INA219'un yalnız prototip ölçümü mü yoksa kalıcı telemetri mi olacağı (ADR-0018).
 - [ ] XL4015 şarj sonlandırma davranışı ve sonlandırma yoksa uygulanacak çözüm (ADR-0009 G4 ölçümü).
 - [ ] PD tetikleyicinin 20 V profilini yük altında koruyup korumadığı.
 - [ ] `F_CHG` değeri ve XL4015 ters polarite koruma yöntemi.
