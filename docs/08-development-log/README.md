@@ -1,11 +1,13 @@
 ---
 status: active
 owner: orchestrator
-updated: 2026-09-05
+updated: 2026-09-08
 tags: [development-log, moc]
 ---
 
 # Geliştirme günlüğü
+
+- [[2026-09-08-portal-username-and-profile|2026-09-08 — Kayıt tutarlılığı, uygulamasız kurulum yolu ve kalibrasyon profili]]
 
 - [[2026-09-05-devkit-bring-up|2026-09-05 — N8R2 geliştirme kartı hedefi ve ilk silikon]]
 
