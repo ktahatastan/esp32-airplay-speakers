@@ -3,22 +3,27 @@
  * @brief Harman Kardom application entry point.
  *
  * What this build actually does: come up, report what it is, drive the button
- * and the LED, run the provisioning policy with real radios, and print what
+ * and the LED, run the provisioning policy with real radios, hold the output
+ * chain's two mute lines and move them when both gates allow it, and print what
  * every other policy concludes about the state the device is in.
  *
  * What it does not do, and why — each of these waits on a measurement, not on
  * someone finding the time:
  *
- *   F1  AirPlay stack chosen (ADR-0007) but not vendored; the integration is
- *       an architectural decision deferred until there is hardware to test on
- *   F2  audio path needs G1, the amplifier on a dummy load
- *   F3  DSP coefficients need G0, the driver impedance measurement
- *   F6  power telemetry needs an ADC driver and the G3/G4 thresholds
+ *   F2  the amplifier has never been run into a dummy load; G1 decides the
+ *       settle times hk_audio_hw is currently guessing
+ *   F3  no crossover, no protective high-pass and no limiter. The DSP
+ *       coefficients need G0, the driver impedance measurement
+ *   F6  power telemetry needs an ADC driver and the G3/G4 thresholds, so the
+ *       power gate has no input and refuses on principle
  *   F7  OTA client compiles but nothing runs it; needs G6
  *
- * The policy modules below are pure logic with no driver behind them yet, so
- * report_policies() runs each one and prints its verdict. A policy nobody
- * calls is indistinguishable from one that does not work.
+ * Most of the policy modules below are still pure logic with no driver behind
+ * them, so report_policies() runs each one and prints its verdict. A policy
+ * nobody calls is indistinguishable from one that does not work. hk_audio is
+ * the exception as of 2026-09-08: hk_audio_hw drives HK_PIN_AMP_MUTE and
+ * HK_PIN_DAC_XSMT for real, which means the verdict this file computes is no
+ * longer only printed. It is obeyed.
  *
  * Nothing here may grow into driving a real driver without the matching gate.
  */
@@ -43,6 +48,7 @@
 
 #include "hk_airplay.h"
 #include "hk_audio.h"
+#include "hk_audio_hw.h"
 #include "hk_button.h"
 #include "hk_display.h"
 #include "hk_identity.h"
@@ -50,6 +56,7 @@
 #include "hk_network.h"
 #include "hk_gate.h"
 #include "hk_health.h"
+#include "hk_view.h"
 #include "hk_ota.h"
 #include "hk_ota_client.h"
 #include "hk_pins.h"
@@ -124,6 +131,59 @@ static uint32_t now_ms(void)
     return (uint32_t)(esp_timer_get_time() / 1000);
 }
 
+/*
+ * What the power policy is given, and why it is so empty.
+ *
+ * There is no ADC driver yet (F6) and no G3/G4 thresholds, so both readings are
+ * the module's own "I do not have this" sentinels and the limits are NULL. The
+ * `charging` flag is the one that deserves a second look: it is false because
+ * nothing can read it, not because the device knows it is not charging. Written
+ * out here rather than inline at each call site so that the two places that ask
+ * about power cannot start asking different questions.
+ */
+static const hk_power_inputs_t HK_POWER_NO_TELEMETRY = {
+    .pack_mv = HK_POWER_MV_UNKNOWN,
+    .cell_c = HK_POWER_C_UNKNOWN,
+    .charging = false,
+};
+
+/** What the power policy concludes from that: HK_POWER_UNKNOWN, and correctly. */
+static hk_power_state_t power_state_now(void)
+{
+    return hk_power_evaluate(HK_POWER_UNKNOWN, &HK_POWER_NO_TELEMETRY, NULL);
+}
+
+/**
+ * Whether sound is allowed, as the whole device sees it.
+ *
+ * Two gates that answer different questions, and both have to say yes. Storage
+ * asks whether a measured driver-protection profile exists; power asks whether
+ * the pack and the charger allow sound right now. This is the one place they
+ * are combined, because hk_audio_hw is a hardware layer that drives two pins
+ * and should hold no policy, and because the bench exceptions below have to be
+ * applied where they can also be printed.
+ *
+ * The bench exception here is narrow on purpose, in the same shape as the one
+ * hk_storage already carries: it only lifts the refusal in the state the symbol
+ * is named after. HK_POWER_UNKNOWN means "no telemetry exists to judge", which
+ * is a true description of this board. CRITICAL, SHUTDOWN, SENSOR_FAULT and
+ * OVERHEAT are judgements, and a build that has declared it cannot measure a
+ * pack has no business overriding one.
+ */
+static bool audio_permitted_now(void)
+{
+    const hk_power_state_t power = power_state_now();
+    bool by_power = hk_power_audio_permitted(power, HK_POWER_NO_TELEMETRY.charging);
+
+#if CONFIG_HK_BENCH_AUDIO_WITHOUT_POWER_TELEMETRY
+    if (!by_power && power == HK_POWER_UNKNOWN && !HK_POWER_NO_TELEMETRY.charging) {
+        by_power = true;
+    }
+#endif
+
+    return hk_storage_audio_permitted() && by_power;
+}
+
 /**
  * Run each policy against what the device actually knows, and print the answer.
  *
@@ -151,22 +211,25 @@ static void report_policies(void)
 
     /* No ADC driver exists, so both readings are unknown. The point of printing
      * it is that the policy says so rather than assuming a healthy pack. */
-    const hk_power_inputs_t power_now = {
-        .pack_mv = HK_POWER_MV_UNKNOWN,
-        .cell_c = HK_POWER_C_UNKNOWN,
-        .charging = false,
-    };
-    const hk_power_state_t power = hk_power_evaluate(HK_POWER_UNKNOWN, &power_now, NULL);
+    const hk_power_state_t power = power_state_now();
     ESP_LOGI(TAG, "power       %s (no calibrated limits, no ADC driver)",
              hk_power_state_name(power));
     /* Two gates, reported separately because they answer different questions
      * and used to be read as one. Storage asks whether a measured protection
      * profile exists; power asks whether the pack and the charger allow sound
      * right now. Printing only one of them produced a boot report that said
-     * "audio NOT permitted" while the receiver was clocking I2S. */
-    ESP_LOGI(TAG, "audio       profile %s · power %s",
+     * "audio NOT permitted" while the receiver was clocking I2S.
+     *
+     * The verdict is printed with them, and it is not always their conjunction:
+     * a bench exception can lift one of these refusals, and a report that
+     * showed only the raw gates would say REFUSES on the line above while the
+     * amplifier came up underneath it. What the third field states is what
+     * hk_audio_hw is actually being told. */
+    ESP_LOGI(TAG, "audio       profile %s · power %s · verdict %s",
              hk_storage_audio_permitted() ? "permits" : "REFUSES",
-             hk_power_audio_permitted(power, false) ? "permits" : "REFUSES");
+             hk_power_audio_permitted(power, HK_POWER_NO_TELEMETRY.charging)
+                 ? "permits" : "REFUSES",
+             audio_permitted_now() ? "PERMITTED" : "muted");
 #if CONFIG_HK_BENCH_AUDIO_WITHOUT_PROFILE
     if (!hk_storage_profile_present()) {
         ESP_LOGW(TAG, "audio       BENCH EXCEPTION: no driver-protection profile exists "
@@ -175,27 +238,49 @@ static void report_policies(void)
                       "connected to the output.");
     }
 #endif
+#if CONFIG_HK_BENCH_AUDIO_WITHOUT_POWER_TELEMETRY
+    if (power == HK_POWER_UNKNOWN) {
+        ESP_LOGW(TAG, "audio       BENCH EXCEPTION: this board cannot measure its pack "
+                      "and the power gate is bypassed anyway "
+                      "(CONFIG_HK_BENCH_AUDIO_WITHOUT_POWER_TELEMETRY). No pack may be "
+                      "connected, and ADR-0004's charge lock is not being enforced.");
+    }
+#endif
+    if (audio_permitted_now()) {
+        /* Loud, and only when both exceptions have actually combined into a
+         * released amplifier. This is the state the two symbols exist to make
+         * visible rather than to make convenient. */
+        ESP_LOGW(TAG, "audio       THE AMPLIFIER WILL BE RELEASED when a stream arrives. "
+                      "There is no crossover, no protective high-pass and no limiter "
+                      "(F3 waits on G0). Check what is on the speaker terminals.");
+    }
 
     /* The output chain starts muted: the amplifier is held down by an external
      * pull-down, not by this firmware (ADR-0011).
      *
-     * "Starts", not "stays". With the AirPlay receiver built in, the I2S pins
-     * are clocked as soon as it comes up, seconds after this line is printed.
-     * The line is true when printed, and the suffix is what keeps it from
-     * reading as a promise about the rest of the boot. The DAC and amplifier
-     * mute lines are a different matter and do stay asserted: audio is not
-     * permitted without a protection profile, and the receiver does not get to
-     * override that. */
+     * "Starts", not "stays", and that used to be true of the I2S clocks alone.
+     * It is now true of all three lines. The receiver clocks I2S as soon as it
+     * comes up, seconds after this line is printed; and since hk_audio_hw
+     * exists, the DAC and amplifier mute lines are no longer permanently
+     * asserted either -- they follow the sequence, and the sequence follows the
+     * verdict printed above. The suffix says which of those applies to this
+     * build, because a line that read as a promise about the rest of the boot
+     * would be the wrong thing to leave in a log next to an amplifier.
+     *
+     * This chain is a throwaway used to name the resting state. The one that
+     * drives the pins belongs to hk_audio_hw and is started further down. */
     hk_audio_t chain;
     hk_audio_init(&chain, 0);
     const hk_audio_outputs_t lines = hk_audio_outputs(chain.state);
     ESP_LOGI(TAG, "output      %s (i2s=%d dac=%d amp=%d)%s",
              hk_audio_state_name(chain.state),
              lines.i2s_running, lines.dac_unmuted, lines.amp_enabled,
+             audio_permitted_now()
+                 ? ", until a stream arrives and the sequence releases both mute lines"
 #if CONFIG_HK_AIRPLAY
-             ", until the AirPlay receiver clocks I2S"
+                 : ", and the mute lines stay asserted; only I2S is clocked, by the receiver"
 #else
-             ""
+                 : ""
 #endif
              );
 
@@ -624,10 +709,22 @@ static void on_button(hk_button_event_t event, void *context)
  * The LED has one owner, and this is how a fact from another subsystem reaches
  * it: hk_ui arbitrates, so playback can never outrank a fault. The precedence
  * lives in hk_led, not here.
+ *
+ * It is also the stream_live signal the output sequence runs on. The two
+ * consumers are told in the order they matter in: the mute sequence is what
+ * decides whether a tweeter sees anything, the LED is what decides whether a
+ * person sees anything. Both calls do nothing but store a value, which is all
+ * the RTSP task should be asked to pay for.
+ *
+ * Note what "playing" does NOT mean here: RTSP_EVENT_CLIENT_CONNECTED is
+ * excluded upstream in hk_airplay.c, so a phone that has selected this speaker
+ * without starting a track leaves the amplifier down. That is the right way
+ * round -- a session with no audio in it is not a reason to energise anything.
  */
 static void on_airplay_state(bool playing, void *context)
 {
     (void)context;
+    hk_audio_hw_set_stream_live(playing);
     hk_ui_set_playing(playing);
 }
 #endif
@@ -746,10 +843,33 @@ void app_main(void)
                       "not a calibration: nothing may be connected to the output.");
     }
 
-    /* The UI is the one subsystem whose hardware layer exists, so it really
-     * runs: the button is read and the LED is driven. The handle is published
-     * before the task starts, so the first possible press already has somewhere
-     * to send its work. */
+    /* The output chain's hardware layer: two mute GPIOs and the task that moves
+     * them. Nothing before this point has ever driven HK_PIN_AMP_MUTE or
+     * HK_PIN_DAC_XSMT, which is not a race — hk_pins.h is explicit that the
+     * external pull-downs are the mechanism that holds them safe through the
+     * ROM, the bootloader and all of app init, and this firmware's job is only
+     * ever to RELEASE mute. So it is started here, after the boot report has
+     * said what it thinks, rather than being hurried in front of it.
+     *
+     * The verdict is pushed before the task exists, so the first tick already
+     * has the real answer instead of the module's own safe default.
+     *
+     * Not fatal: a speaker whose mute lines could not be configured is a
+     * speaker that stays quiet, which is the correct outcome, and taking the
+     * device down would remove the only way to tell anyone about it. */
+    hk_audio_hw_set_permitted(audio_permitted_now());
+    {
+        const esp_err_t chain_err = hk_audio_hw_start();
+        if (chain_err != ESP_OK) {
+            ESP_LOGE(TAG, "the output chain did not start: %s. The mute lines are left "
+                          "to their pull-downs and nothing will release them.",
+                     esp_err_to_name(chain_err));
+        }
+    }
+
+    /* The button is read and the LED is driven. The handle is published before
+     * the task starts, so the first possible press already has somewhere to
+     * send its work. */
     s_main_task = xTaskGetCurrentTaskHandle();
     ESP_ERROR_CHECK(hk_ui_start(on_button, NULL));
 
@@ -816,6 +936,38 @@ void app_main(void)
             (void)hk_airplay_start(on_airplay_state, NULL);
         }
 #endif
+
+        /* What the screen cannot ask for itself.
+         *
+         * Both of these are polled rather than pushed because neither has an
+         * event: the radio does not announce a change in signal strength, and
+         * whether audio is permitted is a conclusion drawn from storage rather
+         * than something that happens. Once a second is finer than either
+         * changes and costs nothing next to the radios. */
+        int rssi = 0;
+        if (hk_network_rssi(&rssi)) {
+            hk_view_set_rssi(rssi);
+        } else {
+            hk_view_clear_rssi();
+        }
+
+        /* Both gates, on the same clock, to the two things that act on them.
+         *
+         * Polled for the same reason the rest of this block is: neither gate
+         * has an event behind it. A profile appears when a calibration is
+         * written, and the power state will change when an ADC driver exists
+         * to change it -- and when it does, this is where the latency lives.
+         * One second is far finer than a profile changes and much coarser than
+         * a pack sagging under load, so F6 will need to push this rather than
+         * let it be polled. Said here because that is where it will be missed.
+         *
+         * The screen is told the same conclusion the amplifier is. It used to
+         * be shown only the storage gate, which meant the padlock could be
+         * open on a board whose power gate was refusing and whose amplifier
+         * was therefore never going to make a sound. */
+        const bool audio_ok = audio_permitted_now();
+        hk_audio_hw_set_permitted(audio_ok);
+        hk_view_set_audio_locked(!audio_ok);
 
         /* Confirm or roll back this image, once, when the evidence is in. */
         hk_health_monitor_tick(now_ms());

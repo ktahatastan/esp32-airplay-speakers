@@ -1,13 +1,38 @@
 # Bench-only fragment. NEVER part of a release.
 #
-# Adds one thing to the product profile: permission to run the audio path on a
-# board that has no driver-protection profile. That gate is what keeps an
-# unmeasured tweeter alive, so this is defensible only while nothing is
-# connected to the output -- no DAC, no amplifier, no driver.
+# It adds TWO exceptions to the product profile, and they are two symbols rather
+# than one because the record of which safety evidence a build went without is
+# the entire point of having them:
+#
+#   HK_BENCH_AUDIO_WITHOUT_PROFILE          No G0/G2 driver-protection profile
+#                                           exists, so there is no crossover, no
+#                                           protective high-pass and no limiter
+#                                           ceiling in front of the amplifier.
+#
+#   HK_BENCH_AUDIO_WITHOUT_POWER_TELEMETRY  No ADC driver (F6) and no G3/G4
+#                                           thresholds exist, so the pack cannot
+#                                           be judged at all -- and neither can
+#                                           ADR-0004's "not while charging".
+#
+# TOGETHER THEY RELEASE THE AMPLIFIER, and that is a change from what this file
+# used to mean. Until 2026-09-08 nothing in this firmware ever drove
+# HK_PIN_AMP_MUTE or HK_PIN_DAC_XSMT, so the exception above bought a clocked
+# I2S bus and nothing else. hk_audio_hw now drives both lines, and it releases
+# them when both gates say yes. With both symbols set, a DAC on the I2S pins and
+# an amplifier on the mute line, full-scale AirPlay audio reaches whatever is
+# wired to that amplifier's output, with nothing in front of it.
+#
+# So the standard for "defensible" has moved with it. This is defensible into a
+# dummy load, into a scope, or into nothing at all. It is NOT defensible into
+# the Nova drivers: their individual impedance is still the open G0 blocker, and
+# without it there is no informed limit on what the amplifier may be asked to
+# produce. Look at what is connected to the speaker terminals before you flash
+# a build made from this file.
 #
 # Build with it:
 #   idf.py -C firmware -B firmware/build-bench \
 #     -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.bench" \
 #     -D SDKCONFIG="$PWD/firmware/build-bench/sdkconfig" build
 CONFIG_HK_BENCH_AUDIO_WITHOUT_PROFILE=y
+CONFIG_HK_BENCH_AUDIO_WITHOUT_POWER_TELEMETRY=y
 CONFIG_HK_DISPLAY_SELF_TEST=y

@@ -77,6 +77,51 @@ config HK_BENCH_AUDIO_WITHOUT_PROFILE
         credentials put a schema version into the calibration namespace, and
         that alone was read as "calibrated".
 
+        It is not the only gate. HK_BENCH_AUDIO_WITHOUT_POWER_TELEMETRY below
+        bypasses the other one, and the amplifier is only released when both
+        answer yes.
+
+config HK_BENCH_AUDIO_WITHOUT_POWER_TELEMETRY
+    bool "Permit audio on a board that cannot measure its own pack"
+    default n
+    help
+        DANGEROUS ON A BATTERY. Leave this off unless the board is running from
+        USB or a current-limited bench supply and you can see that no Li-ion
+        pack is connected to it.
+
+        The evidence this one skips, named exactly: there is no ADC driver
+        (firmware stage F6) and no G3/G4 thresholds, so hk_power_evaluate() is
+        handed HK_POWER_MV_UNKNOWN and a NULL limits set, returns
+        HK_POWER_UNKNOWN, and hk_power_audio_permitted() then refuses. That
+        refusal is CORRECT and stays correct for the product: a pack nobody can
+        measure is not a pack known to be fine, and driving an amplifier from
+        one is how a cell gets taken below its floor with nothing to notice.
+
+        It is a SEPARATE symbol from HK_BENCH_AUDIO_WITHOUT_PROFILE, and
+        deliberately so. The two gates answer different questions -- does a
+        measured driver-protection profile exist, and does the pack allow sound
+        right now -- and folding them into one switch would destroy the only
+        thing these symbols are for: the record of WHICH safety evidence a
+        given build went without. A board on USB with a dummy load needs this
+        one and not that one; a board with a good pack and no calibration needs
+        that one and not this one.
+
+        Narrow on purpose. It only applies where the state is HK_POWER_UNKNOWN,
+        which is the "no telemetry exists" case it is named after. On the day
+        an ADC driver lands and reports CRITICAL, SHUTDOWN, SENSOR_FAULT or
+        OVERHEAT, this symbol does nothing and the amplifier stays down. It
+        does not turn the power gate off; it declares that the gate has no
+        input yet.
+
+        ONE THING IT CANNOT TELL YOU. ADR-0004 says V1 does not play while
+        charging, and that lock lives inside the same function. With no
+        telemetry the `charging` flag is reported false because nothing can
+        read it, not because the device knows it is not charging. So on a board
+        that is both on this exception and on a charger, the charge lock is not
+        being enforced -- it is being answered by a placeholder. That is
+        survivable on USB and it is not survivable on the XL4015 charge chain
+        of ADR-0009.
+
 config HK_DUAL_TRANSPORT
     bool "Offer BLE and SoftAP provisioning at the same time"
     default y
