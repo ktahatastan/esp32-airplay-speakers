@@ -129,7 +129,8 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
   - [x] BLE transport'u NimBLE ile etkinleştirildi. ADR-0005 seçenek C: transport girişten türetilir — kimlik bilgisi yoksa SoftAP, yapılandırılmış cihazda butonla BLE.
   - [x] Provisioning politikası artık gerçekten işletiliyor. Önceki hâlinde `hk_prov_handle` her yerde `now_ms = 0` ile çağrılıyor, `HK_PROV_EV_TICK` hiç gönderilmiyor ve `hk_prov_radios()` hiç okunmuyordu: on dakikalık sınırlı pencere hiçbir zaman dolamazdı. Ana döngü saniyede bir tick veriyor ve pencere kapandığında `hk_network_close_provisioning()` çağrılıyor.
   - [x] iOS'ta **uygulamalı BLE** akışı uçtan uca çalıştı: QR'lı kurulum, kimlik bilgisi teslimi, katılma ve `provisioning succeeded` (2026-09-05, geliştirme kartı).
-  - [ ] **Uygulamasız yol yok.** `wifi_prov_scheme_softap` sayfa sunmuyor, yalnız protocomm uç noktaları açıyor; Espressif'in SoftAP uygulaması da AES-GCM katmanında düşüyor. PRD-004'ün uygulamasız kurulum gereksinimi karşılanmıyor — captive portal yazılacak ya da ADR-0005 revize edilecek.
+  - [x] Uygulamasız yol **yazıldı** (ADR-0015, `hk_portal`): kurulum ağı WPA2, captive DNS her adı cihaza çözüyor, portal sayfası düz bir form ve aldığı bilgiyi `wifi_prov_mgr_configure_sta()` ile yöneticiye veriyor. Form ayrıştırıcısı saf C ve host'ta testli.
+  - [ ] Uygulamasız yol **ölçülmedi**: hiçbir telefon bu sayfayı açmadı. PRD-004 bu ölçüm olmadan kapanmaz.
   - [ ] Android'de hiçbir akış denenmedi.
   - [x] Provisioning kapandığında BLE belleğinin geri verildiği ölçüldü: `BTDM memory released`, ardından `provisioning closed and its memory released`.
   - [x] Wi-Fi parolası ve PoP'un loglarda görünmediği otomatik taramayla denetleniyor (`tools/check_no_credential_logs.py`, CI'da).

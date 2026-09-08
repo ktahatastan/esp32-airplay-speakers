@@ -19,7 +19,7 @@ Her hoparlörde üç kullanıcı arayüzü öğesi bulunacak:
 
 Wi-Fi kurulumu iki yöntemle sunulacak:
 
-- Uygulamasız: SoftAP + captive portal.
+- Uygulamasız: WPA2 korumalı SoftAP + kendi captive portal'ımız ([[07-decisions/ADR-0015-softap-captive-portal|ADR-0015]]).
 - Bluetooth LE: ESP-IDF Unified Provisioning. Espressif uygulaması veya ileride hazırlanacak özel iOS/Android uygulaması kullanılacak.
 
 > [!note] İkisi sırayla sunulur, aynı anda değil
@@ -36,17 +36,24 @@ Plan duruyor. Değişen, ilk kez bir geliştirme kartında denenmiş olması —
 | Plandaki söz | 2026-09-05'te ne var |
 |---|---|
 | SoftAP açılıyor, adı `HarmanKardom-Setup-XXXX` | **Var.** Donanımda açıldı; kimlik bilgileri `factory_cal`'dan yükleniyor (salt 16 B, verifier 384 B). |
-| SoftAP'a bağlanan telefonda kurulum sayfası açılıyor | **Yok.** O sayfayı sunan hiçbir şey yazılmadı. |
+| SoftAP'a bağlanan telefonda kurulum sayfası açılıyor | **O gün yoktu.** 2026-09-08'de yazıldı (ADR-0015, `hk_portal`) ve **hiçbir donanımda denenmedi**. |
 | BLE yayını, Security 2 / SRP6a, QR ile kurulum | **Var ve uçtan uca çalışıyor.** Bir iPhone'dan ağa katılındı. |
 | LED desenleri | **Kısmen görüldü.** Kartta harici RGB LED yok, ama `hk_ui` aynı render geçişini kartın kendi adreslenebilir LED'ine aynalıyor; `ready` (yeşil) ve `playing` (mor nefes) sahibi tarafından doğrulandı. `ota`, `battery_low` ve buton geri sayımları görülmedi. |
 | Butonla açılan pencere | **Kısa basış ve 5 sn doğrulandı** (`GPIO7`-`GND` köprüsüyle), çökme yok. 12 sn fabrika sıfırlaması henüz üretilmedi. Pencerenin 10 dakikada kendi kendine kapanması ölçülmedi. |
 | Güç anahtarı | **Denenmedi.** Kartta yok. |
 
-### Uygulamasız yol bir tasarım, henüz bir yol değil
+### Uygulamasız yol: 2026-09-05'te yoktu, 2026-09-08'de yazıldı
 
-`wifi_prov_scheme_softap` bir web sayfası sunmuyor; `192.168.4.1` üzerinde protocomm uç noktaları açıyor. Bu yüzden SoftAP'a katılmak hiçbir şey açmıyor, captive portal algılaması da açacak bir sayfa bulamıyor. `hk_identity.h`'deki `HK_PORTAL_TITLE` hiçbir şeyin sunmadığı bir sayfayı adlandırıyor.
+O gün görülen şuydu: `wifi_prov_scheme_softap` bir web sayfası sunmuyor, `192.168.4.1` üzerinde yalnız protocomm uç noktaları açıyor. SoftAP'a katılmak hiçbir şey açmıyordu ve captive portal algılaması açacak bir sayfa bulamıyordu. ADR-0005'in gerekçesi — "uygulamasız yol her zaman erişilebilir olmalı" — yazılmış, karşılığı yazılmamıştı.
 
-[[07-decisions/ADR-0005-dual-provisioning|ADR-0005]]'in gerekçesi — "uygulamasız yol her zaman erişilebilir olmalı" — yazılmış, karşılığı yazılmamış. Karar geçerli, eksik olan captive portalın kendisi. O yazılana kadar bu belgedeki "uygulamasız" sözü bir tasarımdır: kayıtlı kimlik bilgisi olmayan bir cihazda son kullanıcıya kalan bir kurulum yolu yoktur. ESP-IDF'in kendi `esp_prov.py`'si bağlanıyor, ama o bir geliştirici aracıdır ve ürün vaadinin karşılığı değildir.
+Karşılığı [[07-decisions/ADR-0015-softap-captive-portal|ADR-0015]] ile yazıldı, ve kararın belirleyici noktası sayfanın kendisi değil, **gizliliğin nereden geldiği**:
+
+- Kurulum ağı artık **açık değil, WPA2**. Anahtarı cihaz başına kurulum parolasıdır — etiketteki parolanın aynısı. Ağa katılabilen kişi zaten parolayı bilen kişidir ve bağlantı 802.11 katmanında şifrelidir.
+- Sayfa bu yüzden **düz bir form** olabiliyor. Alternatifi, tarayıcı düz HTTP'de kendi kriptosunu (`crypto.subtle`) vermediği için, SHA-512/AES-GCM/3072-bit modexp'i elle yazıp flash'tan servis etmekti.
+- Sayfa ikinci bir kurulum yolu değil: aldığı bilgiyi `wifi_prov_mgr_configure_sta()` ile yöneticiye veriyor, yani bağlanma ve pencere kapatma mantığı tek yerde kalıyor.
+- Bedeli kayda geçti: WPA2 anahtarı cihazda düz metin durmak zorunda. Flash'ı okuyabilen biri kullanıcının ev Wi-Fi parolasını zaten `nvs`'ten alıyor, o yüzden bu yeni bir maruziyet açmıyor — ayrıntı ADR-0015'te.
+
+**Hiçbiri donanımda denenmedi.** Bugün kanıtlanan, iki profilin de derlendiği ve form ayrıştırıcısının host'ta test edildiğidir. Telefonun kurulum sayfasını kendiliğinden açtığı bir tezgâh iddiasıdır ve henüz yapılmadı.
 
 ### BLE çalışıyor, ve hangi uygulamayla çalıştığı önemli
 
@@ -73,12 +80,12 @@ Kart geliştirme sırasında yönlendiricinin misafir ağındaydı ve o ağ tasa
 ### Uygulamasız deneyim
 
 - Cihaz ilk açılışta veya provisioning tuşuna basılınca `HarmanKardom-Setup-XXXX` isimli 2,4 GHz SoftAP açar.
-- Kullanıcı telefonun Wi-Fi listesinden bu ağı seçer veya cihaz altındaki Wi-Fi QR kodunu tarar.
+- Kullanıcı telefonun Wi-Fi listesinden bu ağı seçer ve etiketteki kurulum parolasını girer; ağ WPA2 korumalıdır (ADR-0015).
 - iOS/Android captive portal algılaması kurulum sayfasını otomatik açmayı dener.
 - Portal otomatik açılmazsa sabit adres `192.168.4.1` kullanılır.
 
-> [!warning] 2026-09-05 — son iki madde henüz karşılıksız
-> `192.168.4.1`'de sunulan bir sayfa yok, captive portal yazılmadı. Bu liste ne olacağını anlatıyor, bugün ne olduğunu değil. Gerekçe: yukarıdaki "Plan ile bugün arasındaki fark".
+> [!warning] 2026-09-08 — yazıldı, ölçülmedi
+> Sayfa ve captive DNS artık var (`hk_portal`, ADR-0015) ve kurulum ağı WPA2 olduğu için listedeki ikinci madde de değişti: kullanıcı ağı seçerken etiketteki parolayı girer. Hiçbiri bir kartta denenmedi.
 
 Bu yöntem özel uygulama istemez, ancak telefonun BLE yayınını görür görmez ana ekranda Apple/Android sistem kartı açması garanti edilemez.
 
@@ -133,7 +140,7 @@ mDNS + AirPlay       hata LED'i + yeniden dene
 - Başarılı bağlantıdan sonra BLE ve SoftAP tamamen kapatılır.
 - Art arda bağlantı hatasında cihaz kontrollü olarak tekrar provisioning moduna döner.
 - Wi-Fi parolası hiçbir log, web sayfası geri cevabı veya seri telemetride gösterilmez.
-- 2026-09-05: Şemadaki "BLE yayını + SoftAP captive portal" kutusunun SoftAP yarısı gerçek, captive portal yarısı henüz yok. Kutu ayrıca ikisini yan yana gösteriyor; ADR-0005 sırayla sunuyor.
+- 2026-09-05/08: Şemadaki "BLE yayını + SoftAP captive portal" kutusunun SoftAP yarısı donanımda gerçek; captive portal yarısı 2026-09-08'de yazıldı ama denenmedi. Kutu ayrıca ikisini yan yana gösteriyor; ADR-0015 (ADR-0005'ten devralarak) sırayla sunuyor.
 
 ## Çok-fonksiyonlu buton davranışı
 

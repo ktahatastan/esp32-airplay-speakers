@@ -62,7 +62,9 @@ Kilitli kararlar `AGENTS.md` içindedir ve yalnız supersede eden ADR ile deği�
 - [ ] 12 sn fabrika sıfırlamayı **donanımda** doğrula; 2026-09-05'te basış olay üretmedi (köprü teması).
 - [x] Fabrika sürücü koruma/limiter kalibrasyonunu kullanıcı resetinden ayrı NVS alanında tut (ayrı partition; gerçek NVS ile test edildi).
 - [x] RGB LED durum sürücüsünü audio task'tan bağımsız düşük öncelikli görev olarak geliştir.
-- [ ] **Captive portal yok.** `wifi_prov_scheme_softap` sayfa sunmuyor; PRD-004'ün uygulamasız kurulum gereksinimi karşılanmıyor. Portalı yaz ya da ADR-0005'i revize et.
+- [x] Captive portalı yaz (ADR-0015: WPA2 kurulum ağı + `hk_portal`).
+- [ ] Portalı donanımda dene: iOS ve Android kurulum sayfasını kendiliğinden açıyor mu, ağ listesi doluyor mu, kimlik bilgisiyle katılıyor mu?
+- [ ] WPA2 kurulum ağının BLE + Security 2 yolunu bozmadığını donanımda doğrula.
 - [x] ESP-IDF Unified Provisioning BLE transport ve Security 2 / benzersiz PoP ekle.
 - [x] SRP6a kullanıcı adına karar ver — ADR-0014: `wifiprov`, çünkü ad sır değil ve özel bir ad yalnız QR'sız yolu kırıyor.
 - [ ] Verifier değiştiği için QR'lı BLE kurulumunu donanımda **tekrar** doğrula.

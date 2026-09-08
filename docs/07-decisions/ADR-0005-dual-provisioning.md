@@ -1,12 +1,16 @@
 ---
-status: accepted
-decision: accepted
+status: superseded
+decision: superseded
 owner: firmware-engineer
-updated: 2026-08-31
+updated: 2026-09-08
+superseded_by: ADR-0015
 tags: [adr, provisioning]
 ---
 
 # ADR-0005: Çift provisioning
+
+> [!warning] Bu karar [[ADR-0015-softap-captive-portal|ADR-0015]] ile aşıldı.
+> Taşıma seçimi (aşağıdaki seçenek C tablosu) aynen geçerlidir ve ADR-0015 onu tekrar ediyor. Aşılan kısım SoftAP ayağının içidir: kurulum ağı açık değil WPA2'dir, ve captive portal ESP-IDF'ten gelmez, `hk_portal` bileşeninde bizim tarafımızdan sunulur.
 
 Uygulamasız SoftAP/captive portal ile güvenli BLE Unified Provisioning birlikte sunulur. Özel Apple/Android sistem kartı ancak companion app ile sağlanır; platform kimliği taklit edilmez.
 

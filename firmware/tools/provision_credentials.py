@@ -71,6 +71,9 @@ SALT_LEN = 16
 #: Password length. The alphabet below has 30 symbols, so 12 characters carry
 #: about 59 bits: far beyond anything a rate-limited provisioning session can be
 #: brute forced through, while still being typable off a printed label.
+#: It is also the setup network's WPA2 key (ADR-0015), which puts a hard floor
+#: of 8 under it -- WPA2 rejects anything shorter, and it would fail as a
+#: network that never appears rather than as a rejected password.
 PASSWORD_LEN = 12
 
 #: Ambiguous glyphs are left out. This gets read off a small label and typed
@@ -202,6 +205,16 @@ def write_device(out_dir: Path, device_id: str, srp6a) -> str:
     (device_dir / "prov_salt.bin").write_bytes(salt)
     (device_dir / "prov_verif.bin").write_bytes(verifier)
 
+    # The same password again, this time as itself, because the setup network is
+    # WPA2 and WPA2 needs the key on both ends (ADR-0015). The verifier above
+    # cannot be turned back into it, which is the point of Security 2 -- and the
+    # reason a second copy has to exist for the app-less path to work at all.
+    #
+    # Written as bytes rather than as an NVS string so the firmware reads it
+    # back through the same read-only blob path as the other two: one opener of
+    # factory_cal is what keeps the PRD-008 wall in one place.
+    (device_dir / "ap_pass.bin").write_bytes(password.encode("ascii"))
+
     # nvs_partition_gen.py CSV. The namespace and keys match hk_storage.h and
     # the reader in hk_network.c.
     (device_dir / "factory_cal.csv").write_text(
@@ -209,7 +222,8 @@ def write_device(out_dir: Path, device_id: str, srp6a) -> str:
         "cal,namespace,,\n"
         "schema,data,u32,1\n"
         "prov_salt,file,binary,prov_salt.bin\n"
-        "prov_verif,file,binary,prov_verif.bin\n",
+        "prov_verif,file,binary,prov_verif.bin\n"
+        "ap_pass,file,binary,ap_pass.bin\n",
         encoding="utf-8")
 
     (device_dir / "qr.txt").write_text(qr_payload(device_id, password, "softap") + "\n",
@@ -222,15 +236,21 @@ def write_device(out_dir: Path, device_id: str, srp6a) -> str:
         f"setup password : {password}\n"
         f"username       : {USERNAME}\n"
         f"softap ssid    : {SOFTAP_NAME.format(device_id=device_id)}\n"
+        f"softap password: {password}  (the same one; the setup network is WPA2)\n"
         f"ble name       : {BLE_NAME.format(device_id=device_id)}\n"
         f"\n"
         f"QR (SoftAP, first setup):\n{qr_payload(device_id, password, 'softap')}\n"
         f"\n"
         f"QR (BLE, button-opened window):\n{qr_payload(device_id, password, 'ble')}\n"
         f"\n"
-        f"This file is the only copy of the password. The speaker stores only a\n"
-        f"salt and a verifier and cannot reveal it. Losing this file means the\n"
-        f"device has to be re-flashed with new credentials.\n",
+        f"Without an app: join the SoftAP above with this password and the setup\n"
+        f"page opens by itself. With an app: scan a QR.\n"
+        f"\n"
+        f"This file is the only copy of the password. Losing it means the device\n"
+        f"has to be re-flashed with new credentials. The speaker holds the SRP6a\n"
+        f"half as a salt and verifier it cannot reverse, but the WPA2 half is\n"
+        f"stored as itself, because an access point cannot work otherwise\n"
+        f"(ADR-0015).\n",
         encoding="utf-8")
     label.chmod(0o600)
 

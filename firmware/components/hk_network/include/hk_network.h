@@ -29,13 +29,16 @@
  * user who needs the app-less route on a configured device holds the button for
  * 5 s to clear the credentials, which lands them back in the first case.
  *
- * MEASURED ON HARDWARE 2026-09-05: the app-less half of that is not true yet.
- * Joining the SoftAP opens nothing. wifi_prov_scheme_softap serves protocomm
- * endpoints at 192.168.4.1, not a web page, so a phone that joins sits on a
- * network with no captive portal to redirect it, and HK_PORTAL_TITLE in
- * hk_identity.h names a page nothing serves. What exists today is the Espressif
- * provisioning app or ESP-IDF's esp_prov.py. The paragraph above is the design;
- * until a portal is served it should not be read as a description.
+ * The app-less half was a promise with nothing behind it until ADR-0015, and
+ * hardware showed it on 2026-09-05: joining the SoftAP opened nothing, because
+ * wifi_prov_scheme_softap serves protocomm endpoints at 192.168.4.1 and not a
+ * web page. The portal is now ours -- hk_portal serves the page and answers
+ * every DNS query so a phone opens it by itself -- and the setup network is
+ * WPA2 rather than open, which is what lets that page be a plain form instead
+ * of hand-written cryptography running in a browser over cleartext HTTP.
+ *
+ * NOT YET MEASURED: none of that has been exercised on a board. It compiles and
+ * its parsing is tested; that a phone opens the sheet is a claim for a bench.
  *
  * The bring-up devkit has no button, so under the rule above its BLE transport
  * can never be reached, and a transport nothing can reach is one nothing can
@@ -64,7 +67,8 @@
  * logged and reasoned about.
  */
 typedef enum {
-    HK_NET_SCHEME_SOFTAP = 0, /**< App-less: SoftAP plus a captive portal */
+    HK_NET_SCHEME_SOFTAP = 0, /**< App-less: WPA2 SoftAP plus hk_portal's own
+                                   captive portal (ADR-0015). */
     HK_NET_SCHEME_BLE,        /**< Espressif provisioning apps over BLE.
                                    Needs CONFIG_BT_ENABLED; without it the call
                                    fails with ESP_ERR_NOT_SUPPORTED rather than

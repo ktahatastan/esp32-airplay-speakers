@@ -23,6 +23,7 @@ int main(void)
     HK_RUN(test_biquad);
     HK_RUN(test_sched);
     HK_RUN(test_settings);
+    HK_RUN(test_portal);
 #ifdef HK_HAVE_CJSON
     HK_RUN(test_manifest_json);
 #endif
