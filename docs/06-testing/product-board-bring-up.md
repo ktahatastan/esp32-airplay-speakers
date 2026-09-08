@@ -158,3 +158,98 @@ Boş bellek, geliştirme kartına göre beklendiği gibi büyük: **8.386.156 B 
 ## Küçük bir tutarsızlık
 
 `hk_health` `image state 2` bildiriyor (`ESP_OTA_IMG_VALID`), `-1`/`UNDEFINED` değil — çünkü `ota_data_initial.bin` açıkça yazıldı. Sonuç aynı ve doğru: onaylanacak bir şey yok, rollback yolu yalnız `PENDING_VERIFY`'da iş yapar. Kayda geçiyor çünkü "ilk açılışta state `-1` olmalı" beklentisi yanlıştır ve bir sonraki oturumu yanlış yere baktırabilir.
+
+---
+
+## Kimlik bilgileri yazıldı, ve portal ilk kez çalıştırıldı
+
+`provision_credentials.py --device 932C --image` ile üretildi (çıktı depo dışında, dizin `700`), `0x13000`'a yazıldı, `Hash of data verified`. İmaj 53.248 bayt = `0xd000`, ilk NVS sayfası ACTIVE, beş anahtarın beşi de yerinde: `cal`, `schema`, `prov_salt`, `prov_verif`, `ap_pass`.
+
+Üretici tarafında bir kusur bulundu ve düzeltildi: yalnız `label.txt` `600` yapılıyordu, oysa **`ap_pass.bin` parolayı düz metin taşıyor** ve `qr.txt` de aynı parolayı `pop` alanında taşıyor; ikisi de `644`'tü. Üçü de artık `600`. `prov_salt`/`prov_verif` bilerek açık: salt telde açık gider, verifier parolaya çevrilemez.
+
+### İlk deneme: açılış döngüsü
+
+Kimlik bilgileri yazıldıktan sonra cihaz **açılış döngüsüne** girdi — 25 saniyede 16 açılış, her biri tam olarak `hk_portal: setup page open` satırından sonra. Deterministik `LoadProhibited`, her seferinde birebir aynı backtrace:
+
+```text
+httpd_find_uri_handler          IDF/components/esp_http_server/src/httpd_uri.c:89
+httpd_register_uri_handler      IDF/components/esp_http_server/src/httpd_uri.c:139
+protocomm_httpd_add_endpoint    IDF/components/protocomm/.../protocomm_httpd.c:206
+protocomm_set_security          IDF/components/protocomm/src/common/protocomm.c:290
+wifi_prov_mgr_start_provisioning IDF/components/wifi_provisioning/src/manager.c:1715
+start_provisioning              firmware/components/hk_network/hk_network.c:414
+```
+
+Sebep, ADR-0015'i uygularken yaptığım bir hataydı ve iki katmanlıydı:
+
+1. `wifi_prov_scheme_softap_set_httpd_handle()`'ın parametresi "Handle to HTTPD server instance" diye belgeli, ama protocomm onu **handle'a işaretçi** olarak kullanıyor: `protocomm_httpd.c:205-206` `httpd_handle_t *server = pc_httpd->priv;` ardından `httpd_register_uri_handler(*server, ...)`. Handle'ın **değerini** geçmek, protocomm'a o sayıyı adres sanıp oradan bir sunucu yapısı okutur.
+2. Daha derini ömür: handle `start_provisioning()`'in **yığın çerçevesinde** duruyordu. `&server` geçilseydi bile protocomm, pencere açık kaldığı sürece ölü bir yığın adresini tutacaktı.
+
+Düzeltme ikisini birden kapatıyor: `hk_portal` kendi statiğinin adresini veren bir fonksiyon sunuyor (`hk_portal_server_slot()`), yani hem doğru dolaylılık hem sahibine bağlı ömür. Teardown güvenli: protocomm işaretçiyi yalnız kendi ayırdığında `free` ediyor (`ext_handle_provided` yanlışken), bu yol her zaman o bayrağı doğru yapıyor.
+
+Bu kusur host testleriyle yakalanamazdı: iki ESP-IDF bileşeni arasındaki bir sözleşme, ve yalnız gerçek silikonda görünüyor.
+
+### Düzeltmeden sonra ölçülen
+
+```text
+hk_store: calibration store: match -> use
+hk: storage     user=use calibration=use
+hk_net: provisioning credentials loaded: salt 16 B, verifier 384 B
+hk_net: setup network key loaded: 12 B
+hk_portal: setup page open at http://192.168.4.1/
+wifi:mode : sta + softAP
+esp_netif_lwip: DHCP server started on interface WIFI_AP_DEF with IP: 192.168.4.1
+wifi_prov_mgr: Provisioning started with service name : HarmanKardom-Setup-932C
+hk_net: provisioning open over softap
+```
+
+| Ölçüm | Sonuç |
+|---|---|
+| Kalibrasyon deposu okunuyor | **PASS** — `calibration=use` |
+| SRP6a salt/verifier yükleniyor | **PASS** — 16 B / 384 B |
+| ADR-0015'in `ap_pass`'i yükleniyor | **PASS** — 12 B, ilk kez bir cihazda |
+| Portal ayağa kalkıyor | **PASS** — `192.168.4.1` |
+| SoftAP + DHCP açılıyor | **PASS** |
+| Provisioning doğru adla açılıyor | **PASS** — `HarmanKardom-Setup-932C` |
+| Açılış döngüsü / panik | **PASS** — 1 açılış, 0 panik |
+| Ses hâlâ izinsiz | **PASS** — kalibrasyon var ama sürücü profili yok |
+
+**Dışarıdan doğrulanmadı:** Mac'in komşu ağ taraması 17 ağ döndürdüğü hâlde `HarmanKardom-Setup-932C`'yi göstermedi. Bu, ağın yayında olmadığı anlamına gelmez — macOS'un komşu listesi önbelleklidir ve seri porta her dokunuşum kartı sıfırlayıp AP'yi indirip kaldırıyor. Kesin cevap telefondan gelecek: ağ listesinde görünüyor mu, ve **kilit simgesi var mı** (ADR-0015'in WPA2 iddiası).
+
+## Kart üzerindeki durum LED'i
+
+Kullanıcı kartta **yeşil** yanan bir LED gördü. O renk bizim değildi: `HK_DEVKIT_STATUS_LED` ayarı `HK_BOARD_DEVKIT_N8R2`'ye bağlıydı, yani ürün profilinde ayna derlenmiyordu ve açılış logunda `mirrored on gpio` satırı hiç geçmiyordu. Adreslenebilir bir LED son yazılan rengi tutar; sildiğimiz demo firmware'i `50%G / 50%B / 50%R` döngüsü yapıyordu.
+
+Bu, aynanın kartla değil **harici RGB LED'in bağlı olup olmadığıyla** ilgili olduğunu gösterdi: ADR-0011'in göstergesi henüz hiçbir karta lehimlenmedi, yani ürün kartı da tıpkı geliştirme kartı gibi durumunu yalnız seri konsoldan gösteriyordu. Ayar `HK_ONBOARD_STATUS_LED` olarak yeniden adlandırıldı ve kart bağımlılığı kaldırıldı.
+
+Ayna hâlâ ikinci bir gösterge değil: renk aynı render geçişinden geliyor. Pin çakışması artık yorumla değil `_Static_assert` ile engelleniyor — `HK_PIN_MASK` ile kesişen bir GPIO derleme hatası.
+
+Ölçülen: `hk_ui: on-board status LED mirrored on gpio48`, panik yok. **Rengin gözle doğrulanması operatöre ait** ve cihaz o an provisioning'de olduğu için beklenen renk mavi nefestir, yeşil değil.
+
+### Sarı yanıp sönen LED, ve altındaki gerçek kusur
+
+Ayna açıldıktan sonra operatör LED'i **sarı yanıp sönerken** gördü. Durum tablosuna göre bu `HK_LED_CONNECTING` ("Wi-Fi'ye katılıyor"); cihaz ise provisioning'deydi ve orada olması gereken mavi nefestir.
+
+Kök neden LED'de değildi. `WIFI_EVENT_STA_START` korumasızdı:
+
+```c
+case WIFI_EVENT_STA_START:
+    s_status.connecting = true;
+    publish_status();
+    esp_wifi_connect();     /* kurulum penceresi radyonun sahibiyken de */
+```
+
+SoftAP şeması Wi-Fi'yi APSTA'ya alıyor, bu istasyonu başlatıyor ve olay tam da radyoyu bilerek sahiplenen pencerenin içinde düşüyor. İki sonucu var:
+
+1. **Aynı hatanın tekrarı.** 2026-09-05'te `STA_DISCONNECTED` dalı için düzeltilen şeyin ta kendisi: yöneticinin ilk işi taramaktır ve `esp_wifi_scan_start` devam eden bir bağlanma varken reddedilir. O düzeltme yalnız kopma dalını korumuş, başlama dalını değil — ve geliştirme kartında BLE yolu kullanıldığı için (BLE `WIFI_MODE_STA`, APSTA geçişi yok) hiç görünmemişti.
+2. **Göstergenin yalan söylemesi.** Kayıtlı ağ yokken `esp_wifi_connect()` anında hata döner, ve **başlamamış bir çağrının ardından `STA_DISCONNECTED` olayı doğmaz** — yani `connecting` pencere boyunca açık kalır. LED'in sürekli sarı olmasının sebebi buydu.
+
+Düzeltme iki dalı da kapatıyor: pencere radyonun sahibiyken istasyon bağlanmıyor, ve pencere dışında `esp_wifi_connect()` hata dönerse durum orada temizleniyor — çünkü başlamamış bir çağrı için başka temizleyecek bir şey yok.
+
+Ölçülen: `hk_net: station started while setup owns the radio; not joining`, ve LED **mavi nefes** (operatör doğruladı). Bu, `hk_led` önceliğinin doğru olduğunu da gösteriyor: `connecting` gerçekten doğruyken provisioning'i bastırması bilinçli bir tercih, ve sorun sıralamada değil, `connecting`'in yanlışlıkla doğru olmasındaydı.
+
+### Dışarıdan doğrulanan
+
+Operatör kurulum ağını telefonunun Wi-Fi listesinde **gördü**. Mac'in `system_profiler` komşu listesi onu göstermemişti; o liste önbelleklidir ve seri porta her dokunuş kartı sıfırlayıp AP'yi indirip kaldırıyordu. Cihazın kendi logu ile dış gözlem bu kez uyuştu.
+
+**Hâlâ doğrulanmadı:** ağın WPA2 olduğu (kilit simgesi), portalın kendiliğinden açıldığı, ve kurulumun uçtan uca tamamlandığı.

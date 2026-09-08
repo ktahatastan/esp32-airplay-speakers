@@ -203,9 +203,35 @@ static void on_wifi_event(void *arg, esp_event_base_t base, int32_t id, void *da
 
     switch (id) {
     case WIFI_EVENT_STA_START:
+        if (s_setup_owns_radio) {
+            /* The SoftAP scheme puts Wi-Fi into APSTA, which starts the station
+             * and lands here -- inside the window that deliberately owns the
+             * radio. Connecting from here is the same mistake the disconnect
+             * branch below already refuses: the manager's first act is a scan,
+             * and esp_wifi_scan_start is rejected while a connect is in flight.
+             *
+             * It also lies to the user. esp_wifi_connect() with nothing stored
+             * fails on the spot, and a call that never started produces no
+             * STA_DISCONNECTED -- so "connecting" would stay set for as long as
+             * the window is open, and the indicator would show "joining Wi-Fi"
+             * at a device that is waiting to be told which Wi-Fi. Measured on
+             * the product board on 2026-09-08: a steady yellow blink through
+             * the whole setup window. */
+            ESP_LOGI(TAG, "station started while setup owns the radio; not joining");
+            break;
+        }
         s_status.connecting = true;
         publish_status();
-        esp_wifi_connect();
+        {
+            const esp_err_t joining = esp_wifi_connect();
+            if (joining != ESP_OK) {
+                /* Same trap, outside provisioning: no event follows a call that
+                 * did not start, so the state has to be left here or never. */
+                ESP_LOGW(TAG, "could not start joining: %s", esp_err_to_name(joining));
+                s_status.connecting = false;
+                publish_status();
+            }
+        }
         break;
 
     case WIFI_EVENT_STA_DISCONNECTED:
@@ -400,14 +426,16 @@ static esp_err_t start_provisioning(void)
         /* Before the manager starts, not after: protocomm publishes the app
          * path's endpoints on whatever server it is given here, and given none
          * it starts a second one on the same port. */
-        httpd_handle_t server = NULL;
-        const esp_err_t portal = hk_portal_start(&server);
+        const esp_err_t portal = hk_portal_start();
         if (portal != ESP_OK) {
             ESP_LOGE(TAG, "the setup page did not come up: %s", esp_err_to_name(portal));
             s_setup_owns_radio = false;
             return portal;
         }
-        wifi_prov_scheme_softap_set_httpd_handle(server);
+        /* The ADDRESS of the portal's handle, not the handle. protocomm
+         * dereferences what it is given and keeps the pointer for the life of
+         * the window; see hk_portal_server_slot(). */
+        wifi_prov_scheme_softap_set_httpd_handle(hk_portal_server_slot());
     }
 
     const esp_err_t started =

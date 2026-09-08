@@ -381,7 +381,7 @@ static const char *const HK_PORTAL_PROBES[] = {
     "/redirect",
 };
 
-esp_err_t hk_portal_start(httpd_handle_t *out_server)
+esp_err_t hk_portal_start(void)
 {
     if (s_server != NULL) {
         return ESP_ERR_INVALID_STATE;
@@ -459,11 +459,12 @@ esp_err_t hk_portal_start(httpd_handle_t *out_server)
 
     s_state = HK_PORTAL_IDLE;
     ESP_LOGI(TAG, "setup page open at http://%s/", s_address);
-
-    if (out_server != NULL) {
-        *out_server = s_server;
-    }
     return ESP_OK;
+}
+
+httpd_handle_t *hk_portal_server_slot(void)
+{
+    return &s_server;
 }
 
 void hk_portal_stop(void)

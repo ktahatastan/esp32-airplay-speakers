@@ -12,7 +12,7 @@
 
 #include "hk_pins.h"
 
-#if CONFIG_HK_DEVKIT_STATUS_LED
+#if CONFIG_HK_ONBOARD_STATUS_LED
 #include "led_strip.h"
 #endif
 
@@ -29,14 +29,26 @@ static const char *TAG = "hk_ui";
 
 static TaskHandle_t s_task;
 
-#if CONFIG_HK_DEVKIT_STATUS_LED
+#if CONFIG_HK_ONBOARD_STATUS_LED
 static led_strip_handle_t s_strip;
 
-/** Bring up the devkit's on-board LED. Never fatal: it is a mirror. */
+/*
+ * The mirror pin cannot be one hk_pins already assigned.
+ *
+ * A Kconfig integer cannot see that table, so the collision would be found on a
+ * bench: a mute line and an LED driver fighting over the same pad reads as
+ * "the LED is broken" long before anyone suspects the amplifier. The rule is a
+ * compile error instead, for the same reason the board settings are.
+ */
+_Static_assert((HK_PIN_MASK & (1ULL << CONFIG_HK_ONBOARD_STATUS_LED_GPIO)) == 0,
+               "CONFIG_HK_ONBOARD_STATUS_LED_GPIO collides with an assigned pin "
+               "in hk_pins.h");
+
+/** Bring up the board's on-board LED. Never fatal: it is a mirror. */
 static void start_onboard_mirror(void)
 {
     const led_strip_config_t strip = {
-        .strip_gpio_num = CONFIG_HK_DEVKIT_STATUS_LED_GPIO,
+        .strip_gpio_num = CONFIG_HK_ONBOARD_STATUS_LED_GPIO,
         .max_leds = 1,
         .led_model = LED_MODEL_WS2812,
         .color_component_format = LED_STRIP_COLOR_COMPONENT_FMT_GRB,
@@ -49,13 +61,13 @@ static void start_onboard_mirror(void)
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "on-board LED on gpio%d did not start: %s. The external RGB "
                       "channels are unaffected.",
-                 CONFIG_HK_DEVKIT_STATUS_LED_GPIO, esp_err_to_name(err));
+                 CONFIG_HK_ONBOARD_STATUS_LED_GPIO, esp_err_to_name(err));
         s_strip = NULL;
         return;
     }
     (void)led_strip_clear(s_strip);
     ESP_LOGI(TAG, "on-board status LED mirrored on gpio%d",
-             CONFIG_HK_DEVKIT_STATUS_LED_GPIO);
+             CONFIG_HK_ONBOARD_STATUS_LED_GPIO);
 }
 #endif
 
@@ -156,7 +168,7 @@ static void render(const hk_led_pattern_t *pattern, uint32_t time_ms)
         ledc_update_duty(LEDC_LOW_SPEED_MODE, LED_CHANNELS[i].channel);
     }
 
-#if CONFIG_HK_DEVKIT_STATUS_LED
+#if CONFIG_HK_ONBOARD_STATUS_LED
     /* The same values, on the LED the devkit actually has.
      *
      * Taken from `duty` rather than recomputed from the pattern: a second
@@ -261,7 +273,7 @@ esp_err_t hk_ui_start(hk_ui_event_cb_t callback, void *context)
         }
     }
 
-#if CONFIG_HK_DEVKIT_STATUS_LED
+#if CONFIG_HK_ONBOARD_STATUS_LED
     start_onboard_mirror();
 #endif
 

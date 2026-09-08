@@ -202,6 +202,9 @@ def write_device(out_dir: Path, device_id: str, srp6a) -> str:
     password = make_password()
     salt, verifier = srp6a.generate_salt_and_verifier(USERNAME, password, len_s=SALT_LEN)
 
+    # Not restricted, and deliberately: the salt crosses the wire in the clear and
+    # the verifier cannot be turned back into the password. Restricting them too
+    # would blur which files actually matter.
     (device_dir / "prov_salt.bin").write_bytes(salt)
     (device_dir / "prov_verif.bin").write_bytes(verifier)
 
@@ -213,7 +216,10 @@ def write_device(out_dir: Path, device_id: str, srp6a) -> str:
     # Written as bytes rather than as an NVS string so the firmware reads it
     # back through the same read-only blob path as the other two: one opener of
     # factory_cal is what keeps the PRD-008 wall in one place.
-    (device_dir / "ap_pass.bin").write_bytes(password.encode("ascii"))
+    ap_pass = device_dir / "ap_pass.bin"
+    ap_pass.write_bytes(password.encode("ascii"))
+    # Plain text by necessity -- WPA2 needs the key itself -- so it is owner-only.
+    ap_pass.chmod(0o600)
 
     # nvs_partition_gen.py CSV. The namespace and keys match hk_storage.h and
     # the reader in hk_network.c.
@@ -226,8 +232,13 @@ def write_device(out_dir: Path, device_id: str, srp6a) -> str:
         "ap_pass,file,binary,ap_pass.bin\n",
         encoding="utf-8")
 
-    (device_dir / "qr.txt").write_text(qr_payload(device_id, password, "softap") + "\n",
-                                       encoding="utf-8")
+    qr = device_dir / "qr.txt"
+    qr.write_text(qr_payload(device_id, password, "softap") + "\n", encoding="utf-8")
+    # The QR payload carries the password in its `pop` field, so this file is as
+    # sensitive as the label and gets the same permissions. It did not, and the
+    # reason is worth keeping: only label.txt was obviously "the secret one",
+    # while two other files quietly hold the same string.
+    qr.chmod(0o600)
 
     label = device_dir / "label.txt"
     label.write_text(

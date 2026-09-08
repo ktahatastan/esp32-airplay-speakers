@@ -16,28 +16,35 @@ config HK_BOARD_DEVKIT_N8R2
         without also selecting the 8 MB flash size and the devkit partition table
         is a configure-time error, not something you discover on the bench.
 
-config HK_DEVKIT_STATUS_LED
-    bool "Mirror the status LED onto the devkit's on-board addressable LED"
-    depends on HK_BOARD_DEVKIT_N8R2
+config HK_ONBOARD_STATUS_LED
+    bool "Mirror the status LED onto the board's own addressable LED"
     default y
     help
-        The product board's indicator is three PWM channels driving an external
-        RGB LED (ADR-0011). A bare devkit has nothing on those pins, so it shows
-        no status at all -- every state has to be read off the serial console.
+        The indicator ADR-0011 specifies is three PWM channels driving an
+        external RGB LED. Until that LED is wired, a bare board shows no status
+        at all and every state has to be read off the serial console -- which is
+        true of the prototype N16R8 exactly as it was of the bring-up devkit, so
+        this is no longer gated on which board is being built.
 
-        This mirrors exactly what those channels are told to do onto the single
-        addressable LED the devkit already carries. It is a mirror, not a second
-        indicator: the colour comes from the same render pass, so the two cannot
-        disagree about what the device is doing.
+        It mirrors exactly what those PWM channels are told to do onto the single
+        addressable LED most of these boards already carry. It is a mirror, not a
+        second indicator: the colour comes from the same render pass, so the two
+        cannot disagree about what the device is doing.
 
-config HK_DEVKIT_STATUS_LED_GPIO
-    int "GPIO of the devkit's on-board addressable LED"
-    depends on HK_DEVKIT_STATUS_LED
+        Harmless when the board has no such LED: the RMT peripheral drives a pin
+        nothing is listening to.
+
+config HK_ONBOARD_STATUS_LED_GPIO
+    int "GPIO of the board's on-board addressable LED"
+    depends on HK_ONBOARD_STATUS_LED
     default 48
     help
         48 on ESP32-S3-DevKitC-1 v1.1 and later, 38 on some earlier boards and
         on several third-party clones. If the LED stays dark, this is the first
         thing to check.
+
+        It must not collide with the assignment in hk_pins; nothing enforces that
+        here, because a Kconfig integer cannot see that table.
 
 config HK_DEVKIT_FIRST_BOOT_BLE
     bool "Open BLE instead of SoftAP when the devkit has no credentials"

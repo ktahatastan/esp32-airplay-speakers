@@ -28,15 +28,30 @@ typedef enum {
     HK_PORTAL_SUCCEEDED,  /**< Joined. The window is about to close. */
 } hk_portal_state_t;
 
+/** Start the web server and the captive DNS responder. */
+esp_err_t hk_portal_start(void);
+
 /**
- * Start the web server and the captive DNS responder.
+ * The address of the portal's own server handle.
  *
- * The server handle is returned because the provisioning manager has to be
- * given it (wifi_prov_scheme_softap_set_httpd_handle) BEFORE provisioning
- * starts: protocomm then publishes its own endpoints on this same server
- * instead of starting a second one on the same port.
+ * This is what wifi_prov_scheme_softap_set_httpd_handle() wants, and the
+ * distinction is not pedantic. That function's parameter is documented as
+ * "Handle to HTTPD server instance", but protocomm stores the pointer and then
+ * dereferences it -- protocomm_httpd.c calls
+ * httpd_register_uri_handler(*server, ...) on it. Passing the handle VALUE
+ * makes protocomm read a server struct out of the handle's own numeric value,
+ * which is a LoadProhibited panic the moment provisioning starts. Measured on
+ * the product board on 2026-09-08, reproducibly, as a boot loop.
+ *
+ * It returns the address of a static, not of the caller's variable, because the
+ * lifetime is the second half of the same trap: protocomm keeps the pointer for
+ * as long as the window is open, so a handle held in a stack frame would be a
+ * use-after-return that outlives the function that set it up.
+ *
+ * Teardown is safe: protocomm frees the pointer only when it allocated it
+ * itself (ext_handle_provided false), and this path always sets that flag.
  */
-esp_err_t hk_portal_start(httpd_handle_t *out_server);
+httpd_handle_t *hk_portal_server_slot(void);
 
 /** Stop the DNS responder and the server. Safe to call when not started. */
 void hk_portal_stop(void);
