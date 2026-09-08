@@ -23,9 +23,9 @@ from xml.sax.saxutils import escape
 
 from schematic_lib import Sheet
 
-W, H = 2720, 2070
+W, H = 2720, 2800
 REV = "P1"
-DATE = "2026-08-31"
+DATE = "2026-09-08"
 
 CSS = """
 .page{fill:#ffffff}
@@ -130,7 +130,7 @@ def build() -> Sheet:
         "Harman Kardom — tek hoparlör modül seviyesi devre şeması",
         "USB-C PD şarj zinciri, 4S paket ve BMS, anahtarlı güç, 5 V lojik beslemesi, "
         "ESP32-S3 N16R8, PCM5102A I2S DAC, XH-A232 BTL bi-amp, woofer ve C_SAFE korumalı tweeter, "
-        "kullanıcı arayüzü ve TP0-TP27 test noktaları.",
+        "GC9A01 yuvarlak ekran, INA219 şarj akımı ölçümü, kullanıcı arayüzü ve TP0-TP29 test noktaları.",
     )
     frame(sheet)
     sheet.background.append(
@@ -165,7 +165,7 @@ def build() -> Sheet:
     sheet.testpoint(1000, chg_plus[1] - 44, 26, anchor=(1000, chg_plus[1]))
     fa, fb = sheet.fuse(1020, chg_plus[1], "F_CHG", "3 A ADAY")
     sheet.wire([fb, (1085, chg_plus[1])], "chg")
-    sheet.net_flag(1085, chg_plus[1], "CHG_16V8", "R")
+    sheet.net_flag(1085, chg_plus[1], "CHG_16V8_RAW", "R")
     sheet.wire([chg_minus, (1005, chg_minus[1]), (1005, 366), (1085, 366)], "gnd")
     sheet.net_flag(1085, 366, "POWER_GND", "R")
 
@@ -287,7 +287,8 @@ def build() -> Sheet:
     u5 = sheet.block("U5", "ESP32-S3 DEVKIT", "16 MB flash + 8 MB PSRAM", 830, 700, 330,
                      left=["5V / VBUS", "GND", "3V3", "GPIO7  BUTTON", "GPIO8  LED_R",
                            "GPIO9  LED_G", "GPIO10 LED_B", "GPIO1  BATT_SENSE",
-                           "GPIO2  NTC_SENSE"],
+                           "GPIO2  NTC_SENSE", "GPIO47 LCD_SCK", "GPIO41 LCD_MOSI",
+                           "GPIO39 LCD_CS", "GPIO40 LCD_DC", "GPIO18 LCD_RST"],
                      right=["GPIO4  BCLK", "GPIO5  LRCLK", "GPIO6  DATA",
                             "GPIO11 SDA", "GPIO12 SCL", "GPIO21 AMP_MUTE",
                             "GPIO13 DAC_XSMT"],
@@ -303,7 +304,10 @@ def build() -> Sheet:
     sheet.testpoint(v33[0] - 22, v33[1], 10)
     sheet.power_port(v33[0] - 68, v33[1], "+3V3")
     for pin_name, flag in (("GPIO7  BUTTON", "BUTTON_N"), ("GPIO8  LED_R", "LED_R"),
-                           ("GPIO9  LED_G", "LED_G"), ("GPIO10 LED_B", "LED_B")):
+                           ("GPIO9  LED_G", "LED_G"), ("GPIO10 LED_B", "LED_B"),
+                           ("GPIO47 LCD_SCK", "LCD_SCK"), ("GPIO41 LCD_MOSI", "LCD_MOSI"),
+                           ("GPIO39 LCD_CS", "LCD_CS"), ("GPIO40 LCD_DC", "LCD_DC"),
+                           ("GPIO18 LCD_RST", "LCD_RST")):
         point = u5.pin(pin_name)
         sheet.wire([point, (point[0] - 30, point[1])], "dig")
         sheet.net_flag(point[0] - 30, point[1], flag, "L")
@@ -412,6 +416,98 @@ def build() -> Sheet:
     sheet.netlabel(100, cathode_y + 114, "Hazır RGB modülünde seri direnç varsa bu parçalar DNP kalır. LED ve buton kabloları", "start", 0)
     sheet.netlabel(100, cathode_y + 136, "Class-D hoparlör kablolarından ayrı çekilir.", "start", 0)
 
+    # ================================================================ ZONE H
+    sheet.zone(70, 1900, 1290, 620, "H", "GC9A01 240×240 YUVARLAK EKRAN — ADR-0017")
+
+    # Direct from the ESP: the bench build has no series resistors. They are not
+    # decoration -- 33 R at the driver end slows the edges on flying leads that
+    # run beside an analogue audio path, which is a product concern rather than
+    # a bench one. Recorded in ADR-0017 so the product wiring puts them back.
+    u8 = sheet.block("U8", "GC9A01 MODÜLÜ", "240×240 IPS · 7 pin · SPI3 · 3,3 V lojik · 5 V TOLERANSLI DEĞİL",
+                     760, 1962, 300,
+                     left=["RST", "CS", "DC", "SDA", "SCL", "GND", "VCC"],
+                     note="7 pinli varyant: arka ışık ucu yok, VCC ile birlikte yanar")
+    for flag, pin_name in (("LCD_SCK", "SCL"), ("LCD_MOSI", "SDA"),
+                           ("LCD_DC", "DC"), ("LCD_CS", "CS")):
+        point = u8.pin(pin_name)
+        sheet.net_flag(point[0] - 280, point[1], flag, "R")
+        sheet.wire([(point[0] - 280, point[1]), point], "dig")
+
+    rst = u8.pin("RST")
+    sheet.net_flag(rst[0] - 280, rst[1], "LCD_RST", "R")
+    sheet.wire([(rst[0] - 280, rst[1]), rst], "dig")
+
+    # CS must be deasserted through ROM and bootloader. GPIO39 comes up with a
+    # weak internal pull-up, and this makes that guaranteed rather than inherited.
+    cs_node = u8.pin("CS")
+    pu_t, pu_b = sheet.resistor_v(cs_node[0] - 90, cs_node[1] - 150, "R_CS", "10 kΩ", dnp=True)
+    sheet.power_port(pu_t[0], pu_t[1], "+3V3")
+    sheet.wire([pu_b, (pu_b[0], cs_node[1])], "dig")
+    sheet.junction(pu_b[0], cs_node[1])
+
+    vcc8 = u8.pin("VCC")
+    sheet.net_flag(vcc8[0] - 280, vcc8[1], "+3V3_LCD", "R")
+    sheet.wire([(vcc8[0] - 280, vcc8[1]), vcc8], "v33")
+    gnd8 = u8.pin("GND")
+    sheet.gnd(gnd8[0] - 280, gnd8[1], "STAR_GND")
+    sheet.wire([(gnd8[0] - 280, gnd8[1]), gnd8], "gnd")
+
+    sheet.testpoint(700, u8.pin("SCL")[1] - 44, 28, anchor=(680, u8.pin("SCL")[1]))
+
+    sheet.panel(70, 2340, 1290, 170, "EKRAN KURALLARI — ADR-0017")
+    sheet.panel_body(70, 2340, [
+        "Modül 5 V TOLERANSLI DEĞİLDİR. Üstünde LDO olan varyantta bile lojik 3,3 V'tur.",
+        "TEZGÂH KABLOLAMASI: sinyaller doğrudan ESP'ye bağlanır. Ürün kablolamasında ESP ucuna 4 × 33 Ω seri direnç girer — uçan kablolarda kenar hızını yavaşlatır ve analog ses yolunun yanından geçerler.",
+        "R_CS (10 kΩ) tezgâhta DNP: GPIO39 zayıf dahili pull-up ile açılıyor ve açılış penceresini o kapatıyor. Üründe takılır; doğrulanmamış bir dahili değere güvenmek kalıcı bir çözüm değil.",
+        "Panel beslemesi ESP modülünün 3V3'ü değil, MP1584 rayından ayrı bir LDO'dur: panelin anahtarlama yükü BATT_SENSE/NTC_SENSE'in referans aldığı rayı bozmasın (G3'te ölçülür).",
+        "Bu varyantta arka ışık ucu YOKTUR: VCC verildiği anda yanar. Firmware çalışmadan önce ekranı karartmanın yolu yok; parlaklık ayarı da yok.",
+        "GPIO39-41 (MTCK/MTDO/MTDI) pad-JTAG'i tüketir. Harici prob ile hata ayıklama kalmaz; GPIO19/20'deki USB Serial/JTAG durur. GPIO42 serbest kaldı.",
+        ("Panel + arka ışık için bütçe ≤50 mA, bölünmemiş tek yük. Ölçülmedi.", "panel-warn"),
+    ])
+
+    # ================================================================ ZONE I
+    sheet.zone(1410, 1900, 1240, 620, "I", "INA219 ŞARJ AKIMI ÖLÇÜMÜ — ADR-0018")
+
+    rs1 = sheet.block("RS1", "ŞÖNT", "0,05 Ω · %1 · 1 W · yüksek taraf", 1560, 1962, 250,
+                      left=["IN+"], right=["IN−"])
+    sheet.net_flag(rs1.pin("IN+")[0] - 150, rs1.pin("IN+")[1], "CHG_16V8_RAW", "R")
+    sheet.wire([(rs1.pin("IN+")[0] - 150, rs1.pin("IN+")[1]), rs1.pin("IN+")], "chg")
+    sheet.wire([rs1.pin("IN−"), (rs1.pin("IN−")[0] + 150, rs1.pin("IN−")[1])], "chg")
+    sheet.net_flag(rs1.pin("IN−")[0] + 150, rs1.pin("IN−")[1], "CHG_16V8", "R")
+    sheet.testpoint(rs1.pin("IN−")[0] + 80, rs1.pin("IN−")[1] - 44,
+                    29, anchor=(rs1.pin("IN−")[0] + 80, rs1.pin("IN−")[1]))
+
+    u9 = sheet.block("U9", "INA219", "adres 0x40 · A0/A1 → GND", 1620, 2110, 300,
+                     left=["VIN+", "VIN−", "VS", "GND"], right=["SDA", "SCL"],
+                     note="VBUS PİNİ YOK — paket gerilimini bu parça ÖLÇMEZ")
+    sheet.wire([(rs1.pin("IN+")[0] + 40, rs1.pin("IN+")[1]),
+                (rs1.pin("IN+")[0] + 40, u9.pin("VIN+")[1]), u9.pin("VIN+")], "sig")
+    sheet.junction(rs1.pin("IN+")[0] + 40, rs1.pin("IN+")[1])
+    sheet.wire([(rs1.pin("IN−")[0] - 40, rs1.pin("IN−")[1]),
+                (rs1.pin("IN−")[0] - 40, u9.pin("VIN−")[1]), u9.pin("VIN−")], "sig")
+    sheet.junction(rs1.pin("IN−")[0] - 40, rs1.pin("IN−")[1])
+    sheet.power_port(u9.pin("VS")[0] - 70, u9.pin("VS")[1], "+3V3")
+    sheet.wire([(u9.pin("VS")[0] - 70, u9.pin("VS")[1]), u9.pin("VS")], "v33")
+    sheet.gnd(u9.pin("GND")[0] - 70, u9.pin("GND")[1], "STAR_GND")
+    sheet.wire([(u9.pin("GND")[0] - 70, u9.pin("GND")[1]), u9.pin("GND")], "gnd")
+    for pin_name, flag in (("SDA", "I2C_SDA"), ("SCL", "I2C_SCL")):
+        point = u9.pin(pin_name)
+        sheet.wire([point, (point[0] + 60, point[1])], "dig")
+        sheet.net_flag(point[0] + 60, point[1], flag, "R")
+
+    sheet.panel(1410, 2340, 1240, 170, "AKIM SENSÖRÜ KURALLARI — ADR-0018", "danger")
+    sheet.panel_body(1410, 2340, [
+        ("PAKET GERİLİMİNİN KAYNAĞI BU PARÇA DEĞİLDİR", "panel-warn"),
+        ("INA219'un VBUS pini yoktur; gerilimi şöntün YÜK tarafından ölçer, yani yüksek", "panel-text"),
+        ("tarafta paket gerilimi eksi kendi burden düşümünü verir. Hata makul kalır, o", "panel-text"),
+        ("yüzden hk_power'ın imkânsız-okuma koruması yakalayamaz. pack_mv yalnız", "panel-text"),
+        ("GPIO1/BATT_SENSE bölücüsünden gelir.", "panel-text"),
+        ("", "panel-text"),
+        ("Ortak mod 26 V (INA226'da 40 V): XL4015'in 20 V GİRİŞ tarafına asla konmaz.", "panel-text"),
+        ("Bağlamadan önce XL4015 çıkışı, sensör takılı değilken, 16,80 V'ta doğrulanır.", "panel-text"),
+        ("INA219 ve INA226 aynı adresten cevap verir; 0xFE okunarak ayırt edilir.", "panel-text"),
+    ])
+
     # ============================================================== PANELS
     sheet.panel(930, 1470, 830, 380, "GÜVENLİK VE ÖLÇÜM KURALLARI", "danger")
     sheet.panel_body(930, 1470, [
@@ -430,7 +526,7 @@ def build() -> Sheet:
         ("V1'de şarj sırasında amfi kapalıdır (ADR-0004).", "panel-text"),
     ])
 
-    sheet.panel(1790, 1470, 860, 380, "TEST NOKTASI İNDEKSİ — TP0…TP27")
+    sheet.panel(1790, 1470, 860, 380, "TEST NOKTASI İNDEKSİ — TP0…TP29")
     tp_rows = [
         "TP0  paket B−        TP7  F1 sonrası        TP14 DAC LOUT       TP21 XH R−",
         "TP1  hücre 1 / B1    TP8  VBAT_SW           TP15 DAC ROUT       TP22 buton GPIO7",
@@ -439,6 +535,7 @@ def build() -> Sheet:
         "TP4  paket B+        TP11 I²S BCLK          TP18 XH L+          TP25 LED_B sürüş",
         "TP5  BMS P+          TP12 I²S LRCLK         TP19 XH L−          TP26 CHG+ 16,80 V",
         "TP6  BMS P− / GND    TP13 I²S DATA          TP20 XH R+          TP27 NTC uçları",
+        "TP28 LCD SCL         TP29 şönt CHG+ tarafı",
     ]
     sheet.panel_body(1790, 1470, [(row, "panel-mono") for row in tp_rows] + [
         "",
@@ -448,29 +545,34 @@ def build() -> Sheet:
     ])
 
     # gates + legend + title block
-    sheet.panel(70, 1880, 1690, 92, "ENERJİ VERME ÖNCESİ ZORUNLU KAPILAR", "gate")
-    sheet.panel_line(90, 1926, "G0 sürücü DC direnci / empedans / polarite   ·   G1 amfi + 8 Ω ≥50 W non-inductive dummy-load   ·   "
+    #
+    # Anchored to the bottom of the sheet rather than to fixed numbers. The
+    # first time the sheet grew, these stayed where they were and two new zones
+    # landed on top of the title block.
+    strip = H - 190
+    sheet.panel(70, strip, 1690, 92, "ENERJİ VERME ÖNCESİ ZORUNLU KAPILAR", "gate")
+    sheet.panel_line(90, strip + 46, "G0 sürücü DC direnci / empedans / polarite   ·   G1 amfi + 8 Ω ≥50 W non-inductive dummy-load   ·   "
                                "G2 tweeter HPF + limiter + C_SAFE   ·   G3 güç, ripple, brownout, EMI, pop   ·   G4 batarya, BMS, şarj, sonlandırma, NTC",
                      "panel-mono")
-    sheet.panel_line(90, 1952, "Fiziksel ölçüm kaydı olmadan hiçbir kapı PASS yapılamaz. G0–G5 geçmeden dört üniteye çoğaltma yoktur.", "panel-warn")
+    sheet.panel_line(90, strip + 72, "Fiziksel ölçüm kaydı olmadan hiçbir kapı PASS yapılamaz. G0–G5 geçmeden dört üniteye çoğaltma yoktur.", "panel-warn")
 
-    sheet.panel(1790, 1880, 860, 92, "", "title")
+    sheet.panel(1790, strip, 860, 92, "", "title")
 
     # The legend sits on its own strip below both panels. Sharing the title
     # block's rectangle would have hidden it: panels paint an opaque fill and
     # render in append order.
     legend = [("pwr", "batarya / VBAT"), ("chg", "şarj"), ("v5", "5 V"), ("v33", "3V3"),
               ("dig", "dijital / I²S"), ("aud", "analog ses"), ("btl", "BTL çıkış"), ("gnd", "toprak")]
-    sheet.overlay.append(f'<text class="panel-title" x="70" y="2010">GÖSTERİM</text>')
+    sheet.overlay.append(f'<text class="panel-title" x="70" y="{strip + 130}">GÖSTERİM</text>')
     for index, (kind, name) in enumerate(legend):
         x = 210 + index * 305
-        sheet.overlay.append(f'<line class="w {kind}" x1="{x}" y1="2005" x2="{x + 46}" y2="2005"/>'
-                             f'<text class="legend" x="{x + 56}" y="2010">{escape(name)}</text>')
+        sheet.overlay.append(f'<line class="w {kind}" x1="{x}" y1="{strip + 125}" x2="{x + 46}" y2="{strip + 125}"/>'
+                             f'<text class="legend" x="{x + 56}" y="{strip + 130}">{escape(name)}</text>')
     fields = [("BELGE", "HK-HW-SCH", 1810), ("REV", REV, 2010), ("DURUM", "CANDIDATE", 2130), ("TARİH", DATE, 2330), ("SAYFA", "1 / 1", 2500)]
     for key, value, x in fields:
-        sheet.overlay.append(f'<text class="tb-key" x="{x}" y="{1912}">{escape(key)}</text>'
-                             f'<text class="tb-val" x="{x}" y="{1938}">{escape(value)}</text>')
-    sheet.overlay.append('<text class="tb-key" x="1810" y="1962">ÜRETEN  hardware/diagrams/generate_schematic_svg.py  ·  '
+        sheet.overlay.append(f'<text class="tb-key" x="{x}" y="{strip + 32}">{escape(key)}</text>'
+                             f'<text class="tb-val" x="{x}" y="{strip + 58}">{escape(value)}</text>')
+    sheet.overlay.append(f'<text class="tb-key" x="1810" y="{strip + 82}">ÜRETEN  hardware/diagrams/generate_schematic_svg.py  ·  '
                          'ELEKTRİKSEL KAYNAK  hardware/kicad/</text>')
     return sheet
 

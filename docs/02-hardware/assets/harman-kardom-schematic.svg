@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="2720" height="2070" viewBox="0 0 2720 2070" role="img" aria-labelledby="t d">
+<svg xmlns="http://www.w3.org/2000/svg" width="2720" height="2800" viewBox="0 0 2720 2800" role="img" aria-labelledby="t d">
 <title id="t">Harman Kardom — tek hoparlör modül seviyesi devre şeması</title>
-<desc id="d">USB-C PD şarj zinciri, 4S paket ve BMS, anahtarlı güç, 5 V lojik beslemesi, ESP32-S3 N16R8, PCM5102A I2S DAC, XH-A232 BTL bi-amp, woofer ve C_SAFE korumalı tweeter, kullanıcı arayüzü ve TP0-TP27 test noktaları.</desc>
+<desc id="d">USB-C PD şarj zinciri, 4S paket ve BMS, anahtarlı güç, 5 V lojik beslemesi, ESP32-S3 N16R8, PCM5102A I2S DAC, XH-A232 BTL bi-amp, woofer ve C_SAFE korumalı tweeter, GC9A01 yuvarlak ekran, INA219 şarj akımı ölçümü, kullanıcı arayüzü ve TP0-TP29 test noktaları.</desc>
 <style>
 .page{fill:#ffffff}
 .frame{fill:none;stroke:#0f172a;stroke-width:2}
@@ -71,53 +71,53 @@
 .tb-line{stroke:#cbd5e1;stroke-width:1}
 .legend{font:12px 'Helvetica Neue',Arial,sans-serif;fill:#334155}
 </style>
-<rect class="page" x="0" y="0" width="2720" height="2070"/>
-<rect class="frame" x="16" y="16" width="2688" height="2038"/>
-<rect class="frame-inner" x="42" y="42" width="2636" height="1986"/>
+<rect class="page" x="0" y="0" width="2720" height="2800"/>
+<rect class="frame" x="16" y="16" width="2688" height="2768"/>
+<rect class="frame-inner" x="42" y="42" width="2636" height="2716"/>
 <text class="ruler" x="207" y="34">1</text>
-<text class="ruler" x="207" y="2048">1</text>
+<text class="ruler" x="207" y="2778">1</text>
 <text class="ruler" x="536" y="34">2</text>
-<text class="ruler" x="536" y="2048">2</text>
+<text class="ruler" x="536" y="2778">2</text>
 <line class="tb-line" x1="372" y1="16" x2="372" y2="42"/>
-<line class="tb-line" x1="372" y1="2028" x2="372" y2="2054"/>
+<line class="tb-line" x1="372" y1="2758" x2="372" y2="2784"/>
 <text class="ruler" x="866" y="34">3</text>
-<text class="ruler" x="866" y="2048">3</text>
+<text class="ruler" x="866" y="2778">3</text>
 <line class="tb-line" x1="701" y1="16" x2="701" y2="42"/>
-<line class="tb-line" x1="701" y1="2028" x2="701" y2="2054"/>
+<line class="tb-line" x1="701" y1="2758" x2="701" y2="2784"/>
 <text class="ruler" x="1195" y="34">4</text>
-<text class="ruler" x="1195" y="2048">4</text>
+<text class="ruler" x="1195" y="2778">4</text>
 <line class="tb-line" x1="1030" y1="16" x2="1030" y2="42"/>
-<line class="tb-line" x1="1030" y1="2028" x2="1030" y2="2054"/>
+<line class="tb-line" x1="1030" y1="2758" x2="1030" y2="2784"/>
 <text class="ruler" x="1525" y="34">5</text>
-<text class="ruler" x="1525" y="2048">5</text>
+<text class="ruler" x="1525" y="2778">5</text>
 <line class="tb-line" x1="1360" y1="16" x2="1360" y2="42"/>
-<line class="tb-line" x1="1360" y1="2028" x2="1360" y2="2054"/>
+<line class="tb-line" x1="1360" y1="2758" x2="1360" y2="2784"/>
 <text class="ruler" x="1854" y="34">6</text>
-<text class="ruler" x="1854" y="2048">6</text>
+<text class="ruler" x="1854" y="2778">6</text>
 <line class="tb-line" x1="1690" y1="16" x2="1690" y2="42"/>
-<line class="tb-line" x1="1690" y1="2028" x2="1690" y2="2054"/>
+<line class="tb-line" x1="1690" y1="2758" x2="1690" y2="2784"/>
 <text class="ruler" x="2184" y="34">7</text>
-<text class="ruler" x="2184" y="2048">7</text>
+<text class="ruler" x="2184" y="2778">7</text>
 <line class="tb-line" x1="2019" y1="16" x2="2019" y2="42"/>
-<line class="tb-line" x1="2019" y1="2028" x2="2019" y2="2054"/>
+<line class="tb-line" x1="2019" y1="2758" x2="2019" y2="2784"/>
 <text class="ruler" x="2513" y="34">8</text>
-<text class="ruler" x="2513" y="2048">8</text>
+<text class="ruler" x="2513" y="2778">8</text>
 <line class="tb-line" x1="2348" y1="16" x2="2348" y2="42"/>
-<line class="tb-line" x1="2348" y1="2028" x2="2348" y2="2054"/>
-<text class="ruler" x="29" y="295">A</text>
-<text class="ruler" x="2691" y="295">A</text>
-<text class="ruler" x="29" y="792">B</text>
-<text class="ruler" x="2691" y="792">B</text>
-<line class="tb-line" x1="16" y1="538" x2="42" y2="538"/>
-<line class="tb-line" x1="2678" y1="538" x2="2704" y2="538"/>
-<text class="ruler" x="29" y="1288">C</text>
-<text class="ruler" x="2691" y="1288">C</text>
-<line class="tb-line" x1="16" y1="1035" x2="42" y2="1035"/>
-<line class="tb-line" x1="2678" y1="1035" x2="2704" y2="1035"/>
-<text class="ruler" x="29" y="1785">D</text>
-<text class="ruler" x="2691" y="1785">D</text>
-<line class="tb-line" x1="16" y1="1532" x2="42" y2="1532"/>
-<line class="tb-line" x1="2678" y1="1532" x2="2704" y2="1532"/>
+<line class="tb-line" x1="2348" y1="2758" x2="2348" y2="2784"/>
+<text class="ruler" x="29" y="386">A</text>
+<text class="ruler" x="2691" y="386">A</text>
+<text class="ruler" x="29" y="1066">B</text>
+<text class="ruler" x="2691" y="1066">B</text>
+<line class="tb-line" x1="16" y1="721" x2="42" y2="721"/>
+<line class="tb-line" x1="2678" y1="721" x2="2704" y2="721"/>
+<text class="ruler" x="29" y="1744">C</text>
+<text class="ruler" x="2691" y="1744">C</text>
+<line class="tb-line" x1="16" y1="1400" x2="42" y2="1400"/>
+<line class="tb-line" x1="2678" y1="1400" x2="2704" y2="1400"/>
+<text class="ruler" x="29" y="2424">D</text>
+<text class="ruler" x="2691" y="2424">D</text>
+<line class="tb-line" x1="16" y1="2079" x2="42" y2="2079"/>
+<line class="tb-line" x1="2678" y1="2079" x2="2704" y2="2079"/>
 <text class="sheet-title" x="70" y="86">HARMAN KARDOM · TEK HOPARLÖR DEVRE ŞEMASI</text><text class="sheet-sub" x="70" y="108">Modül seviyesi prototip · dört kutuda aynı devre tekrarlanır · &#171;ADAY / TBD&#187; değerler ölçümle kilitlenir · üretim PCB şeması değildir</text>
 <rect class="zone" x="70" y="130" width="1050" height="500" rx="8"/><rect class="zone-tab" x="70" y="130" width="383.59999999999997" height="28" rx="6"/><text class="zone-letter" x="83" y="150">A</text><text class="zone-title" x="102" y="150">USB-C PD ŞARJ GİRİŞİ  →  16,80 V CC/CV</text>
 <rect class="zone" x="1150" y="130" width="1500" height="470" rx="8"/><rect class="zone-tab" x="1150" y="130" width="420.4" height="28" rx="6"/><text class="zone-letter" x="1163" y="150">B</text><text class="zone-title" x="1182" y="150">4S PAKET, BMS, SİGORTA VE ANA GÜÇ ANAHTARI</text>
@@ -126,6 +126,8 @@
 <rect class="zone" x="1210" y="630" width="580" height="800" rx="8"/><rect class="zone-tab" x="1210" y="630" width="181.2" height="28" rx="6"/><text class="zone-letter" x="1223" y="650">E</text><text class="zone-title" x="1242" y="650">PCM5102A I²S DAC</text>
 <rect class="zone" x="1810" y="630" width="850" height="800" rx="8"/><rect class="zone-tab" x="1810" y="630" width="411.2" height="28" rx="6"/><text class="zone-letter" x="1823" y="650">F</text><text class="zone-title" x="1842" y="650">XH-A232 / TPA3110 BTL Bİ-AMP VE SÜRÜCÜLER</text>
 <rect class="zone" x="70" y="1470" width="830" height="380" rx="8"/><rect class="zone-tab" x="70" y="1470" width="190.39999999999998" height="28" rx="6"/><text class="zone-letter" x="83" y="1490">G</text><text class="zone-title" x="102" y="1490">KULLANICI ARAYÜZÜ</text>
+<rect class="zone" x="70" y="1900" width="1290" height="620" rx="8"/><rect class="zone-tab" x="70" y="1900" width="402.0" height="28" rx="6"/><text class="zone-letter" x="83" y="1920">H</text><text class="zone-title" x="102" y="1920">GC9A01 240×240 YUVARLAK EKRAN — ADR-0017</text>
+<rect class="zone" x="1410" y="1900" width="1240" height="620" rx="8"/><rect class="zone-tab" x="1410" y="1900" width="356.0" height="28" rx="6"/><text class="zone-letter" x="1423" y="1920">I</text><text class="zone-title" x="1442" y="1920">INA219 ŞARJ AKIMI ÖLÇÜMÜ — ADR-0018</text>
 <polyline class="w chg" points="302,278.0 378,278.0"/>
 <polyline class="w gnd" points="302,310.0 378,310.0"/>
 <polyline class="w chg" points="632,278.0 718,278.0"/>
@@ -163,6 +165,11 @@
 <polyline class="w dig" points="808,906.0 778,906.0"/>
 <polyline class="w dig" points="808,938.0 778,938.0"/>
 <polyline class="w dig" points="808,970.0 778,970.0"/>
+<polyline class="w dig" points="808,1066.0 778,1066.0"/>
+<polyline class="w dig" points="808,1098.0 778,1098.0"/>
+<polyline class="w dig" points="808,1130.0 778,1130.0"/>
+<polyline class="w dig" points="808,1162.0 778,1162.0"/>
+<polyline class="w dig" points="808,1194.0 778,1194.0"/>
 <polyline class="w dig" points="1182,778.0 1328,778.0"/>
 <polyline class="w dig" points="1182,810.0 1328,810.0"/>
 <polyline class="w dig" points="1182,842.0 1328,842.0"/>
@@ -189,6 +196,22 @@
 <polyline class="w sig" points="810,1622 810,1622"/>
 <polyline class="w sig" points="590,1674 810,1674"/>
 <polyline class="w gnd" points="700,1674 700,1700"/>
+<polyline class="w dig" points="458,2166.0 738,2166.0"/>
+<polyline class="w dig" points="458,2134.0 738,2134.0"/>
+<polyline class="w dig" points="458,2102.0 738,2102.0"/>
+<polyline class="w dig" points="458,2070.0 738,2070.0"/>
+<polyline class="w dig" points="458,2038.0 738,2038.0"/>
+<polyline class="w dig" points="648,1986.0 648,2070.0"/>
+<polyline class="w v33" points="458,2230.0 738,2230.0"/>
+<polyline class="w gnd" points="458,2198.0 738,2198.0"/>
+<polyline class="w chg" points="1388,2038.0 1538,2038.0"/>
+<polyline class="w chg" points="1832,2038.0 1982,2038.0"/>
+<polyline class="w sig" points="1578,2038.0 1578,2188.0 1598,2188.0"/>
+<polyline class="w sig" points="1792,2038.0 1792,2220.0 1598,2220.0"/>
+<polyline class="w v33" points="1528,2252.0 1598,2252.0"/>
+<polyline class="w gnd" points="1528,2284.0 1598,2284.0"/>
+<polyline class="w dig" points="1942,2188.0 2002,2188.0"/>
+<polyline class="w dig" points="1942,2220.0 2002,2220.0"/>
 <rect class="blk" x="100" y="200" width="180" height="144" rx="6"/><line class="blk-div" x1="100" y1="252" x2="280" y2="252"/>
 <text class="blk-ref" x="100" y="191">J1</text><text class="blk-title" x="190.0" y="226">USB-C SOKETİ</text><text class="blk-sub" x="190.0" y="243">harici 65 W PD adaptör</text>
 <line class="pin" x1="280" y1="278.0" x2="302" y2="278.0"/>
@@ -216,8 +239,8 @@
 <line class="pin" x1="950" y1="310.0" x2="972" y2="310.0"/>
 <text class="pin-name" text-anchor="end" x="940" y="314.0">CHG−</text>
 <rect class="sym" x="1020" y="268.0" width="56" height="20" rx="3"/><line class="sym-line" x1="1020" y1="278.0" x2="1076" y2="278.0"/><text class="sym-ref" text-anchor="middle" x="1048" y="260.0">F_CHG</text><text class="sym-val" text-anchor="middle" x="1048" y="308.0">3 A ADAY</text>
-<path class="flag" d="M 1085 278.0 l 12 -13 h 83.2 v 26 h -83.2 Z"/>
-<text class="flag-name" text-anchor="start" x="1105" y="283.0">CHG_16V8</text>
+<path class="flag" d="M 1085 278.0 l 12 -13 h 116.80000000000001 v 26 h -116.80000000000001 Z"/>
+<text class="flag-name" text-anchor="start" x="1105" y="283.0">CHG_16V8_RAW</text>
 <path class="flag" d="M 1085 366 l 12 -13 h 91.60000000000001 v 26 h -91.60000000000001 Z"/>
 <text class="flag-name" text-anchor="start" x="1105" y="371">POWER_GND</text>
 <line class="sym-line" x1="1240" y1="190" x2="1240" y2="208"/><line class="sym-plate-long" x1="1220" y1="208" x2="1260" y2="208"/><line class="sym-plate" x1="1229" y1="220" x2="1251" y2="220"/><line class="sym-line" x1="1240" y1="220" x2="1240" y2="238"/><text class="sym-pol" x="1206" y="206">+</text><text class="cell-name" text-anchor="start" x="1270" y="218">BT4</text>
@@ -280,7 +303,7 @@
 <line class="w rail" x1="600" y1="778.0" x2="600" y2="762.0"/><line class="rail-bar" x1="584" y1="762.0" x2="616" y2="762.0"/><text class="rail-name" text-anchor="middle" x="600" y="754.0">+5V_LOGIC</text>
 <line class="w gnd" x1="502" y1="810.0" x2="502" y2="824.0"/><line class="gnd-bar" x1="487" y1="824.0" x2="517" y2="824.0"/><line class="gnd-bar" x1="493" y1="830.0" x2="511" y2="830.0"/><line class="gnd-bar" x1="498" y1="836.0" x2="506" y2="836.0"/>
 <text class="gnd-name" text-anchor="middle" x="502" y="852.0">STAR_GND</text>
-<rect class="blk" x="830" y="700" width="330" height="368" rx="6"/><line class="blk-div" x1="830" y1="752" x2="1160" y2="752"/>
+<rect class="blk" x="830" y="700" width="330" height="528" rx="6"/><line class="blk-div" x1="830" y1="752" x2="1160" y2="752"/>
 <text class="blk-ref" x="830" y="691">U5</text><text class="blk-title" x="995.0" y="726">ESP32-S3 DEVKIT</text><text class="blk-sub" x="995.0" y="743">16 MB flash + 8 MB PSRAM</text>
 <line class="pin" x1="830" y1="778.0" x2="808" y2="778.0"/>
 <text class="pin-name" text-anchor="start" x="840" y="782.0">5V / VBUS</text>
@@ -300,6 +323,16 @@
 <text class="pin-name" text-anchor="start" x="840" y="1006.0">GPIO1  BATT_SENSE</text>
 <line class="pin" x1="830" y1="1034.0" x2="808" y2="1034.0"/>
 <text class="pin-name" text-anchor="start" x="840" y="1038.0">GPIO2  NTC_SENSE</text>
+<line class="pin" x1="830" y1="1066.0" x2="808" y2="1066.0"/>
+<text class="pin-name" text-anchor="start" x="840" y="1070.0">GPIO47 LCD_SCK</text>
+<line class="pin" x1="830" y1="1098.0" x2="808" y2="1098.0"/>
+<text class="pin-name" text-anchor="start" x="840" y="1102.0">GPIO41 LCD_MOSI</text>
+<line class="pin" x1="830" y1="1130.0" x2="808" y2="1130.0"/>
+<text class="pin-name" text-anchor="start" x="840" y="1134.0">GPIO39 LCD_CS</text>
+<line class="pin" x1="830" y1="1162.0" x2="808" y2="1162.0"/>
+<text class="pin-name" text-anchor="start" x="840" y="1166.0">GPIO40 LCD_DC</text>
+<line class="pin" x1="830" y1="1194.0" x2="808" y2="1194.0"/>
+<text class="pin-name" text-anchor="start" x="840" y="1198.0">GPIO18 LCD_RST</text>
 <line class="pin" x1="1160" y1="778.0" x2="1182" y2="778.0"/>
 <text class="pin-name" text-anchor="end" x="1150" y="782.0">GPIO4  BCLK</text>
 <line class="pin" x1="1160" y1="810.0" x2="1182" y2="810.0"/>
@@ -314,7 +347,7 @@
 <text class="pin-name" text-anchor="end" x="1150" y="942.0">GPIO21 AMP_MUTE</text>
 <line class="pin" x1="1160" y1="970.0" x2="1182" y2="970.0"/>
 <text class="pin-name" text-anchor="end" x="1150" y="974.0">GPIO13 DAC_XSMT</text>
-<text class="blk-note" x="995.0" y="1086">GPIO ataması ADAY · kart şeması ve boot testi olmadan accepted değil</text>
+<text class="blk-note" x="995.0" y="1246">GPIO ataması ADAY · kart şeması ve boot testi olmadan accepted değil</text>
 <path class="flag" d="M 778 778.0 l -12 -13 h -91.60000000000001 v 26 h 91.60000000000001 Z"/>
 <text class="flag-name" text-anchor="end" x="758" y="783.0">+5V_LOGIC</text>
 <line class="w gnd" x1="660" y1="810.0" x2="660" y2="824.0"/><line class="gnd-bar" x1="645" y1="824.0" x2="675" y2="824.0"/><line class="gnd-bar" x1="651" y1="830.0" x2="669" y2="830.0"/><line class="gnd-bar" x1="656" y1="836.0" x2="664" y2="836.0"/>
@@ -328,6 +361,16 @@
 <text class="flag-name" text-anchor="end" x="758" y="943.0">LED_G</text>
 <path class="flag" d="M 778 970.0 l -12 -13 h -58.0 v 26 h 58.0 Z"/>
 <text class="flag-name" text-anchor="end" x="758" y="975.0">LED_B</text>
+<path class="flag" d="M 778 1066.0 l -12 -13 h -74.80000000000001 v 26 h 74.80000000000001 Z"/>
+<text class="flag-name" text-anchor="end" x="758" y="1071.0">LCD_SCK</text>
+<path class="flag" d="M 778 1098.0 l -12 -13 h -83.2 v 26 h 83.2 Z"/>
+<text class="flag-name" text-anchor="end" x="758" y="1103.0">LCD_MOSI</text>
+<path class="flag" d="M 778 1130.0 l -12 -13 h -66.4 v 26 h 66.4 Z"/>
+<text class="flag-name" text-anchor="end" x="758" y="1135.0">LCD_CS</text>
+<path class="flag" d="M 778 1162.0 l -12 -13 h -66.4 v 26 h 66.4 Z"/>
+<text class="flag-name" text-anchor="end" x="758" y="1167.0">LCD_DC</text>
+<path class="flag" d="M 778 1194.0 l -12 -13 h -74.80000000000001 v 26 h 74.80000000000001 Z"/>
+<text class="flag-name" text-anchor="end" x="758" y="1199.0">LCD_RST</text>
 <rect class="blk" x="1350" y="700" width="380" height="272" rx="6"/><line class="blk-div" x1="1350" y1="752" x2="1730" y2="752"/>
 <text class="blk-ref" x="1350" y="691">U6</text><text class="blk-title" x="1540.0" y="726">PCM5102A MODÜLÜ</text><text class="blk-sub" x="1540.0" y="743">3-wire I²S · modül köprüleri doğrulanacak</text>
 <line class="pin" x1="1350" y1="778.0" x2="1328" y2="778.0"/>
@@ -407,6 +450,71 @@
 <line class="sym-line" x1="810" y1="1622" x2="810" y2="1636"/><path class="sym" style="fill:#bfdbfe" d="M 796 1636 L 824 1636 L 810 1660 Z"/><line class="sym-plate" x1="796" y1="1660" x2="824" y2="1660"/><line class="sym-line" x1="810" y1="1660" x2="810" y2="1674"/><path class="led-ray" d="M 826 1638 l 12 -10 M 826 1648 l 12 -10"/><text class="sym-ref" text-anchor="start" x="842" y="1644">D5</text><text class="sym-val" text-anchor="start" x="842" y="1660"></text>
 <line class="w gnd" x1="700" y1="1700" x2="700" y2="1714"/><line class="gnd-bar" x1="685" y1="1714" x2="715" y2="1714"/><line class="gnd-bar" x1="691" y1="1720" x2="709" y2="1720"/><line class="gnd-bar" x1="696" y1="1726" x2="704" y2="1726"/>
 <text class="gnd-name" text-anchor="middle" x="700" y="1742">ORTAK KATOT → STAR_GND</text>
+<rect class="blk" x="760" y="1960" width="300" height="304" rx="6"/><line class="blk-div" x1="760" y1="2012" x2="1060" y2="2012"/>
+<text class="blk-ref" x="760" y="1951">U8</text><text class="blk-title" x="910.0" y="1986">GC9A01 MODÜLÜ</text><text class="blk-sub" x="910.0" y="2003">240×240 IPS · 7 pin · SPI3 · 3,3 V lojik · 5 V TOLERANSLI DEĞİL</text>
+<line class="pin" x1="760" y1="2038.0" x2="738" y2="2038.0"/>
+<text class="pin-name" text-anchor="start" x="770" y="2042.0">RST</text>
+<line class="pin" x1="760" y1="2070.0" x2="738" y2="2070.0"/>
+<text class="pin-name" text-anchor="start" x="770" y="2074.0">CS</text>
+<line class="pin" x1="760" y1="2102.0" x2="738" y2="2102.0"/>
+<text class="pin-name" text-anchor="start" x="770" y="2106.0">DC</text>
+<line class="pin" x1="760" y1="2134.0" x2="738" y2="2134.0"/>
+<text class="pin-name" text-anchor="start" x="770" y="2138.0">SDA</text>
+<line class="pin" x1="760" y1="2166.0" x2="738" y2="2166.0"/>
+<text class="pin-name" text-anchor="start" x="770" y="2170.0">SCL</text>
+<line class="pin" x1="760" y1="2198.0" x2="738" y2="2198.0"/>
+<text class="pin-name" text-anchor="start" x="770" y="2202.0">GND</text>
+<line class="pin" x1="760" y1="2230.0" x2="738" y2="2230.0"/>
+<text class="pin-name" text-anchor="start" x="770" y="2234.0">VCC</text>
+<text class="blk-note" x="910.0" y="2282">7 pinli varyant: arka ışık ucu yok, VCC ile birlikte yanar</text>
+<path class="flag" d="M 458 2166.0 l 12 -13 h 74.80000000000001 v 26 h -74.80000000000001 Z"/>
+<text class="flag-name" text-anchor="start" x="478" y="2171.0">LCD_SCK</text>
+<path class="flag" d="M 458 2134.0 l 12 -13 h 83.2 v 26 h -83.2 Z"/>
+<text class="flag-name" text-anchor="start" x="478" y="2139.0">LCD_MOSI</text>
+<path class="flag" d="M 458 2102.0 l 12 -13 h 66.4 v 26 h -66.4 Z"/>
+<text class="flag-name" text-anchor="start" x="478" y="2107.0">LCD_DC</text>
+<path class="flag" d="M 458 2070.0 l 12 -13 h 66.4 v 26 h -66.4 Z"/>
+<text class="flag-name" text-anchor="start" x="478" y="2075.0">LCD_CS</text>
+<path class="flag" d="M 458 2038.0 l 12 -13 h 74.80000000000001 v 26 h -74.80000000000001 Z"/>
+<text class="flag-name" text-anchor="start" x="478" y="2043.0">LCD_RST</text>
+<line class="sym-line" x1="648" y1="1920.0" x2="648" y2="1932.0"/><rect class="sym dnp" x="637" y="1932.0" width="22" height="42" rx="2"/><line class="sym-line" x1="648" y1="1974.0" x2="648" y2="1986.0"/><text class="sym-ref" text-anchor="start" x="666" y="1948.0">R_CS</text><text class="sym-val" text-anchor="start" x="666" y="1964.0">10 kΩ</text>
+<line class="w rail" x1="648" y1="1920.0" x2="648" y2="1904.0"/><line class="rail-bar" x1="632" y1="1904.0" x2="664" y2="1904.0"/><text class="rail-name" text-anchor="middle" x="648" y="1896.0">+3V3</text>
+<path class="flag" d="M 458 2230.0 l 12 -13 h 83.2 v 26 h -83.2 Z"/>
+<text class="flag-name" text-anchor="start" x="478" y="2235.0">+3V3_LCD</text>
+<line class="w gnd" x1="458" y1="2198.0" x2="458" y2="2212.0"/><line class="gnd-bar" x1="443" y1="2212.0" x2="473" y2="2212.0"/><line class="gnd-bar" x1="449" y1="2218.0" x2="467" y2="2218.0"/><line class="gnd-bar" x1="454" y1="2224.0" x2="462" y2="2224.0"/>
+<text class="gnd-name" text-anchor="middle" x="458" y="2240.0">STAR_GND</text>
+<rect class="blk" x="1560" y="1960" width="250" height="112" rx="6"/><line class="blk-div" x1="1560" y1="2012" x2="1810" y2="2012"/>
+<text class="blk-ref" x="1560" y="1951">RS1</text><text class="blk-title" x="1685.0" y="1986">ŞÖNT</text><text class="blk-sub" x="1685.0" y="2003">0,05 Ω · %1 · 1 W · yüksek taraf</text>
+<line class="pin" x1="1560" y1="2038.0" x2="1538" y2="2038.0"/>
+<text class="pin-name" text-anchor="start" x="1570" y="2042.0">IN+</text>
+<line class="pin" x1="1810" y1="2038.0" x2="1832" y2="2038.0"/>
+<text class="pin-name" text-anchor="end" x="1800" y="2042.0">IN−</text>
+<path class="flag" d="M 1388 2038.0 l 12 -13 h 116.80000000000001 v 26 h -116.80000000000001 Z"/>
+<text class="flag-name" text-anchor="start" x="1408" y="2043.0">CHG_16V8_RAW</text>
+<path class="flag" d="M 1982 2038.0 l 12 -13 h 83.2 v 26 h -83.2 Z"/>
+<text class="flag-name" text-anchor="start" x="2002" y="2043.0">CHG_16V8</text>
+<rect class="blk" x="1620" y="2110" width="300" height="208" rx="6"/><line class="blk-div" x1="1620" y1="2162" x2="1920" y2="2162"/>
+<text class="blk-ref" x="1620" y="2101">U9</text><text class="blk-title" x="1770.0" y="2136">INA219</text><text class="blk-sub" x="1770.0" y="2153">adres 0x40 · A0/A1 → GND</text>
+<line class="pin" x1="1620" y1="2188.0" x2="1598" y2="2188.0"/>
+<text class="pin-name" text-anchor="start" x="1630" y="2192.0">VIN+</text>
+<line class="pin" x1="1620" y1="2220.0" x2="1598" y2="2220.0"/>
+<text class="pin-name" text-anchor="start" x="1630" y="2224.0">VIN−</text>
+<line class="pin" x1="1620" y1="2252.0" x2="1598" y2="2252.0"/>
+<text class="pin-name" text-anchor="start" x="1630" y="2256.0">VS</text>
+<line class="pin" x1="1620" y1="2284.0" x2="1598" y2="2284.0"/>
+<text class="pin-name" text-anchor="start" x="1630" y="2288.0">GND</text>
+<line class="pin" x1="1920" y1="2188.0" x2="1942" y2="2188.0"/>
+<text class="pin-name" text-anchor="end" x="1910" y="2192.0">SDA</text>
+<line class="pin" x1="1920" y1="2220.0" x2="1942" y2="2220.0"/>
+<text class="pin-name" text-anchor="end" x="1910" y="2224.0">SCL</text>
+<text class="blk-note" x="1770.0" y="2336">VBUS PİNİ YOK — paket gerilimini bu parça ÖLÇMEZ</text>
+<line class="w rail" x1="1528" y1="2252.0" x2="1528" y2="2236.0"/><line class="rail-bar" x1="1512" y1="2236.0" x2="1544" y2="2236.0"/><text class="rail-name" text-anchor="middle" x="1528" y="2228.0">+3V3</text>
+<line class="w gnd" x1="1528" y1="2284.0" x2="1528" y2="2298.0"/><line class="gnd-bar" x1="1513" y1="2298.0" x2="1543" y2="2298.0"/><line class="gnd-bar" x1="1519" y1="2304.0" x2="1537" y2="2304.0"/><line class="gnd-bar" x1="1524" y1="2310.0" x2="1532" y2="2310.0"/>
+<text class="gnd-name" text-anchor="middle" x="1528" y="2326.0">STAR_GND</text>
+<path class="flag" d="M 2002 2188.0 l 12 -13 h 74.80000000000001 v 26 h -74.80000000000001 Z"/>
+<text class="flag-name" text-anchor="start" x="2022" y="2193.0">I2C_SDA</text>
+<path class="flag" d="M 2002 2220.0 l 12 -13 h 74.80000000000001 v 26 h -74.80000000000001 Z"/>
+<text class="flag-name" text-anchor="start" x="2022" y="2225.0">I2C_SCL</text>
 <text class="net" text-anchor="middle" x="360" y="270">USB_PD_VBUS</text>
 <text class="net" text-anchor="middle" x="700" y="270">PD20V</text>
 <line class="tp-leader" x1="1000" y1="278.0" x2="1000" y2="234.0"/><circle class="junction" cx="1000" cy="278.0" r="3.5"/>
@@ -491,6 +599,32 @@
 <text class="net" text-anchor="start" x="100" y="1766">Direnç değerleri ADAY: gerçek LED ileri gerilimi ve 2–5 mA hedefine göre hesaplanır.</text>
 <text class="net" text-anchor="start" x="100" y="1788">Hazır RGB modülünde seri direnç varsa bu parçalar DNP kalır. LED ve buton kabloları</text>
 <text class="net" text-anchor="start" x="100" y="1810">Class-D hoparlör kablolarından ayrı çekilir.</text>
+<circle class="junction" cx="648" cy="2070.0" r="4.5"/>
+<line class="tp-leader" x1="680" y1="2166.0" x2="700" y2="2122.0"/><circle class="junction" cx="680" cy="2166.0" r="3.5"/>
+<circle class="tp" cx="700" cy="2122.0" r="13"/><text class="tp-text" x="700" y="2126.0">28</text>
+<rect class="panel note" x="70" y="2340" width="1290" height="170" rx="6"/>
+<text class="panel-title note-t" x="86" y="2368">EKRAN KURALLARI — ADR-0017</text><line class="tb-line" x1="86" y1="2382" x2="1344" y2="2382"/>
+<text class="panel-text" x="90" y="2402">Modül 5 V TOLERANSLI DEĞİLDİR. Üstünde LDO olan varyantta bile lojik 3,3 V'tur.</text>
+<text class="panel-text" x="90" y="2426">TEZGÂH KABLOLAMASI: sinyaller doğrudan ESP'ye bağlanır. Ürün kablolamasında ESP ucuna 4 × 33 Ω seri direnç girer — uçan kablolarda kenar hızını yavaşlatır ve analog ses yolunun yanından geçerler.</text>
+<text class="panel-text" x="90" y="2450">R_CS (10 kΩ) tezgâhta DNP: GPIO39 zayıf dahili pull-up ile açılıyor ve açılış penceresini o kapatıyor. Üründe takılır; doğrulanmamış bir dahili değere güvenmek kalıcı bir çözüm değil.</text>
+<text class="panel-text" x="90" y="2474">Panel beslemesi ESP modülünün 3V3'ü değil, MP1584 rayından ayrı bir LDO'dur: panelin anahtarlama yükü BATT_SENSE/NTC_SENSE'in referans aldığı rayı bozmasın (G3'te ölçülür).</text>
+<text class="panel-text" x="90" y="2498">Bu varyantta arka ışık ucu YOKTUR: VCC verildiği anda yanar. Firmware çalışmadan önce ekranı karartmanın yolu yok; parlaklık ayarı da yok.</text>
+<text class="panel-text" x="90" y="2522">GPIO39-41 (MTCK/MTDO/MTDI) pad-JTAG'i tüketir. Harici prob ile hata ayıklama kalmaz; GPIO19/20'deki USB Serial/JTAG durur. GPIO42 serbest kaldı.</text>
+<text class="panel-warn" x="90" y="2546">Panel + arka ışık için bütçe ≤50 mA, bölünmemiş tek yük. Ölçülmedi.</text>
+<line class="tp-leader" x1="1912" y1="2038.0" x2="1912" y2="1994.0"/><circle class="junction" cx="1912" cy="2038.0" r="3.5"/>
+<circle class="tp" cx="1912" cy="1994.0" r="13"/><text class="tp-text" x="1912" y="1998.0">29</text>
+<circle class="junction" cx="1578" cy="2038.0" r="4.5"/>
+<circle class="junction" cx="1792" cy="2038.0" r="4.5"/>
+<rect class="panel danger" x="1410" y="2340" width="1240" height="170" rx="6"/>
+<text class="panel-title danger-t" x="1426" y="2368">AKIM SENSÖRÜ KURALLARI — ADR-0018</text><line class="tb-line" x1="1426" y1="2382" x2="2634" y2="2382"/>
+<text class="panel-warn" x="1430" y="2402">PAKET GERİLİMİNİN KAYNAĞI BU PARÇA DEĞİLDİR</text>
+<text class="panel-text" x="1430" y="2426">INA219'un VBUS pini yoktur; gerilimi şöntün YÜK tarafından ölçer, yani yüksek</text>
+<text class="panel-text" x="1430" y="2450">tarafta paket gerilimi eksi kendi burden düşümünü verir. Hata makul kalır, o</text>
+<text class="panel-text" x="1430" y="2474">yüzden hk_power'ın imkânsız-okuma koruması yakalayamaz. pack_mv yalnız</text>
+<text class="panel-text" x="1430" y="2498">GPIO1/BATT_SENSE bölücüsünden gelir.</text>
+<text class="panel-text" x="1430" y="2546">Ortak mod 26 V (INA226'da 40 V): XL4015'in 20 V GİRİŞ tarafına asla konmaz.</text>
+<text class="panel-text" x="1430" y="2570">Bağlamadan önce XL4015 çıkışı, sensör takılı değilken, 16,80 V'ta doğrulanır.</text>
+<text class="panel-text" x="1430" y="2594">INA219 ve INA226 aynı adresten cevap verir; 0xFE okunarak ayırt edilir.</text>
 <rect class="panel danger" x="930" y="1470" width="830" height="380" rx="6"/>
 <text class="panel-title danger-t" x="946" y="1498">GÜVENLİK VE ÖLÇÜM KURALLARI</text><line class="tb-line" x1="946" y1="1512" x2="1744" y2="1512"/>
 <text class="panel-warn" x="950" y="1532">BTL ÇIKIŞA ŞASE KLİPSİ TAKMA</text>
@@ -505,7 +639,7 @@
 <text class="panel-text" x="950" y="1796">Değeri C = 1 / (2π · R_tweeter · f_safe) ile G2 raporundan gelir.</text>
 <text class="panel-text" x="950" y="1820">V1'de şarj sırasında amfi kapalıdır (ADR-0004).</text>
 <rect class="panel note" x="1790" y="1470" width="860" height="380" rx="6"/>
-<text class="panel-title note-t" x="1806" y="1498">TEST NOKTASI İNDEKSİ — TP0…TP27</text><line class="tb-line" x1="1806" y1="1512" x2="2634" y2="1512"/>
+<text class="panel-title note-t" x="1806" y="1498">TEST NOKTASI İNDEKSİ — TP0…TP29</text><line class="tb-line" x1="1806" y1="1512" x2="2634" y2="1512"/>
 <text class="panel-mono" x="1810" y="1532">TP0  paket B−        TP7  F1 sonrası        TP14 DAC LOUT       TP21 XH R−</text>
 <text class="panel-mono" x="1810" y="1556">TP1  hücre 1 / B1    TP8  VBAT_SW           TP15 DAC ROUT       TP22 buton GPIO7</text>
 <text class="panel-mono" x="1810" y="1580">TP2  hücre 2 / B2    TP9  MP1584 5,10 V     TP16 amfi L IN      TP23 LED_R sürüş</text>
@@ -513,27 +647,28 @@
 <text class="panel-mono" x="1810" y="1628">TP4  paket B+        TP11 I²S BCLK          TP18 XH L+          TP25 LED_B sürüş</text>
 <text class="panel-mono" x="1810" y="1652">TP5  BMS P+          TP12 I²S LRCLK         TP19 XH L−          TP26 CHG+ 16,80 V</text>
 <text class="panel-mono" x="1810" y="1676">TP6  BMS P− / GND    TP13 I²S DATA          TP20 XH R+          TP27 NTC uçları</text>
-<text class="panel-text" x="1810" y="1724">Güç açma/kapatma kaydı — CH1 TP8 · CH2 TP9 · CH3 TP10 · CH4 TP14/TP15.</text>
-<text class="panel-text" x="1810" y="1748">Ripple ölçümünde 10× prob, ground-spring ve 20 MHz bant sınırı kullanılır.</text>
-<text class="panel-text" x="1810" y="1772">Beklenen değer ve geçiş şartları: docs/02-hardware/circuit-and-wiring-plan.md §7</text>
-<rect class="panel gate" x="70" y="1880" width="1690" height="92" rx="6"/>
-<text class="panel-title gate-t" x="86" y="1908">ENERJİ VERME ÖNCESİ ZORUNLU KAPILAR</text><line class="tb-line" x1="86" y1="1922" x2="1744" y2="1922"/>
-<text class="panel-mono" x="90" y="1926">G0 sürücü DC direnci / empedans / polarite   ·   G1 amfi + 8 Ω ≥50 W non-inductive dummy-load   ·   G2 tweeter HPF + limiter + C_SAFE   ·   G3 güç, ripple, brownout, EMI, pop   ·   G4 batarya, BMS, şarj, sonlandırma, NTC</text>
-<text class="panel-warn" x="90" y="1952">Fiziksel ölçüm kaydı olmadan hiçbir kapı PASS yapılamaz. G0–G5 geçmeden dört üniteye çoğaltma yoktur.</text>
-<rect class="panel title" x="1790" y="1880" width="860" height="92" rx="6"/>
-<text class="panel-title" x="70" y="2010">GÖSTERİM</text>
-<line class="w pwr" x1="210" y1="2005" x2="256" y2="2005"/><text class="legend" x="266" y="2010">batarya / VBAT</text>
-<line class="w chg" x1="515" y1="2005" x2="561" y2="2005"/><text class="legend" x="571" y="2010">şarj</text>
-<line class="w v5" x1="820" y1="2005" x2="866" y2="2005"/><text class="legend" x="876" y="2010">5 V</text>
-<line class="w v33" x1="1125" y1="2005" x2="1171" y2="2005"/><text class="legend" x="1181" y="2010">3V3</text>
-<line class="w dig" x1="1430" y1="2005" x2="1476" y2="2005"/><text class="legend" x="1486" y="2010">dijital / I²S</text>
-<line class="w aud" x1="1735" y1="2005" x2="1781" y2="2005"/><text class="legend" x="1791" y="2010">analog ses</text>
-<line class="w btl" x1="2040" y1="2005" x2="2086" y2="2005"/><text class="legend" x="2096" y="2010">BTL çıkış</text>
-<line class="w gnd" x1="2345" y1="2005" x2="2391" y2="2005"/><text class="legend" x="2401" y="2010">toprak</text>
-<text class="tb-key" x="1810" y="1912">BELGE</text><text class="tb-val" x="1810" y="1938">HK-HW-SCH</text>
-<text class="tb-key" x="2010" y="1912">REV</text><text class="tb-val" x="2010" y="1938">P1</text>
-<text class="tb-key" x="2130" y="1912">DURUM</text><text class="tb-val" x="2130" y="1938">CANDIDATE</text>
-<text class="tb-key" x="2330" y="1912">TARİH</text><text class="tb-val" x="2330" y="1938">2026-08-31</text>
-<text class="tb-key" x="2500" y="1912">SAYFA</text><text class="tb-val" x="2500" y="1938">1 / 1</text>
-<text class="tb-key" x="1810" y="1962">ÜRETEN  hardware/diagrams/generate_schematic_svg.py  ·  ELEKTRİKSEL KAYNAK  hardware/kicad/</text>
+<text class="panel-mono" x="1810" y="1700">TP28 LCD SCL         TP29 şönt CHG+ tarafı</text>
+<text class="panel-text" x="1810" y="1748">Güç açma/kapatma kaydı — CH1 TP8 · CH2 TP9 · CH3 TP10 · CH4 TP14/TP15.</text>
+<text class="panel-text" x="1810" y="1772">Ripple ölçümünde 10× prob, ground-spring ve 20 MHz bant sınırı kullanılır.</text>
+<text class="panel-text" x="1810" y="1796">Beklenen değer ve geçiş şartları: docs/02-hardware/circuit-and-wiring-plan.md §7</text>
+<rect class="panel gate" x="70" y="2610" width="1690" height="92" rx="6"/>
+<text class="panel-title gate-t" x="86" y="2638">ENERJİ VERME ÖNCESİ ZORUNLU KAPILAR</text><line class="tb-line" x1="86" y1="2652" x2="1744" y2="2652"/>
+<text class="panel-mono" x="90" y="2656">G0 sürücü DC direnci / empedans / polarite   ·   G1 amfi + 8 Ω ≥50 W non-inductive dummy-load   ·   G2 tweeter HPF + limiter + C_SAFE   ·   G3 güç, ripple, brownout, EMI, pop   ·   G4 batarya, BMS, şarj, sonlandırma, NTC</text>
+<text class="panel-warn" x="90" y="2682">Fiziksel ölçüm kaydı olmadan hiçbir kapı PASS yapılamaz. G0–G5 geçmeden dört üniteye çoğaltma yoktur.</text>
+<rect class="panel title" x="1790" y="2610" width="860" height="92" rx="6"/>
+<text class="panel-title" x="70" y="2740">GÖSTERİM</text>
+<line class="w pwr" x1="210" y1="2735" x2="256" y2="2735"/><text class="legend" x="266" y="2740">batarya / VBAT</text>
+<line class="w chg" x1="515" y1="2735" x2="561" y2="2735"/><text class="legend" x="571" y="2740">şarj</text>
+<line class="w v5" x1="820" y1="2735" x2="866" y2="2735"/><text class="legend" x="876" y="2740">5 V</text>
+<line class="w v33" x1="1125" y1="2735" x2="1171" y2="2735"/><text class="legend" x="1181" y="2740">3V3</text>
+<line class="w dig" x1="1430" y1="2735" x2="1476" y2="2735"/><text class="legend" x="1486" y="2740">dijital / I²S</text>
+<line class="w aud" x1="1735" y1="2735" x2="1781" y2="2735"/><text class="legend" x="1791" y="2740">analog ses</text>
+<line class="w btl" x1="2040" y1="2735" x2="2086" y2="2735"/><text class="legend" x="2096" y="2740">BTL çıkış</text>
+<line class="w gnd" x1="2345" y1="2735" x2="2391" y2="2735"/><text class="legend" x="2401" y="2740">toprak</text>
+<text class="tb-key" x="1810" y="2642">BELGE</text><text class="tb-val" x="1810" y="2668">HK-HW-SCH</text>
+<text class="tb-key" x="2010" y="2642">REV</text><text class="tb-val" x="2010" y="2668">P1</text>
+<text class="tb-key" x="2130" y="2642">DURUM</text><text class="tb-val" x="2130" y="2668">CANDIDATE</text>
+<text class="tb-key" x="2330" y="2642">TARİH</text><text class="tb-val" x="2330" y="2668">2026-09-08</text>
+<text class="tb-key" x="2500" y="2642">SAYFA</text><text class="tb-val" x="2500" y="2668">1 / 1</text>
+<text class="tb-key" x="1810" y="2692">ÜRETEN  hardware/diagrams/generate_schematic_svg.py  ·  ELEKTRİKSEL KAYNAK  hardware/kicad/</text>
 </svg>

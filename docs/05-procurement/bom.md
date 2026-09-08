@@ -35,6 +35,8 @@ updated: 2026-08-31
 | 5 V buck regülatör | 4S giriş, sürekli akım ve termal marj; ESP32 + DAC beslemesi | 1 | 1 | 4 | [Robotistan MP1584EN 3 A](https://www.robotistan.com/3a-mini-ayarlanabilir-voltaj-dusurucu-regulator-karti-step-down) aday; yük/ısınma ve ses gürültüsü ölçülecek. |
 | Çok işlevli anlık buton | NO, panel tipi veya PCB tipi; 3.3 V GPIO için | 1 | 1 | 4 | [Robotistan KY-004](https://www.robotistan.com/ky-004-buton-modulu) yalnız prototip adayı; nihai panel butonu kasa tasarımına göre seçilecek. |
 | RGB durum LED'i | Ortak anot/katot RGB veya adreslenebilir LED; firmware seçimiyle uyumlu | 1 | 1 | 4 | [Robotistan 5 mm RGB modül](https://www.robotistan.com/3-renkli-rgb-led-modulu-5mm-rgb-led) prototip adayı. |
+| GC9A01 yuvarlak ekran | 240×240 IPS, SPI, **3,3 V lojik — 5 V toleranslı değil**. Elde olan **7 pinli** varyant: `RST · CS · DC · SDA · SCL · GND · VCC`, arka ışık ucu yok — [[../07-decisions/ADR-0017-round-display\|ADR-0017]] | 1 | 1 | 4 | **Elde.** [Motorobit GC9A01 240×240 yuvarlak](https://www.motorobit.com/gc9a01-128-240x240-oled-grafik-lcd-ekran-yuvarlak-pcb). Sekiz pinli varyantta `BLK` bir FET üzerinden sürülür; bu üründe o uç yok. |
+| INA219 akım sensörü | I²C, adres `0x40`; **ortak mod 26 V** ve **VBUS pini yok** — [[../07-decisions/ADR-0018-ina219-current-sensor\|ADR-0018]] | 1 | 1 | 4 | **Elde.** [Robo90 INA219 modülü](https://www.robo90.com/ina219-dc-akim-sensor-modulu). Paket geriliminin kaynağı **değildir**; yalnız şarj akımı. XL4015 çıkışı sensörsüz 16,80 V'ta doğrulanmadan bağlanmaz. |
 | Sert güç anahtarı | Mandallı; en az 24 V DC / 5 A kontak hedefi | 1 | 1 | 4 | **Kullanıcının seçtiği mekanik aday:** [Direnc.net KM103 / DC-132A 12 V ışıklı 3P rocker](https://www.direnc.net/dc-132a-12v-yuvarlak-nokta-isikli-on-off-anahtar-3p-beyaz). Satıcı sayfası kontak akımı vermiyor; yalnız dahili LED için 12 V DC yazıyor. **16,8 V DC kesme kapasitesi yazılı doğrulanmadan ana batarya hattında onaylanmaz; LED pini doğrudan 4S'e bağlanmaz.** |
 
 ## Batarya ve şarj BOM'u
@@ -75,6 +77,9 @@ updated: 2026-08-31
 | `R_MUTE` | 10 kΩ, 1/4 W | 2 | 10'lu paket | 8 | Amfi `SD` ve DAC `XSMT` pull-down. **Opsiyonel değil**: susturmayı tutan şey bu, GPIO değil (ADR-0011). |
 | `R_LED_R` | 680 Ω, 1/4 W | 1 | 10'lu paket | 4 | Yalnız çıplak RGB LED'de; modül üzerinde direnç varsa `DNP`. |
 | `R_LED_G`, `R_LED_B` | 330 Ω, 1/4 W | 2 | 10'lu paket | 8 | Yalnız çıplak RGB LED'de; modül üzerinde direnç varsa `DNP`. |
+| `R_LCD` | 33 Ω, 1/4 W | 4 | 10'lu paket | 16 | Ekran `SCL/SDA/DC/CS` hatlarına, **ESP ucunda** seri. Uçan kablolarda kenar hızını yavaşlatır ve bu kablolar analog ses yolunun yanından geçer. **Tezgâhta takılmadı**; ürün kablolamasına ait (ADR-0017). |
+| `R_CS` | 10 kΩ, 1/4 W | 1 | 10'lu paket | 4 | Ekran `CS` pull-up'ı. Tezgâhta `DNP`: `GPIO39` zayıf dahili pull-up ile açılıyor ve açılış penceresini o kapatıyor. Üründe takılır — doğrulanmamış bir dahili değere güvenmek kalıcı çözüm değil. |
+| `RS1` | 0,05 Ω, %1, 1 W | 1 | 2 adet | 4 | INA219 şöntü, **şarj hattında yüksek taraf**, `F_CHG` ile `CHG+` arasında. 2,00 A CC'de 0,2 W; tam skala 6,4 A; çözünürlük 200 µA (ADR-0018). |
 | `C_DB` | 100 nF seramik | 1 isteğe bağlı | 10'lu paket | 4 | Donanım debounce/bypass adayı; firmware testiyle karar verilecek. |
 | `C_A` | 1.000 µF / 25 V, 105 °C düşük-ESR hedef | 1 | 1 | 4 | Bulunan perakende ürün yalnız prototip adayı; ESR/ripple/sıcaklık G3'te ölçülecek. |
 | `C_SAFE` deney bankası | 4×2,2 µF / 400 V kutupsuz film | Değer TBD | 4 ortak deney parçası | Nihai: 4 eş değer | Tweeter empedansı ve G2 süpürmesi olmadan değer dondurulmaz veya sürücüye bağlanmaz. |

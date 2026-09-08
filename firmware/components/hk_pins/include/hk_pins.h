@@ -47,10 +47,13 @@
 #define HK_PIN_I2C_SCL   12  /**< INA219 current sensor (ADR-0018) */
 
 /* --- Round display, GC9A01 240x240 over SPI (ADR-0017) -------------------
- * Six signals, and the cost is stated where it is paid: GPIO39-42 are MTCK,
- * MTDO, MTDI and MTMS, so taking them spends pad-JTAG entirely. USB
- * Serial/JTAG on GPIO19/20 survives and is already this build's secondary
- * console, so what is lost is the external probe, not the debugger.
+ * The module in hand is the SEVEN pin variant -- RST, CS, DC, SDA, SCL, GND,
+ * VCC -- so there is no backlight pin: the panel lights when VCC does. Five
+ * signals, and the cost is stated where it is paid: GPIO39-41 are MTCK, MTDO
+ * and MTDI, so taking them spends pad-JTAG entirely (all four are needed and
+ * three is enough to lose it). USB Serial/JTAG on GPIO19/20 survives and is
+ * already this build's secondary console, so what is lost is the external
+ * probe, not the debugger.
  *
  * GPIO14-17 are deliberately NOT used here. They are the only free pins that
  * are both RTC-capable and free of any strapping, USB, UART0 or JTAG role,
@@ -65,12 +68,11 @@
  *     reset that is the safe level, and it is the one place where GPIO18's
  *     defect -- the reason it is barred from mute duty -- is an asset.
  */
-#define HK_PIN_LCD_SCK   47  /**< SPI clock, 33 R series at the ESP end */
-#define HK_PIN_LCD_MOSI  41  /**< SPI data to the panel; nothing reads back */
-#define HK_PIN_LCD_CS    39  /**< Active low. External 10 k pull-up to 3V3 */
-#define HK_PIN_LCD_DC    40  /**< Data/command select */
-#define HK_PIN_LCD_RST   18  /**< Active low. Silicon drives this high at reset */
-#define HK_PIN_LCD_BL    42  /**< Backlight, through a 2N7002; LEDC timer 1 */
+#define HK_PIN_LCD_SCK   47  /**< Module `SCL`. 33 R series at the ESP end on the product */
+#define HK_PIN_LCD_MOSI  41  /**< Module `SDA`. One direction; `SDO` is not wired */
+#define HK_PIN_LCD_CS    39  /**< Module `CS`, active low. Weak internal pull-up at reset */
+#define HK_PIN_LCD_DC    40  /**< Module `DC`, data/command select */
+#define HK_PIN_LCD_RST   18  /**< Module `RST`, active low. Silicon drives this high at reset */
 
 /* --- Mute lines ----------------------------------------------------------
  * Both are active low, and both are held in their SAFE state by an external
@@ -122,15 +124,15 @@
 
 /**
  * Number of GPIOs this design claims:
- * 3 I2S + 1 button + 3 RGB + 2 I2C + 2 mute + 2 analogue + 6 display.
+ * 3 I2S + 1 button + 3 RGB + 2 I2C + 2 mute + 2 analogue + 5 display.
  */
-#define HK_PIN_COUNT 19
+#define HK_PIN_COUNT 18
 
 /** Every assigned pin, as a bit mask. */
 #define HK_PIN_MASK ( \
       (1ULL << HK_PIN_LCD_SCK)   | (1ULL << HK_PIN_LCD_MOSI)  | \
       (1ULL << HK_PIN_LCD_CS)    | (1ULL << HK_PIN_LCD_DC)    | \
-      (1ULL << HK_PIN_LCD_RST)   | (1ULL << HK_PIN_LCD_BL)    | \
+      (1ULL << HK_PIN_LCD_RST)                                | \
       (1ULL << HK_PIN_I2S_BCLK)  | (1ULL << HK_PIN_I2S_LRCLK) | \
       (1ULL << HK_PIN_I2S_DATA)  | (1ULL << HK_PIN_BUTTON)    | \
       (1ULL << HK_PIN_LED_R)     | (1ULL << HK_PIN_LED_G)     | \

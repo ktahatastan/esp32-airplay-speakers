@@ -155,19 +155,25 @@ Bu GPIO tablosu [[../07-decisions/ADR-0010-esp32-s3-n16r8-board|ADR-0010]] ile k
 | DAC susturma | GPIO13 | PCM5102A `XSMT` | **Aktif düşük.** 10 kΩ pull-down zorunlu |
 | Paket gerilimi | GPIO1 | Bölücü -> ADC1_CH0 | Bölücü oranı `G3`/`G4`'ten gelir |
 | Hücre sıcaklığı | GPIO2 | NTC ağı -> ADC1_CH1 | Ağ ve eşikler `G4`'ten gelir |
-| Ekran SPI saat | GPIO47 | GC9A01 `SCL` | 33 Ω seri, ESP ucunda; [[../07-decisions/ADR-0017-round-display\|ADR-0017]] |
-| Ekran SPI veri | GPIO41 | GC9A01 `SDA` | 33 Ω seri. Geri okuma yok, `SDO` bağlanmaz |
-| Ekran CS | GPIO39 | GC9A01 `CS` | 33 Ω seri **+ 10 kΩ pull-up**. Açılışta boşta kalmalı |
-| Ekran D/C | GPIO40 | GC9A01 `DC` | 33 Ω seri |
-| Ekran reset | GPIO18 | GC9A01 `RST` | Doğrudan. Silikon bu pini açılışta **yüksek** sürüyor, aktif-düşük reset için güvenli seviye |
-| Ekran arka ışık | GPIO42 | 2N7002 kapısı | 100 Ω kapı direnci, 10 kΩ kapı-GND pull-down. LEDC timer 1 |
+| Ekran reset | GPIO18 | GC9A01 `RST` | Silikon bu pini açılışta **yüksek** sürüyor, aktif-düşük reset için güvenli seviye; [[../07-decisions/ADR-0017-round-display\|ADR-0017]] |
+| Ekran CS | GPIO39 | GC9A01 `CS` | Aktif düşük. Tezgâhta doğrudan; üründe 10 kΩ pull-up |
+| Ekran D/C | GPIO40 | GC9A01 `DC` | Veri/komut seçimi |
+| Ekran SPI veri | GPIO41 | GC9A01 `SDA` | Tek yön. `SDO` bağlanmaz |
+| Ekran SPI saat | GPIO47 | GC9A01 `SCL` | Tezgâhta doğrudan; üründe 33 Ω seri, ESP ucunda |
 
 Tablo [[../07-decisions/ADR-0011-audio-side-gpio-reservation|ADR-0011]] ile genişletildi, ekran satırları [[../07-decisions/ADR-0017-round-display|ADR-0017]] ile eklendi.
 
+Ekran satırları modülün **kendi başlık sırasıyla** yazıldı — `RST · CS · DC · SDA · SCL · GND · VCC` — ki tablo elindeki parçaya karşı okunabilsin, çevrilmesi gerekmesin.
+
 > [!warning] Ekran pinlerinin bedeli: pad-JTAG
-> `GPIO39-42` sırasıyla `MTCK`, `MTDO`, `MTDI`, `MTMS`'tir. Ekran bunları alınca **harici JTAG probu ile hata ayıklama kalmıyor.** `GPIO19/20` üzerindeki USB Serial/JTAG duruyor ve zaten bu yapının ikincil konsolu; kaybedilen prob, hata ayıklayıcının kendisi değil. Bedel burada yazıyor çünkü tezgâhta fark edilmesi kötü bir sürpriz olurdu.
+> `GPIO39`, `GPIO40` ve `GPIO41` sırasıyla `MTCK`, `MTDO` ve `MTDI`'dir. Dördünün dördü de gerektiği için üçünü almak **harici JTAG probu ile hata ayıklamayı bitiriyor.** `GPIO19/20` üzerindeki USB Serial/JTAG duruyor ve zaten bu yapının ikincil konsolu; kaybedilen prob, hata ayıklayıcının kendisi değil.
 >
 > `GPIO14-17` bilerek boş bırakıldı. Serbest pinler arasında hem RTC yetenekli hem de strapping/USB/UART0/JTAG rolü olmayan tek dörtlü onlar, yani susturma hatlarının yedek havuzu. Ekrana verilmeleri bir güvenlik yedeğini bir kolaylığa çevirirdi.
+
+> [!note] Elimizdeki modül 7 pinli: arka ışık ucu yok
+> `BLK` pini bulunmayan varyantta arka ışık `VCC` ile birlikte yanıyor. Sonuçları: firmware çalışmadan önce ekranı karartmanın yolu yok, parlaklık ayarı yok, ve panelin akımı sürekli. `GPIO42` bu yüzden serbest kaldı.
+>
+> Tezgâh kablolamasında sinyaller **doğrudan** ESP'ye gidiyor: seri direnç yok, `CS` pull-up'ı yok. İkisi de ürün kablolamasına ait ve sebepleri ADR-0017'de yazılı — kısaca, uçan kabloların kenar hızı ve `CS`'in açılış penceresinde doğrulanmamış bir dahili pull-up'a bırakılmaması.
 
 `GPIO6` ürünün dışında ikinci bir işe daha koşuluyor: tezgâhtaki geliştirme kartında S/PDIF çıkışı aynı pinden sürülüyor, bkz. 3.5. Ürün kablolamasında bu pin yalnız `DIN`'e gider.
 

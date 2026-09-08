@@ -100,7 +100,7 @@ class Module:
 MODULES: tuple[Module, ...] = (
     Module("J1", "USB-C PD INLET / EXTERNAL 65 W ADAPTER", (46, 36), ("USB_PD_VBUS", "POWER_GND")),
     Module("U1", "USB-C PD TRIGGER / FIXED 20 V", (99, 36), ("USB_PD_VBUS", "POWER_GND", "PD20V", "POWER_GND")),
-    Module("U2", "XL4015 CC-CV / CALIBRATE 16.80 V 2.00 A", (155, 36), ("PD20V", "POWER_GND", "CHG_16V8", "POWER_GND")),
+    Module("U2", "XL4015 CC-CV / CALIBRATE 16.80 V 2.00 A", (155, 36), ("PD20V", "POWER_GND", "CHG_16V8_RAW", "POWER_GND")),
     Module("U3", "4S BALANCED BMS / COMMON PORT / VERIFY SILKSCREEN", (244, 33),
            ("BPLUS", "B3", "B2", "B1", "BMINUS", "PACK_POS", "POWER_GND", "NTC_BMS")),
     Module("U4", "MP1584 BUCK / SET 5.10 V UNLOADED", (56, 104), ("VBAT_SW", "POWER_GND", "V5_SYS", "STAR_GND")),
@@ -108,6 +108,7 @@ MODULES: tuple[Module, ...] = (
         "V5_LOGIC", "STAR_GND", "ESP_3V3", "BUTTON_N", "LED_R", "LED_G", "LED_B",
         "I2S_BCLK", "I2S_LRCLK", "I2S_DATA", "I2C_SDA", "I2C_SCL",
         "AMP_MUTE", "DAC_XSMT", "BATT_SENSE", "NTC_SENSE",
+        "LCD_RST", "LCD_CS", "LCD_DC", "LCD_MOSI", "LCD_SCK",
     )),
     Module("U6", "PCM5102A I2S DAC MODULE / 3-WIRE PLL", (218, 100), (
         "I2S_BCLK", "I2S_LRCLK", "I2S_DATA", "STAR_GND", "V5_LOGIC", "STAR_GND",
@@ -122,6 +123,17 @@ MODULES: tuple[Module, ...] = (
     # Anodes carry the POST-resistor nets. Naming them LED_R/LED_G/LED_B here would
     # put the pre- and post-resistor net on one node and short out R3/R4/R5.
     Module("D1", "COMMON-CATHODE RGB STATUS LED", (140, 168), ("LED_R_A", "LED_G_A", "LED_B_A", "STAR_GND")),
+    # ADR-0017. Pins in the module's own header order, and no series resistors:
+    # the bench build wires the signals straight to the ESP. The seven-pin
+    # variant has no backlight pin at all -- the panel lights with VCC.
+    Module("U8", "GC9A01 240x240 ROUND IPS / 7 PIN / SPI / 3.3 V LOGIC / NOT 5 V TOLERANT", (140, 268), (
+        "LCD_RST", "LCD_CS", "LCD_DC", "LCD_MOSI", "LCD_SCK", "STAR_GND", "LCD_3V3",
+    )),
+    # ADR-0018. High side of the charge line, between F_CHG and the pack node.
+    Module("RS1", "SHUNT 0R05 1% 1W / CHARGE LINE HIGH SIDE", (300, 268), ("CHG_16V8_RAW", "CHG_16V8")),
+    Module("U9", "INA219 CHARGE CURRENT / ADDR 0x40 / NO VBUS PIN", (300, 300), (
+        "CHG_16V8_RAW", "CHG_16V8", "ESP_3V3", "STAR_GND", "I2C_SDA", "I2C_SCL",
+    )),
 )
 
 #: Probe points TP0-TP27. The numbering is the single source shared with
@@ -134,9 +146,10 @@ TEST_POINTS: tuple[tuple[int, str], ...] = (
     # TP14/TP16 and TP15/TP17 are two probe points on one net: the DAC output pad
     # and the amplifier input pad of the same wire.
     (14, "DAC_LOUT"), (15, "DAC_ROUT"), (16, "DAC_LOUT"), (17, "DAC_ROUT"),
+    # TP28/TP29 are ADR-0017 and ADR-0018 probe points.
     (18, "AMP_L_PLUS"), (19, "AMP_L_MINUS"), (20, "AMP_R_PLUS"), (21, "AMP_R_MINUS"),
     (22, "BUTTON_N"), (23, "LED_R"), (24, "LED_G"), (25, "LED_B"),
-    (26, "CHG_16V8"), (27, "NTC_BMS"),
+    (26, "CHG_16V8"), (27, "NTC_BMS"), (28, "LCD_SCK"), (29, "CHG_16V8_RAW"),
 )
 
 #: Nets that are deliberately left with a single connection: reserved pins and
@@ -150,6 +163,9 @@ EXPECTED_OPEN_NETS: frozenset[str] = frozenset({
     "NTC_SENSE",     # GPIO2 reservation; thermistor network comes from G4
     "I2C_SDA",       # INA219 charge-current telemetry (ADR-0018)
     "I2C_SCL",
+    # Round display, ADR-0017. Reservations until the panel is wired: the module
+    # is a header, not a footprint on this sheet.
+    "LCD_3V3",       # separate LDO off the MP1584 rail, ADR-0017; not on this sheet
 })
 
 SECTIONS: tuple[tuple[str, tuple[float, float], tuple[float, float]], ...] = (
@@ -158,7 +174,9 @@ SECTIONS: tuple[tuple[str, tuple[float, float], tuple[float, float]], ...] = (
     ("C. 5 V LOGIC SUPPLY", (25, 78), (120, 150)),
     ("D. ESP32-S3 N16R8 AND USER INTERFACE  (ADR-0010)", (126, 78), (200, 190)),
     ("E. I2S DAC, BTL BI-AMP AND DRIVERS  (ADR-0002)", (208, 78), (400, 150)),
-    ("F. TEST POINT ACCESS  TP0-TP27", (25, 196), (400, 250)),
+    ("F. TEST POINT ACCESS  TP0-TP29", (25, 196), (400, 250)),
+    ("G. GC9A01 ROUND DISPLAY AND INA219 CHARGE-CURRENT SENSE  (ADR-0017, ADR-0018)",
+     (25, 258), (400, 320)),
 )
 
 
