@@ -1,7 +1,7 @@
 ---
 status: pending
 owner: acoustics-engineer
-updated: 2026-08-30
+updated: 2026-09-08
 tags: [acoustics, crossover, limiter]
 ---
 
@@ -16,7 +16,7 @@ tags: [acoustics, crossover, limiter]
 7. Kabin içinde yakın alan + dinleme ekseni ölçümü.
 8. Dört ünitede tolerans/kalibrasyon karşılaştırması.
 
-Her profil kaynak ölçüm, firmware sürümü, tarih ve rollback değeriyle saklanır.
+Her profil kaynak ölçüm, firmware sürümü, tarih ve rollback değeriyle saklanır. Bu cümlenin karşılığı 2026-09-08'de yazıldı: aşağıdaki "Profil" bölümüne bakın.
 
 ## Limiter: yazıldı, ayarlanmadı
 
@@ -43,3 +43,25 @@ Bedeli dürüstçe: anlık kazanç değişimi bozulmadır. Normal kullanımda du
 Bir sınır fuzz'lamayla bulundu: `fc/fs` oranı yaklaşık **4,83e-5**'in altında katsayılar tek duyarlıkta kararlı bir filtre tanımlamayı bırakıyor — `a2` bire yaklaşıyor ve yuvarlama kutupları birim çemberin üstüne ya da dışına itiyor. Katsayılar yine de üretiliyor ve yine filtre gibi görünüyor. Modül artık bu oranın altını **reddediyor** (sınır ölçülenin iki katı, 48 kHz'de 4,8 Hz). Projenin ihtiyacı olan her değer çok yukarıda: 2 kHz crossover 0,042; tweeter'ın 80 Hz koruma yüksek-geçireni 0,0017; 20 Hz subsonic 4,2e-4.
 
 Doğrulama katsayı tablosuna değil **frekans yanıtına** bakıyor — yanlış formül tutarlı biçimde yazıldığında bir tablo mutlu mutlu geçerdi, yanıt geçmez. İki dalın toplamının düzlüğü tüm spektrum boyunca 2000 noktada denetleniyor, ve eğim ayrıca gerçek işleme yolundan sinüsle ölçülüyor.
+
+## Profil: biçim yazıldı, sayılar bekliyor
+
+`firmware/components/hk_audio/hk_profile.c`. `G0` ve `G2` sayıları ürettiğinde yapılacak iş **bir struct doldurmak** olsun diye, o struct'ın kendisi ve reddettiği şeyler şimdiden tanımlandı. İçinde tek bir sürücü değeri yok ve olamaz: Nova woofer/tweeter ölçülmedi, bugün yazılacak herhangi bir sayı yarın ölçülmüş olandan ayırt edilemezdi.
+
+**Profil kendi kaynağını taşıyor.** Ölçülen DC dirençler saklanıyor, ama çalışma zamanı onlarla hiçbir hesap yapmıyor. Crossover'ı türetmek tezgâhta bir insanın işi; cihaz yalnız sonucu taşır. Sonucun **neyden** türetildiğini kaydetmek, profili bir ölçüme bağlanabilir kılan şeydir — ve ölçümünü adlandıramayan bir profil, bu projenin çalıştırmayı reddettiği tahminin kendisidir. Doğrulayıcı bu yüzden kaynağı olmayan profili reddediyor.
+
+**Tavanın yanında bir gerilim var, ve olmak zorunda.** Limiter tavanı dijital bir sayı; sürücüye ulaşan şey volt. Sabit bir dijital seviyede class-D bir amfinin çıkışı besleme ile ölçeklenir, ve buradaki besleme boşaldıkça 16,8 V'tan 12,0 V'a düşen bir batarya ([[../07-decisions/ADR-0003-4s-power|ADR-0003]]). Yani tek bir saklanmış tavan sürücüyü **tek bir şarj durumunda** korur; diğer her durumda ya güvensiz ya gereksiz kısıktır.
+
+Profil bu yüzden tavanı, ölçüldüğü paket gerilimiyle **birlikte** saklıyor ve `hk_profile_ceiling_at()` onu o anki gerilime taşıyor:
+
+```text
+tavan(V) = min(1, tavan_ref x V_ref / V_paket)
+```
+
+Yön önemli ve tersi hayat pahasına yanlış: paket **doluyken** dijital birim başına daha çok volt düşer, yani dijital tavan **aşağı** inmelidir. Boşaldıkça aynı volt için daha çok dijital seviye kalır, ve üst sınır tam ölçektir — orada artık gönderilecek sinyal kalmadığı için, güvenlik kararı değil aritmetik. Bu yön testte ayrıca iddia ediliyor, çünkü sessizce ters yazılırsa sonuç "biraz kısık bir hoparlör" gibi değil, yalnız batarya doluyken ölen bir tweeter gibi görünür.
+
+Bu, F3'ün "limiter tam dolu ve düşük bataryada ayrı ayrı doğrulandı" ölçütünün firmware tarafıdır: aynı profil iki gerilimde inşa ediliyor, yalnız tavanlar değişiyor, filtre katsayıları aynı kalıyor.
+
+**Reddetmek, düzeltmekten iyidir.** Subsonic filtre crossover'ın üstündeyse woofer dalında hiçbir şey kalmaz; bu iki sayının yer değiştirmesidir ve düzeltilmez, reddedilir. Aynı şekilde bu örnekleme hızında kurulamayan bir köşe sessizce aşağı çekilmez: sonucu kimsenin seçmediği bir crossover olurdu. Her ret kendi adını veriyor (`schema`, `source`, `frequency`, `ceiling`, …), yani tezgâhta bir profil reddedildiğinde hangi alanın sorunlu olduğu log satırında yazıyor.
+
+**Kalan iş ölçümdür.** `G0` kapandığında doldurulacak alanlar: iki DC direnç, subsonic köşe, crossover köşesi, iki dal kazancı. `G2` kapandığında: iki tavan ve ölçüldükleri paket gerilimi. Kod tarafında değişecek bir şey yok.

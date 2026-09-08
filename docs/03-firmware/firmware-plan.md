@@ -107,10 +107,11 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
 
 - **Önkoşul:** F2. Donanım tarafında `G0` (sürücü empedansı) **kapanmış** olmalı.
 - **Çıktı:** woofer HPF, aktif crossover, kanal gain/delay, RMS ve tepe limiter, clipping davranışı, `factory_cal` profil formatı.
+- **Durum (2026-09-08):** matematik ve **profil biçimi** yazıldı, sayılar bekliyor. `hk_biquad` (LR4, DF2T), `hk_limiter` (attack'sız tepe limiter) ve `hk_profile` (profilin kendisi, doğrulaması, zincire dönüşmesi) host'ta testli. Hiçbirinde sürücü değeri yok; `G0` kapandığında yapılacak iş bir struct doldurmaktır. Ayrıntı: [[../04-acoustics/measurement-and-dsp-plan#Profil: biçim yazıldı, sayılar bekliyor|ölçüm ve DSP planı]].
 - **Kabul ölçütü:**
   - Filtre katsayıları ölçülmüş sürücü empedansından türetildi; tahmin yok.
   - Tweeter yolu HPF'i ölçümle doğrulandı; `C_SAFE` değeri G2 raporundan geldi.
-  - Limiter tam dolu (16,8 V) ve düşük (12,0 V) bataryada ayrı ayrı doğrulandı.
+  - Limiter tam dolu (16,8 V) ve düşük (12,0 V) bataryada ayrı ayrı doğrulandı. Firmware tarafı hazır: profil tavanı ölçüldüğü paket gerilimiyle birlikte saklıyor ve `hk_profile_ceiling_at()` onu o anki gerilime taşıyor; iki gerilimde inşa edilen zincirde yalnız tavanlar değişiyor. Ölçüm hâlâ gerekli.
   - Kullanıcı reseti koruma profilini silmiyor (otomatik test).
   - DSP zinciri ses görevinde deterministik süre içinde bitiyor.
 - **Gate:** `G2` zorunlu.

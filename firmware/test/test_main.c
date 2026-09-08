@@ -24,6 +24,7 @@ int main(void)
     HK_RUN(test_sched);
     HK_RUN(test_settings);
     HK_RUN(test_portal);
+    HK_RUN(test_profile);
 #ifdef HK_HAVE_CJSON
     HK_RUN(test_manifest_json);
 #endif

@@ -30,8 +30,8 @@ Kilitli kararlar `AGENTS.md` içindedir ve yalnız supersede eden ADR ile deği�
 ## P2 - Ses koruması ve çalışma süresi
 
 - [ ] Ölçülen sürücü empedansına göre güvenli amfi gerilimini onayla.
-- [ ] Woofer HPF, aktif crossover ve tweeter limiter başlangıç değerlerini belirle.
-- [ ] Tam dolu ve düşük bataryada clipping/limiter davranışını doğrula.
+- [ ] Woofer HPF, aktif crossover ve tweeter limiter başlangıç değerlerini belirle. **Firmware tarafı hazır:** `hk_profile` profilin biçimini, doğrulamasını ve zincire dönüşmesini taşıyor; kalan iş ölçülen sayıları doldurmak.
+- [ ] Tam dolu ve düşük bataryada clipping/limiter davranışını doğrula. Tavanın gerilimle ölçeklenmesi yazıldı ve testli; ölçüm bekliyor.
 - [ ] 4S1P gerçek çalışma süresini ölç.
 - [ ] Sonuca göre nihai paketi 4S1P veya 4S2P olarak seç.
 
