@@ -54,6 +54,28 @@ Bu, güvenli amfi seviyesi ve termal bütçe için ilk somut girdi.
 Yani `AGENTS.md`'deki "sürücü empedansı doğrulanmadı" tıkayıcısı **kısmen**
 kapandı: nominal empedans biliniyor, koruyucu filtrenin köşesi hâlâ bilinmiyor.
 
+## `Fs` TAHMİNLERİ — ölçüm değil (2026-09-08)
+
+Ölçüm yarım kaldı: telefondaki sinyal jeneratörü uygulaması **100 Hz'in altına
+inemiyor**, ve woofer'ın rezonansı tam orada başlıyor. Aşağıdakiler eldeki
+veriden çıkarılmış **tahminlerdir** ve dinleyerek denemek için kullanılıyor.
+Kartın kendi tarama modu 40 Hz'den başlıyor; gerçek ölçüm o çalıştırıldığında
+yapılacak ve bu bölüm silinecek.
+
+| sürücü | tahmini `Fs` | dayanağı |
+|---|---:|---|
+| woofer | **~100 Hz** ±%20 | 100 Hz'de `Z` = 11,6 Ω, yani `Re`'nin 2,9 katı. Bu büyüklükte bir yükselme ancak rezonansın yakınında olur. 300 Hz'de 4,8 Ω'a inmiş, yani tepe aşağıda. 60 mm sürücü için 90–110 Hz zaten beklenen aralık. |
+| tweeter | **~2200 Hz** | Veride tek özellik: 2000–2450 Hz'de 3,3 → 3,9 Ω kabarma. Küçük kubbelerde ferrofluid rezonansı 20 Ω'dan 5 Ω'a bastırır, ve gördüğümüz buna benziyor. 25 mm kubbe için 1200–2400 Hz tipik. |
+
+### Bunlardan türeyen provisional ayarlar
+
+| parametre | değer | neden |
+|---|---:|---|
+| `crossover_hz` | 3500 | Tahmini tweeter `Fs`'sinin 1,6 katı. LR4 orada 16 dB, `C_SAFE` 5 dB daha → toplam ~21 dB. 4000 yerine 3500: 60 mm koni 3,5 kHz'de biter, 4'te zorlanır. |
+| `woofer_hpf_hz` | 50 | Tahmini `Fs`'nin çok altında, yani gerçek hiçbir çıkışı kesmiyor. Operatörün itirazı yerindeydi: subsonic filtre bası kısmaz, sese dönüşmeyen eksürsiyonu atar — ama nereye konacağını `Fs` belirler, ve o henüz ölçülmedi. |
+| kanal kazançları | tweeter −3 dB | Hassasiyet ölçümü yok. Hata payı tweeter'ı korumak yönünde. |
+| EQ | düz | Akustik ölçüm olmadan voicing uydurmak tahmindir. Bantlar açık, kulakla ayarlanacak. |
+
 ## Tweeter seri kondansatörü `C_SAFE` (2026-09-08)
 
 **Seçilen değer: 10 µF, kutupsuz film, ≥ 50 V.**

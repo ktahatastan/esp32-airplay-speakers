@@ -1,0 +1,19 @@
+# Bench-only fragment, layered ON TOP of sdkconfig.bench. NEVER part of a release.
+#
+# Turns the board into a measurement source: the AirPlay receiver is not started
+# and hk_tone steps through a fixed list of frequencies instead, logging each one
+# before it sounds. It exists because a phone signal-generator app stopped at
+# 100 Hz and the woofer's resonance is at or below that -- the one part of the
+# curve that decides Fs was the part the app could not reach.
+#
+# THE AMPLIFIER MUST BE OUT OF THE PATH. The two exceptions in sdkconfig.bench
+# release the DAC's mute and the amplifier's together; there is no setting that
+# separates them. Keeping the amp out is a wiring act, which is why the sweep
+# begins with ten seconds of silence.
+#
+#   idf.py -C firmware -B firmware/build-sweep \
+#     -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.bench;sdkconfig.sweep" \
+#     -D SDKCONFIG="$PWD/firmware/build-sweep/sdkconfig" build
+CONFIG_HK_BENCH_TONE_INSTEAD_OF_AIRPLAY=y
+CONFIG_HK_BENCH_SWEEP=y
+CONFIG_HK_BENCH_SWEEP_FINE_HZ=0
