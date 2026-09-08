@@ -22,6 +22,7 @@
 #endif
 
 #include "hk_identity.h"
+#include "hk_view.h"
 #include "hk_portal.h"
 #include "hk_provision.h"
 #include "hk_storage.h"
@@ -45,6 +46,15 @@ static const char *TAG = "hk_net";
  * the same label, but this one has to be stored as itself: WPA2 needs the key
  * on both ends, and a verifier cannot be turned back into it. */
 #define HK_PROV_NVS_AP_PASS   "ap_pass"
+
+/* The SRP6a username, duplicated from tools/provision_credentials.py.
+ *
+ * ADR-0014: the device never stores this -- the client sends it and protocomm
+ * compares proofs -- so the firmware had no reason to know it until the screen
+ * started drawing the pairing QR, which carries it. The two copies must agree
+ * or the code pairs with nothing; the ADR is the reason there is only one value
+ * to agree on. */
+#define HK_PROV_SRP_USERNAME  "wifiprov"
 
 /*
  * SRP6a salt and verifier sizes.
@@ -290,6 +300,56 @@ static void on_ip_event(void *arg, esp_event_base_t base, int32_t id, void *data
     }
 }
 
+/**
+ * Put the setup codes on the screen, and take them off again.
+ *
+ * The speaker can build its own pairing QR because of a consequence of
+ * ADR-0015 that is worth stating plainly: the WPA2 key and the SRP6a proof of
+ * possession are the SAME secret, so the `ap_pass` blob the setup network needs
+ * is also the `pop` the provisioning app asks for. Security 2 alone would leave
+ * only a salt and a verifier here, and a verifier cannot be turned back into a
+ * password -- the device would have nothing to draw.
+ *
+ * That makes this a deliberate exposure, not an oversight: anyone who can see
+ * the panel while the window is open can pair. It is the same exposure as the
+ * printed label, it lasts only as long as the window, and hk_view_clear_setup()
+ * at WIFI_PROV_END is what bounds it. The alternative -- an owner who cannot
+ * pair without finding a label -- is the friction this screen exists to remove.
+ *
+ * The payload's field names and order follow tools/provision_credentials.py,
+ * which follows ESP-IDF's own wifi_prov_print_qr(). A QR that differs from the
+ * label's by one key is a QR that fails in the owner's hand.
+ */
+static void publish_setup_codes(void)
+{
+    if (!s_have_ap_password) {
+        return;
+    }
+    char payload[HK_VIEW_QR_MAX];
+
+    int written = snprintf(payload, sizeof(payload),
+                           "{\"ver\":\"v1\",\"name\":\"%s\",\"username\":\"%s\","
+                           "\"pop\":\"%s\",\"transport\":\"ble\"}",
+                           s_identity.ble, HK_PROV_SRP_USERNAME, s_ap_password);
+    if (written > 0 && (size_t)written < sizeof(payload)) {
+        hk_view_set_ble_qr(payload);
+    } else {
+        ESP_LOGW(TAG, "ble pairing payload does not fit in %u B; screen will offer "
+                      "the access point instead", (unsigned)sizeof(payload));
+    }
+
+    /* What a camera does with this is join the setup network outright, which is
+     * why the PIN below it is a fallback rather than the path. */
+    written = snprintf(payload, sizeof(payload), "WIFI:T:WPA;S:%s;P:%s;;",
+                       s_identity.softap, s_ap_password);
+    if (written > 0 && (size_t)written < sizeof(payload)) {
+        hk_view_set_wifi_qr(payload);
+    }
+
+    hk_view_set_pin(s_ap_password);
+    memset(payload, 0, sizeof(payload));
+}
+
 static void on_prov_event(void *arg, esp_event_base_t base, int32_t id, void *data)
 {
     (void)arg;
@@ -303,6 +363,7 @@ static void on_prov_event(void *arg, esp_event_base_t base, int32_t id, void *da
         ESP_LOGI(TAG, "provisioning open over %s",
                  s_scheme == HK_NET_SCHEME_BLE ? "ble" : "softap");
         s_status.provisioning = true;
+        publish_setup_codes();
         publish_status();
         break;
 
@@ -341,6 +402,10 @@ static void on_prov_event(void *arg, esp_event_base_t base, int32_t id, void *da
         (void)esp_wifi_set_mode(WIFI_MODE_STA);
 #endif
         s_status.provisioning = false;
+        /* The codes leave RAM at the same moment they leave the screen. A
+         * window that has closed is a credential that should not still be
+         * sitting in a living room. */
+        hk_view_clear_setup();
         publish_status();
         ESP_LOGI(TAG, "provisioning closed and its memory released");
 
@@ -828,4 +893,14 @@ bool hk_network_is_provisioned(void)
 {
     bool provisioned = false;
     return wifi_prov_mgr_is_provisioned(&provisioned) == ESP_OK && provisioned;
+}
+
+bool hk_network_rssi(int *dbm)
+{
+    wifi_ap_record_t ap;
+    if (dbm == NULL || esp_wifi_sta_get_ap_info(&ap) != ESP_OK) {
+        return false;
+    }
+    *dbm = ap.rssi;
+    return true;
 }

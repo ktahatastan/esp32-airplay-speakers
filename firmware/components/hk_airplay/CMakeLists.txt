@@ -81,7 +81,7 @@ idf_component_register(
     INCLUDE_DIRS "include"
     PRIV_INCLUDE_DIRS "vendor" "vendor/audio" "vendor/rtsp" "vendor/plist"
                       "vendor/hap" "vendor/network"
-    REQUIRES hk_identity hk_pins hk_storage
+    REQUIRES hk_identity hk_pins hk_storage hk_ui
     PRIV_REQUIRES driver nvs_flash esp_wifi esp_netif esp_event esp_ringbuf
                   esp_driver_i2s esp_timer esp_http_client esp_driver_ledc
                   app_update json mbedtls espressif__mdns dac audio-resampler

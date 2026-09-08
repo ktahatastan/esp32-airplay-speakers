@@ -21,6 +21,7 @@
 #include "hk_identity.h"
 #include "hk_palette.h"
 #include "hk_pins.h"
+#include "hk_font.h"
 #include "hk_screen.h"
 #include "hk_sky.h"
 #include "hk_storage.h"
@@ -48,8 +49,22 @@ static const char *TAG = "hk_lcd";
 /* Lowest of anything that draws. Audio and the network both pre-empt it, and
  * ADR-0007's one-millisecond synchronisation budget is the reason. */
 #define HK_LCD_TASK_PRIO  1
-#define HK_LCD_TASK_STACK 4096
-#define HK_LCD_FRAME_MS   42          /* ~24 fps */
+/* Eight, not four.
+ *
+ * Three things share this stack and the largest of them is intermittent: the
+ * view snapshot the task copies is about 900 bytes, and hk_qr_encode() needs
+ * roughly 1.4 KB more on this part -- but only on the frame where a pairing
+ * payload changes, which is exactly the kind of peak that a stack sized for
+ * the common frame survives in testing and overflows in a living room. */
+#define HK_LCD_TASK_STACK 8192
+/* 30 fps, because the measurement now allows it.
+ *
+ * This was 42 ms (~24 fps) while a frame cost 112 ms and the number was
+ * aspirational rather than a budget. A frame now costs 22 ms measured on the
+ * board -- 9.5 ms of that is the panel transfer and cannot shrink -- so 33 ms
+ * leaves real headroom and the extra six frames a second are exactly where a
+ * transition stops looking like steps. */
+#define HK_LCD_FRAME_MS   33          /* ~30 fps; measured cost is 22 ms */
 #define HK_LCD_STRIP_ROWS 40          /* rows per SPI transfer */
 
 /* How long both setup codes stay up before swapping. Both transports are
@@ -99,6 +114,67 @@ static hk_screen_id_t wanted_screen(const hk_view_t *view, uint32_t now_ms)
 }
 
 /**
+ * Collapse everything outside a radius to the shell colour.
+ *
+ * This is the iris, and it lives here rather than in hk_gfx because of a
+ * measurement. hk_gfx_iris() visits all 57,600 pixels and blends each one,
+ * which means reading the framebuffer back out of PSRAM; on the board that cost
+ * about 50 ms, and it was the whole reason transitions did not look smooth.
+ * Nearly all of that work is wasted: inside the circle the answer is "leave it
+ * alone", and outside it the answer is a constant that needs no read at all.
+ *
+ * So each row is a span. The interior is skipped, the exterior is written
+ * without being read, and only the two boundary pixels per row are blended --
+ * a few hundred blends instead of tens of thousands, for an edge that would
+ * otherwise step visibly as the radius animates.
+ */
+static void collapse_outside(uint16_t *buf, int radius)
+{
+    if (radius >= 170) {                 /* past the corners: nothing to do */
+        return;
+    }
+    const int r2 = radius * radius;
+    for (int y = 0; y < HK_DRAW_HEIGHT; y++) {
+        const int dy = y - 120;
+        const int inside2 = r2 - dy * dy;
+        int half = 0;
+        if (inside2 > 0) {
+            int lo = 0, hi = radius;     /* integer sqrt: the row's half-width */
+            while (lo < hi) {
+                const int mid = (lo + hi + 1) / 2;
+                if (mid * mid <= inside2) {
+                    lo = mid;
+                } else {
+                    hi = mid - 1;
+                }
+            }
+            half = lo;
+        }
+        uint16_t *row = buf + (size_t)y * HK_DRAW_WIDTH;
+        int x0 = 120 - half;
+        int x1 = 120 + half;
+        if (x0 < 0) {
+            x0 = 0;
+        }
+        if (x1 > HK_DRAW_WIDTH) {
+            x1 = HK_DRAW_WIDTH;
+        }
+        for (int x = 0; x < x0; x++) {
+            row[x] = HK_C_SHELL;
+        }
+        for (int x = x1; x < HK_DRAW_WIDTH; x++) {
+            row[x] = HK_C_SHELL;
+        }
+        if (x0 > 0 && x0 < HK_DRAW_WIDTH) {
+            row[x0] = hk_gfx_blend(row[x0], HK_C_SHELL, 128);
+        }
+        if (x1 > 1 && x1 <= HK_DRAW_WIDTH) {
+            row[x1 - 1] = hk_gfx_blend(row[x1 - 1], HK_C_SHELL, 128);
+        }
+    }
+}
+
+/**
  * One frame: the screen, the transition it may be in, and the volume overlay.
  *
  * The transition is an iris rather than a cross-fade. Two lit screens mixed
@@ -115,13 +191,11 @@ static void compose(const hk_view_t *view, uint32_t now_ms)
         if (age < half) {
             hk_screen_render(s_frame, s_scene.previous, view, now_ms,
                              s_scene.previous_entered_ms, 255);
-            const int radius = 120 - (int)((120u * age) / half);
-            hk_gfx_iris(s_frame, 120, 120, HK_Q4(radius), HK_Q4(14), HK_C_SHELL, true);
+            collapse_outside(s_frame, 170 - (int)((170u * age) / half));
         } else if (age < HK_SCREEN_TRANSITION_MS) {
             hk_screen_render(s_frame, s_scene.current, view, now_ms,
                              s_scene.entered_ms, 255);
-            const int radius = (int)((120u * (age - half)) / half);
-            hk_gfx_iris(s_frame, 120, 120, HK_Q4(radius), HK_Q4(14), HK_C_SHELL, true);
+            collapse_outside(s_frame, (int)((170u * (age - half)) / half));
         } else {
             s_scene.transition_began_ms = 0u;
             hk_screen_render(s_frame, s_scene.current, view, now_ms,
@@ -167,8 +241,39 @@ static void self_test(void)
         hk_draw_rect(s_frame, 116, 0, 8, HK_DRAW_HEIGHT, hk_rgb(0, 0, 0));
         ESP_LOGI(TAG, "self test: %s", steps[i].name);
         (void)esp_lcd_panel_draw_bitmap(s_panel, 0, 0, HK_DRAW_WIDTH, HK_DRAW_HEIGHT, s_frame);
-        vTaskDelay(pdMS_TO_TICKS(700));
+        vTaskDelay(pdMS_TO_TICKS(450));
     }
+
+    /* The orientation card.
+     *
+     * Four flat colours prove our pixels arrive; they say nothing about which
+     * way round they arrive, because a centred cross looks identical under
+     * every flip. This card cannot. It names each edge and sets the names in
+     * letters that are asymmetric in both axes, so a mirrored panel shows the
+     * words backwards and a flipped one shows them on the wrong sides. That
+     * separates the two axes, which is the thing neither the cross nor a
+     * photograph of a status screen could do -- and it is why the first attempt
+     * at this fix was a guess. */
+    hk_gfx_clip_reset();
+    hk_draw_fill(s_frame, hk_rgb(6, 7, 16));
+    hk_gfx_disc(s_frame, HK_Q4(120), HK_Q4(120), HK_Q4(118), HK_C_VOID, 255);
+    hk_font_draw(s_frame, hk_font_body(),
+                 120 - hk_font_measure(hk_font_body(), "UST") / 2, 46,
+                 "UST", HK_C_GOOD, 255);
+    hk_font_draw(s_frame, hk_font_body(), 24, 126, "SOL", HK_C_ACCENT, 255);
+    hk_font_draw(s_frame, hk_font_body(),
+                 216 - hk_font_measure(hk_font_body(), "SAG"), 126,
+                 "SAG", HK_C_WAIT, 255);
+    hk_font_draw(s_frame, hk_font_body(),
+                 120 - hk_font_measure(hk_font_body(), "ALT") / 2, 206,
+                 "ALT", HK_C_EMBER, 255);
+    /* One large glyph with no symmetry at all, so "backwards" is unmistakable
+     * without reading the words. */
+    hk_draw_text(s_frame, 100, 96, 32, 52, 7, "F", HK_C_INK);
+    ESP_LOGI(TAG, "orientation card: UST top, SOL left, SAG right, ALT bottom, "
+                  "and an F that must not read backwards");
+    (void)esp_lcd_panel_draw_bitmap(s_panel, 0, 0, HK_DRAW_WIDTH, HK_DRAW_HEIGHT, s_frame);
+    vTaskDelay(pdMS_TO_TICKS(5000));
     ESP_LOGI(TAG, "self test done. If the panel showed red, green, blue and white "
                   "with a black cross, our pixels reach it.");
 }
@@ -237,7 +342,7 @@ static void display_task(void *arg)
         if (cost_ms > HK_LCD_FRAME_MS) {
             slow_frames++;
         }
-        if ((frames % 600u) == 0u) {
+        if ((frames % 120u) == 0u) {
             ESP_LOGI(TAG, "%u frames, %u over %u ms; last %u ms (sky %u us)",
                      (unsigned)frames, (unsigned)slow_frames,
                      (unsigned)HK_LCD_FRAME_MS, (unsigned)cost_ms,

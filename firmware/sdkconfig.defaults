@@ -65,3 +65,15 @@ CONFIG_MBEDTLS_CUSTOM_CERTIFICATE_BUNDLE_PATH="certs/isrg-root-yr.pem"
 # audio path. Enabling it binds the whole firmware to upstream's non-commercial
 # licence, which ADR-0007 accepted.
 CONFIG_HK_AIRPLAY=y
+
+# The part runs at 240 MHz, not the 160 MHz default.
+#
+# The frame budget is what forces this. One full panel transfer is 115,200
+# bytes and costs 9.5 ms measured at 80 MHz, which cannot be shortened; the
+# render has to fit in what is left of 42 ms, and at 160 MHz it did not. The
+# cost is power, and it is the right way round: a speaker that is awake is
+# already spending far more on its amplifier and its radio than on its core
+# clock, and G5's runtime measurement is where this gets revisited with numbers
+# rather than reasoning.
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ=240

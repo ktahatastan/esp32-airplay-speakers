@@ -77,6 +77,9 @@ void test_settings(void);
 void test_portal(void);
 void test_profile(void);
 void test_draw(void);
+void test_gfx(void);
+void test_qr(void);
+void test_screen(void);
 #ifdef HK_HAVE_CJSON
 void test_manifest_json(void);
 #endif

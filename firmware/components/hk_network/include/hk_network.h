@@ -128,4 +128,13 @@ esp_err_t hk_network_forget_credentials(void);
 /** True when Wi-Fi credentials are stored. */
 bool hk_network_is_provisioned(void);
 
+/**
+ * Signal strength of the associated access point, in dBm.
+ *
+ * Returns false when nothing is associated, which is the honest answer and the
+ * one the screen needs: no bars at all reads differently from one bar, and a
+ * device that is provisioning has no signal to report rather than a weak one.
+ */
+bool hk_network_rssi(int *dbm);
+
 #endif /* HK_NETWORK_H */

@@ -26,6 +26,9 @@ int main(void)
     HK_RUN(test_portal);
     HK_RUN(test_profile);
     HK_RUN(test_draw);
+    HK_RUN(test_gfx);
+    HK_RUN(test_qr);
+    HK_RUN(test_screen);
 #ifdef HK_HAVE_CJSON
     HK_RUN(test_manifest_json);
 #endif

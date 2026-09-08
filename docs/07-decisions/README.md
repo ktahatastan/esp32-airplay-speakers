@@ -27,3 +27,4 @@ Durumlar: `proposed`, `accepted`, `superseded`, `rejected`.
 - [[ADR-0016-simultaneous-dual-transport|ADR-0016 — İki taşıma aynı anda]]
 - [[ADR-0017-round-display|ADR-0017 — Yuvarlak GC9A01 ekran]]
 - [[ADR-0018-ina219-current-sensor|ADR-0018 — Akım sensörü INA219]]
+- [[ADR-0019-screen-ui-model|ADR-0019 — Ekran durum modeli ve eşleşme karekodu]]
