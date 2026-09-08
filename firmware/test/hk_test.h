@@ -76,6 +76,7 @@ void test_sched(void);
 void test_settings(void);
 void test_portal(void);
 void test_profile(void);
+void test_dsp(void);
 void test_draw(void);
 void test_gfx(void);
 void test_qr(void);

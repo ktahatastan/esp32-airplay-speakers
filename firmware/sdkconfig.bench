@@ -40,3 +40,19 @@ CONFIG_HK_BENCH_AUDIO_WITHOUT_POWER_TELEMETRY=y
 # driven. It is the single largest source of periodic switching on this board
 # and removing it entirely is the cleanest way to stop it being a variable.
 CONFIG_HK_DISPLAY=n
+
+# Lets the DSP chain run without a manufactured calibration. Two of its numbers
+# are measured (the DC resistances); the rest are reasoned. See the Kconfig help.
+CONFIG_HK_BENCH_PROVISIONAL_PROFILE=y
+
+# The DSP output backend: mono downmix, EQ, subsonic, LR4 crossover into the two
+# amplifier channels, and a per-branch limiter last. Left = woofer, right =
+# tweeter, which is the bi-amp mapping ADR-0002 fixed.
+CONFIG_HK_AIRPLAY_OUTPUT_DSP=y
+
+# NOT set: the bench board's crossed leads were fixed in the harness instead.
+# The switch stays in the tree because the failure it catches is real and was
+# found here -- with a mono programme a crossed pair is completely invisible,
+# and it only announces itself by putting bass into a tweeter the first time a
+# crossover works. Four speakers get wired by hand.
+# CONFIG_HK_OUTPUT_SWAP_BRANCHES is not set

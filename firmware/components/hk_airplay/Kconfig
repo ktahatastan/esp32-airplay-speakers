@@ -57,6 +57,58 @@ choice HK_AIRPLAY_OUTPUT
 config HK_AIRPLAY_OUTPUT_I2S
     bool "I2S to the PCM5102A (the product's output, ADR-0002)"
 
+config HK_AIRPLAY_OUTPUT_DSP
+    bool "I2S to the PCM5102A, through the crossover and driver protection"
+    help
+        The same I2S output as above, with this project's DSP in it: the mono
+        downmix, the LR4 crossover, the woofer's subsonic high-pass and the two
+        limiters. Left carries the WOOFER and right the TWEETER (ADR-0002).
+        This is not a stereo pair, and selecting it on a box wired as one sends
+        a low-passed signal to one speaker and a high-passed signal to the
+        other.
+
+        OFF BY DEFAULT, and it needs a calibration profile to do anything.
+        The crossover corner, the subsonic corner, the branch gains and both
+        limiter ceilings all come from a stored `factory_cal` profile produced
+        at G0 and G2 (hk_profile.h). WITHOUT ONE THIS BACKEND OUTPUTS DIGITAL
+        ZERO: the receiver runs, mDNS advertises, I2S is clocked, and nothing is
+        audible. That is deliberate. The alternative -- passing audio through
+        with the crossover bypassed -- would put full-range programme with no
+        protective high-pass and no ceiling on a tweeter whose Fs has not been
+        measured, which is the one failure the profile exists to prevent.
+
+        So a silent speaker on this setting is the setting working. Check the
+        boot log: the backend says plainly which of the two it is doing.
+
+        It lives in output/hk_airplay_output_i2s.c and SHADOWS
+        vendor/audio/audio_output.c -- same DMA geometry, same playout cursor,
+        same latency reporting, same task priority -- because ADR-0013 forbids
+        editing the vendored tree. The two are kept in step by review, enforced
+        by scripts/check_vendor_output_shadow.py.
+
+config HK_OUTPUT_SWAP_BRANCHES
+    bool "The woofer is on the RIGHT analogue channel, not the left"
+    depends on HK_AIRPLAY_OUTPUT_DSP
+    default n
+    help
+        Swaps the two branches on the way out, so the woofer branch leaves on
+        the right analogue channel and the tweeter branch on the left.
+
+        ADR-0002 and the wiring plan both say left is the woofer, and the DSP
+        produces exactly that. This exists because the plan describes intent
+        while a bench describes what somebody actually soldered -- a PCM5102A
+        module labelled the other way round, or a crossed pair of input leads,
+        puts full-band bass into a tweeter the moment a crossover starts
+        working. Until that moment it is invisible: with a mono programme both
+        channels carry the same samples, so nothing can distinguish them.
+
+        Which is why this is a switch rather than a soldering iron. Four
+        speakers get wired by hand and they will not all be wired the same.
+
+        HOW TO TELL: play quietly and listen close to each driver. If the bass
+        is coming from the tweeter this is the wrong way round -- and turn it
+        down before you go looking, because that is the failure it prevents.
+
 config HK_AIRPLAY_OUTPUT_SPDIF
     bool "Coaxial S/PDIF, bit-banged through I2S"
     help

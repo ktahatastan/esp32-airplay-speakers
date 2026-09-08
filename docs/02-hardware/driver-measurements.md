@@ -76,6 +76,37 @@ yapılacak ve bu bölüm silinecek.
 | kanal kazançları | tweeter −3 dB | Hassasiyet ölçümü yok. Hata payı tweeter'ı korumak yönünde. |
 | EQ | düz | Akustik ölçüm olmadan voicing uydurmak tahmindir. Bantlar açık, kulakla ayarlanacak. |
 
+## Kabin: pasif radyatör kullanılacak (2026-09-08)
+
+Orijinal Nova'nın pasif radyatörleri operatörün elinde ve yeni kabinde
+kullanılacak. Bu, subsonic filtreyi **daha önemli** hâle getiriyor, daha az
+değil — ve sebebi kapalı kutunun tersi:
+
+Akort frekansının (`Fb`) altında pasif radyatör akustik yükü üstlenir ve woofer
+havasız kalır. Koni serbest salınır, eksürsiyon hızla artar, karşılığında ses
+üretilmez. Kapalı kutuda hava yayı hiç değilse frenler; burada o fren yok.
+
+**Bu yüzden `woofer_hpf_hz` 50 → 55 Hz.** Perakende/inceleme kaynakları sistemin
+−6 dB noktasını 55 Hz, PR akordunu 60–65 Hz veriyor; 55 Hz akordun hemen altı.
+
+### `Fb` kabin hacmine bağlıdır ve ÖLÇÜLEBİLİR
+
+60–65 Hz orijinal kutunun iç hacminde geçerli. Yeni kabin daha büyükse akort
+aşağı, küçükse yukarı kayar; PR'a kütle eklemek `Fb`'yi düşürür.
+
+Tahmin etmeye gerek yok: **aynı empedans düzeneğiyle woofer kutunun içindeyken
+ölçülür.** PR'lı (veya bas refleks) bir sistemde empedans eğrisi **iki tepe**
+verir ve aradaki çukurun frekansı tam olarak `Fb`'dir. Kabin bittiğinde 10
+dakikalık bir ölçüm, subsonic frekansını tahminden çıkarır.
+
+### Sonraki tur için not
+
+Profil formatındaki subsonic filtre şu an **ikinci derece** (12 dB/oktav):
+`hk_profile_chain_t.woofer_hpf` tek bir `hk_biquad_coeffs_t`. Kaynaklar PR'lı
+sistem için **24 dB/oktav** (LR4 veya Butterworth) öneriyor ve bu doğrudur —
+`Fb` altında eksürsiyon çok hızlı artar, 12 dB/oktav geç kalır. İkinci bir
+biquad eklemek gerekiyor. İlk dinleme için 12 yeterli, ama bu açık bir madde.
+
 ## Tweeter seri kondansatörü `C_SAFE` (2026-09-08)
 
 **Seçilen değer: 10 µF, kutupsuz film, ≥ 50 V.**

@@ -59,23 +59,50 @@ set(VENDOR_SRCS
     vendor/alac_magic_cookie.c
 )
 
+# Our own sources: not upstream, and not subject to the warning relaxation at
+# the bottom of this file.
+set(HK_OWN_SRCS hk_airplay.c shim/hk_airplay_shim.c)
+
 # The output backend is chosen at compile time, upstream's own arrangement:
 # audio_output_common.c carries weak defaults and exactly one backend supplies
-# the rest. S/PDIF is a bench output that lets the audio path be heard before
-# the product's DAC exists; see Kconfig for the circuit it needs.
+# the rest. There are three to choose from and exactly one may be listed.
+#
+#   audio_output.c            upstream's I2S stage. No crossover, no limiter:
+#                             whatever arrives is what the amplifier gets.
+#   audio_output_spdif.c      a bench output that lets the audio path be heard
+#                             before the product's DAC exists; see Kconfig for
+#                             the circuit it needs.
+#   output/hk_airplay_output_i2s.c
+#                             ours. The same I2S stage with this project's
+#                             crossover, protective filters and limiter in it.
+#                             It SHADOWS audio_output.c rather than patching it,
+#                             because ADR-0013 forbids touching vendor/ -- so
+#                             the two have to be kept in step by review, and
+#                             scripts/check_vendor_output_shadow.py is what
+#                             forces that review to happen.
 if(CONFIG_HK_AIRPLAY_OUTPUT_SPDIF)
     list(APPEND VENDOR_SRCS vendor/audio/audio_output_spdif.c)
+elseif(CONFIG_HK_AIRPLAY_OUTPUT_DSP)
+    list(APPEND HK_OWN_SRCS output/hk_airplay_output_i2s.c)
 else()
     list(APPEND VENDOR_SRCS vendor/audio/audio_output.c)
 endif()
 
 if(CONFIG_HK_AIRPLAY)
-    set(HK_AIRPLAY_SRCS "hk_airplay.c" "shim/hk_airplay_shim.c" ${VENDOR_SRCS})
+    set(HK_AIRPLAY_SRCS ${HK_OWN_SRCS} ${VENDOR_SRCS})
 else()
     set(HK_AIRPLAY_SRCS "")
     set(VENDOR_SRCS "")
 endif()
 
+# hk_audio and hk_power are named unconditionally, for the reason the block at
+# the top of this file gives: a PRIV_REQUIRES inside an `if(CONFIG_...)` is
+# evaluated in the early pass, where CONFIG_ symbols do not exist, and is
+# silently dropped. The DSP backend needs hk_dsp.h, hk_eq.h and hk_profile.h
+# from hk_audio, and HK_POWER_MV_UNKNOWN from hk_power -- the sentinel it hands
+# hk_profile_build() while no ADC driver exists to replace it. Naming them in a
+# build that does not select that backend costs nothing in the image: the linker
+# discards what nothing calls.
 idf_component_register(
     SRCS ${HK_AIRPLAY_SRCS}
     INCLUDE_DIRS "include"
@@ -85,6 +112,7 @@ idf_component_register(
     PRIV_REQUIRES driver nvs_flash esp_wifi esp_netif esp_event esp_ringbuf
                   esp_driver_i2s esp_timer esp_http_client esp_driver_ledc
                   app_update json mbedtls espressif__mdns dac audio-resampler
+                  hk_audio hk_power
 )
 
 # Upstream's own warning posture, not this project's. The vendored tree is not

@@ -41,6 +41,7 @@ add_executable(hk_host_tests
     test_settings.c
     test_portal.c
     test_profile.c
+    test_dsp.c
     test_draw.c
     test_gfx.c
     test_qr.c
@@ -61,6 +62,8 @@ add_executable(hk_host_tests
     ${HK_COMPONENTS}/hk_audio/hk_limiter.c
     ${HK_COMPONENTS}/hk_audio/hk_biquad.c
     ${HK_COMPONENTS}/hk_audio/hk_profile.c
+    ${HK_COMPONENTS}/hk_audio/hk_dsp.c
+    ${HK_COMPONENTS}/hk_audio/hk_eq.c
     ${HK_COMPONENTS}/hk_display/hk_draw.c
     ${HK_COMPONENTS}/hk_display/hk_gfx.c
     ${HK_COMPONENTS}/hk_display/hk_font.c

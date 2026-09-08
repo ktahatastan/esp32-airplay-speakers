@@ -27,18 +27,26 @@
  * led_audio_feed() and then writes that buffer to I2S -- and never refills it.
  * It stays silent only because nothing along that path writes to it.
  *
- * Process in place there and the buffer stops being silence: frame N's output
- * becomes frame N+1's input. The loop gain is 0.5 * |EQ| at each frequency
- * (one half from the LR4 branch split, the rest from whatever the EQ is doing),
- * so anywhere the owner asks for bass boost the loop gain exceeds one and the
+ * hk_dsp_process() works in place, on the buffer the backend already owns. Bolt
+ * it in there and that buffer stops being silence: frame N's output becomes
+ * frame N+1's input. The loop gain is 0.5 * |EQ| at each frequency (one half
+ * from the LR4 branch split, the rest from whatever the equaliser is doing), so
+ * anywhere the owner asks for bass boost the loop gain exceeds one and the
  * "silence" frame GROWS on every underrun instead of decaying. That is a
  * runaway into an amplifier driving a tweeter whose Fs has not been measured.
  *
- * A guard would work. Owning the buffers removes the defect: here the input
- * buffers and the output buffer are different objects, the zero buffer is
- * written exactly once at allocation and read forever after, and the DSP's
- * destination is never anybody's source. There is no arrangement of underruns
- * that can feed this backend its own output.
+ * A guard would work. Owning the buffers removes the defect. Every buffer this
+ * file hands to hk_dsp_process() is completely written first, in the same loop
+ * iteration, by something that is not the DSP:
+ *
+ *   pcm            filled by audio_receiver_read()
+ *   resample_buf   filled by audio_resample_process()
+ *   silence        zeroed by memset, unconditionally, every time it is used
+ *
+ * The third is the one upstream gets wrong, and the memset is the whole fix.
+ * There is no arrangement of underruns that can feed this backend its own
+ * output, because there is no buffer here whose previous contents survive into
+ * the next frame.
  *
  *
  * WHAT THIS BACKEND WILL AND WILL NOT DO
@@ -46,11 +54,18 @@
  * The DSP holds the crossover, the subsonic filter and the two limiters. It is
  * ready only when a calibration profile has been read and built (hk_profile).
  * Until then this backend clocks I2S, drains the receiver and writes DIGITAL
- * ZERO. It does not fall back to passing audio through: an unfiltered full-range
- * signal on the tweeter branch is precisely the damage the profile exists to
- * prevent, and "no calibration" must never be quieter-but-audible. See the
- * Kconfig help text, which says the same thing where somebody selecting this
- * backend will read it.
+ * ZERO. It does not fall back to passing audio through: an unfiltered
+ * full-range signal on the tweeter branch is precisely the damage the profile
+ * exists to prevent. hk_dsp.h makes the same refusal for the same reason, and
+ * says the thing worth repeating here -- writing zeros to a live amplifier is
+ * not the answer to "do not play". It is not the answer here either, and it
+ * does not have to be: hk_storage_audio_permitted() is already false in exactly
+ * this state, so hk_audio_step() has already driven the mute sequence and the
+ * amplifier is already shut down. This backend agreeing with that gate costs
+ * nothing; disagreeing with it would be the bug.
+ *
+ * See the Kconfig help text, which says the same thing where somebody selecting
+ * this backend will read it.
  */
 
 #include "audio_output.h"
@@ -71,11 +86,16 @@
 #include "freertos/task.h"
 #include "sdkconfig.h"
 
+#include <string.h>
 #include <stdlib.h>
 
-/* This project's DSP. The one thing this file has that the vendored one does
- * not, and the reason it is a separate backend rather than a copy. */
+/* This project's own modules. The DSP is the reason this backend exists; the
+ * other three are what it takes to hand the DSP an honest chain. */
 #include "hk_dsp.h"
+#include "hk_eq.h"
+#include "hk_power.h"
+#include "hk_profile.h"
+#include "hk_storage.h"
 
 #define TAG "hk_out_dsp"
 
@@ -117,69 +137,238 @@
 #endif
 
 /* ==========================================================================
- * THE SEAM
- *
- * Every call this backend makes into the DSP is in the three wrappers below
- * and nowhere else, so reconciling with hk_dsp.h is a change to this block
- * rather than a hunt through the playback loop.
- *
- * The contract assumed here:
- *
- *   bool hk_dsp_init(uint32_t sample_rate_hz)
- *        Read the stored calibration and build the chain for this rate.
- *        false means no usable profile -- not an error to retry, a state to
- *        stay silent in. The pack voltage a limiter ceiling has to be
- *        translated to (hk_profile_ceiling_at) is the DSP's business, not this
- *        backend's: this file knows about buffers and DMA, and nothing about
- *        batteries.
- *
- *   bool hk_dsp_ready(void)
- *        Asked once per frame rather than cached, because the DSP may become
- *        unready underneath us -- a profile reload, or a pack voltage that has
- *        left the range its ceilings were measured for.
- *
- *   void hk_dsp_reset(void)
- *        Clear filter and limiter state. Called on flush, where the stream is
- *        discontinuous anyway; without it the tail of the discarded audio rings
- *        out over the first frames of the new.
- *
- *   void hk_dsp_process(const int16_t *in, int16_t *out, size_t frames)
- *        `in` is the interleaved stereo programme; `out` is interleaved
- *        WOOFER (left) / TWEETER (right), per ADR-0002. The mono downmix and
- *        the crossover split both happen inside -- which is why the vendored
- *        apply_channel_mode() has no job in this backend. `in` and `out` are
- *        always distinct buffers here, and `in` is const because this file
- *        guarantees it is never modified.
+ * The DSP, and what it takes to build one
  * ========================================================================== */
 
+/* The path's state lives here rather than in hk_audio, because hk_dsp_t is
+ * caller-owned by design (hk_dsp.h: "no globals") and the playback task is the
+ * only thing that touches it per frame. One instance, one owner, one writer. */
+static hk_dsp_t s_dsp;
+
+/**
+ * The pack terminal voltage a limiter ceiling has to be translated to.
+ *
+ * There is no ADC driver yet -- that is F6 -- so the honest answer is the
+ * project's own sentinel for a reading nobody took. It is not a placeholder to
+ * be replaced by a guess: hk_profile_build() refuses a non-positive pack
+ * voltage (hk_profile.c:118-120), so an uncalibrated device declines to build a
+ * chain instead of protecting the drivers at a voltage it invented.
+ *
+ * Refusing is also the only safe direction. A ceiling measured at 16.8 V and
+ * applied to a pack that is actually at 12 V would be needlessly quiet, which
+ * costs nothing; applied the other way round it would be a ceiling that lets
+ * through more volts than the tweeter was measured to survive. Guessing is only
+ * ever wrong in one of those two ways, and nothing here can tell which.
+ *
+ * When F6 lands this becomes a read of hk_power's telemetry and nothing else in
+ * this file changes.
+ */
+#if CONFIG_HK_BENCH_PROVISIONAL_PROFILE
+static float pack_mv_now(void);
+
+/** The pack voltage the bench ceilings are written against. */
+#define HK_BENCH_REFERENCE_PACK_MV 12000
+
+/**
+ * A profile nobody measured, so the speaker can be LISTENED to.
+ *
+ * Two of these numbers are measurements and the rest are not, and the
+ * difference is the whole reason this function is behind its own Kconfig
+ * symbol rather than being a default. Measured on 2026-09-08: the woofer's DC
+ * resistance is 4.0 ohm and the tweeter's 3.7 ohm, both 4 ohm class. Everything
+ * else below is a choice derived from two facts -- that the woofer's impedance
+ * peaks at or below 100 Hz, and that the tweeter shows no peak above about
+ * 5 ohm anywhere between 500 Hz and 3150 Hz.
+ *
+ * WHY EACH NUMBER IS WHAT IT IS:
+ *
+ * crossover 2800 Hz. The original Nova crossed at about 2.5 kHz and its
+ * documentation warns against taking this tweeter below 2 kHz, which implies an
+ * Fs near 1.2 kHz. 2800 sits above that guidance because we have not measured
+ * Fs ourselves, and below the 3500 first chosen when the only evidence was our
+ * own flat impedance sweep. A 60 mm cone beams above about 1.8 kHz, so lower is
+ * better for sound and this is expected to fall again once Fs is known.
+ *
+ * subsonic 55 Hz. The cabinet will use the original passive radiators, and
+ * below a passive radiator's tuning the woofer unloads: the cone moves freely,
+ * excursion climbs, and no sound comes out. A sealed box at least has an air
+ * spring; this does not. 55 Hz is just under the 60-65 Hz the original system
+ * was tuned to.
+ *
+ * gains 0.50 and 0.35, tweeter about 3 dB below the woofer. A 25 mm dome is
+ * usually more sensitive than a small cone and there is no sensitivity
+ * measurement, so the error is left on the side of less tweeter. Both are low
+ * in absolute terms too, deliberately, while the amplifier's gain is unmeasured.
+ *
+ * These were briefly 0.35 and 0.85 to compensate a 7 uF series capacitor whose
+ * corner into 4 ohm is 5.7 kHz, costing the tweeter about 7 dB at the crossover.
+ * That capacitor turned out to be faulty and is not fitted, so the compensation
+ * came straight back out -- with no capacitor, boosting the tweeter branch by
+ * 7 dB would be pushing an UNPROTECTED driver, and the LR4 high-pass is now the
+ * only thing in front of it. Put the compensation back when a good capacitor is,
+ * and not before.
+ *
+ * ceilings 0.7 and 0.35. A tweeter takes a small fraction of a woofer's power,
+ * and neither driver's power handling is known. Conservative, and the tweeter's
+ * far more so.
+ */
+static bool bench_provisional_chain(hk_profile_chain_t *out)
+{
+    const hk_profile_t provisional = {
+        .schema             = HK_PROFILE_SCHEMA,
+        .reserved           = 0,
+        .measured_yyyymmdd  = 20260908u,
+        .source             = "provisional-not-measured",
+        .woofer_dcr_ohm     = 4.0f,    /* measured */
+        .tweeter_dcr_ohm    = 3.7f,    /* measured */
+        .woofer_hpf_hz      = 55.0f,
+        .crossover_hz       = 2800.0f,
+        .woofer_gain        = 0.50f,
+        .tweeter_gain       = 0.35f,
+        .reference_pack_mv  = (float)HK_BENCH_REFERENCE_PACK_MV,
+        .woofer_ceiling     = 0.70f,
+        .tweeter_ceiling    = 0.35f,
+        .release_ms         = 150u,
+        .hold_ms            = 20u,
+    };
+
+    const hk_profile_verdict_t built =
+        hk_profile_build(&provisional, (float)OUTPUT_RATE, pack_mv_now(), out);
+    if (built != HK_PROFILE_OK) {
+        ESP_LOGE(TAG, "the provisional bench profile does not even build: %s",
+                 hk_profile_verdict_name(built));
+        return false;
+    }
+
+    ESP_LOGW(TAG, "BENCH PROFILE IN USE AND IT WAS NOT MEASURED "
+                  "(CONFIG_HK_BENCH_PROVISIONAL_PROFILE). crossover %.0f Hz, "
+                  "subsonic %.0f Hz, gains %.2f/%.2f, ceilings %.2f/%.2f. Only "
+                  "the two DC resistances are measurements; the rest are choices "
+                  "derived from them. This protects a driver by argument, not by "
+                  "evidence -- it is not a G0/G2 calibration and must never be "
+                  "mistaken for one.",
+             (double)provisional.crossover_hz, (double)provisional.woofer_hpf_hz,
+             (double)provisional.woofer_gain, (double)provisional.tweeter_gain,
+             (double)provisional.woofer_ceiling, (double)provisional.tweeter_ceiling);
+    return true;
+}
+#endif /* CONFIG_HK_BENCH_PROVISIONAL_PROFILE */
+
+static float pack_mv_now(void)
+{
+#if CONFIG_HK_BENCH_PROVISIONAL_PROFILE
+    /* The reference the ceiling was written against, so hk_profile_ceiling_at()
+     * is an identity and the ceiling is used exactly as written. That is the
+     * honest bench answer: there is no telemetry, so the number is not scaled
+     * rather than being scaled by a guess. */
+    return (float)HK_BENCH_REFERENCE_PACK_MV;
+#else
+    return (float)HK_POWER_MV_UNKNOWN;
+#endif
+}
+
+/** Adapter so hk_eq_settings_load() can read the user store. */
+static bool read_user_u32(const char *key, uint32_t *out, void *ctx)
+{
+    (void)ctx;
+    return hk_storage_user_read_u32(key, out);
+}
+
+/**
+ * Build the protective chain from the stored calibration, or fail saying why.
+ *
+ * Read here rather than in hk_main because this backend owns the ::hk_dsp_t and
+ * hk_dsp_init() takes the chain by value at construction: there is nowhere else
+ * to put it that does not also invent a way to hand a struct across a component
+ * boundary. It uses nothing but existing public API -- hk_storage's read-only
+ * window onto factory_cal, and hk_profile's own judgement of what it read.
+ */
+static bool load_chain(hk_profile_chain_t *out)
+{
+    /* A blob of the wrong length is not a profile of another version, it is not
+     * a profile; hk_profile_from_blob() says so, and reading into a raw buffer
+     * first is what lets it check the length instead of trusting it. */
+    uint8_t raw[sizeof(hk_profile_t)];
+    size_t  length = sizeof(raw);
+    if (hk_storage_factory_get_blob(HK_STORAGE_PROFILE_KEY, raw, &length) != ESP_OK) {
+        ESP_LOGW(TAG, "no calibration profile in %s/%s",
+                 HK_STORAGE_FACTORY_PARTITION, HK_STORAGE_PROFILE_KEY);
+#if CONFIG_HK_BENCH_PROVISIONAL_PROFILE
+        return bench_provisional_chain(out);
+#else
+        return false;
+#endif
+    }
+
+    hk_profile_t               profile;
+    const hk_profile_verdict_t read = hk_profile_from_blob(raw, length, &profile);
+    if (read != HK_PROFILE_OK) {
+        ESP_LOGE(TAG, "stored calibration refused: %s", hk_profile_verdict_name(read));
+        return false;
+    }
+
+    const hk_profile_verdict_t built =
+        hk_profile_build(&profile, (float)OUTPUT_RATE, pack_mv_now(), out);
+    if (built != HK_PROFILE_OK) {
+        ESP_LOGE(TAG, "calibration would not build at %u Hz: %s",
+                 (unsigned int)OUTPUT_RATE, hk_profile_verdict_name(built));
+        return false;
+    }
+
+    ESP_LOGI(TAG, "calibration %u from '%s': crossover %.0f Hz, subsonic %.0f Hz",
+             (unsigned int)profile.measured_yyyymmdd, profile.source,
+             (double)profile.crossover_hz, (double)profile.woofer_hpf_hz);
+    return true;
+}
+
+/**
+ * Bring the signal path up.
+ *
+ * Both halves are read here, and they are read from different places on
+ * purpose: the protective numbers come from `factory_cal`, which a user reset
+ * cannot reach, and the tonal ones from the user store, which it can. That is
+ * PRD-008, and hk_dsp.h calls the struct boundary between them the same wall
+ * one layer up. Nothing in this function can move a value across it.
+ */
 static bool dsp_start(void)
 {
-    return hk_dsp_init((uint32_t)OUTPUT_RATE);
+    hk_profile_chain_t chain;
+    const bool         calibrated = load_chain(&chain);
+
+    /* Tonal settings never stop the speaker: a row that is missing or out of
+     * range falls back to its default and hk_eq_settings_load() reports that as
+     * diagnostic information, not as a failure. */
+    hk_eq_settings_t eq;
+    if (!hk_eq_settings_load(&eq, read_user_u32, NULL)) {
+        ESP_LOGI(TAG, "some EQ settings are not stored; defaults used for those");
+    }
+
+    /* NULL chain is the documented way to say "uncalibrated" -- a refusal
+     * rather than a reason to invent defaults. */
+    return hk_dsp_init(&s_dsp, calibrated ? &chain : NULL, &eq, (float)OUTPUT_RATE);
 }
 
-static bool dsp_ready(void)
-{
-    return hk_dsp_ready();
-}
+/* ==========================================================================
+ * Output state, copied from the vendored backend
+ * ========================================================================== */
 
-static void dsp_reset(void)
-{
-    hk_dsp_reset();
-}
+static i2s_chan_handle_t tx_handle;
+static volatile bool     flush_requested = false;
+static volatile bool     playback_running = false;
+static TaskHandle_t      playback_task_handle = NULL;
+static volatile int      source_rate = 44100;
+static volatile bool     resample_reinit_needed = false;
 
-static void dsp_run(const int16_t *in, int16_t *out, size_t frames)
-{
-    hk_dsp_process(in, out, frames);
-}
-
-/* ========================================================================== */
-
-static i2s_chan_handle_t     tx_handle;
-static volatile bool         flush_requested = false;
-static volatile bool         playback_running = false;
-static TaskHandle_t          playback_task_handle = NULL;
-static volatile int          source_rate = 44100;
-static volatile bool         resample_reinit_needed = false;
+/*
+ * Which part of the programme this box plays.
+ *
+ * MONO by default, and mono is what a bi-amp box normally wants: hk_settings'
+ * `chan_mode` defaults to 0, which hk_airplay.c maps to AUDIO_CHANNEL_MONO.
+ * Set before the first frame in practice, but defaulted correctly anyway
+ * because audio_output_start() runs before hk_airplay.c gets to
+ * audio_output_set_channel_mode().
+ */
+static volatile audio_channel_mode_t channel_mode = AUDIO_CHANNEL_MONO;
 
 /* Live output cursor. Copied from vendor/audio/audio_output.c:76-120 together
  * with its comment, because the reasoning is the part that matters:
@@ -263,6 +452,11 @@ static uint32_t output_queued_frames(void)
  * amplifier, so the volume control has to sit upstream of them. A volume
  * applied after the limiter would scale the ceiling along with the audio and
  * protect nothing at full volume.
+ *
+ * It is also the one downstream operation hk_dsp.h explicitly permits, but only
+ * because it is upstream: "a common gain applied to both slots equally ... lands
+ * after the limiters, so it can only make the output quieter". Here it lands
+ * before them, which is stricter still.
  */
 static void apply_volume(int16_t *buf, size_t n)
 {
@@ -289,86 +483,119 @@ static void apply_volume(int16_t *buf, size_t n)
 #endif
 }
 
-/*
- * There is no apply_channel_mode() here, and its absence is a decision rather
- * than an omission.
+/**
+ * Put the channel the owner asked for into both slots, ahead of the DSP.
  *
- * Upstream picks a channel or downmixes because its outputs are a left speaker
- * and a right speaker. Ours are not: ADR-0002 gives the left DAC channel to the
- * woofer and the right to the tweeter, one mono programme split by frequency --
- * "Bu esleme stereo kutu degildir". Choosing a channel downstream of that would
- * not select a channel, it would mute a driver.
+ * This is NOT upstream's apply_channel_mode(), and the difference is the whole
+ * reason it is written out again rather than inherited. Upstream picks a
+ * channel or downmixes because its two outputs are a left speaker and a right
+ * speaker. Ours are not: ADR-0002 gives the left DAC channel to the WOOFER and
+ * the right to the TWEETER. Downstream of the DSP there is no left and right to
+ * choose between, and a channel selection applied there would not select a
+ * channel -- it would mute a driver.
  *
- * So the DSP's input mixer makes the selection, and the software downmix stands
- * aside. The channel-mode API itself still answers, from the weak defaults in
- * vendor/audio/audio_output_common.c:33-55 -- set/cycle become no-ops, get
- * reports STEREO and locked reports true, which is what the vendored callers
- * need and is not worth a second copy here.
+ * So the selection happens here, upstream of everything, and it is exactly the
+ * operation hk_dsp.h asks the caller for: "a speaker that should play only the
+ * left channel of the programme is served by the CALLER duplicating that
+ * channel into both slots before calling in -- 0.5 * (L + L) is exactly L".
+ * Four of these boxes will sit in one room, so `chan_mode` is a real setting
+ * with a real effect and not a leftover.
+ *
+ * MONO needs no work at all: the DSP's stage 1 sums the pair. STEREO means the
+ * same thing here, because there is no stereo to keep -- it survives only
+ * because it is the enum's zero value and the weak defaults in
+ * audio_output_common.c report it.
  */
+static void select_channel(int16_t *buf, size_t frames)
+{
+    const audio_channel_mode_t mode = channel_mode;
+    if (mode != AUDIO_CHANNEL_LEFT && mode != AUDIO_CHANNEL_RIGHT) {
+        return;
+    }
+    const size_t src = (mode == AUDIO_CHANNEL_RIGHT) ? 1u : 0u;
+    for (size_t i = 0; i < frames; i++) {
+        const int16_t s  = buf[i * 2 + src];
+        buf[i * 2]       = s;
+        buf[i * 2 + 1]   = s;
+    }
+}
 
 /* --- The playback task ----------------------------------------------------
  *
  * Structurally the vendored playback_task (vendor/audio/audio_output.c:201-267)
  * with three changes, all of them the point of the file:
  *
- *   1. The zero buffer is const after allocation. It is the DSP's input on an
- *      underrun and the direct I2S write when the DSP is not ready, and NOTHING
- *      writes to it in either role. Compare upstream, where the buffer handed
- *      to I2S is the buffer processing would have written.
+ *   1. The silence buffer is re-zeroed on every frame that uses it. Upstream
+ *      zeroes it once at allocation and then relies on nobody writing to it,
+ *      which stops being true the moment a processing stage is added.
  *
- *   2. Output goes to its own buffer. The receiver's PCM, the resampler's
- *      output and the DSP's output are three distinct objects; the DSP's
- *      destination is never anybody's source.
+ *   2. Every buffer handed to the DSP was completely written earlier in the
+ *      same iteration by something that is not the DSP, so in-place processing
+ *      here cannot read back a previous output.
  *
- *   3. The DSP call sits where apply_channel_mode() used to.
+ *   3. The DSP call sits where apply_channel_mode() used to, and the channel
+ *      selection moved ahead of it.
  */
 static void playback_task(void *arg)
 {
     (void)arg;
 
-    /* Input side: what the receiver and resampler fill, and what apply_volume
-     * scales in place. Both are refilled completely on every frame that uses
-     * them, so in-place work here is not feedback. */
     int16_t *pcm          = malloc((size_t)(FRAME_SAMPLES + 1) * 2 * sizeof(int16_t));
     int16_t *resample_buf = malloc(MAX_RESAMPLE_FRAMES * 2 * sizeof(int16_t));
+    int16_t *silence      = malloc((size_t)FRAME_SAMPLES * 2 * sizeof(int16_t));
 
-    /* Output side: the only buffer this task ever hands to I2S when the DSP is
-     * running, and the only buffer the DSP writes. Sized for the resampled
-     * worst case, because that is the largest frame count that can reach it. */
-    int16_t *out = malloc(MAX_RESAMPLE_FRAMES * 2 * sizeof(int16_t));
-
-    /* Zero, once, forever. calloc gives it its only write. */
-    const int16_t *zero = calloc((size_t)FRAME_SAMPLES * 2, sizeof(int16_t));
-
-    if (!pcm || !resample_buf || !out || !zero) {
+    if (!pcm || !resample_buf || !silence) {
         ESP_LOGE(TAG, "Failed to allocate buffers");
         free(pcm);
         free(resample_buf);
-        free(out);
-        free((void *)zero);
+        free(silence);
         playback_task_handle = NULL;
         vTaskDelete(NULL);
         return;
     }
 
+    const size_t silence_bytes = (size_t)FRAME_SAMPLES * 2 * sizeof(int16_t);
+
     /* Said once rather than per frame: a log line in the playback loop is a log
      * line at 125 Hz. */
-    bool announced_silent = false;
+    bool announced_refusal = false;
 
     size_t written;
     while (playback_running) {
         if (resample_reinit_needed) {
             resample_reinit_needed = false;
             audio_resample_init((uint32_t)source_rate, OUTPUT_RATE, 2);
+            /* Ours, and for the same reason as the flush below rather than a
+             * different one -- hk_dsp.h names both cases in one sentence: reset
+             * is "for a stream flush OR A RATE CHANGE, where the samples that
+             * follow have no relationship to the ones before".
+             *
+             * A rate change arrives from audio_receiver_set_format(), which
+             * rtsp_handlers.c calls on SETUP and ANNOUNCE (lines 1005, 1091,
+             * 1219) -- and none of those three is accompanied by an
+             * audio_output_flush(), so the branch below does NOT cover this
+             * one. Without this call the previous stream's filter memory and
+             * the limiters' reduced gain ring out over the first frames of the
+             * new one. Measured on the built chain (70 Hz subsonic, 4 kHz LR4)
+             * by feeding an all-zero frame into a path left by a loud 300 Hz
+             * passage: the retained state alone produces a woofer peak of 8598
+             * and a TWEETER peak of 5268 (-15.9 dBFS) out of digital silence,
+             * and the tweeter branch's ceiling does not prevent it -- a limiter
+             * caps a level, it does not remove a discontinuity. With the reset
+             * both peaks are 0.
+             *
+             * The resampler is already re-initialised on the line above; this
+             * is the same statement about the stage after it. */
+            hk_dsp_reset(&s_dsp);
         }
         if (flush_requested) {
             flush_requested = false;
             audio_resample_reset();
-            /* Ours: the filters and limiters carry state across the
+            /* Ours. The filters and limiters carry state across the
              * discontinuity too, and the tail of audio that was just discarded
              * would otherwise ring out over the first frames of the new
              * stream. */
-            dsp_reset();
+            hk_dsp_reset(&s_dsp);
             i2s_channel_disable(tx_handle);
             output_cursor_reset();
             i2s_channel_enable(tx_handle);
@@ -380,95 +607,118 @@ static void playback_task(void *arg)
          * still perfectly alive backs up behind a silent output stage. */
         size_t samples = audio_receiver_read(pcm, FRAME_SAMPLES + 1);
 
-        if (!dsp_ready()) {
-            /* No calibration profile, or one that stopped applying. Digital
-             * zero -- not attenuated audio, not audio with the crossover
-             * bypassed. The tweeter branch has no protective high-pass and no
-             * ceiling in this state, and there is no level at which sending it
-             * full-range programme is defensible. */
-            if (!announced_silent) {
-                announced_silent = true;
-                ESP_LOGW(TAG, "no DSP chain: writing digital zero. The receiver "
-                              "is running and I2S is clocked, but nothing plays "
-                              "until a calibration profile is built (G0/G2).");
-            }
-            led_audio_feed(zero, FRAME_SAMPLES);
-            if (i2s_channel_write(tx_handle, zero,
-                                  (size_t)FRAME_SAMPLES * 2 * sizeof(int16_t),
-                                  &written, portMAX_DELAY) == ESP_OK) {
-                __atomic_add_fetch(&output_submitted_frames,
-                                   (uint64_t)(written / (2U * sizeof(int16_t))),
-                                   __ATOMIC_RELAXED);
-            }
-            continue;
-        }
-        if (announced_silent) {
-            announced_silent = false;
-            ESP_LOGI(TAG, "DSP chain available; audio is being processed again");
-        }
+        int16_t *play_buf;
+        size_t   play_samples;
 
-        if (samples > 0) {
-            int16_t *play_buf     = pcm;
-            size_t   play_samples = samples;
+        if (samples > 0 && hk_dsp_ready(&s_dsp)) {
+            play_buf     = pcm;
+            play_samples = samples;
             if (audio_resample_is_active()) {
                 play_samples = audio_resample_process(pcm, samples, resample_buf,
                                                       MAX_RESAMPLE_FRAMES);
                 play_buf     = resample_buf;
             }
             apply_volume(play_buf, play_samples * 2);
-
-            /* Where apply_channel_mode() used to be, and out of place instead
-             * of in it. */
-            dsp_run(play_buf, out, play_samples);
+            select_channel(play_buf, play_samples);
 
             /* Upstream feeds the buffer it is about to write; this feeds the
-             * PROGRAMME instead. What we are about to write is two crossover
-             * ways, so a level meter fed from it would show woofer-band energy
-             * on the left and tweeter-band on the right rather than the
-             * loudness of the track. The distinction is currently academic --
-             * shim/hk_airplay_shim.c drops these samples, because hk_ui owns
-             * the LED -- but the argument is what the next person needs. */
+             * PROGRAMME, one line earlier, because after the next call the
+             * buffer holds two crossover ways rather than a stereo image and a
+             * level meter fed from it would show woofer-band energy on the left
+             * and tweeter-band on the right instead of the loudness of the
+             * track. Academic today -- shim/hk_airplay_shim.c drops these
+             * samples, because hk_ui owns the LED -- but the next person needs
+             * the argument, not the outcome. */
             led_audio_feed(play_buf, play_samples);
-
-            if (i2s_channel_write(tx_handle, out,
-                                  play_samples * 2 * sizeof(int16_t), &written,
-                                  portMAX_DELAY) == ESP_OK) {
-                __atomic_add_fetch(&output_submitted_frames,
-                                   (uint64_t)(written / (2U * sizeof(int16_t))),
-                                   __ATOMIC_RELAXED);
-            }
-            taskYIELD();
         } else {
-            /* Receiver underflow. Upstream's pacing, kept because the reasoning
-             * is still right (vendor/audio/audio_output.c:248-259): block on the
-             * DMA write (portMAX_DELAY) so the write itself paces the loop,
-             * instead of a short timeout plus vTaskDelay(1) which produced
-             * jittery silence.
+            /* Two cases arrive here and both want the same buffer: a receiver
+             * underflow, and a DSP that has no chain to run.
              *
-             * The difference is where the silence comes from. Upstream reuses
-             * one buffer as both the thing it processes and the thing it
-             * writes; here zeros go IN and the DSP's own output comes OUT. That
-             * is not ceremony: it lets the filters and the limiters ring out and
-             * recover across the gap instead of freezing mid-decay, so the
-             * first frame after the underrun continues the tail rather than
-             * stepping off it. And `zero` is untouched by all of it, which is
-             * the property upstream's buffer does not have. */
-            dsp_run(zero, out, (size_t)FRAME_SAMPLES);
-            led_audio_feed(zero, FRAME_SAMPLES);
-            if (i2s_channel_write(tx_handle, out,
-                                  (size_t)FRAME_SAMPLES * 2 * sizeof(int16_t),
-                                  &written, portMAX_DELAY) == ESP_OK) {
-                __atomic_add_fetch(&output_submitted_frames,
-                                   (uint64_t)(written / (2U * sizeof(int16_t))),
-                                   __ATOMIC_RELAXED);
+             * THE MEMSET IS THE POINT OF THIS FILE. hk_dsp_process() writes in
+             * place, so without it frame N's output would be frame N+1's input
+             * and an EQ boost would make the "silence" grow. Unconditional, and
+             * cheap: 1408 bytes at 125 Hz. */
+            memset(silence, 0, silence_bytes);
+            play_buf     = silence;
+            play_samples = FRAME_SAMPLES;
+            led_audio_feed(silence, FRAME_SAMPLES);
+        }
+
+        /* Where apply_channel_mode() used to be.
+         *
+         * Called even for the silence frame, and deliberately: it lets the
+         * filters and the limiters ring out and recover across a gap instead of
+         * freezing mid-decay, so the first frame after an underrun continues
+         * the tail rather than stepping off it. When the path is not ready it
+         * zeroes the buffer and says no, which is why the buffer written below
+         * is safe in every branch. */
+        if (!hk_dsp_process(&s_dsp, play_buf, play_samples)) {
+            if (!announced_refusal) {
+                announced_refusal = true;
+                ESP_LOGW(TAG, "no DSP chain (%s): writing digital zero. The "
+                              "receiver runs and I2S is clocked, but nothing is "
+                              "audible until a calibration profile exists "
+                              "(G0/G2). The amplifier should already be muted "
+                              "by the same gate.",
+                         hk_dsp_refusal_name(hk_dsp_refusal(&s_dsp)));
             }
+        } else if (announced_refusal) {
+            announced_refusal = false;
+            ESP_LOGI(TAG, "DSP chain available; audio is being processed again");
+        }
+
+#if CONFIG_HK_OUTPUT_SWAP_BRANCHES
+        /* The wiring, not the design.
+         *
+         * hk_dsp puts the woofer branch in the left slot because ADR-0002 and
+         * the wiring plan both say the left analogue channel drives the woofer.
+         * This undoes that for a board where the two are physically the other
+         * way round, and it belongs here rather than inside the DSP: the DSP
+         * describes the loudspeaker, this line describes one bench's solder.
+         *
+         * It is deliberately AFTER the limiter, because it is a relabelling and
+         * not a processing stage. Nothing about the samples changes -- the
+         * high-passed, limited tweeter band is still exactly that -- only which
+         * pin it leaves on. */
+        for (size_t i = 0; i < play_samples; i++) {
+            const int16_t held = play_buf[2u * i];
+            play_buf[2u * i] = play_buf[2u * i + 1u];
+            play_buf[2u * i + 1u] = held;
+        }
+#endif
+
+        if (i2s_channel_write(tx_handle, play_buf,
+                              play_samples * 2 * sizeof(int16_t), &written,
+                              portMAX_DELAY) == ESP_OK) {
+            __atomic_add_fetch(&output_submitted_frames,
+                               (uint64_t)(written / (2U * sizeof(int16_t))),
+                               __ATOMIC_RELAXED);
+        }
+
+        /* Upstream yields after a real frame and lets the blocking write pace
+         * the silence one (vendor/audio/audio_output.c:247,250-251): "block on
+         * the DMA write (portMAX_DELAY) so the write itself paces the loop,
+         * instead of a short timeout plus vTaskDelay(1) which produced jittery
+         * silence". Both paths end in the same blocking write here.
+         *
+         * The condition is NOT upstream's, and the difference is worth naming
+         * rather than glossing: upstream yields whenever the receiver returned
+         * samples, this yields whenever those samples were PLAYED. They part
+         * company in one state -- receiver delivering, DSP not ready -- which
+         * is the whole of an uncalibrated device's life, and there this does
+         * not yield where upstream would. Harmless, and checked rather than
+         * assumed: the i2s_channel_write() above is portMAX_DELAY, so the loop
+         * still blocks once per frame and cannot starve a lower-priority task.
+         * The yield is a courtesy on top of that, not the thing that provides
+         * it. Tying it to play_buf keeps it describing the branch it is in. */
+        if (play_buf != silence) {
+            taskYIELD();
         }
     }
 
     free(pcm);
     free(resample_buf);
-    free(out);
-    free((void *)zero);
+    free(silence);
     playback_task_handle = NULL;
     vTaskDelete(NULL);
 }
@@ -496,9 +746,17 @@ static void playback_task(void *arg)
  * The first five have no weak default and MUST be defined here. The next two
  * are defined because this backend genuinely has a completion cursor and a real
  * underrun count, and letting the weak "I cannot answer" default stand would
- * throw away the measurement the timing engine prefers. The channel-mode calls
- * are deliberately left to the weak defaults; see the note above the playback
- * task.
+ * throw away the measurement the timing engine prefers.
+ *
+ * audio_output_set_channel_mode is defined for a reason worth stating, because
+ * the weak default would have compiled and linked and quietly done nothing:
+ * hk_airplay.c reads the owner's `chan_mode` setting and calls it, and with the
+ * no-op default a box set to "left only" would silently play the mono sum while
+ * the boot log said "channel mode left". The selection has real work to do here
+ * -- see select_channel() -- it just has to happen before the DSP rather than
+ * after it. audio_output_get_channel_mode() comes with it so nothing can read
+ * back a mode this backend is not in. Cycle and locked are left to the weak
+ * defaults: no compiled source calls them.
  *
  * audio_output_write() is deliberately NOT defined, and that is a safety
  * decision rather than a shortcut. It exists upstream so another source (A2DP)
@@ -516,7 +774,8 @@ static void playback_task(void *arg)
 esp_err_t audio_output_init(void)
 {
     /* Copied from vendor/audio/audio_output.c:286-353, minus the channel-mode
-     * restore (this backend has no channel mode) and plus the DSP bring-up. */
+     * restore from upstream's own NVS (this project stores that setting itself,
+     * see audio_output_set_channel_mode) and plus the DSP bring-up. */
     i2s_chan_config_t chan_cfg =
         I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
     chan_cfg.dma_desc_num  = I2S_DMA_DESC_NUM;
@@ -585,17 +844,20 @@ esp_err_t audio_output_init(void)
 
     audio_resample_init(44100, OUTPUT_RATE, 2);
 
-    /* Ours. A failure is not an init failure: the receiver, the clock and the
-     * network side are all perfectly able to run, and refusing to start here
+    /* Ours. A refusal is not an init failure: the receiver, the clock and the
+     * network side are all perfectly able to run, and returning an error here
      * would take AirPlay discovery down over a missing calibration file. The
-     * playback task writes zero instead, and says so. */
+     * playback task writes zero instead, and says so once. */
     if (!dsp_start()) {
-        ESP_LOGW(TAG, "DSP chain not built -- no calibration profile. The output "
-                      "will be digital zero until one exists (G0/G2).");
+        ESP_LOGW(TAG, "DSP path refused (%s). Output will be digital zero until "
+                      "a calibration profile exists (G0/G2).",
+                 hk_dsp_refusal_name(hk_dsp_refusal(&s_dsp)));
     } else {
-        ESP_LOGI(TAG, "DSP chain built at %u Hz: left = woofer, right = tweeter "
-                      "(ADR-0002). This is not a stereo pair.",
-                 (unsigned int)OUTPUT_RATE);
+        ESP_LOGI(TAG, "DSP path built at %u Hz, %u biquads per frame. "
+                      "Left = WOOFER, right = TWEETER (ADR-0002); this is not a "
+                      "stereo pair.",
+                 (unsigned int)OUTPUT_RATE,
+                 (unsigned int)hk_dsp_biquads_per_frame(&s_dsp));
     }
 
     return ESP_OK;
@@ -605,7 +867,11 @@ void audio_output_start(void)
 {
     /* Copied from vendor/audio/audio_output.c:356-368, including the task
      * priority (AUDIO_PLAYBACK_TASK_PRIORITY, which audio_output.h explains
-     * must outrank every source task) and the core pinning. */
+     * must outrank every source task) and the core pinning.
+     *
+     * The stack is upstream's 4096 unchanged. The DSP adds no allocation and no
+     * recursion to the frame -- its state is the caller-owned hk_dsp_t in
+     * static storage, and its working set is a handful of floats. */
     if (playback_task_handle != NULL) {
         return; /* already running */
     }
@@ -613,6 +879,19 @@ void audio_output_start(void)
     /* The DMA has been free-running since the last session, so the cursor
      * carries an arbitrary submitted/sent skew. Start from a clean slate. */
     output_cursor_reset();
+    /* Ours, and the same sentence as the line above applied to the signal path:
+     * the filters and the limiters also carry the last session's state, and a
+     * session that ended mid-passage leaves a decaying tail and a limiter gain
+     * still held down. Safe to touch s_dsp here because this function returned
+     * early if a playback task exists, so there is no other reader.
+     *
+     * audio_output_stop() has no compiled caller today, which makes this
+     * unreachable rather than wrong -- and that is exactly why it belongs here.
+     * stop() is defined in this file on the argument that "a start with no stop
+     * leaves the task and its buffers alive with no way to reclaim them"; the
+     * day something calls it, the restart must not resume on the old stream's
+     * filter memory. Costs ten floats and two limiter re-inits, once. */
+    hk_dsp_reset(&s_dsp);
     xTaskCreatePinnedToCore(playback_task, "audio_play", 4096, NULL,
                             AUDIO_PLAYBACK_TASK_PRIORITY, &playback_task_handle,
                             PLAYBACK_CORE);
@@ -672,9 +951,10 @@ uint32_t audio_output_get_hardware_latency_us(void)
      *   The residual +/-2.9 ms swing is real jitter that the drift servo in
      *   audio_timing.c absorbs; only the constant bias is removed here.
      *
-     * The DSP adds no latency of its own to model: the filters are biquads and
-     * the limiter has zero attack and no lookahead, both of which hk_limiter.h
-     * chose precisely so this number would stay true. */
+     * The DSP adds no latency to model. hk_dsp.h states it: every stage is a
+     * recursive filter or a memoryless multiply, and the limiter has no
+     * lookahead by deliberate design (hk_limiter.h), precisely so this number
+     * would stay true and ADR-0007's 1 ms synchronisation budget untouched. */
     return (uint32_t)((((uint64_t)(2 * I2S_DMA_DESC_NUM - 1) * I2S_DMA_FRAME_NUM *
                         1000000ULL) /
                        2) /
@@ -702,4 +982,30 @@ bool audio_output_get_pipeline_us(int64_t *now_us, uint32_t *pipeline_us)
 uint32_t audio_output_get_underruns(void)
 {
     return __atomic_load_n(&output_underruns, __ATOMIC_RELAXED);
+}
+
+void audio_output_set_channel_mode(audio_channel_mode_t mode)
+{
+    /* Not persisted, unlike vendor/audio/audio_output.c:496-511. Upstream owns
+     * the preference and writes its own NVS key; here the owner's `chan_mode`
+     * setting is the record, hk_airplay.c reads it from hk_settings/hk_storage
+     * and pushes it in, and a second store for the same fact is a second thing
+     * that can disagree.
+     *
+     * Nor is it gated on audio_output_channel_mode_locked(): that guard exists
+     * upstream for boards with two DACs, where the hardware already fixes the
+     * routing. This board has one DAC and the routing is the crossover. */
+    if (mode > AUDIO_CHANNEL_MONO) {
+        mode = AUDIO_CHANNEL_MONO;
+    }
+    channel_mode = mode;
+    ESP_LOGI(TAG, "programme: %s",
+             mode == AUDIO_CHANNEL_LEFT    ? "LEFT channel only"
+             : mode == AUDIO_CHANNEL_RIGHT ? "RIGHT channel only"
+                                           : "MONO (L+R)/2");
+}
+
+audio_channel_mode_t audio_output_get_channel_mode(void)
+{
+    return channel_mode;
 }

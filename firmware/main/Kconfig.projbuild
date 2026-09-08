@@ -74,6 +74,31 @@ config HK_DISPLAY
         On means the product build. Off is for bench sessions that are chasing
         something else.
 
+config HK_BENCH_PROVISIONAL_PROFILE
+    bool "Use a compiled-in provisional profile when factory_cal has none"
+    default n
+    help
+        DANGEROUS ON A BOARD WITH DRIVERS ATTACHED, and differently dangerous
+        from the other two: this one does not bypass a gate, it FEEDS it a
+        profile nobody measured, so everything downstream behaves as though the
+        speaker were calibrated.
+
+        What it supplies: a crossover corner, a subsonic corner, branch gains
+        and limiter ceilings, derived on a bench from exactly two measurements
+        -- the two drivers' DC resistances. The tweeter's Fs was never located,
+        so the corner that protects it is an argument rather than evidence.
+
+        It exists because the alternative is not listening at all. hk_dsp
+        refuses to run without a profile, correctly, and writing a real one into
+        factory_cal is a manufacturing step. This is the bench shortcut, and the
+        boot log says so in as many words every time it is used.
+
+        It also makes pack_mv_now() return the profile's own reference voltage,
+        so the ceiling is used exactly as written instead of being scaled by a
+        pack nobody can measure.
+
+        Off for any build that leaves the bench.
+
 config HK_BENCH_AUDIO_WITHOUT_PROFILE
     bool "Permit audio on a board that has no driver-protection profile"
     default n

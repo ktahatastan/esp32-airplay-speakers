@@ -25,6 +25,7 @@ int main(void)
     HK_RUN(test_settings);
     HK_RUN(test_portal);
     HK_RUN(test_profile);
+    HK_RUN(test_dsp);
     HK_RUN(test_draw);
     HK_RUN(test_gfx);
     HK_RUN(test_qr);
