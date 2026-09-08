@@ -178,6 +178,91 @@ config HK_BENCH_TONE_INSTEAD_OF_AIRPLAY
         that is not committed. The source is only compiled when it is set, so a
         release image never carries it.
 
+        HK_BENCH_SWEEP below turns this single held tone into a stepped sweep
+        for measuring a driver. That is a different instrument into a different
+        circuit, and its warnings are its own.
+
+config HK_BENCH_SWEEP
+    bool "Step through frequencies to measure a driver, instead of holding one tone"
+    depends on HK_BENCH_TONE_INSTEAD_OF_AIRPLAY
+    default n
+    help
+        Replaces the fixed 1 kHz tone with a stepped sine sweep, so that one
+        Nova driver's impedance curve and resonance frequency (Fs) can be read
+        off a multimeter. This is the measurement that closes the largest part
+        of the G0 blocker in AGENTS.md.
+
+        WHY IT MATTERS: the tweeter's Fs sets the MINIMUM SAFE high-pass corner
+        -- at least twice Fs. Until it is measured, the crossover corner in
+        docs/04-acoustics/measurement-and-dsp-plan.md is a conservative guess.
+        The drivers came out of a Harman Kardon Nova, carry only manufacturer
+        internal codes, and the woofer has an extra magnet glued to its back, so
+        no published parameter applies and measurement is the only path.
+
+        A DIFFERENT CIRCUIT, AND THIS IS THE PART TO GET RIGHT. The intended
+        connection is NOT through the amplifier:
+
+            DAC line out -> 470 ohm 1/4 W series resistor -> ONE BARE driver ->
+            DAC ground, with the meter on AC volts across the driver.
+
+        Bare means bare: if the tweeter's 10 uF C_SAFE capacitor is fitted, take
+        it out of this circuit first. At 40 Hz that capacitor is about 400 ohms
+        and the sweep would measure it rather than the voice coil.
+
+        With that in place the driver dissipates tens of microwatts, and under
+        half a milliwatt at a resonance peak. That is what allows the sweep to run at
+        -6 dBFS -- 24 dB above the fixed tone -- and still be gentler on a
+        tweeter by orders of magnitude than the fixed tone is. The level is
+        chosen so the whole curve lands inside one 200 mV meter range; it is
+        not a relaxed safety limit, it is the same limit applied to a circuit
+        with no amplifier in it.
+
+        THE DANGER IS THE WIRING, AND FIRMWARE CANNOT SEE IT. Left connected to
+        the TPA3110, -6 dBFS through a possibly 36 dB amplifier is well past
+        clipping into an unmeasured tweeter, held near its resonance for eight
+        seconds at a time. Worse, the two bench exception symbols above that
+        unmute the DAC are the same two that unmute the AMPLIFIER: there is no
+        configuration that releases one and holds the other. Unplug the
+        amplifier's input or cut its supply. The sweep prints this and then
+        stays silent for ten seconds before the first step, so there is time to
+        act on it.
+
+        The full procedure -- the circuit, the meter range, the arithmetic that
+        turns two readings into ohms, the expected values and the table to fill
+        in -- is in docs/02-hardware/driver-measurements.md. Read it before
+        flashing this, not after.
+
+        Runs to the end on its own: about three and a half minutes, then
+        silence and the mute lines back down. It needs no button and no input,
+        because a run that wants a press per step is a run nobody finishes.
+
+config HK_BENCH_SWEEP_FINE_HZ
+    int "Centre a fine pass on this frequency (0: run the coarse pass)"
+    depends on HK_BENCH_SWEEP
+    range 0 8000
+    default 0
+    help
+        0 runs the COARSE pass: 22 steps at 1/3 octave from 40 Hz to 4.9 kHz,
+        which is wide enough to contain both the 60 mm cone's resonance and the
+        25 mm dome's, and coarse enough that a person will actually finish
+        writing it down.
+
+        Set this to the frequency of the largest reading that pass produced,
+        and the next run is a FINE pass instead: 17 steps at 1/12 octave across
+        two thirds of an octave either side of it. The coarse pass says which
+        neighbourhood Fs is in to about 13%; the fine pass says where it is to
+        about 3%, which is what a high-pass corner deserves to be derived from.
+
+        Two passes rather than one long fine sweep because a 1/12-octave sweep
+        of the whole range is 122 steps and a quarter of an hour of copying
+        numbers off a meter, and eighty of those steps are known in advance to
+        be flat.
+
+        Clamped to 20 Hz - 7.35 kHz by the generator regardless of what is set
+        here, because outside that band the block length stops fitting the
+        buffer at one end and the sample rate stops describing a sine at the
+        other.
+
 config HK_DUAL_TRANSPORT
     bool "Offer BLE and SoftAP provisioning at the same time"
     default y

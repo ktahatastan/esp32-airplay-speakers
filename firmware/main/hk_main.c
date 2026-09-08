@@ -777,6 +777,34 @@ static void on_airplay_state(bool playing, void *context)
 }
 #endif /* HK_AIRPLAY_RUNS */
 
+#if CONFIG_HK_BENCH_TONE_INSTEAD_OF_AIRPLAY
+/**
+ * The bench signal has ended.
+ *
+ * The same fact, in the same shape, as on_airplay_state(false): whatever was
+ * feeding I2S has stopped, so the claim of a live stream has to be withdrawn
+ * and hk_audio's sequence puts the DAC and the amplifier back down.
+ *
+ * The fixed tone never ends, so in that build this never runs. The sweep does,
+ * after its last step -- and it also runs if the sweep ABANDONS itself on an
+ * I2S error, which is the case worth stating: the two outcomes differ in what
+ * the operator learned, not in what the output chain should be doing
+ * afterwards, and a failed run that left the amplifier released would be the
+ * worse of the two.
+ *
+ * Called on the generator task, so it does what the receiver's callback does
+ * and no more: stores a value.
+ */
+static void on_tone_done(void *context)
+{
+    (void)context;
+    hk_audio_hw_set_stream_live(false);
+    ESP_LOGW(TAG, "the bench signal has ended; the mute lines are going back down. "
+                  "Nothing here is a measurement until you write it into "
+                  "docs/02-hardware/driver-measurements.md.");
+}
+#endif /* CONFIG_HK_BENCH_TONE_INSTEAD_OF_AIRPLAY */
+
 static void on_network_status(const hk_net_status_t *network, void *context)
 {
     (void)context;
@@ -928,7 +956,7 @@ void app_main(void)
      * an asserted mute is a tone nobody can hear. It is set AFTER the start
      * call succeeds, so a failed instrument never claims a live stream. */
     {
-        const esp_err_t tone_err = hk_tone_start();
+        const esp_err_t tone_err = hk_tone_start(on_tone_done, NULL);
         if (tone_err != ESP_OK) {
             ESP_LOGE(TAG, "the bench test tone did not start: %s. Nothing is driving "
                           "I2S in this build, so silence proves nothing.",
@@ -981,6 +1009,19 @@ void app_main(void)
                   "speaker will not appear on any phone. The DSP chain is absent here "
                   "too: no crossover, no protective high-pass and no limiter until G0/G2 "
                   "produce a profile. See docs/03-firmware/firmware-plan.md stage F3.");
+#if CONFIG_HK_BENCH_SWEEP
+    /* Said again here, at the end of the boot report, because this is the last
+     * thing on the console before the sweep's own banner and it is the one
+     * warning that cannot be enforced anywhere: the amplifier is kept out of
+     * the sweep's circuit by the wiring alone. The two bench exception symbols
+     * that release the DAC release it too, so the boot report above saying
+     * "PERMITTED" is not evidence that the amplifier is idle. */
+    ESP_LOGW(TAG, "SWEEP BUILD: this one is not for listening to. It measures ONE driver "
+                  "through a 470 ohm series resistor straight off the DAC line output, "
+                  "with the amplifier UNPLUGGED. Check the speaker terminals and the "
+                  "amplifier input before the ten second lead-in runs out. The procedure "
+                  "is docs/02-hardware/driver-measurements.md.");
+#endif
 #elif CONFIG_HK_AIRPLAY
     ESP_LOGI(TAG, "the AirPlay receiver is built in. The DSP chain is not: there is no "
                   "crossover, no protective high-pass and no limiter until G0/G2 produce "

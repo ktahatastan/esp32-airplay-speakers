@@ -67,8 +67,13 @@ void test_screen(void)
      * loop drove audio_locked from the same bit as `ready` and `charging` from
      * the same bit as `battery_low`, which made three screens unreachable and
      * looked exactly like the product bug this test exists to find. Inputs that
-     * are independent in the struct have to be independent here. */
-    for (unsigned bits = 0; bits < 4096u; bits++) {
+     * are independent in the struct have to be independent here.
+     *
+     * It caught a second one the same way: HK_SCREEN_CONFIRM_SETUP was added to
+     * the enum and to hk_screen_choose(), but confirm_setup was not added to
+     * this loop -- so the completeness check reported an unreachable screen,
+     * which is exactly what it is for. */
+    for (unsigned bits = 0; bits < 8192u; bits++) {
         for (int hold = HK_BUTTON_HOLD_NONE; hold <= HK_BUTTON_HOLD_FACTORY_ARMED; hold++) {
             memset(&v, 0, sizeof(v));
             v.led.error        = (bits & (1u << 0)) != 0u;
@@ -84,6 +89,7 @@ void test_screen(void)
             v.charging         = (bits & (1u << 9)) != 0u;
             v.have_battery     = (bits & (1u << 10)) != 0u;
             v.have_ble_qr      = (bits & (1u << 11)) != 0u;
+            v.confirm_setup    = (bits & (1u << 12)) != 0u;
 
             const hk_screen_id_t id = hk_screen_choose(&v);
             HK_CHECK(id >= 0 && id < HK_SCREEN_COUNT);
