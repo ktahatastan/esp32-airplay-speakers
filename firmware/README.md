@@ -128,11 +128,11 @@ Wrapping `idf_component_register()` in `if(CONFIG_...)` makes that early pass
 record an empty requirement list, and the failure then surfaces far from its
 cause, as `esp_*.h` includes that cannot be found.
 
-**A run that succeeded and produced a broken file.** `nvs_partition_gen.py`
-resolves the file paths named *inside* a CSV against the working directory, not
-against the CSV. Started from anywhere else it fails to find them, still writes
-an output binary, and that short file flashed at the `factory_cal` offset erases
-the credentials and replaces nothing — leaving a device that behaves as if it
+**A run that produced a broken file.** `nvs_partition_gen.py` resolves the file
+paths named *inside* a CSV against the working directory, not against the CSV.
+Started from anywhere else it fails to find them and leaves a short or empty
+output behind, and that file flashed at the `factory_cal` offset erases the
+credentials and replaces nothing — leaving a device that behaves as if it
 had never been given any, which this firmware correctly refuses to provision.
 Run the tool from the directory the CSV's paths are written against.
 
@@ -190,8 +190,13 @@ back to a weaker security mode. Generate them with
 
 ```bash
 . $IDF_PATH/export.sh
-python3 firmware/tools/provision_credentials.py --device A1B2
+python3 firmware/tools/provision_credentials.py --device A1B2 --image --out ~/hk-credentials
 ```
+
+`--image` is not optional in practice: it builds the partition image from the
+directory the CSV's paths are written against, and checks the result. Doing it
+by hand is the trap described under ESP-IDF traps. `--out` belongs outside the
+repository — three of the files it writes hold the password.
 
 Each device gets its own random password. The speaker stores only an SRP6a salt
 and verifier, from which the password cannot be recovered, so reading the flash

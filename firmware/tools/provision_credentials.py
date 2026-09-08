@@ -68,8 +68,8 @@ BLE_NAME = "HarmanKardom-{device_id}"
 #: accepts a range and uses whatever length was stored.
 SALT_LEN = 16
 
-#: Password length. The alphabet below has 30 symbols, so 12 characters carry
-#: about 59 bits: far beyond anything a rate-limited provisioning session can be
+#: Password length. The alphabet below has 27 symbols, so 12 characters carry
+#: about 57 bits: far beyond anything a rate-limited provisioning session can be
 #: brute forced through, while still being typable off a printed label.
 #: It is also the setup network's WPA2 key (ADR-0015), which puts a hard floor
 #: of 8 under it -- WPA2 rejects anything shorter, and it would fail as a
@@ -318,7 +318,8 @@ def main() -> int:
     print("The `cd` is not optional: the CSV names its input files without a path and")
     print("nvs_partition_gen.py resolves them against the working directory, not against")
     print("the CSV. Run it from anywhere else and the inputs are not found -- and a")
-    print(f"truncated image flashed at that offset erases the credentials that were there.")
+    print("truncated image flashed at that offset erases the credentials that were there.")
+    print("--image does the cd for you and checks the result, which is why it exists.")
     print(f"Check the result is exactly {IMAGE_SIZE} bytes before flashing it.")
     print(f"Then flash it at the factory_cal offset from {PARTITION_HINT}.")
     return 0
