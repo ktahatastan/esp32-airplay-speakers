@@ -46,6 +46,26 @@ config HK_ONBOARD_STATUS_LED_GPIO
         It must not collide with the assignment in hk_pins; nothing enforces that
         here, because a Kconfig integer cannot see that table.
 
+config HK_BENCH_AUDIO_WITHOUT_PROFILE
+    bool "Permit audio on a board that has no driver-protection profile"
+    default n
+    help
+        DANGEROUS ON A BOARD WITH DRIVERS ATTACHED. Leave this off unless you
+        can see that nothing is connected to the audio output.
+
+        The gate this bypasses is the one that keeps an unmeasured tweeter
+        alive: without a profile from G0/G2 there is no crossover, no protective
+        high-pass and no limiter ceiling, and hk_audio refuses rather than
+        inventing them. On a bench board with no DAC, no amplifier and no driver
+        the risk is absent, and the receiver cannot be exercised at all while
+        the gate is shut.
+
+        It exists so that exception is written down and visible in the boot
+        report, rather than being obtained by accident. Until 2026-09-08 the
+        gate could be defeated without anyone deciding to: writing provisioning
+        credentials put a schema version into the calibration namespace, and
+        that alone was read as "calibrated".
+
 config HK_DUAL_TRANSPORT
     bool "Offer BLE and SoftAP provisioning at the same time"
     default y

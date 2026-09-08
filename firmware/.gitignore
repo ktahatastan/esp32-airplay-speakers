@@ -2,6 +2,7 @@
 # sdkconfig lives inside it precisely so it can never overwrite the product one.
 build/
 build-devkit/
+build-bench/
 sdkconfig
 sdkconfig.old
 # Bench-only Wi-Fi credentials for the devkit preload. Never committed:

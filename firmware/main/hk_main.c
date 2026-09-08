@@ -158,9 +158,22 @@ static void report_policies(void)
     const hk_power_state_t power = hk_power_evaluate(HK_POWER_UNKNOWN, &power_now, NULL);
     ESP_LOGI(TAG, "power       %s (no calibrated limits, no ADC driver)",
              hk_power_state_name(power));
-    ESP_LOGI(TAG, "audio       %s",
-             hk_power_audio_permitted(power, false) ? "permitted"
-                                                    : "NOT permitted");
+    /* Two gates, reported separately because they answer different questions
+     * and used to be read as one. Storage asks whether a measured protection
+     * profile exists; power asks whether the pack and the charger allow sound
+     * right now. Printing only one of them produced a boot report that said
+     * "audio NOT permitted" while the receiver was clocking I2S. */
+    ESP_LOGI(TAG, "audio       profile %s · power %s",
+             hk_storage_audio_permitted() ? "permits" : "REFUSES",
+             hk_power_audio_permitted(power, false) ? "permits" : "REFUSES");
+#if CONFIG_HK_BENCH_AUDIO_WITHOUT_PROFILE
+    if (!hk_storage_profile_present()) {
+        ESP_LOGW(TAG, "audio       BENCH EXCEPTION: no driver-protection profile exists "
+                      "and the audio path is permitted anyway "
+                      "(CONFIG_HK_BENCH_AUDIO_WITHOUT_PROFILE). Only safe with nothing "
+                      "connected to the output.");
+    }
+#endif
 
     /* The output chain starts muted: the amplifier is held down by an external
      * pull-down, not by this firmware (ADR-0011).
@@ -727,6 +740,9 @@ void app_main(void)
     if (!hk_storage_audio_permitted()) {
         ESP_LOGE(TAG, "audio is NOT permitted: this device has no trustworthy driver "
                       "protection profile. No default profile is invented (G0/G2).");
+    } else if (!hk_storage_profile_present()) {
+        ESP_LOGW(TAG, "audio is permitted WITHOUT a profile. This is the bench exception, "
+                      "not a calibration: nothing may be connected to the output.");
     }
 
     /* The UI is the one subsystem whose hardware layer exists, so it really
@@ -737,8 +753,14 @@ void app_main(void)
     ESP_ERROR_CHECK(hk_ui_start(on_button, NULL));
     start_network();
     hk_ui_clear_booting();
+#if CONFIG_HK_AIRPLAY
+    ESP_LOGI(TAG, "the AirPlay receiver is built in. The DSP chain is not: there is no "
+                  "crossover, no protective high-pass and no limiter until G0/G2 produce "
+                  "a profile. See docs/03-firmware/firmware-plan.md stage F3.");
+#else
     ESP_LOGW(TAG, "no audio in this build. The button, LED and provisioning policy are "
                   "live. See docs/03-firmware/firmware-plan.md for what comes next.");
+#endif
 
     /* The supervisory loop. It exists to give the provisioning policy a clock:
      * a window that closes after ten minutes needs something to notice that

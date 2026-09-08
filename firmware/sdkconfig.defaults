@@ -58,3 +58,10 @@ CONFIG_MBEDTLS_CUSTOM_CERTIFICATE_BUNDLE_PATH="certs/isrg-root-yr.pem"
 #     ile derlenen bir gelistirme yapisi boot dongusune girer. Imzalama yalniz
 #     imzalama adiminin ayni is icinde kesin calistigi surum yolunda acilir:
 #     sdkconfig.release. Ayrinti ADR-0008'de.
+
+# The AirPlay receiver, vendored at the commit ADR-0007 pins. On by default now
+# that the product is meant to be an AirPlay speaker; it still refuses to run
+# until a driver-protection profile exists, so compiling it in does not open the
+# audio path. Enabling it binds the whole firmware to upstream's non-commercial
+# licence, which ADR-0007 accepted.
+CONFIG_HK_AIRPLAY=y

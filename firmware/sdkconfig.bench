@@ -1,0 +1,12 @@
+# Bench-only fragment. NEVER part of a release.
+#
+# Adds one thing to the product profile: permission to run the audio path on a
+# board that has no driver-protection profile. That gate is what keeps an
+# unmeasured tweeter alive, so this is defensible only while nothing is
+# connected to the output -- no DAC, no amplifier, no driver.
+#
+# Build with it:
+#   idf.py -C firmware -B firmware/build-bench \
+#     -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.bench" \
+#     -D SDKCONFIG="$PWD/firmware/build-bench/sdkconfig" build
+CONFIG_HK_BENCH_AUDIO_WITHOUT_PROFILE=y

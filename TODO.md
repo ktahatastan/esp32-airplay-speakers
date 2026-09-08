@@ -29,7 +29,9 @@ Kilitli kararlar `AGENTS.md` içindedir ve yalnız supersede eden ADR ile deği�
 
 ## P2 - Ses koruması ve çalışma süresi
 
-- [ ] **G0 kapısındaki deliği kapat:** kimlik bilgisi yazmak `calibration=use` yapıyor ve ses iznini açıyor. Provisioning şemasını kalibrasyon şemasından ayır; ses iznini doğrulanan bir `hk_profile_t`'ye bağla. `F2` başlamadan.
+- [x] **G0 kapısındaki deliği kapat:** ses izni artık `factory_cal` içindeki `profile` blob'unun varlığını istiyor, şema sürümünü değil.
+- [ ] Profilin **geçerliliğini** de denetle: `hk_profile_valid()` çağrısını `hk_main`'e ekle (G0 verisi gelince).
+- [ ] Tezgâh istisnasını kaldır: `G0`/`G2` profil ürettiğinde `sdkconfig.bench` gereksiz kalmalı.
 - [ ] Ölçülen sürücü empedansına göre güvenli amfi gerilimini onayla.
 - [ ] Woofer HPF, aktif crossover ve tweeter limiter başlangıç değerlerini belirle. **Firmware tarafı hazır:** `hk_profile` profilin biçimini, doğrulamasını ve zincire dönüşmesini taşıyor; kalan iş ölçülen sayıları doldurmak.
 - [ ] Tam dolu ve düşük bataryada clipping/limiter davranışını doğrula. Tavanın gerilimle ölçeklenmesi yazıldı ve testli; ölçüm bekliyor.

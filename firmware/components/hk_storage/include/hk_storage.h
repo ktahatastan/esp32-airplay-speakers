@@ -46,6 +46,18 @@ hk_schema_action_t hk_storage_factory_action(void);
 /** What was decided about the user settings store. */
 hk_schema_action_t hk_storage_user_action(void);
 
+/** The calibration profile blob, written by the bench once G0/G2 have run. */
+#define HK_STORAGE_PROFILE_KEY "profile"
+
+/**
+ * Whether a profile blob is present at all.
+ *
+ * Presence, not validity: this module cannot judge a profile without pulling in
+ * the audio component, and the layering is worth more than the extra check.
+ * hk_profile_valid() is the judge, and hk_main runs it.
+ */
+bool hk_storage_profile_present(void);
+
 /**
  * Whether a trustworthy calibration profile is available.
  *
@@ -53,6 +65,12 @@ hk_schema_action_t hk_storage_user_action(void);
  * unreadable. The audio path must stay in its safe state: no default profile
  * is invented, because an invented one would look exactly like a measured one
  * while driving unprotected drivers.
+ *
+ * A matching schema version is NOT sufficient and used to be treated as if it
+ * were. The provisioning credential generator writes a schema version into this
+ * same namespace, so every provisioned device claimed to be calibrated -- on
+ * two real boards, unnoticed, because a second gate happened to be holding the
+ * door. Presence of the profile itself is now required.
  */
 bool hk_storage_audio_permitted(void);
 

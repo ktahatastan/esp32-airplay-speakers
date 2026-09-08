@@ -105,6 +105,29 @@ hk: flash       8 MB detected
 hk: psram       2 MB
 ```
 
+### The bench profile
+
+The product profile now compiles the AirPlay receiver in, and it still refuses
+to drive the audio path until a driver-protection profile exists in
+`factory_cal`. On a board with no DAC, no amplifier and no driver that gate can
+never open, so the receiver can never be exercised.
+
+`sdkconfig.bench` lifts exactly that one gate, and nothing else:
+
+```bash
+idf.py -C firmware -B firmware/build-bench \
+  -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.bench" \
+  -D SDKCONFIG="$PWD/firmware/build-bench/sdkconfig" \
+  build
+```
+
+It announces itself twice in the boot report, because an exception nobody can
+see is indistinguishable from a defect — which is how this one started life:
+until 2026-09-08 writing provisioning credentials put a schema version into the
+calibration namespace, and that alone was read as "calibrated".
+
+**Only run this build with nothing connected to the output.**
+
 ## ESP-IDF traps
 
 Four toolchain behaviours cost time on 2026-09-05, during devkit bring-up. None

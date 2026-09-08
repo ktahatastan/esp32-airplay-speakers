@@ -13,6 +13,7 @@ static const char *TAG = "hk_store";
 
 static hk_schema_action_t s_user_action = HK_SCHEMA_WRITE_DEFAULTS;
 static hk_schema_action_t s_factory_action = HK_SCHEMA_FAIL_SAFE;
+static bool               s_profile_present;
 
 /** Read a store's schema version, distinguishing absent from unreadable. */
 /**
@@ -132,12 +133,21 @@ static void init_factory_store(void)
     }
 
     hk_schema_found_t found;
+    /* Does a profile actually exist? Asked before the handle closes, and asked
+     * for its own sake: the schema version says which layout to expect, not
+     * that there is anything laid out. */
+    size_t profile_size = 0;
+    s_profile_present =
+        (nvs_get_blob(handle, HK_STORAGE_PROFILE_KEY, NULL, &profile_size) == ESP_OK) &&
+        profile_size > 0;
+
     s_factory_action = plan_for(handle, HK_STORE_FACTORY,
                                 (uint16_t)HK_SCHEMA_FACTORY_VERSION, &found);
     nvs_close(handle);
 
-    ESP_LOGI(TAG, "calibration store: %s -> %s",
-             hk_schema_found_name(found), hk_schema_action_name(s_factory_action));
+    ESP_LOGI(TAG, "calibration store: %s -> %s, profile %s",
+             hk_schema_found_name(found), hk_schema_action_name(s_factory_action),
+             s_profile_present ? "present" : "ABSENT");
     if (!hk_schema_audio_permitted(s_factory_action)) {
         ESP_LOGE(TAG, "no trustworthy calibration: audio must stay in its safe state");
     }
@@ -156,9 +166,24 @@ esp_err_t hk_storage_init(void)
 hk_schema_action_t hk_storage_factory_action(void) { return s_factory_action; }
 hk_schema_action_t hk_storage_user_action(void) { return s_user_action; }
 
+bool hk_storage_profile_present(void)
+{
+    return s_profile_present;
+}
+
 bool hk_storage_audio_permitted(void)
 {
-    return hk_schema_audio_permitted(s_factory_action);
+#if CONFIG_HK_BENCH_AUDIO_WITHOUT_PROFILE
+    /* The exception is deliberate and it announces itself. See the Kconfig help:
+     * it is only defensible on a board with nothing attached to the output. */
+    if (hk_schema_audio_permitted(s_factory_action) && !s_profile_present) {
+        return true;
+    }
+#endif
+    /* Both, and the second one is the point. A schema version alone was enough
+     * until 2026-09-08, which meant writing provisioning credentials made a
+     * never-calibrated device claim it was calibrated. */
+    return hk_schema_audio_permitted(s_factory_action) && s_profile_present;
 }
 
 esp_err_t hk_storage_user_reset(void)
