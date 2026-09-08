@@ -253,3 +253,58 @@ Düzeltme iki dalı da kapatıyor: pencere radyonun sahibiyken istasyon bağlanm
 Operatör kurulum ağını telefonunun Wi-Fi listesinde **gördü**. Mac'in `system_profiler` komşu listesi onu göstermemişti; o liste önbelleklidir ve seri porta her dokunuş kartı sıfırlayıp AP'yi indirip kaldırıyordu. Cihazın kendi logu ile dış gözlem bu kez uyuştu.
 
 **Hâlâ doğrulanmadı:** ağın WPA2 olduğu (kilit simgesi), portalın kendiliğinden açıldığı, ve kurulumun uçtan uca tamamlandığı.
+
+## Ekran: kare bütçesi ölçümü (kart 056C, 2026-09-08)
+
+Kartın kendi raporladığı sayılar. Ölçüm ilk kareden **sonra** alınıyor: SPI, PSRAM
+kaynaklı bir aktarımın DMA tamponlarını ilk gönderimde ayırdığı için, öncesinde
+alınan sayı yanlış soruyu cevaplıyor.
+
+| aşama | render | aktarım | galaksi | kare | 42 ms'yi aşan |
+|---|---:|---:|---:|---:|---|
+| ilk hâli | 112.356 µs | 9.500 µs | 3.029 µs | ~62 ms | hepsi |
+| vignette geçişi kaldırıldı | 52.861 µs | 9.465 µs | 3.060 µs | ~52 ms | — |
+| iris satır aralığı + 240 MHz | **5.604 µs** | 9.494 µs | 2.912 µs | **22 ms** | **720 karede 0** |
+
+Ham kayıt:
+
+```text
+I (8322) hk_lcd: first frame sent: render 5604 us, transfer 9494 us, sky 2912 us;
+                 internal free 151663 B (largest block 77824 B)
+I (13331) hk_lcd: 120 frames, 0 over 42 ms; last 22 ms (sky 2904 us)
+I (38551) hk_lcd: 720 frames, 0 over 42 ms; last 23 ms (sky 2926 us)
+```
+
+Panel aktarımı 80 MHz'de 9,5 ms ve kısaltılamaz — 240×240×16 bit = 115.200 bayt.
+Kısalması gereken render'dı.
+
+### Dahili RAM
+
+| durum | boş | en büyük blok |
+|---|---:|---:|
+| ekran eklenmeden önce, iki taşıma açık | 148.007 B | — |
+| ekran eklendikten sonra (kuyruk derinliği 10) | **6.291 B** | 2.176 B |
+| kuyruk derinliği 2 | 81.783 B | 31.744 B |
+| tam arayüz, 240 MHz | 151.663 B | 77.824 B |
+
+### Karekod: çözücüyle doğrulama
+
+İkinci bir kodlayıcıyla modül karşılaştırması yapıldı ve **tutmadı** — aynı sürüm ve
+boyut, farklı maske. Maske seçimi standardın serbest bıraktığı bir arama olduğu için
+bu yanlış testtir. Doğru test çözmektir; OpenCV `QRCodeDetector` ile:
+
+```text
+qr0: DECODED OK  'HELLO'
+qr1: DECODED OK  'WIFI:T:WPA;S:HarmanKardom-Setup-932C;P:...;;'
+qr2: DECODED OK  '{"ver":"v1","name":"HarmanKardom-932C","username":"wifiprov",...'
+qr3: DECODED OK  'WIFI:T:WPA;S:HarmanKardom-Setup-932C;P:4719;;'
+4/4 decoded correctly
+```
+
+### Hâlâ açık
+
+- **Yön.** Panelin aynalanıp aynalanmadığı operatör tarafından okunmadı. Açılıştaki
+  yön kartı (`ÜST/SOL/SAĞ/ALT` + asimetrik bir `F`) bunu X ve Y için ayrı ayrı çözer;
+  merkezi artı işareti çözemez, çünkü her çevirme altında aynı görünür.
+- Ekranın yazı ve simge okunabilirliği yalnız host PNG'lerinde bakıldı; 240 piksellik
+  yuvarlak camda kol mesafesinden hiçbir şey doğrulanmadı.
