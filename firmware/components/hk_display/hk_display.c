@@ -447,14 +447,22 @@ esp_err_t hk_display_start(void)
      * as the deep blue-violet (8,48,121). Three independent colours, three
      * exact complements. */
     ESP_RETURN_ON_ERROR(esp_lcd_panel_invert_color(s_panel, false), TAG, "invert");
-    /* Half a turn.
+    /* Y only.
      *
-     * Mirroring both axes is a 180 degree rotation, which is the difference
-     * between the panel's native scan order and the module's own top -- the
-     * seven-pin header. The same photograph shows it: the device id, drawn
-     * above the PIN, appeared below it, and its glyphs read mirrored. With the
-     * header up, this puts our up on the module's up. */
-    ESP_RETURN_ON_ERROR(esp_lcd_panel_mirror(s_panel, true, true), TAG, "mirror");
+     * This was (true, true) for a while, read off a photograph of the old
+     * seven-segment status screen, and it was half wrong. That screen could not
+     * settle the question: its glyphs are stroke forms, several of which look
+     * plausible reversed, so "the id appeared below the PIN" was real evidence
+     * about Y while "the glyphs read mirrored" was a guess about X.
+     *
+     * The orientation card in self_test() answered it properly -- named edges
+     * plus a letter with no symmetry in either axis -- and the operator read it
+     * back as horizontally mirrored with the vertical correct. So the panel's
+     * scan order differs from the module's own top in Y alone, and X was never
+     * wrong. The lesson belongs to the self test rather than here: four flat
+     * colours and a centred cross prove that pixels arrive and say nothing
+     * whatever about which way up they arrive. */
+    ESP_RETURN_ON_ERROR(esp_lcd_panel_mirror(s_panel, false, true), TAG, "mirror");
     ESP_RETURN_ON_ERROR(esp_lcd_panel_disp_on_off(s_panel, true), TAG, "display on");
     after = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
     ESP_LOGI(TAG, "internal cost: panel %d B", (int)(before - after));
