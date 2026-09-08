@@ -122,6 +122,45 @@ config HK_BENCH_AUDIO_WITHOUT_POWER_TELEMETRY
         survivable on USB and it is not survivable on the XL4015 charge chain
         of ADR-0009.
 
+config HK_BENCH_TONE_INSTEAD_OF_AIRPLAY
+    bool "Replace the AirPlay receiver with a locally generated test tone"
+    default n
+    help
+        DANGEROUS ON A BOARD WITH DRIVERS ATTACHED, for exactly the reasons the
+        two symbols above are: this build makes sound, and there is still no
+        crossover, no protective high-pass and no limiter in front of the
+        amplifier. Leave it off unless you can see what is on the speaker
+        terminals.
+
+        It is an INSTRUMENT, not a feature. On 2026-09-08 the bench board showed
+        AirPlay metadata on its screen -- so the RTSP session works -- and made
+        no sound, and nothing in the log could separate "the receiver is not
+        delivering samples" from "the DAC or the amplifier chain is broken".
+        This symbol separates them: it puts a 1 kHz sine at -30 dBFS, generated
+        by hk_tone.c, onto the same three I2S pins, so the receiver is removed
+        from the question entirely. A clean tone means the fault is upstream of
+        the DAC; noise or silence means it is not.
+
+        INSTEAD OF, and the words are exact. The vendored receiver takes
+        I2S_NUM_0 when it starts and holds it; so does the tone. With this set,
+        hk_main does not start the receiver at all -- not the callback, not the
+        RTSP server, not the mDNS advertisement -- because two owners of one
+        I2S channel is a worse bug than the one being diagnosed and would be
+        misread as more evidence about the DAC.
+
+        It does not open any gate. The mute lines still follow hk_audio's
+        sequence and are still released only when the profile and power gates
+        both say yes, which on this board means the two bench exceptions above
+        must ALSO be set or the tone will be generated into an asserted mute
+        and heard by nobody. hk_main says so in the log when that is the case.
+
+        Not in sdkconfig.bench: turning this on is an operator's decision taken
+        while looking at the bench, not something inherited from a file. Set it
+        with `idf.py menuconfig` under "Harman Kardom board", or add
+        CONFIG_HK_BENCH_TONE_INSTEAD_OF_AIRPLAY=y to a local sdkconfig fragment
+        that is not committed. The source is only compiled when it is set, so a
+        release image never carries it.
+
 config HK_DUAL_TRANSPORT
     bool "Offer BLE and SoftAP provisioning at the same time"
     default y

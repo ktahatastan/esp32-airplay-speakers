@@ -4,8 +4,27 @@
 # GPIOs, and it is the only file here that needs a driver. Keeping both in one
 # component keeps the sequence and the pins it moves in one place; the host
 # tests name the pure files individually, so this addition does not reach them.
+set(HK_AUDIO_SRCS
+    "hk_audio.c" "hk_audio_hw.c" "hk_limiter.c" "hk_biquad.c" "hk_profile.c")
+
+# hk_tone.c is a bench diagnostic, not a product feature, so the SOURCE is left
+# out of an image that did not ask for it -- the same arrangement hk_airplay
+# uses for the vendored receiver.
+#
+# The requirement below is NOT conditional, and the asymmetry is deliberate
+# rather than an oversight: ESP-IDF resolves the component dependency graph in
+# an earlier pass than the one that builds the sources, and CONFIG_ values are
+# not reliably set during it. A `PRIV_REQUIRES` inside this `if()` is silently
+# dropped and the build then fails on a missing driver/i2s_std.h -- which is
+# exactly what it did on the first attempt here. Naming it unconditionally
+# costs nothing in the image: the linker discards the sections nothing calls.
+if(CONFIG_HK_BENCH_TONE_INSTEAD_OF_AIRPLAY)
+    list(APPEND HK_AUDIO_SRCS "hk_tone.c")
+endif()
+
 idf_component_register(
-    SRCS "hk_audio.c" "hk_audio_hw.c" "hk_limiter.c" "hk_biquad.c" "hk_profile.c"
+    SRCS ${HK_AUDIO_SRCS}
     INCLUDE_DIRS "include"
     REQUIRES esp_common hk_pins esp_driver_gpio esp_timer
+    PRIV_REQUIRES esp_driver_i2s
 )

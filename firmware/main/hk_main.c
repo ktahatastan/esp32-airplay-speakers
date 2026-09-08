@@ -49,6 +49,9 @@
 #include "hk_airplay.h"
 #include "hk_audio.h"
 #include "hk_audio_hw.h"
+#if CONFIG_HK_BENCH_TONE_INSTEAD_OF_AIRPLAY
+#include "hk_tone.h"
+#endif
 #include "hk_button.h"
 #include "hk_display.h"
 #include "hk_identity.h"
@@ -67,6 +70,23 @@
 #include "hk_storage.h"
 #include "hk_ui.h"
 #include "hk_version.h"
+
+/**
+ * Which of the two possible sources of audio this build actually runs.
+ *
+ * The vendored receiver takes I2S_NUM_0 when it starts and holds it for as long
+ * as it lives; so does the bench tone. Two owners of one channel would produce a
+ * failure that looks like a DAC fault, which is precisely the fault under
+ * investigation, so the exclusion is expressed once, here, and every site that
+ * touches the receiver reads it from this macro rather than testing
+ * CONFIG_HK_AIRPLAY on its own. A site that forgot would be a site that starts
+ * the receiver underneath the tone.
+ */
+#if CONFIG_HK_AIRPLAY && !CONFIG_HK_BENCH_TONE_INSTEAD_OF_AIRPLAY
+#define HK_AIRPLAY_RUNS 1
+#else
+#define HK_AIRPLAY_RUNS 0
+#endif
 
 static const char *TAG = "hk";
 
@@ -277,7 +297,9 @@ static void report_policies(void)
              lines.i2s_running, lines.dac_unmuted, lines.amp_enabled,
              audio_permitted_now()
                  ? ", until a stream arrives and the sequence releases both mute lines"
-#if CONFIG_HK_AIRPLAY
+#if CONFIG_HK_BENCH_TONE_INSTEAD_OF_AIRPLAY
+                 : ", and the mute lines stay asserted; only I2S is clocked, by the bench tone"
+#elif CONFIG_HK_AIRPLAY
                  : ", and the mute lines stay asserted; only I2S is clocked, by the receiver"
 #else
                  : ""
@@ -702,7 +724,7 @@ static void on_button(hk_button_event_t event, void *context)
 }
 
 /** Mirror the network layer's state onto the status LED. */
-#if CONFIG_HK_AIRPLAY
+#if HK_AIRPLAY_RUNS
 /**
  * Playback started or stopped.
  *
@@ -727,7 +749,7 @@ static void on_airplay_state(bool playing, void *context)
     hk_audio_hw_set_stream_live(playing);
     hk_ui_set_playing(playing);
 }
-#endif
+#endif /* HK_AIRPLAY_RUNS */
 
 static void on_network_status(const hk_net_status_t *network, void *context)
 {
@@ -867,6 +889,40 @@ void app_main(void)
         }
     }
 
+#if CONFIG_HK_BENCH_TONE_INSTEAD_OF_AIRPLAY
+    /* The bench instrument, started here rather than where the receiver would
+     * be, because it needs no address and no network: the operator gets an
+     * answer a second after reset instead of after a Wi-Fi join. hk_airplay is
+     * not started at all in this build -- see HK_AIRPLAY_RUNS.
+     *
+     * The stream_live input is pushed by hand once the tone is confirmed
+     * running, which is the same fact the receiver's playback callback pushes
+     * and it is pushed for the same reason: the sequence in hk_audio.c releases
+     * the mute lines on `permitted && stream_live`, and a tone generated behind
+     * an asserted mute is a tone nobody can hear. It is set AFTER the start
+     * call succeeds, so a failed instrument never claims a live stream. */
+    {
+        const esp_err_t tone_err = hk_tone_start();
+        if (tone_err != ESP_OK) {
+            ESP_LOGE(TAG, "the bench test tone did not start: %s. Nothing is driving "
+                          "I2S in this build, so silence proves nothing.",
+                     esp_err_to_name(tone_err));
+        } else {
+            hk_audio_hw_set_stream_live(true);
+            if (!audio_permitted_now()) {
+                /* The other half of the answer, said before the operator spends
+                 * ten minutes listening to a board that was never going to make
+                 * a sound. */
+                ESP_LOGW(TAG, "the tone is being generated but audio is NOT permitted, "
+                              "so both mute lines stay asserted and you will hear "
+                              "nothing. This build also needs "
+                              "CONFIG_HK_BENCH_AUDIO_WITHOUT_PROFILE and "
+                              "CONFIG_HK_BENCH_AUDIO_WITHOUT_POWER_TELEMETRY.");
+            }
+        }
+    }
+#endif
+
     /* The button is read and the LED is driven. The handle is published before
      * the task starts, so the first possible press already has somewhere to
      * send its work. */
@@ -885,7 +941,13 @@ void app_main(void)
     }
     start_network();
     hk_ui_clear_booting();
-#if CONFIG_HK_AIRPLAY
+#if CONFIG_HK_BENCH_TONE_INSTEAD_OF_AIRPLAY
+    ESP_LOGW(TAG, "BENCH TONE BUILD: the AirPlay receiver is NOT started, whether or not "
+                  "it was compiled in, because it and the tone cannot both own I2S. This "
+                  "speaker will not appear on any phone. The DSP chain is absent here "
+                  "too: no crossover, no protective high-pass and no limiter until G0/G2 "
+                  "produce a profile. See docs/03-firmware/firmware-plan.md stage F3.");
+#elif CONFIG_HK_AIRPLAY
     ESP_LOGI(TAG, "the AirPlay receiver is built in. The DSP chain is not: there is no "
                   "crossover, no protective high-pass and no limiter until G0/G2 produce "
                   "a profile. See docs/03-firmware/firmware-plan.md stage F3.");
@@ -927,7 +989,7 @@ void app_main(void)
             && hk_network_open_provisioning() != ESP_OK) {
             ESP_LOGE(TAG, "could not open provisioning");
         }
-#if CONFIG_HK_AIRPLAY
+#if HK_AIRPLAY_RUNS
         if ((actions & HK_ACTION_START_AIRPLAY) != 0u) {
             /* Failure is logged by hk_airplay and is not fatal: a speaker that
              * cannot receive AirPlay is still a speaker that can be reached,
