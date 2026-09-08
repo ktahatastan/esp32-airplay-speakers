@@ -47,3 +47,56 @@ Her `have_*` bayrağı bir alanın **ölçülmüş olup olmadığını** taşır
 - Karekod kodlayıcı depoya girdi. Doğruluğu OpenCV çözücüsüyle, gerçek eşleşme yükü dâhil dört yük üzerinde doğrulandı; ikinci bir kodlayıcıyla bit karşılaştırması **yanlış testtir**, çünkü maske seçimi standardın serbest bıraktığı bir aramadır ve iki doğru kodlayıcı farklı maske seçebilir.
 - Kare bütçesi bağlayıcıdır: 240×240×16 bit = 115.200 bayt, 80 MHz'de 11,5 ms, ve bu kısaltılamaz. Ölçülen kare süresi `hk_lcd` günlüğünde raporlanır.
 - Dört haneli PIN **hâlâ açık**: WPA2 parolası 8 karakterden kısa olamaz, dolayısıyla dört hane istenmesi WPA2 anahtarı ile `pop` değerinin ayrılmasını gerektirir. Bu ayrı bir karardır ve bu ADR'de verilmemiştir; ekran şimdilik uzun anahtarı tek çerçevede, kısa PIN'i haneli hücrelerde gösterecek şekilde ikisini de kaldırıyor.
+
+---
+
+## Ek karar (2026-09-08 akşamı): ekran olay tabanlı çizer, animasyon yok
+
+Yukarıdaki model — durumdan türeyen ekranlar, iris geçişleri, nefes alan galaksi
+zemini — bir tezgâh oturumundan sonra **kısmen geri alınıyor.** Sebebi estetik
+değil, elektriksel.
+
+### Ne oldu
+
+Operatör firmware açıldıktan sonra artan bir dip gürültüsü bildirdi. Ekran
+derlemeden tamamen çıkarıldı (`CONFIG_HK_DISPLAY=n`, yani panel değil **SPI3
+veriyolu** yok) ve topraklama düzeltildikten sonra gürültü **tamamen kayboldu**.
+
+**Atıf kesin değil ve öyle yazılmamalı.** Sonda asıl biçiminde — sekiz saniye
+açık, sekiz saniye hiçbir aktarım yok — hiç dinlenmedi; ekran devre dışıyken
+toprak da değişti, dolayısıyla iki değişikliğin payı ayrılamadı. Kesin olan tek
+şey: ekransız ve düzgün topraklı hâlde zincir temiz.
+
+### Neden mimari olarak çözülüyor
+
+Mevcut tasarım saniyede 30 kez **tam kare** gönderiyor: 115.200 bayt, 80 MHz'de
+9,5 ms süren bir anahtarlama patlaması, analog ses çiftinin yanından geçen uçan
+kablolarda. Galaksi döndüğü için her piksel her karede değişebiliyor, yani
+aktarım kısaltılamıyor.
+
+Durağan bir ekranda ise **hiçbir şey gönderilmez.** Durum değişmedikçe veriyolu
+sessizdir. Bu, gürültüyü azaltmak değil, kaynağı çoğu zaman **var etmemektir**.
+
+### Karar
+
+| şimdiki | olacak |
+|---|---|
+| 30 fps, tam kare, sürekli | **olay tabanlı**: yalnız durum değişince çizer |
+| 80 MHz SPI | **10–20 MHz**, `SCK`/`MOSI`'ye 22–33 Ω seri direnç (kenar yavaşlatma) |
+| tam kare aktarım | **kısmi aktarım**: yalnız değişen dikdörtgen |
+| galaksi, nefes, iris | **kaldırılır** |
+| zengin zemin, degrade | **düz siyah, büyük yazı** |
+
+Panelin kendisi de bunu destekliyor: RGB565 kâğıt üstünde 65 bin renk ama ucuz
+bir panelin gamması yumuşak geçişleri bantlıyor. Galaksinin ihtiyaç duyduğu şey
+tam olarak yumuşak geçiş; siyah üstüne beyaz yazının umurunda değil. Panel,
+istenen şeyi iyi, yapılmış olan şeyi kötü yapıyor.
+
+### Ne kalıyor, ne gidiyor
+
+**Kalır:** `hk_gfx`, `hk_font`, `hk_icons`, `hk_qr`, `hk_screen` seçim mantığı —
+hepsi olay tabanlı bir ekranda da gerekli, ve `hk_screen_choose()`'un toplamlığı
+bu değişiklikten etkilenmiyor.
+
+**Gider:** `hk_sky` ve kare başına animasyon. En pahalı ve en gürültülü kısım
+oydu.

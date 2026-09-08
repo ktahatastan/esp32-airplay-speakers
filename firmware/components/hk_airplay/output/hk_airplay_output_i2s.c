@@ -195,7 +195,21 @@ static float pack_mv_now(void);
  * spring; this does not. 55 Hz is just under the 60-65 Hz the original system
  * was tuned to.
  *
- * gains 0.50 and 0.35, tweeter about 3 dB below the woofer. A 25 mm dome is
+ * gains 0.25 and 0.18, tweeter about 3 dB below the woofer. Both have come
+ * down 6 dB in two steps, because the first 3 dB was not enough and the
+ * amplifier still ran out near the top of the slider. The first setting distorted above about 80% on
+ * the sender's volume slider, and the distortion is ANALOGUE: with these gains a
+ * full-scale sample leaves the chain at 0.35, nowhere near the 0.70 limiter
+ * ceiling, so nothing digital is clipping. What runs out is the amplifier. The
+ * PCM5102A puts out about 2.1 Vrms at full scale and a TPA3110 at 36 dB reaches
+ * full output from roughly 0.1 Vrms, so the chain is about 26 dB hotter than
+ * the amplifier wants and the top of the volume range was unusable.
+ *
+ * A trim rather than a limiter, deliberately: a limiter would compress the
+ * dynamics to fit, while a fixed attenuation moves everything down and leaves
+ * the music's own shape alone. The real fix is the amplifier's gain-select
+ * pins, which are still unmeasured; this buys back the top of the slider until
+ * then. A 25 mm dome is
  * usually more sensitive than a small cone and there is no sensitivity
  * measurement, so the error is left on the side of less tweeter. Both are low
  * in absolute terms too, deliberately, while the amplifier's gain is unmeasured.
@@ -223,8 +237,8 @@ static bool bench_provisional_chain(hk_profile_chain_t *out)
         .tweeter_dcr_ohm    = 3.7f,    /* measured */
         .woofer_hpf_hz      = 55.0f,
         .crossover_hz       = 2800.0f,
-        .woofer_gain        = 0.50f,
-        .tweeter_gain       = 0.35f,
+        .woofer_gain        = 0.25f,
+        .tweeter_gain       = 0.18f,
         .reference_pack_mv  = (float)HK_BENCH_REFERENCE_PACK_MV,
         .woofer_ceiling     = 0.70f,
         .tweeter_ceiling    = 0.35f,
