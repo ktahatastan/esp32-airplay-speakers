@@ -3,9 +3,16 @@
 ESP32-S3 firmware for one speaker. Four speakers run the same image and are told
 apart by a device identity derived from their MAC.
 
-**Stage F0.** This build comes up, reports what it is, and proves the skeleton
-links. It plays no audio, joins no network and drives no GPIO. What comes next,
-in order and with acceptance criteria, is in
+**F0 is closed, and F4/F5 have run on real silicon.** On the N8R2 bring-up
+devkit (ADR-0012) this firmware joins Wi-Fi, answers mDNS, provisions over both
+SoftAP and BLE, drives the button and the LED, and runs the vendored AirPlay
+receiver: on 2026-09-05 an iPhone streamed to it and the audio was heard.
+
+What it still does not do is drive the product's own audio path. That audio left
+the board as bench S/PDIF into the operator's own DAC; the product's I2S, DAC and
+amplifier mute lines stay asserted, because no driver has been measured and no
+calibration profile exists (`G0`). What comes next, in order and with acceptance
+criteria, is in
 [docs/03-firmware/firmware-plan.md](../docs/03-firmware/firmware-plan.md).
 
 ## Locked inputs
@@ -16,7 +23,7 @@ in order and with acceptance criteria, is in
 | ESP-IDF | `v5.5.1`, pinned | this file and `.github/workflows/firmware-ci.yml` |
 | Audio topology | mono program, bi-amp: left path woofer, right path tweeter | ADR-0002 |
 | Distribution | SemVer tag, GitHub Releases, signed A/B OTA | ADR-0008 |
-| AirPlay stack | **not chosen** | ADR-0007 is open |
+| AirPlay stack | `rbouteiller/airplay-esp32`, vendored at `38027441ff43` | ADR-0007, ADR-0013 |
 
 The GPIO assignment is a *candidate*, not accepted: it holds until the purchased
 board's own schematic and a boot test confirm it.
@@ -164,15 +171,18 @@ python3 scripts/check_docs.py
 
 ### What has been verified, and what has not
 
-Verified on 2026-08-31 with ESP-IDF v5.5.1 on macOS: the project builds clean
-with no warnings in project sources, the host suite passes, the partition gate
-and its own tests pass, and `PROJECT_VER` in the built image matches
-`version.txt`.
+Verified without hardware, and re-verified by CI on every change: the project
+builds clean with no warnings in project sources, the host suite passes, the
+partition gate and its own tests pass, and `PROJECT_VER` in the built image
+matches `version.txt`.
 
-The button and LED now have a driver: the pin is read, the PWM runs, and the
-network layer starts Wi-Fi, mDNS and SoftAP provisioning. None of that has run
-on a board, so treat every behaviour below the policy modules as written but
-unproven.
+Verified on real silicon on 2026-09-05, on the N8R2 bring-up devkit, with the
+image built from this repository. The record and its raw logs are in
+[docs/06-testing/devkit-bring-up.md](../docs/06-testing/devkit-bring-up.md):
+the boot report and PSRAM detection, the 8 MB partition table, a Wi-Fi join with
+DHCP and mDNS, provisioning end to end over both SoftAP and BLE, the short and
+5-second button presses, the LED, and the vendored AirPlay receiver carrying a
+real iPhone session whose audio was heard through the bench S/PDIF output.
 
 Provisioning will not open on a device whose per-device credentials have not
 been written, and that is on purpose: the firmware refuses rather than falling
@@ -190,9 +200,17 @@ only copy of the password; it is written owner-only and must not be committed. T
 nothing stored, BLE from a button press on a configured device. ADR-0005
 option C, because ESP-IDF cannot run both in one session.
 
-**Not verified: nothing has run on hardware.** No board has been flashed, so the
-boot report, the GPIO assignment and the PSRAM detection are unexercised. The
-pin table stays a candidate until that happens.
+**Not verified: nothing has run on the product board.** The devkit is an N8R2
+with 8 MB flash and 2 MB quad PSRAM; the product is an N16R8 with 16 MB and 8 MB
+octal (ADR-0010, ADR-0012). No timing or memory number measured on the devkit
+carries over, and the GPIO assignment stays a *candidate* until the purchased
+board's own schematic and a boot test confirm it.
+
+**No physical gate is open.** No driver, amplifier, DAC or battery has been
+attached to anything, so `G0`-`G8` are all untouched, and neither the
+twelve-second button press nor four-device synchronisation has ever been
+exercised. The product profile also leaves the AirPlay receiver out entirely
+(`CONFIG_HK_AIRPLAY` defaults to `n`); it is the devkit profile that enables it.
 
 ## Layout
 

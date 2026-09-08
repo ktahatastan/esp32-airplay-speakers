@@ -2,7 +2,7 @@
 status: active
 owner: firmware-engineer
 reviewers: [orchestrator, qa-engineer]
-updated: 2026-08-31
+updated: 2026-09-08
 tags: [firmware, plan, roadmap, esp32]
 ---
 
@@ -10,7 +10,7 @@ tags: [firmware, plan, roadmap, esp32]
 
 Bu belge firmware'in **ne olduğunu** ve **hangi sırayla yapıldığını** birlikte tanımlar. Aşama sırası keyfi değildir: her aşama kendinden öncekinin kanıtına ve gerektiğinde bir donanım kapısına bağlıdır.
 
-`F0` iskeleti `firmware/` altında kuruldu ve ESP-IDF `v5.5.1` ile derleniyor. `F0`'ın kalan işi, satın alınan kartta açılış raporunu doğrulayıp GPIO tablosunu `accepted` yapmaktır. Kurulum ve doğrulama komutları `firmware/README.md` dosyasındadır.
+`F0` iskeleti `firmware/` altında kuruldu ve ESP-IDF `v5.5.1` ile derleniyor. 2026-09-05'te bu depodan derlenen imaj ilk kez gerçek silikonda çalıştı — ama **ürün kartında değil**, ADR-0012'nin tanımladığı geliştirme kartında ([[../06-testing/devkit-bring-up|bring-up kaydı]]). `F0`'ın kalan işi bu yüzden aynen duruyor: satın alınan **ürün** kartında açılış raporunu doğrulayıp GPIO tablosunu `accepted` yapmak. Geliştirme kartında ölçülen hiçbir sayı o kartın yerine geçmez. Kurulum ve doğrulama komutları `firmware/README.md` dosyasındadır.
 
 ## Kilitli girdiler
 
@@ -21,9 +21,9 @@ Bu belge firmware'in **ne olduğunu** ve **hangi sırayla yapıldığını** bir
 | Provisioning | SoftAP/captive portal ve BLE, **sırayla**; transport girişten türetilir | [[../07-decisions/ADR-0005-dual-provisioning\|ADR-0005]] |
 | Dağıtım | SemVer tag -> GitHub Releases -> imzalı A/B OTA | [[../07-decisions/ADR-0008-github-releases-ota\|ADR-0008]] |
 | Şarj davranışı | V1'de şarj sırasında amfi kapalı | [[../07-decisions/ADR-0004-v1-charge-policy\|ADR-0004]] |
-| AirPlay yığını | `rbouteiller/airplay-esp32`, sabit commit'e vendor | [[../07-decisions/ADR-0007-airplay-stack\|ADR-0007]] |
+| AirPlay yığını | `rbouteiller/airplay-esp32`, `38027441ff43`'e vendor edildi | [[../07-decisions/ADR-0007-airplay-stack\|ADR-0007]], [[../07-decisions/ADR-0013-airplay-integration-shape\|ADR-0013]] |
 
-`F1` spike'ının araştırma yarısı tamamlandı ve `ADR-0007` kabul edildi; ölçüm yarısı donanım bekliyor. Yığının lisansı **ticari olmayan** kullanımla sınırlıdır ve bu tüm projeyi bağlar.
+`F1` spike'ının araştırma yarısı tamamlandı, `ADR-0007` kabul edildi ve yığın tek kartta gerçekten çalıştı; ölçüm yarısından geriye **dört kart isteyen** kısım kaldı. Yığının lisansı **ticari olmayan** kullanımla sınırlıdır ve bu tüm projeyi bağlar.
 
 ## Modüller
 
@@ -79,12 +79,13 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
   - [x] Flash/DIRAM bütçesine sığdığı **derlenerek** gösterildi: ESP32-S3 + ESP-IDF v5.5.1, 1.460.192 baytlık imaj (bir OTA slotunun %20,3'ü), 136.495 bayt statik DIRAM.
   - [x] Lisans hedef kullanımla uyumlu; ticari olmayan sınırı kabul edildi ve kaydedildi.
   - [x] `ADR-0007` `accepted` oldu ve `G7` sayısal eşikleri kilitlendi.
-  - [ ] Dört hedefin Apple cihazında **birlikte seçilebildiği** gösterilmedi — donanım gerekir.
-  - [ ] Çalışma zamanı heap/PSRAM ve CPU yükü ölçülmedi — donanım gerekir.
+  - [x] Yığın vendor edildi ve **depodan derlenen imaj** bir Apple cihazıyla gerçek bir oturum taşıdı: mDNS ve RTSP dışarıdan doğrulandı, `ptp_clock: LOCKED`, ses duyuldu (2026-09-05, tek kart).
+  - [ ] Dört hedefin Apple cihazında **birlikte seçilebildiği** gösterilmedi — dört kart gerekir, elde bir kart var.
+  - [ ] Çalışma zamanı heap/PSRAM ve CPU yükü **akış sırasında** ölçülmedi. Ağa katıldıktan sonraki boş bellek ölçüldü (237.843 B dahili, 2.094.848 B PSRAM); alıcının akarken ne tükettiği ayrıştırılmadı.
 - **Gate:** `G7`'nin ön koşulu. **`G7` başarısız olursa** yığının `CONFIG_AIRPLAY_FORCE_V1` yoluyla AirPlay 1'e geri çekilme seçeneği vardır; senkron çoklu-oda düşer ve PRD-002 yeniden müzakere edilir.
 
 > [!note] F1 kısmen tamamlandı
-> Araştırma ve derleme yarısı bitti; ölçüm yarısı donanım bekliyor. Yığın seçimi bu yüzden `accepted`, senkron iddiası değil.
+> Araştırma ve derleme yarısı bitti. Ölçüm yarısı 2026-09-05'te tek kartta ilerledi: alıcı çalıştı, bir Apple cihazı bağlandı, PTP kilitlendi. Geriye kalan **dört kart ister** ve `G7`'nin kendisidir. Yığın seçimi bu yüzden `accepted`, senkron iddiası hâlâ değil.
 
 > [!warning] Bu aşama projenin en büyük teknik riskidir
 > Multiroom senkron kanıtlanamazsa dört senkron hoparlör hedefi düşer. Bu nedenle F1, pahalı donanım işinden **önce** yapılır.
@@ -92,6 +93,7 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
 ### F2 — Ses yolu bring-up
 
 - **Önkoşul:** F1 kabul. Donanım tarafında `G1` (amfi + dummy-load) geçmiş olmalı.
+- **Not (2026-09-05):** geliştirme kartında bir **tezgâh** çıkışı var — vendor edilen yığının S/PDIF çıkışı `GPIO6`'dan, üç pasif parçayla operatörün kendi DAC'ına. Bu F2 değildir ve hiçbir kapıya dokunmaz: ürünün I2S/PCM5102A yolu hâlâ susturulu ve dönüşümü başka bir cihaz yapıyor.
 - **Çıktı:** I2S sürücü, PCM5102A 3-wire yapılandırma, mono programın iki DSP yoluna ayrılması, test sinyali üreteci, boot/mute sıralaması.
 - **Kabul ölçütü:**
   - TP11/TP12/TP13'te beklenen I2S saatleri osiloskopla doğrulandı.
@@ -126,8 +128,10 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
   - [x] Wi-Fi istasyon, yeniden bağlanma, mDNS ve SoftAP provisioning sürücü katmanı yazıldı; ESP-IDF v5.5.1 ile derleniyor.
   - [x] BLE transport'u NimBLE ile etkinleştirildi. ADR-0005 seçenek C: transport girişten türetilir — kimlik bilgisi yoksa SoftAP, yapılandırılmış cihazda butonla BLE.
   - [x] Provisioning politikası artık gerçekten işletiliyor. Önceki hâlinde `hk_prov_handle` her yerde `now_ms = 0` ile çağrılıyor, `HK_PROV_EV_TICK` hiç gönderilmiyor ve `hk_prov_radios()` hiç okunmuyordu: on dakikalık sınırlı pencere hiçbir zaman dolamazdı. Ana döngü saniyede bir tick veriyor ve pencere kapandığında `hk_network_close_provisioning()` çağrılıyor.
-  - [ ] iOS ve Android'de hem uygulamalı BLE hem uygulamasız captive portal akışı — donanım gerekir.
-  - [ ] Provisioning sonrası BLE heap'inin geri kazanıldığı ölçülmedi — donanım gerekir.
+  - [x] iOS'ta **uygulamalı BLE** akışı uçtan uca çalıştı: QR'lı kurulum, kimlik bilgisi teslimi, katılma ve `provisioning succeeded` (2026-09-05, geliştirme kartı).
+  - [ ] **Uygulamasız yol yok.** `wifi_prov_scheme_softap` sayfa sunmuyor, yalnız protocomm uç noktaları açıyor; Espressif'in SoftAP uygulaması da AES-GCM katmanında düşüyor. PRD-004'ün uygulamasız kurulum gereksinimi karşılanmıyor — captive portal yazılacak ya da ADR-0005 revize edilecek.
+  - [ ] Android'de hiçbir akış denenmedi.
+  - [x] Provisioning kapandığında BLE belleğinin geri verildiği ölçüldü: `BTDM memory released`, ardından `provisioning closed and its memory released`.
   - [x] Wi-Fi parolası ve PoP'un loglarda görünmediği otomatik taramayla denetleniyor (`tools/check_no_credential_logs.py`, CI'da).
   - [x] Cihaz başına salt/verifier üreten üretim aracı yazıldı (`tools/provision_credentials.py`), ESP-IDF'in kendi SRP6a uygulamasını kullanıyor. Firmware kimlik bilgisi yoksa provisioning'i **açmayı reddediyor**, zayıf bir güvenlik moduna düşmüyor.
   - [x] Cihaz başına QR yükü üretiliyor; biçim ESP-IDF'in `wifi_prov_print_qr()` çıktısıyla aynı.
@@ -144,7 +148,9 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
   - [x] Buton GPIO ve RGB PWM sürücüsü yazıldı; ayrı düşük öncelikli görevde çalışıyor, ses görevinden bağımsız.
   - [x] Kullanıcı resetinin `factory_cal`'a dokunmadığı **gerçek NVS ile gösterildi**: `firmware/test/nvs_host/`, ESP-IDF'in `linux` hedefinde, `partitions.csv`'den üretilmiş gerçek bölüm tablosu ve gerçek `hk_storage.c` ile. 113 kontrol; 21 ardışık reset ve bir tam `nvs_flash_erase()` sonrası kalibrasyon duruyor ve ses hâlâ izinli. Kart gerekmiyor.
   - [x] LED durum alanlarının sahipliği ayrıldı. Önceki `hk_ui_set_status()` tüm yapıyı değiştiriyordu ve her çağıran alanların yalnız bir kısmını dolduruyordu; OTA göstergesi sıradaki Wi-Fi olayında sessizce sönerdi.
-  - [ ] LED PWM'inin I2S zamanlamasına ve analog dip gürültüsüne etkisi ölçülmedi — donanım gerekir.
+  - [x] Kısa basış ve 5 sn basış donanımda doğrulandı: kısa basış provisioning açıyor ve **çökme yok** (2026-09-03 oturumunun yığın taşması burada yeniden üretilmedi), 5 sn kayıtlı ağı unutuyor ve açık pencereyi bozmuyor.
+  - [ ] 12 sn fabrika sıfırlama donanımda **doğrulanmadı**: köprü teması kesilip debounce sayacı sıfırlandı, olay üretilmedi. Tekrar denenecek.
+  - [ ] LED PWM'inin I2S zamanlamasına ve analog dip gürültüsüne etkisi ölçülmedi — ürün donanımı gerekir.
 - **Gate:** `PRD-005`, `G3` katkı.
 
 ### F6 — Depolama ve güç telemetrisi

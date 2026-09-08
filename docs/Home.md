@@ -2,7 +2,7 @@
 title: Harman Kardom Proje Merkezi
 status: active
 owner: orchestrator
-updated: 2026-08-31
+updated: 2026-09-08
 tags: [harman-kardom, moc]
 ---
 
@@ -16,7 +16,7 @@ Bu sayfa ortak Obsidian kasasının ana haritasıdır.
 - [[01-planning/work-breakdown|İş kırılımı]]
 - [[01-planning/risk-register|Risk kaydı]]
 - [[06-testing/test-strategy|Test stratejisi ve kabul kapıları]]
-- [[08-development-log/2026-08-31-consistency-and-schematic-rework|Son geliştirme günlüğü]]
+- [[08-development-log/2026-09-05-devkit-bring-up|Son geliştirme günlüğü]]
 
 ## Ürün ve mimari
 

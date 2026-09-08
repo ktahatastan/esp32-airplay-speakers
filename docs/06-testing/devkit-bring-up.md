@@ -127,8 +127,8 @@ Cihaz adı bizim kimliğimizden geliyor, yukarı akışın kendi varsayılanınd
 | Yığın derleniyor, açılıyor, çökmüyor | **PASS** |
 | mDNS servisleri hatasız kaydediliyor | **PASS** (cihaz tarafı) |
 | RTSP 7000 dinliyor | **PASS** (cihaz tarafı) |
-| Bir Apple cihazı bağlandı | **YAPILMADI** |
-| Ağdan bağımsız doğrulama | **BAŞARISIZ — ağ nedeniyle**, aşağıya bakın |
+| Bir Apple cihazı bağlandı | **PASS** — sahibinin iPhone'undan gerçek bir oturum; DMAP meta verisi geldi, PTP kilitlendi, ses duyuldu |
+| Ağdan bağımsız doğrulama | **PASS** — ama önce **BAŞARISIZ**tı ve nedeni ağdı; ikisi de aşağıda |
 
 ### Ağdan doğrulanamadı, ve nedeni firmware değil
 
@@ -144,7 +144,17 @@ Sebep ağ yapılandırması: kart, yönlendiricinin (TP-Link Deco) ayrı 2,4 GHz
 
 Bu bir test kolaylığı sorunu değil, **ürün için belirleyici**: AirPlay keşfi mDNS çoklu yayınıyla, oturum RTSP ile, senkron PTP çoklu yayınıyla çalışır. Hiçbiri yalıtılmış bir misafir ağını aşmaz. Hoparlör ve telefon aynı L2 ağında olmak zorundadır.
 
-Kart bu yüzden saklanan kimlik bilgileri silinip provisioning'e alındı; ana ağa katılması kullanıcının parolayı kendi girmesiyle olacak.
+Kart bu yüzden saklanan kimlik bilgileri silinip provisioning'e alındı; ana ağa katılması kullanıcının parolayı kendi girmesiyle oldu.
+
+### Ana ağa katıldıktan sonra dışarıdan doğrulandı
+
+Kart provisioning ile ana ağa katıldıktan sonra aynı `dns-sd` sorgusu bu kez cevap verdi, ve arkasından gerçek bir oturum kuruldu. Bu ölçümler fizibiliteyi değiştirdikleri için özet olarak [[../01-architecture/audio-network-feasibility#Tek kartta ölçülen (2026-09-05)|fizibilite sayfasında]] duruyor; kısaca:
+
+- `_airplay._tcp` altında `Harman Kardom 06C4`, `_raop._tcp` altında `A4CB8F9B06C4@Harman Kardom 06C4` bulundu ve `Harman-Kardom-06C4.local:7000`'e çözüldü. TXT: `model=AudioAccessory5,1`, `features=0x405C4A00,0x1C340`, `srcvers=377.40.00`.
+- RTSP `OPTIONS` → `RTSP/1.0 200 OK`, `Server: AirTunes/377.40.00`; `Public` listesinde `SETPEERS`, `SETRATEANCHORTIME`, `FLUSHBUFFERED`.
+- Sahibinin iPhone'undan müzik çalındı, DMAP meta verisi geldi, `ptp_clock: LOCKED` `dev=973672 ns` `samples=62`.
+
+> `dev=973672 ns` **kartın kendi saat kilididir**, cihazlar arası fark değildir. `G7` dört kart ister ve elde bir kart var; bu satır o kapıya dokunmuyor.
 
 ## Provisioning ilk kez donanımda açıldı
 

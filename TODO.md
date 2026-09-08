@@ -55,18 +55,21 @@ Kilitli kararlar `AGENTS.md` içindedir ve yalnız supersede eden ADR ile deği�
 
 ## P5 - Buton, LED ve provisioning
 
-- [ ] Proje, AirPlay, BLE, SoftAP, mDNS, captive portal ve QR yüzeylerinde Harman Kardom adlandırmasını uygula.
+- [x] Proje, AirPlay, BLE, SoftAP, mDNS ve QR yüzeylerinde Harman Kardom adlandırmasını uygula. (Captive portal yüzeyi yok; aşağıya bakın.)
 - [x] Kanonik ESP32-S3 kartını seç (ADR-0010: N16R8).
 - [ ] Satın alınan kartın şemasıyla aday GPIO tablosunu doğrula ve boot testinden geçir.
-- [ ] Tek buton için kısa basış, 5 sn ağ sıfırlama ve 12 sn kullanıcı fabrika sıfırlama durum makinesini geliştir.
-- [ ] Fabrika sürücü koruma/limiter kalibrasyonunu kullanıcı resetinden ayrı NVS alanında tut.
-- [ ] RGB LED durum sürücüsünü audio task'tan bağımsız düşük öncelikli görev olarak geliştir.
-- [ ] İlk açılış ve reset sonrası mevcut SoftAP captive portal akışını doğrula.
-- [ ] ESP-IDF Unified Provisioning BLE transport ve Security 2 / benzersiz PoP ekle.
-- [ ] Cihaz başına provisioning ve Wi-Fi QR kodu üret.
-- [ ] Provisioning tamamlanınca BLE belleğinin serbest bırakıldığını doğrula.
-- [ ] iOS ve Android Espressif Provisioning uygulamalarıyla BLE kurulum testi yap.
-- [ ] Uygulamasız iOS/Android SoftAP + captive portal davranışını test et.
+- [x] Tek buton için kısa basış, 5 sn ağ sıfırlama ve 12 sn kullanıcı fabrika sıfırlama durum makinesini geliştir.
+- [ ] 12 sn fabrika sıfırlamayı **donanımda** doğrula; 2026-09-05'te basış olay üretmedi (köprü teması).
+- [x] Fabrika sürücü koruma/limiter kalibrasyonunu kullanıcı resetinden ayrı NVS alanında tut (ayrı partition; gerçek NVS ile test edildi).
+- [x] RGB LED durum sürücüsünü audio task'tan bağımsız düşük öncelikli görev olarak geliştir.
+- [ ] **Captive portal yok.** `wifi_prov_scheme_softap` sayfa sunmuyor; PRD-004'ün uygulamasız kurulum gereksinimi karşılanmıyor. Portalı yaz ya da ADR-0005'i revize et.
+- [x] ESP-IDF Unified Provisioning BLE transport ve Security 2 / benzersiz PoP ekle.
+- [ ] SRP6a kullanıcı adına karar ver: `harmankardom` mu, ekosistem varsayılanı `wifiprov` mu? ADR gerekir.
+- [x] Cihaz başına provisioning ve Wi-Fi QR kodu üret (`tools/provision_credentials.py`).
+- [x] Provisioning tamamlanınca BLE belleğinin serbest bırakıldığını doğrula (`BTDM memory released`, geliştirme kartı).
+- [x] iOS'ta Espressif BLE Provisioning uygulamasıyla kurulum testi yap — uçtan uca çalıştı.
+- [ ] Android'de BLE kurulum testi yap; hiç denenmedi.
+- [ ] Uygulamasız iOS/Android akışını test et — **önce portalın var olması gerekiyor**. Espressif'in SoftAP uygulaması ayrıca AES-GCM katmanında düşüyor (`mbedtls_gcm_auth_decrypt : -18`); ESP-IDF'in kendi istemcisi aynı cihaza bağlanıyor, yani kusur o uygulamada.
 - [ ] Özel mobil uygulama kararı verilirse iOS AccessorySetupKit ve Android Companion Device Manager prototipi hazırla.
 - [ ] Provisioning timeout, tekrar deneme, parola gizliliği ve NVS encryption testlerini yap.
 - [ ] Ayrı 24 V DC / 5 A fiziksel güç anahtarını BMS sonrası yük hattına ekle.
@@ -79,27 +82,28 @@ Ayrıntı, önkoşul ve kabul ölçütleri: [[docs/03-firmware/firmware-plan|fir
 - [x] `F0` iskelet: ESP-IDF `v5.5.1` kilidi, partition CSV, boyut/partition doğrulayıcısı, host testi, PR CI.
 - [ ] `F0` kalan: satın alınan kartla `idf.py flash monitor` ile açılış raporunu doğrula ve GPIO tablosunu `accepted` yap.
 - [x] `F1` araştırma yarısı: yığın seçildi, derlendi, lisans incelendi, ADR-0007 kabul edildi.
-- [ ] `F1` ölçüm yarısı: yığını vendor et, karta yükle, dört hedefin birlikte seçilebildiğini ve çalışma zamanı kaynak kullanımını ölç.
+- [x] `F1` ölçüm yarısı, tek kartlık kısmı: yığın vendor edildi, karta yüklendi, bir Apple cihazı bağlandı, PTP kilitlendi, ses duyuldu.
+- [ ] `F1` kalan: dört hedefin birlikte seçilebildiğini ve **akış sırasındaki** kaynak kullanımını ölç — dört kart ister.
 - [ ] `F2` I2S/DAC/bi-amp ses yolu bring-up (G1 sonrası).
 - [ ] `F3` HPF, crossover ve limiter zinciri (G0 kapandıktan sonra).
-- [ ] `F4` Wi-Fi, mDNS, SoftAP portal ve BLE Unified Provisioning.
-- [ ] `F5` buton durum makinesi ve RGB LED animatörü.
+- [x] `F4` Wi-Fi, mDNS ve BLE/SoftAP Unified Provisioning — geliştirme kartında uçtan uca. Portal kısmı hariç (yukarıya bakın).
+- [x] `F5` buton durum makinesi ve RGB LED animatörü — 12 sn senaryosu ve LED'in ses zamanlamasına etkisi hariç.
 - [ ] `F6` NVS ayrımı, güç telemetrisi ve güvenli kapanış (G4 sonrası).
 - [ ] `F7` imzalı A/B OTA, release hattı ve recovery (G6).
 - [ ] `F8` dört cihaz senkronu ve soak (G7, G8).
 
 ## P6b - Firmware güvenliği ve kurtarma
 
-- [ ] `factory_cal` ile `user_settings` NVS şemasını ve migration testlerini yaz.
+- [x] `factory_cal` ile `user_settings` NVS şemasını ve migration testlerini yaz.
 - [ ] Cihaz başına benzersiz PoP/QR üretim, seri eşleme ve güvenli yedekleme prosedürünü tanımla.
-- [ ] ESP-IDF sürümünü kilitle; `esp_ghota` uyumluluk/kaynak kullanımı spike'ını tamamla.
-- [ ] `otadata`, `ota_0`, `ota_1` ve kalibrasyon/NVS alanlarını içeren partition CSV ve size budget oluştur.
-- [ ] SemVer `v*.*.*` tag ile test/build/sign/checksum/GitHub Release üreten GitHub Actions hattını kur.
-- [ ] Release manifest target/donanım/sürüm/hash doğrulamasını ve stable update state machine'ini geliştir.
-- [ ] Idle audio, batarya, NTC ve Wi-Fi koşullarına bağlı OTA erteleme kapılarını uygula.
+- [x] ESP-IDF sürümünü kilitle (`v5.5.1`); `esp_ghota` spike'ı tamamlandı ve aday reddedildi (ADR-0008).
+- [x] `otadata`, `ota_0`, `ota_1` ve kalibrasyon/NVS alanlarını içeren partition CSV ve size budget oluştur (iki kart için ayrı tablo, CI'da denetleniyor).
+- [x] SemVer `v*.*.*` tag ile test/build/sign/checksum/GitHub Release üreten GitHub Actions hattını kur. **Hiç sürüm yayımlanmadı.**
+- [x] Release manifest target/donanım/sürüm/hash doğrulamasını ve stable update state machine'ini geliştir (`hk_manifest`, `hk_ota`; üretici/doğrulayıcı CI'da çapraz denetimli).
+- [x] Idle audio, batarya, NTC ve Wi-Fi koşullarına bağlı OTA erteleme kapılarını uygula (`hk_gate`, `hk_sched`). Batarya eşiği hâlâ G3/G4'ten gelecek.
 - [ ] İlk-boot health check, A/B rollback, canary/stable dağıtım ve güç kesintisi G6 testlerini tamamla.
-- [ ] Wi-Fi parolası/PoP/anahtarların loglarda görünmediğini otomatik taramayla doğrula.
-- [ ] USB/UART recovery ve boot prosedürünü saha servis dokümanına ekle.
+- [x] Wi-Fi parolası/PoP/anahtarların loglarda görünmediğini otomatik taramayla doğrula (`tools/check_no_credential_logs.py`, CI'da).
+- [x] USB/UART recovery ve boot prosedürünü saha servis dokümanına ekle ([[docs/03-firmware/usb-recovery|usb-recovery]]). Donanımda çalıştırılmadı.
 
 ## P7 - Agentic süreç ve proje hafızası
 
@@ -109,4 +113,5 @@ Ayrıntı, önkoşul ve kabul ölçütleri: [[docs/03-firmware/firmware-plan|fir
 - [ ] Agent sahipliği değişiminde handoff kaydı oluştur.
 - [x] Birleşme öncesi doğrulamayı tekrarlanabilir hâle getir (`scripts/check_docs.py`).
 - [ ] Her birleşme öncesi `python3 scripts/check_docs.py` ve `git diff --check` çalıştır.
+- [ ] Geliştirme kartında açıklanmayan ~14 s'lik ilk birleşme düşüşünü ürün kartında tekrar incele; sebep kodunu kaydet.
 - [ ] KiCad kurulu bir makinede `generate_harman_kardom.py --validate` ile ERC/PDF doğrulamasını tamamla.

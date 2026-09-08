@@ -106,6 +106,6 @@ Başlık düzeltildi. Vaat tasarım olarak duruyor; ne olduğu ile ne olacağı 
 
 ## Ne yapılmadı
 
-- **AirPlay bu depoda hâlâ vendor edilmedi.** Kartta çalışan eski yapı onu içeriyordu; bu, entegrasyonun mümkün olduğunun kanıtı ama depoda var olduğunun kanıtı değil. Sıradaki iş bu.
+- ~~**AirPlay bu depoda hâlâ vendor edilmedi.**~~ Bu satır aynı oturumun erken bir taslağından kalmış ve yazıldığı anda bile yanlıştı: vendor işi aynı akşam yapıldı ve yukarıdaki *AirPlay vendor edildi* bölümü onu anlatıyor. Düzeltme 2026-09-08'de, bir tutarlılık turunda yapıldı. Satır silinmiyor çünkü günlük bir kayıttır; neyin ne zaman yanlış durduğu da kayıttır.
 - Hiçbir fiziksel kapı açılmadı. Kartta sürücü, amfi, DAC, batarya yok.
 - Bu kartta ölçülen hiçbir sayı ürün kartına taşınmaz: quad 2 MB PSRAM, oktal 8 MB'ın yerine geçmez.
