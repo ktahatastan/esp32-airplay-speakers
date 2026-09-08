@@ -2,7 +2,7 @@
 status: proposed
 owner: hardware-engineer
 reviewers: [orchestrator, qa-engineer]
-updated: 2026-09-05
+updated: 2026-09-08
 tags: [hardware, wiring, schematic, power, audio, usb-c]
 ---
 
@@ -17,15 +17,15 @@ Bu belge **tek Harman Kardom hoparlör** için modül-temelli prototip bağlant�
 
 ![Harman Kardom tek hoparlör devre şeması](assets/harman-kardom-schematic.svg)
 
-Tek sayfalık pafta; USB-C PD şarj zinciri, 4S paket ve BMS, sigorta ve ana anahtar, 5 V lojik beslemesi, ESP32-S3 N16R8, PCM5102A, XH-A232 BTL bi-amp, sürücüler, kullanıcı arayüzü ve `TP0-TP27` ölçüm noktalarını gösterir. Ölçeklenebilir SVG'dir; Obsidian ve GitHub üzerinde doğrudan açılır.
+Tek sayfalık pafta; USB-C PD şarj zinciri, 4S paket ve BMS, sigorta ve ana anahtar, 5 V lojik beslemesi, ESP32-S3 N16R8, PCM5102A, XH-A232 BTL bi-amp, sürücüler, kullanıcı arayüzü, GPIO13/GPIO21 susturma hatları ve `TP0-TP31` ölçüm noktalarını gösterir. Ölçeklenebilir SVG'dir; Obsidian ve GitHub üzerinde doğrudan açılır.
 
 Pafta `hardware/diagrams/generate_schematic_svg.py` ile üretilir ve elle düzenlenmez. Bu çizim modül-temelli prototip içindir; üretim PCB şeması yerine geçmez.
 
 ### Düzenlenebilir KiCad paftası
 
-Netlist, ERC ve ileride PCB için elektriksel kaynak KiCad projesidir: [[kicad-schematic|KiCad şeması ve üretim scripti]]. Script ve `.kicad_pro` `hardware/kicad/` altında Git'te tutulur. Üretilen `.kicad_sch` **şu an depoda yok**: ADR-0011 ile üreteç değişti ve bu makinede KiCad sembol kütüphaneleri kurulu olmadığı için çıktı yenilenemedi, eldeki dosya da artık yanlış pin atamasını gösteriyordu. `scripts/check_generated_kicad.py` üreteç ile çıktının ayrışmasını CI'da yakalar; geri getirme komutları `hardware/kicad/README.md` içinde.
+Netlist, ERC ve ileride PCB için elektriksel kaynak KiCad projesidir: [[kicad-schematic|KiCad şeması ve üretim scripti]]. Script ve `.kicad_pro` `hardware/kicad/` altında Git'te tutulur. Üretilen `.kicad_sch` **şu an depoda yok**: ADR-0011 ile üreteç değişti ve bu makinede KiCad sembol kütüphaneleri kurulu olmadığı için çıktı yenilenemedi, eldeki dosya da artık yanlış pin atamasını gösteriyordu. Aynı durum 2026-09-08'de susturma netleri eklenirken de sürüyordu: `kicad-sch-api` çözemediği bir sembolü yerleştirmeyi reddettiği için üreteç bu makinede **hiç çalışmıyor**, yalnız `--validate` değil. Yani ERC ve PDF çıktısı alınmadı; üreteçteki yapısal self-check ayrı olarak koşturuldu ve sıfır sorun verdi. `scripts/check_generated_kicad.py` üreteç ile çıktının ayrışmasını CI'da yakalar; geri getirme komutları `hardware/kicad/README.md` içinde.
 
-İki çıktı bilerek ayrıdır: SVG paftası okunabilirlik ve bring-up prosedürü için, KiCad paftası elektriksel doğrulama için tutulur. İkisi de aynı net adlarını ve aynı `TP0-TP27` numaralandırmasını kullanır.
+İki çıktı bilerek ayrıdır: SVG paftası okunabilirlik ve bring-up prosedürü için, KiCad paftası elektriksel doğrulama için tutulur. İkisi de aynı net adlarını ve aynı `TP0-TP31` numaralandırmasını kullanır.
 
 ## 1. Sistem bağlantı özeti
 
@@ -151,8 +151,8 @@ Bu GPIO tablosu [[../07-decisions/ADR-0010-esp32-s3-n16r8-board|ADR-0010]] ile k
 | RGB mavi | GPIO10 | `R_B` -> LED B | PWM |
 | I2C SDA | GPIO11 | INA219 `SDA` | Şarj akımı; [[../07-decisions/ADR-0018-ina219-current-sensor\|ADR-0018]] |
 | I2C SCL | GPIO12 | INA219 `SCL` | Aynı veri yolu |
-| Amfi susturma | GPIO21 | TPA3110 `SD` | **Aktif düşük.** 10 kΩ pull-down zorunlu. Rezervasyon: `SD` pad erişimi henüz doğrulanmadı |
-| DAC susturma | GPIO13 | PCM5102A `XSMT` | **Aktif düşük.** 10 kΩ pull-down zorunlu |
+| Amfi susturma | GPIO21 | TPA3110 `SD` | **Aktif düşük.** `R7` 10 kΩ pull-down zorunlu, amfi ucuna monte edilir. Rezervasyon: `SD` pad erişimi doğrulanmadı, bkz. §9 |
+| DAC susturma | GPIO13 | PCM5102A `XSMT` | **Aktif düşük.** `R6` 10 kΩ pull-down zorunlu. Bağlamadan önce modül köprüsü ölçülür, bkz. §3.3 |
 | Paket gerilimi | GPIO1 | Bölücü -> ADC1_CH0 | Bölücü oranı `G3`/`G4`'ten gelir |
 | Hücre sıcaklığı | GPIO2 | NTC ağı -> ADC1_CH1 | Ağ ve eşikler `G4`'ten gelir |
 | Ekran reset | GPIO18 | GC9A01 `RST` | Silikon bu pini açılışta **yüksek** sürüyor, aktif-düşük reset için güvenli seviye; [[../07-decisions/ADR-0017-round-display\|ADR-0017]] |
@@ -181,6 +181,10 @@ Sıralamanın kendisi `firmware/components/hk_audio/` içinde yazılı ve host't
 
 **Susturma hatlarındaki pull-down opsiyonel değildir; susturma mekanizmasının kendisidir.** Bu parçadaki her GPIO reset'ten yüksek empedanslı çıkar ve ROM, bootloader ve uygulama başlangıcı boyunca öyle kalır — yüzlerce milisaniye. O pencerede amfiyi susturan tek şey harici dirençtir. Yazılımın işi susturmayı **bırakmaktır**; firmware hiç çalışmazsa hoparlörler sessiz kalır.
 
+Bu iki direncin referans numaraları `R6` (`XSMT` → `STAR_GND`) ve `R7` (`SD` → `POWER_GND`); ikisi de BOM'da ve iki şema üretecinde çizili parçalardır. 2026-09-08'e kadar değildiler: firmware (`firmware/components/hk_audio/`) her iki pini açılıştan itibaren sürüyordu ama şemada iki pin de uçsuz etiketti, PCM5102A blokunda `XSMT` pini hiç yoktu ve pull-down'lar yalnız bir notta geçiyordu. Bir notun sipariş edilmesi, lehimlenmesi veya denetlenmesi mümkün değildir.
+
+Her iki direnç de **modül ucuna** monte edilir, ESP ucuna değil. Uçan kablo koparsa pad kendi pull-down'unu görmeye devam eder; direnç ESP ucunda olsaydı kopan kablo pad'i serbest bırakırdı.
+
 `GPIO18/19/20` susturma hattı olamaz: silikon bunları açılışta HIGH sürer. `GPIO0/39/43/44` de olamaz: zayıf dahili pull-up ile açılırlar. İkisi de yazılım var olmadan amfiyi serbest bırakırdı.
 
 Kaçınılan pinler: boot/strapping `GPIO0/3/45/46`, native USB `GPIO19/20`, SPI flash `GPIO26-32`, **oktal PSRAM `GPIO33-37`** (N16R8'in R8'i), UART0 konsolu `GPIO43/44`, ve S3 die'ında var olmayan `GPIO22-25`. Tamamı `hk_pins.h` içinde derleme zamanında reddedilir — ESP-IDF bu kart yapılandırmasında `GPIO33-37`'yi rezerve **etmez**, gerekçesi ADR-0011'de. Kesin kart farklıysa tablo yeniden hazırlanır.
@@ -195,6 +199,11 @@ flowchart LR
     DG[ESP GND] --- PG[PCM GND]
     P5[5.10 V] --> VIN[PCM VIN]
     SCK[PCM SCK] -->|3-wire PLL için| SGND[GND]
+
+    G13[ESP GPIO13] -->|TP30: aktif düşük| XSMT[PCM XSMT]
+    XSMT --- R6[R6 10 kOhm pull-down] --- SG[STAR_GND]
+    G21[ESP GPIO21] -.->|TP31: pad ADAY| SD[XH-A232 SD]
+    SD -.- R7[R7 10 kOhm pull-down] -.- PG2[POWER_GND]
 
     LOUT[TP14: PCM LOUT] -->|ekranlı/kısa| LIN[TP16: XH-A232 L input]
     ROUT[TP15: PCM ROUT] -->|ekranlı/kısa| RIN[TP17: XH-A232 R input]
@@ -217,9 +226,24 @@ Mor PCM5102A modül ailesinde kontrol padleri genellikle `FLT`, `DEMP`, `XSMT`, 
 | `FMT` | LOW | Standart I2S formatı |
 | `FLT` | LOW | Normal latency filtre |
 | `DEMP` | LOW | De-emphasis kapalı |
-| `XSMT` | HIGH / kart varsayılanı | DAC çıkışı aktif; ileride kontrollü mute değerlendirilebilir |
+| `XSMT` | **`R6` ile LOW tutulur, GPIO13 sürer** | Açılışta DAC susturulmuş; susturmayı firmware bırakır ([[../07-decisions/ADR-0011-audio-side-gpio-reservation\|ADR-0011]]) |
+
+Bu satır 2026-09-08'e kadar "HIGH / kart varsayılanı" diyordu. O okuma kabul edilmiş ADR-0011 ile, yukarıdaki 3.1 pin tablosuyla, BOM'un `R6`/`R7` satırıyla ve pini açılıştan itibaren süren firmware ile çelişiyordu; dördü de aynı şeyi söylediği için düzeltilen taraf bu satır oldu. Karar ADR-0011'dir ve **modül varsayılanı kullanılmaz**: varsayılan "sesi aç" demektir ve tam olarak yazılımın var olmadığı pencerede geçerlidir.
 
 PCM5102A çipi harici SCK olmadan BCK PLL ile çalışabilir. Ancak modülün altındaki lehim köprüleri satıcıdan satıcıya farklı olabilir; pad ismine bakıp körlemesine lehim yapılmaz.
+
+> [!danger] `XSMT` pad'i, GPIO13 bağlanmadan önce ölçülür
+> Mor modüllerin bir kısmında `XSMT` pad'i kart üzerinde 3,3 V'a **sert bağlıdır** (lehim köprüsü veya 0 Ω). O durumda 10 kΩ pull-down hiçbir şey tutmaz — yalnız bir bölücü kurar, pad HIGH kalır — ve GPIO13 pini LOW sürdüğü anda 3,3 V rayına kısa devre olur. Yani bu ölçüm atlandığında hem susturma çalışmaz hem de ESP pini zorlanır.
+>
+> Operatör sırası, modül **enerjisizken**:
+>
+> 1. `XSMT` pad'i ile modülün `VIN`/3,3 V ucu arasındaki direnci ölç. Kaydet.
+> 2. Değer birkaç yüz Ω'un altındaysa köprü vardır: köprüyü kes ve kesildiğini aynı ölçümle doğrula.
+> 3. `R6`'yı modül ucuna, pad'in yanına lehimle. `R6` ile `GND` arasında 10 kΩ okunmalı.
+> 4. GPIO13'ü ancak bundan sonra bağla.
+> 5. İlk enerjilendirmede `TP30`'u osiloskopla kaydet: reset anından firmware susturmayı bırakana kadar LOW kalmalı.
+>
+> Adım 1, 3 ve 5 ölçüm kaydı olmadan susturma katmanı doğrulanmış sayılmaz; kaydı operatör [[../06-testing/test-strategy|test kaydına]] yazar. Aynı köprü riski `FMT`, `FLT` ve `DEMP` için de geçerlidir, ama onlarda yanlış sonuç ses formatıdır, susturmanın kaybı değildir.
 
 ### 3.4 Kanal ve sürücü kuralları
 
@@ -228,6 +252,13 @@ PCM5102A çipi harici SCK olmadan BCK PLL ile çalışabilir. Ancak modülün al
 - `C_SAFE` tek başına crossover değildir; DSP HPF ve limiter'a karşı son savunma katmanıdır.
 - `C_SAFE` değeri tweeter nominal empedansı ve güvenli alt frekansı ölçülmeden yazılmaz. İlk hesap: `C = 1 / (2π × R_tweeter × f_safe)`; seçilen değer G2 test raporuna girer.
 - Amfi kanal eşlemesi kabin içinde etiketlenir; firmware ve kablo aynı sürüm numarasını taşır.
+
+> [!warning] Amfi susturması bir rezervasyondur, kurulmuş bir devre değil
+> `GPIO21` → `SD` dalı, XH-A232 üzerinde erişilebilir bir `SD` pad'i bulunmasına bağlıdır ve bu §9'da hâlâ açık bir karardır. Şemalarda bu yüzden **kesikli** çizilir: pad bulunmazsa `R7` de bu dal da takılmaz.
+>
+> Pad bulunmazsa sonucu açıkça yazmak gerekir: **firmware kontrollü amfi susturması yoktur.** Geriye tek katman olarak DAC `XSMT` kalır — sinyali keser, ama TPA3110'un kendi açılış/kapanış geçişini kesmez, çünkü TPA3110 veri sayfası kapanış pop'u için shutdown'ın güçten önce verilmesini istiyor. `hk_audio` sıralaması o pad yokken de aynı komutları verir ve hiçbir şey olmaz; operatör bunu yalnız `TP31`'i ölçerek fark eder.
+>
+> Pad araması: kart enerjisizken TPA3110'un `SD` bacağı ile kart üzerindeki test pad/via/direnç ucu arasında süreklilik ara. Bulunan nokta ile `GND` arasındaki direnci de ölç: kart `SD`'yi kendi üzerinde besleme rayına çekiyorsa (yaygın), 10 kΩ pull-down o pull-up'a karşı yeterli olmayabilir — o zaman oran ölçülüp `R7` değeri yeniden hesaplanır veya kart üzerindeki pull-up kaldırılır. Sonuç ne olursa olsun §9 satırı ölçüm kaydıyla kapatılır.
 
 ### 3.5 S/PDIF tezgâh çıkışı — ürün kablolamasında yoktur
 
@@ -363,6 +394,10 @@ PCB veya kablo dağıtım kartında test noktaları iğne probla erişilebilir, 
 | TP23/24/25 | LED R/G/B anot sürüşü | TPG | 0-3.3 V PWM | Scope; PWM frekansı ve audio paraziti |
 | TP26 | XL4015 çıkışı `CHG+` | TP6 veya C- | Yüksüz 16,80 V ± kalibrasyon toleransı | Önce **batarya bağlı değilken** DMM; polarite ve akım sınırı ayarı |
 | TP27 | NTC iki ucu | BMS şemasına göre | Direnç/sıcaklık ilişkisi | Enerjisiz ohmmetre; BMS'e göre |
+| TP28 | GC9A01 `SCL` | TPG | 0-3.3 V SPI saati | Scope 10x; ADR-0017 |
+| TP29 | Şöntün `CHG+` tarafı | TP6 | Şarj hattı yüksek taraf | DMM; ADR-0018 |
+| TP30 | PCM5102A `XSMT` / GPIO13 | TPG | Reset anından firmware susturmayı bırakana kadar **LOW** (≤0,4 V); sonra 3,3 V | Scope single-shot, reset'ten tetikle; enerjisizken önce pad↔3V3 direnci (§3.3) |
+| TP31 | XH-A232 `SD` / GPIO21 | TP6 | Pad varsa reset'ten itibaren **LOW**; pad yoksa satır uygulanmaz ve bu **kayda geçer** | Scope single-shot; önce pad erişimini ve kart pull-up'ını süreklilik/ohm ile doğrula (§3.4) |
 
 `TP10` ESP32 geliştirme kartının gerçek `3V3` pininden alınır. Kart regülatörü ve USB güç topolojisi görülmeden 3V3 hattına harici enerji verilmez.
 
@@ -454,7 +489,9 @@ Scope single-shot kaydı için kanallar:
 - CH3: TP10 `3V3`.
 - CH4: TP14 veya TP15 DAC analog çıkışı.
 
-Varsa ayrı kayıtta XH `SD/MUTE` test pad'i eklenir. Açılış/kapanışta DAC pop, amfi pop, ESP brownout ve rail sıralaması kaydedilir. TPA3110D2 için en iyi power-off pop davranışı güç kesilmeden önce shutdown uygulanmasıdır; XH-A232 üzerinde `SD` erişimi yoksa bu açık donanım kararı olarak kalır.
+Susturma hatları için **ayrı ve zorunlu** bir single-shot kayıt alınır: CH1 `TP8`, CH2 `TP30` (`XSMT`), CH3 `TP31` (`SD`, pad varsa), CH4 `TP14`/`TP15`. Tetik reset kenarındadır ve kaydın kapsaması gereken şey açılış penceresinin tamamıdır — ROM, bootloader ve uygulama başlangıcı. Beklenen: her iki mute hattı bu pencere boyunca LOW; DAC analog çıkışında adım yok; susturma yalnız firmware bıraktığında kalkıyor.
+
+Bu kayıt olmadan `G1` ve `G3` için "pop yok" denemez: pop'un olmaması, susturmanın çalıştığını değil yalnız o denemede duyulmadığını gösterir. Açılış/kapanışta DAC pop, amfi pop, ESP brownout ve rail sıralaması ayrıca kaydedilir. TPA3110D2 için en iyi power-off pop davranışı güç kesilmeden önce shutdown uygulanmasıdır; XH-A232 üzerinde `SD` erişimi yoksa bu açık donanım kararı olarak kalır ve `TP31` satırı "uygulanmadı" olarak kapatılır.
 
 ## 8. Kademeli kurulum ve ölçüm planı
 
@@ -478,7 +515,8 @@ Her adım için [[../templates/test-report|test raporu]] oluşturulur. Fiziksel 
 - [ ] `C_SAFE` tipi ve değeri.
 - [ ] Kesin ESP32-S3 kartı ve aday GPIO tablosunun boot/I2S doğrulaması.
 - [ ] XH-A232 kartların dört fiziksel revizyonunun aynı olup olmadığı.
-- [ ] XH-A232 kartında erişilebilir `SD/MUTE` noktası bulunup bulunmadığı; bulunursa pop önleme devresi.
+- [ ] XH-A232 kartında erişilebilir `SD/MUTE` noktası bulunup bulunmadığı; bulunursa pop önleme devresi ve kart üzerindeki pull-up'a karşı `R7` değerinin doğrulanması. Bulunmazsa firmware kontrollü amfi susturmasının olmadığı yazılı olarak kapatılır (§3.4).
+- [ ] PCM5102A modülünde `XSMT` pad'inin 3,3 V'a sert bağlı olup olmadığı; köprü varsa kesilmesi (§3.3). `R6` takılıp `TP30` açılışta LOW ölçülene kadar susturma katmanı doğrulanmamıştır.
 - [ ] Common-port veya separate-port, NTC'li kesin BMS modeli.
 - [ ] F1/F_CHG değeri, kablo kesiti ve konnektör akım sınıfı.
 - [ ] USB ile harici 5 V arasında jumper, Schottky OR veya load-switch seçimi.
@@ -509,3 +547,4 @@ Her adım için [[../templates/test-report|test raporu]] oluşturulur. Fiziksel 
 - [[../07-decisions/ADR-0002-biamp-signal-chain|ADR-0002 — Bi-amp sinyal zinciri]]
 - [[../07-decisions/ADR-0009-usb-c-pd-charge-chain|ADR-0009 — USB-C PD şarj zinciri]]
 - [[../07-decisions/ADR-0010-esp32-s3-n16r8-board|ADR-0010 — Kanonik N16R8 kartı]]
+- [[../07-decisions/ADR-0011-audio-side-gpio-reservation|ADR-0011 — Ses tarafı GPIO rezervasyonu ve susturma pull-down'ları]]

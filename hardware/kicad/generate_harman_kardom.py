@@ -53,8 +53,8 @@ DEFAULT_OUTPUT = ROOT / "generated"
 
 #: kicad-sch-api snaps to 1.27 mm; 2.54 keeps symbol pins on grid as well.
 GRID = 2.54
-SHEET_REV = "0.6-candidate"
-SHEET_DATE = "2026-08-31"
+SHEET_REV = "0.7-candidate"
+SHEET_DATE = "2026-09-08"
 
 
 def on_grid(value: float) -> float:
@@ -110,13 +110,21 @@ MODULES: tuple[Module, ...] = (
         "AMP_MUTE", "DAC_XSMT", "BATT_SENSE", "NTC_SENSE",
         "LCD_RST", "LCD_CS", "LCD_DC", "LCD_MOSI", "LCD_SCK",
     )),
-    Module("U6", "PCM5102A I2S DAC MODULE / 3-WIRE PLL", (218, 100), (
+    # XSMT is a pin on the module, not a note about it. ADR-0011 makes GPIO13
+    # drive it and an external pull-down hold it, so it has to be in the netlist
+    # or ERC is checking a circuit nobody is going to build.
+    Module("U6", "PCM5102A I2S DAC MODULE / 3-WIRE PLL / MEASURE XSMT PAD BRIDGE BEFORE WIRING", (218, 100), (
         "I2S_BCLK", "I2S_LRCLK", "I2S_DATA", "STAR_GND", "V5_LOGIC", "STAR_GND",
-        "DAC_LOUT", "DAC_ROUT", "DAC_AGND",
+        "DAC_XSMT", "DAC_LOUT", "DAC_ROUT", "DAC_AGND",
     )),
-    Module("U7", "XH-A232 TPA3110 BTL AMP / 8-26 V", (300, 100), (
+    # `SD` is a TPA3110 pin; what is unconfirmed is whether the XH-A232 board
+    # exposes it, so the value string carries that and the wiring plan §9 keeps
+    # the open decision. The net is AMP_MUTE because a pull-down has to sit on
+    # the same net as the pad it holds down; a separate AMP_SD_TBD net would
+    # have made the pull-down a component connected to nothing.
+    Module("U7", "XH-A232 TPA3110 BTL AMP / 8-26 V / SD PAD ACCESS NOT CONFIRMED", (300, 100), (
         "DAC_LOUT", "DAC_ROUT", "VBAT_SW", "POWER_GND",
-        "AMP_L_PLUS", "AMP_L_MINUS", "AMP_R_PLUS", "AMP_R_MINUS", "AMP_SD_TBD",
+        "AMP_L_PLUS", "AMP_L_MINUS", "AMP_R_PLUS", "AMP_R_MINUS", "AMP_MUTE",
     )),
     Module("J2", "WOOFER / IMPEDANCE TBD / G0", (360, 104), ("AMP_L_PLUS", "AMP_L_MINUS")),
     Module("J3", "TWEETER / IMPEDANCE TBD / G2", (360, 130), ("TWEETER_POS", "AMP_R_MINUS")),
@@ -136,7 +144,7 @@ MODULES: tuple[Module, ...] = (
     )),
 )
 
-#: Probe points TP0-TP27. The numbering is the single source shared with
+#: Probe points TP0-TP31. The numbering is the single source shared with
 #: docs/02-hardware/circuit-and-wiring-plan.md; a mismatch here means the bring-up
 #: procedure and the schematic disagree, so they are generated from one table.
 TEST_POINTS: tuple[tuple[int, str], ...] = (
@@ -146,19 +154,23 @@ TEST_POINTS: tuple[tuple[int, str], ...] = (
     # TP14/TP16 and TP15/TP17 are two probe points on one net: the DAC output pad
     # and the amplifier input pad of the same wire.
     (14, "DAC_LOUT"), (15, "DAC_ROUT"), (16, "DAC_LOUT"), (17, "DAC_ROUT"),
-    # TP28/TP29 are ADR-0017 and ADR-0018 probe points.
+    # TP28/TP29 are ADR-0017 and ADR-0018 probe points. TP30/TP31 are the mute
+    # lines: the only way to tell whether the pull-downs are actually holding
+    # the pads low through reset is to put a probe on them at power-up.
     (18, "AMP_L_PLUS"), (19, "AMP_L_MINUS"), (20, "AMP_R_PLUS"), (21, "AMP_R_MINUS"),
     (22, "BUTTON_N"), (23, "LED_R"), (24, "LED_G"), (25, "LED_B"),
     (26, "CHG_16V8"), (27, "NTC_BMS"), (28, "LCD_SCK"), (29, "CHG_16V8_RAW"),
+    (30, "DAC_XSMT"), (31, "AMP_MUTE"),
 )
 
 #: Nets that are deliberately left with a single connection: reserved pins and
 #: interfaces whose counterpart is still an open hardware decision. Anything else
 #: appearing with one pin is a wiring mistake, not an intentional stub.
 EXPECTED_OPEN_NETS: frozenset[str] = frozenset({
-    "AMP_SD_TBD",    # XH-A232 shutdown pad; access not confirmed on the board
-    "AMP_MUTE",      # GPIO21 reservation; its far end is AMP_SD_TBD, still unconfirmed
-    "DAC_XSMT",      # GPIO13 reservation; PCM5102A XSMT, external pull-down holds mute
+    # AMP_MUTE and DAC_XSMT left this set on 2026-09-08. They were listed as
+    # single-connection stubs while the sheet drew no pull-down and no far end,
+    # which meant the structural check was confirming their absence instead of
+    # catching it -- while the firmware had already started driving both pads.
     "BATT_SENSE",    # GPIO1 reservation; divider ratio comes from G3/G4
     "NTC_SENSE",     # GPIO2 reservation; thermistor network comes from G4
     "I2C_SDA",       # INA219 charge-current telemetry (ADR-0018)
@@ -173,8 +185,8 @@ SECTIONS: tuple[tuple[str, tuple[float, float], tuple[float, float]], ...] = (
     ("B. 4S PACK, BALANCED BMS, FUSE AND HARD POWER SWITCH", (208, 15), (400, 70)),
     ("C. 5 V LOGIC SUPPLY", (25, 78), (120, 150)),
     ("D. ESP32-S3 N16R8 AND USER INTERFACE  (ADR-0010)", (126, 78), (200, 190)),
-    ("E. I2S DAC, BTL BI-AMP AND DRIVERS  (ADR-0002)", (208, 78), (400, 150)),
-    ("F. TEST POINT ACCESS  TP0-TP29", (25, 196), (400, 250)),
+    ("E. I2S DAC, BTL BI-AMP, MUTE LINES AND DRIVERS  (ADR-0002, ADR-0011)", (208, 78), (400, 166)),
+    ("F. TEST POINT ACCESS  TP0-TP31", (25, 196), (400, 250)),
     ("G. GC9A01 ROUND DISPLAY AND INA219 CHARGE-CURRENT SENSE  (ADR-0017, ADR-0018)",
      (25, 258), (400, 320)),
 )
@@ -356,13 +368,35 @@ def draw_audio_chain(builder: Builder) -> None:
     builder.text("Left digital channel drives the woofer path, right drives the tweeter path. "
                  "This is a bi-amp split of one mono program, not a stereo box.", (212, 146))
 
+    # ADR-0011. The pull-down is the mute; the GPIO only releases it. Drawn as
+    # parts so they are ordered, stuffed and checked rather than remembered.
+    builder.add_part("Device:R", "R6", "10 k PULL-DOWN / DAC XSMT / NOT OPTIONAL (ADR-0011)",
+                     (240, 122), rotation=90)
+    builder.label("R6", "1", "DAC_XSMT")
+    builder.label("R6", "2", "STAR_GND")
+    builder.add_part("Device:R", "R7", "10 k PULL-DOWN / AMP SD / FIT ONLY IF AN ACCESSIBLE SD PAD IS FOUND",
+                     (272, 122), rotation=90)
+    builder.label("R7", "1", "AMP_MUTE")
+    builder.label("R7", "2", "POWER_GND")
+
+    builder.text("MUTE: R6 and R7 are not optional. Every candidate GPIO on this part leaves reset "
+                 "high-impedance and stays that way through ROM, bootloader and app init, so the resistor "
+                 "is what holds mute; firmware only RELEASES it (ADR-0011).", (212, 150), bold=True)
+    builder.text("BEFORE SOLDERING: measure the PCM5102A XSMT pad to 3V3. A hard bridge there makes "
+                 "GPIO13 fight the rail when it drives low; cut the bridge first.", (212, 154))
+    builder.text("AMP_MUTE reaches U7 only if the XH-A232 exposes an accessible SD pad, which is still an "
+                 "open decision (wiring plan section 9). If it does not, R7 and this net are not fitted and "
+                 "there is no firmware-controllable amplifier mute.", (212, 158))
+
 
 def draw_test_points(builder: Builder) -> None:
     """One test point symbol per TP number, generated from the shared table."""
     for number, net in TEST_POINTS:
-        column, row = number % 10, number // 10
+        # Sixteen to a row. Ten put TP30/TP31 on a fourth row, which landed on
+        # the section's own footer text and outside its box.
+        column, row = number % 16, number // 16
         builder.add_part("Connector:TestPoint", f"TP{number}", net,
-                         (34 + column * 36, 210 + row * 12))
+                         (34 + column * 22, 210 + row * 14))
         builder.label(f"TP{number}", "1", net)
     builder.text("Scope ground goes to POWER_GND or STAR_GND only. For BTL outputs use a differential "
                  "probe, or two 10x probes with BOTH ground clips on TP6 and MATH = CH1 - CH2.",

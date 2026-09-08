@@ -9,7 +9,7 @@ tags:
   - bom
 owner: procurement-researcher
 status: draft
-updated: 2026-08-31
+updated: 2026-09-08
 ---
 
 # BOM ve satın alma listesi
@@ -74,7 +74,8 @@ updated: 2026-08-31
 | Referans / kalem | Değer veya tip | Bir ünite | İlk prototip satın alımı | Dört ünite için toplam | Durum |
 |---|---|---:|---:|---:|---|
 | `R_PU` | 10 kΩ, 1/4 W | 1 | 10'lu paket | 4 | Buton pull-up; aday. |
-| `R_MUTE` | 10 kΩ, 1/4 W | 2 | 10'lu paket | 8 | Amfi `SD` ve DAC `XSMT` pull-down. **Opsiyonel değil**: susturmayı tutan şey bu, GPIO değil (ADR-0011). |
+| `R6` | 10 kΩ, 1/4 W | 1 | 10'lu paket | 4 | DAC `XSMT` → `STAR_GND` pull-down, modül ucuna monte edilir. **Opsiyonel değil**: susturmayı tutan şey bu, GPIO değil (ADR-0011). Lehimden önce modülün `XSMT` pad'i ile 3,3 V arası direnç ölçülür; sert köprü varsa kesilir, yoksa pull-down bir bölücüye dönüşür ([[../02-hardware/circuit-and-wiring-plan#3.3 PCM5102A modül ayarları\|kablolama planı §3.3]]). |
+| `R7` | 10 kΩ, 1/4 W | 1 koşullu | 10'lu paket | 4 koşullu | Amfi `SD` → `POWER_GND` pull-down, amfi ucuna monte edilir. **Koşullu**: XH-A232'de erişilebilir `SD` pad'i bulunduğu ölçümle doğrulanana kadar takılmaz; şemalarda kesikli çizilidir. Kart `SD`'yi kendi üzerinde yukarı çekiyorsa değer o pull-up ölçülerek yeniden hesaplanır (ADR-0011, kablolama planı §3.4). |
 | `R_LED_R` | 680 Ω, 1/4 W | 1 | 10'lu paket | 4 | Yalnız çıplak RGB LED'de; modül üzerinde direnç varsa `DNP`. |
 | `R_LED_G`, `R_LED_B` | 330 Ω, 1/4 W | 2 | 10'lu paket | 8 | Yalnız çıplak RGB LED'de; modül üzerinde direnç varsa `DNP`. |
 | `R_LCD` | 33 Ω, 1/4 W | 4 | 10'lu paket | 16 | Ekran `SCL/SDA/DC/CS` hatlarına, **ESP ucunda** seri. Uçan kablolarda kenar hızını yavaşlatır ve bu kablolar analog ses yolunun yanından geçer. **Tezgâhta takılmadı**; ürün kablolamasına ait (ADR-0017). |
@@ -85,7 +86,7 @@ updated: 2026-08-31
 | `C_SAFE` deney bankası | 4×2,2 µF / 400 V kutupsuz film | Değer TBD | 4 ortak deney parçası | Nihai: 4 eş değer | Tweeter empedansı ve G2 süpürmesi olmadan değer dondurulmaz veya sürücüye bağlanmaz. |
 | `JP1` + jumper cap | 2 pin 2,54 mm + kısa devre şapkası | 1 | 1×40 header + 1 cap | 4 cap | USB/system 5 V izolasyonu; nihai PCB'de bulunur. |
 | Vidalı klemens | KF128V, 5,08 mm, 2 pin | Prototipte 4 | 4 | 16 | Prototip adayı; nihai titreşim dayanımlı kilitli konnektör daha sonra seçilir. |
-| Test noktaları `TP0–TP27` | Header kesiti veya prob pedi | Gerektikçe | 1×40 header'dan | Nihai PCB pedi | Üretimde ayrı BOM parçası değildir. |
+| Test noktaları `TP0–TP31` | Header kesiti veya prob pedi | Gerektikçe | 1×40 header'dan | Nihai PCB pedi | Üretimde ayrı BOM parçası değildir. |
 | Delikli pertinaks | 5×10 cm, tek yüzlü | 0 nihai | 1 | 1 ortak | Yalnız masaüstü prototip. |
 | Jumper kablo | 20 cm dişi-erkek, 40'lı | 0 nihai | 1 set | 1 ortak | Yalnız düşük akımlı I2S/GPIO prototipleme; güç/ses çıkışında kullanılmaz. |
 | `R_SW_LED` | Değer TBD, en az 1/4 W | 1 koşullu | Mevcut direnç setinden | 4 koşullu | KM103 dahili LED'i kullanılacaksa 12 V'taki LED akımı ölçülerek `R=(16,8−12)/I_LED` ile seçilir; ilk prototipte LED pini açık bırakılır. |

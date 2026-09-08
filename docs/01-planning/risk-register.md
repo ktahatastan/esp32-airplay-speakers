@@ -1,7 +1,7 @@
 ---
 status: active
 owner: orchestrator
-updated: 2026-09-05
+updated: 2026-09-08
 tags: [risk, fmea]
 ---
 
@@ -15,6 +15,7 @@ tags: [risk, fmea]
 | Seçilen yığının lisansı ticari olmayan kullanımla sınırlı | Orta | Kesin | Kabul edildi ve ADR-0007'ye yazıldı; release asset'leri lisans metnini taşır | orchestrator |
 | Sürücü empedansı/rezonansı bilinmiyor | Kritik | Yüksek | G0 ve düşük seviyeli G2 | acoustics |
 | Tweeter'a DC/düşük frekans gider | Kritik | Orta | HPF, limiter, mute | hardware |
+| Susturma hatları firmware'de sürülüyor ama şemada hiç çizilmemişti | Kritik | Kesin | **Çizim tarafı kapatıldı (2026-09-08), fiziksel taraf açık.** `hk_audio_hw.c` `GPIO21`/`GPIO13`'ü açılıştan itibaren susturulmuş tutup sıralı bırakıyordu; oysa SVG paftasında iki pin de uçsuz etiketti, `U6` blokunda `XSMT` pini hiç yoktu, sayfa "XSMT=HIGH / kart varsayılanı" diyerek kabul edilmiş ADR-0011 ile çelişiyordu ve KiCad üreteci iki neti `EXPECTED_OPEN_NETS`'te tutarak yokluklarını **onaylıyordu**. Yani susturma katmanı hiçbir şeyi sürmüyor olabilirdi ve hiçbir denetim bunu söylemezdi. Şimdi `R6`/`R7` referanslı parçalar olarak çizildi, `TP30`/`TP31` eklendi, BOM ve kablolama planı hizalandı. Kalan risk fiziksel ve üç ölçümdür: (1) PCM5102A modülünde `XSMT` pad'i 3,3 V'a sert bağlıysa pull-down bölücüye döner ve `GPIO13` LOW sürerken rayı zorlar; (2) XH-A232'de erişilebilir `SD` pad'i olup olmadığı bilinmiyor — yoksa firmware kontrollü amfi susturması **yoktur**, geriye yalnız DAC `XSMT` kalır; (3) hiçbir kartta `TP30`/`TP31` açılışta ölçülmedi. Üçü kaydedilmeden "pop yok" veya susturma `PASS` denemez ve empedansı ölçülmemiş sürücülere sinyal verilmez (kablolama planı §3.3, §3.4, §7.5) | hardware |
 | BMS ilan akımı gerçek değil | Kritik | Orta | Teknik doğrulama, yük testi, sigorta | power |
 | Hücre termal kaçağı | Kritik | Düşük-Orta | Eşleme, NTC, profesyonel puntalama, G4/G5 | power |
 | Buck/LED/Wi-Fi ses gürültüsü | Yüksek | Orta | Yerleşim, yıldız toprak, filtre, G3 | hardware |

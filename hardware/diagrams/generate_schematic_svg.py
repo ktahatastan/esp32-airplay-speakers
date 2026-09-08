@@ -4,7 +4,7 @@
 One speaker, module level. The four speakers repeat the same circuit.
 
 This sheet is the readable overview: functional zones, real symbols, orthogonal
-wires, junction dots, net flags for cross-zone nets, and the TP0-TP27 probe
+wires, junction dots, net flags for cross-zone nets, and the TP0-TP31 probe
 index used during bring-up. The electrical source of truth for netlist and ERC
 is the KiCad project under hardware/kicad/.
 
@@ -23,9 +23,23 @@ from xml.sax.saxutils import escape
 
 from schematic_lib import Sheet
 
-W, H = 2720, 2800
-REV = "P1"
+W, H = 2720, 3010
+REV = "P2"
 DATE = "2026-09-08"
+
+
+def panel_height(lines: int, tail: float = 14) -> float:
+    """Box height that actually contains `lines` body lines.
+
+    Two panels were sized by hand and were 50 and 98 units too short, so their
+    last lines — the ≤50 mA display budget and the INA219 common-mode limit —
+    were rendered outside their own boxes. Nothing complained, because a panel
+    is a rectangle and its text is separate. Then the next panel added below
+    them painted over that text, because panels have an opaque fill and render
+    in append order. Derived from the library's own pitch so it cannot drift.
+    """
+    return Sheet.PANEL_BODY_TOP + (lines - 1) * Sheet.PANEL_LINE + tail
+
 
 CSS = """
 .page{fill:#ffffff}
@@ -129,8 +143,9 @@ def build() -> Sheet:
         W, H,
         "Harman Kardom — tek hoparlör modül seviyesi devre şeması",
         "USB-C PD şarj zinciri, 4S paket ve BMS, anahtarlı güç, 5 V lojik beslemesi, "
-        "ESP32-S3 N16R8, PCM5102A I2S DAC, XH-A232 BTL bi-amp, woofer ve C_SAFE korumalı tweeter, "
-        "GC9A01 yuvarlak ekran, INA219 şarj akımı ölçümü, kullanıcı arayüzü ve TP0-TP29 test noktaları.",
+        "ESP32-S3 N16R8, PCM5102A I2S DAC, XH-A232 BTL bi-amp, GPIO13/GPIO21 susturma hatları ve "
+        "harici pull-down'ları, woofer ve C_SAFE korumalı tweeter, "
+        "GC9A01 yuvarlak ekran, INA219 şarj akımı ölçümü, kullanıcı arayüzü ve TP0-TP31 test noktaları.",
     )
     frame(sheet)
     sheet.background.append(
@@ -289,9 +304,13 @@ def build() -> Sheet:
                            "GPIO9  LED_G", "GPIO10 LED_B", "GPIO1  BATT_SENSE",
                            "GPIO2  NTC_SENSE", "GPIO47 LCD_SCK", "GPIO41 LCD_MOSI",
                            "GPIO39 LCD_CS", "GPIO40 LCD_DC", "GPIO18 LCD_RST"],
+                     # DAC_XSMT sits one row above AMP_MUTE so that it lands on the
+                     # same row as U6's XSMT pin: the mute net is then a straight
+                     # wire, and the long AMP_MUTE run leaves from the bottom row
+                     # where it has a clear corridor under zone E.
                      right=["GPIO4  BCLK", "GPIO5  LRCLK", "GPIO6  DATA",
-                            "GPIO11 SDA", "GPIO12 SCL", "GPIO21 AMP_MUTE",
-                            "GPIO13 DAC_XSMT"],
+                            "GPIO11 SDA", "GPIO12 SCL", "GPIO13 DAC_XSMT",
+                            "GPIO21 AMP_MUTE"],
                      note="GPIO ataması ADAY · kart şeması ve boot testi olmadan accepted değil")
     v5 = u5.pin("5V / VBUS")
     sheet.net_flag(v5[0] - 30, v5[1], "+5V_LOGIC", "L")
@@ -316,7 +335,7 @@ def build() -> Sheet:
     sheet.zone(1210, 630, 580, 800, "E", "PCM5102A I²S DAC")
     u6 = sheet.block("U6", "PCM5102A MODÜLÜ", "3-wire I²S · modül köprüleri doğrulanacak",
                      1350, 700, 380,
-                     left=["BCK", "LCK / LRCK", "DIN", "SCK", "VIN 5 V", "GND / AGND"],
+                     left=["BCK", "LCK / LRCK", "DIN", "SCK", "VIN 5 V", "XSMT", "GND / AGND"],
                      right=["LOUT", "ROUT", "AGND"])
     # I2S: the DAC input pins sit on the same rows as the ESP32 outputs, so each
     # clock is a single straight wire with nothing to cross.
@@ -332,19 +351,40 @@ def build() -> Sheet:
     vin6 = u6.pin("VIN 5 V")
     sheet.net_flag(vin6[0] - 30, vin6[1], "+5V_LOGIC", "L")
     sheet.wire([(vin6[0] - 30, vin6[1]), vin6], "v5")
+    # Short stub: the mute net and its pull-down occupy the lane to the left of
+    # this ground, so a long one would put the STAR_GND caption on the wire.
     gnd6 = u6.pin("GND / AGND")
-    sheet.wire([gnd6, (gnd6[0] - 44, gnd6[1])], "gnd")
-    sheet.gnd(gnd6[0] - 44, gnd6[1], "STAR_GND")
+    sheet.wire([gnd6, (gnd6[0] - 18, gnd6[1])], "gnd")
+    sheet.gnd(gnd6[0] - 18, gnd6[1], "STAR_GND")
     agnd = u6.pin("AGND")
     sheet.wire([agnd, (agnd[0], 990)], "gnd")
     sheet.gnd(agnd[0], 990, "AGND")
-    sheet.netlabel(1350, 1090, "FMT=LOW · FLT=LOW · DEMP=LOW · XSMT=HIGH/kart varsayılanı", "start", 0)
-    sheet.netlabel(1350, 1114, "SCK→GND yalnız 3-wire BCK-PLL modu içindir; modül köprüsü ölçülür.", "start", 0)
+
+    # DAC mute. ADR-0011: the pull-down is the mute, the GPIO only releases it.
+    # Drawn as a real component with a designator because a note cannot be
+    # ordered, stuffed or checked, and this net is the last thing between an
+    # unmeasured driver and whatever the amplifier input happens to be holding.
+    xsmt_esp, xsmt_dac = u5.pin("GPIO13 DAC_XSMT"), u6.pin("XSMT")
+    sheet.wire([xsmt_esp, xsmt_dac], "dig")
+    sheet.testpoint(1300, xsmt_dac[1], 30)
+    r6_t, r6_b = sheet.resistor_v(1230, xsmt_dac[1], "R6", "10 kΩ")
+    sheet.junction(1230, xsmt_dac[1])
+    sheet.gnd(r6_b[0], r6_b[1], "STAR_GND")
+
+    sheet.netlabel(1230, 1200, "FMT=LOW · FLT=LOW · DEMP=LOW · SCK→GND (yalnız 3-wire BCK-PLL modu)", "start", 0)
+    sheet.netlabel(1230, 1224, "XSMT modül varsayılanına BIRAKILMAZ: GPIO13 sürer, R6 kapalı tutar.", "start", 0)
+    sheet.netlabel(1230, 1248, "LEHİMDEN ÖNCE ÖLÇ: XSMT pad'i ↔ 3V3 direnci. Sert köprü / 0 Ω varsa", "start", 0)
+    sheet.netlabel(1230, 1272, "kesilmeden GPIO13 bağlanmaz; pin LOW sürerken 3V3 rayına kısa devredir.", "start", 0)
+    sheet.netlabel(1230, 1296, "Modül köprüleri satıcıya göre değişir; pad ismine bakıp lehim yapılmaz.", "start", 0)
 
     # ================================================================ ZONE F
     sheet.zone(1810, 630, 850, 800, "F", "XH-A232 / TPA3110 BTL Bİ-AMP VE SÜRÜCÜLER")
+    # `SD` is a real TPA3110 pin. What is NOT confirmed is whether the XH-A232
+    # board brings it out to a pad anyone can solder to, so the pin is labelled
+    # ADAY and everything hanging off it is drawn dashed.
     u7 = sheet.block("U7", "XH-A232 / TPA3110", "2 × BTL Class-D · 8–26 V", 1960, 700, 330,
-                     left=["L IN", "R IN", "VCC", "GND"], right=["L+", "L−", "R+", "R−"])
+                     left=["L IN", "R IN", "VCC", "GND", "SD  PAD ADAY"],
+                     right=["L+", "L−", "R+", "R−"])
     for source, target, tp_dac, tp_amp in (("LOUT", "L IN", 14, 16), ("ROUT", "R IN", 15, 17)):
         a, b = u6.pin(source), u7.pin(target)
         sheet.wire([a, b], "aud")
@@ -356,7 +396,24 @@ def build() -> Sheet:
     gnd7 = u7.pin("GND")
     sheet.wire([gnd7, (gnd7[0] - 44, gnd7[1])], "gnd")
     sheet.gnd(gnd7[0] - 44, gnd7[1], "POWER_GND")
-    sheet.netlabel(1830, 990, "DAC ↔ amfi arası kısa ekranlı kablo · hoparlör çıkışına paralel gitmez", "start", 0)
+    sheet.netlabel(2000, 990, "DAC ↔ amfi kablosu kısa ve ekranlı", "start", 0)
+    sheet.netlabel(2000, 1014, "hoparlör çıkış kablosuyla paralel gitmez", "start", 0)
+
+    # Amplifier mute. Dashed for its whole length, R7 included: this branch is a
+    # RESERVATION (ADR-0011). It is fitted only if an accessible SD pad is found
+    # on the XH-A232, which is still an open decision in the wiring plan §9. The
+    # corridor runs under zone E because the ESP is in zone D and the amp in F.
+    sd_pin = u7.pin("SD  PAD ADAY")
+    mute_esp = u5.pin("GPIO21 AMP_MUTE")
+    sheet.wire([mute_esp, (1200, mute_esp[1]), (1200, 1150), (sd_pin[0], 1150), sd_pin], "dig dnp")
+    sheet.testpoint(sd_pin[0], 1010, 31)
+    r7_t, r7_b = sheet.resistor_v(1880, 1150, "R7", "10 kΩ", dnp=True)
+    sheet.junction(1880, 1150)
+    sheet.gnd(r7_b[0], r7_b[1], "POWER_GND")
+    sheet.netlabel(1830, 1300, "KESİKLİ DAL ADAYDIR: XH-A232'de erişilebilir 'SD' pad'i", "start", 0)
+    sheet.netlabel(1830, 1324, "doğrulanmadı (§9 açık karar). Pad yoksa R7 ve bu dal takılmaz;", "start", 0)
+    sheet.netlabel(1830, 1348, "firmware kontrollü amfi susturması olmaz, geriye DAC XSMT kalır.", "start", 0)
+    sheet.netlabel(1830, 1372, "R7 amfi ucuna monte edilir: kablo koparsa pad LOW kalsın.", "start", 0)
 
     lp, lm = u7.pin("L+"), u7.pin("L−")
     wof_p, wof_m = sheet.speaker(2450, (lp[1] + lm[1]) / 2, "SPK1", "WOOFER", "Ω TBD · G0 bekliyor")
@@ -417,7 +474,7 @@ def build() -> Sheet:
     sheet.netlabel(100, cathode_y + 136, "Class-D hoparlör kablolarından ayrı çekilir.", "start", 0)
 
     # ================================================================ ZONE H
-    sheet.zone(70, 1900, 1290, 620, "H", "GC9A01 240×240 YUVARLAK EKRAN — ADR-0017")
+    sheet.zone(70, 1900, 1290, 728, "H", "GC9A01 240×240 YUVARLAK EKRAN — ADR-0017")
 
     # Direct from the ESP: the bench build has no series resistors. They are not
     # decoration -- 33 R at the driver end slows the edges on flying leads that
@@ -454,7 +511,7 @@ def build() -> Sheet:
 
     sheet.testpoint(700, u8.pin("SCL")[1] - 44, 28, anchor=(680, u8.pin("SCL")[1]))
 
-    sheet.panel(70, 2340, 1290, 170, "EKRAN KURALLARI — ADR-0017")
+    sheet.panel(70, 2340, 1290, panel_height(7), "EKRAN KURALLARI — ADR-0017")
     sheet.panel_body(70, 2340, [
         "Modül 5 V TOLERANSLI DEĞİLDİR. Üstünde LDO olan varyantta bile lojik 3,3 V'tur.",
         "TEZGÂH KABLOLAMASI: sinyaller doğrudan ESP'ye bağlanır. Ürün kablolamasında ESP ucuna 4 × 33 Ω seri direnç girer — uçan kablolarda kenar hızını yavaşlatır ve analog ses yolunun yanından geçerler.",
@@ -466,7 +523,7 @@ def build() -> Sheet:
     ])
 
     # ================================================================ ZONE I
-    sheet.zone(1410, 1900, 1240, 620, "I", "INA219 ŞARJ AKIMI ÖLÇÜMÜ — ADR-0018")
+    sheet.zone(1410, 1900, 1240, 728, "I", "INA219 ŞARJ AKIMI ÖLÇÜMÜ — ADR-0018")
 
     rs1 = sheet.block("RS1", "ŞÖNT", "0,05 Ω · %1 · 1 W · yüksek taraf", 1560, 1962, 250,
                       left=["IN+"], right=["IN−"])
@@ -495,7 +552,7 @@ def build() -> Sheet:
         sheet.wire([point, (point[0] + 60, point[1])], "dig")
         sheet.net_flag(point[0] + 60, point[1], flag, "R")
 
-    sheet.panel(1410, 2340, 1240, 170, "AKIM SENSÖRÜ KURALLARI — ADR-0018", "danger")
+    sheet.panel(1410, 2340, 1240, panel_height(9), "AKIM SENSÖRÜ KURALLARI — ADR-0018", "danger")
     sheet.panel_body(1410, 2340, [
         ("PAKET GERİLİMİNİN KAYNAĞI BU PARÇA DEĞİLDİR", "panel-warn"),
         ("INA219'un VBUS pini yoktur; gerilimi şöntün YÜK tarafından ölçer, yani yüksek", "panel-text"),
@@ -526,7 +583,7 @@ def build() -> Sheet:
         ("V1'de şarj sırasında amfi kapalıdır (ADR-0004).", "panel-text"),
     ])
 
-    sheet.panel(1790, 1470, 860, 380, "TEST NOKTASI İNDEKSİ — TP0…TP29")
+    sheet.panel(1790, 1470, 860, 380, "TEST NOKTASI İNDEKSİ — TP0…TP31")
     tp_rows = [
         "TP0  paket B−        TP7  F1 sonrası        TP14 DAC LOUT       TP21 XH R−",
         "TP1  hücre 1 / B1    TP8  VBAT_SW           TP15 DAC ROUT       TP22 buton GPIO7",
@@ -535,13 +592,29 @@ def build() -> Sheet:
         "TP4  paket B+        TP11 I²S BCLK          TP18 XH L+          TP25 LED_B sürüş",
         "TP5  BMS P+          TP12 I²S LRCLK         TP19 XH L−          TP26 CHG+ 16,80 V",
         "TP6  BMS P− / GND    TP13 I²S DATA          TP20 XH R+          TP27 NTC uçları",
-        "TP28 LCD SCL         TP29 şönt CHG+ tarafı",
+        "TP28 LCD SCL         TP29 şönt CHG+       TP30 DAC XSMT       TP31 amfi SD ADAY",
     ]
     sheet.panel_body(1790, 1470, [(row, "panel-mono") for row in tp_rows] + [
         "",
         "Güç açma/kapatma kaydı — CH1 TP8 · CH2 TP9 · CH3 TP10 · CH4 TP14/TP15.",
         "Ripple ölçümünde 10× prob, ground-spring ve 20 MHz bant sınırı kullanılır.",
         "Beklenen değer ve geçiş şartları: docs/02-hardware/circuit-and-wiring-plan.md §7",
+    ])
+
+    # The mute chain gets its own full-width strip rather than a line inside one
+    # of the zones. It is the only safety layer that exists before firmware runs,
+    # and the sheet was contradicting itself about it until 2026-09-08.
+    sheet.panel(70, 2650, 2580, panel_height(4), "SUSTURMA HATLARI — ADR-0011", "danger")
+    sheet.panel_body(70, 2650, [
+        ("SUSTURMAYI TUTAN ŞEY GPIO DEĞİL, DİRENÇTİR", "panel-warn"),
+        ("R6 ve R7 (10 kΩ pull-down) opsiyonel değildir. Bu parçadaki her aday GPIO reset'ten yüksek empedanslı "
+         "çıkar ve ROM, bootloader ve uygulama başlangıcı boyunca öyle kalır — yüzlerce ms. Firmware'in işi "
+         "susturmayı BIRAKMAKTIR; firmware hiç çalışmazsa hoparlörler sessiz kalır.", "panel-text"),
+        ("OPERATÖR, LEHİMDEN ÖNCE: (1) PCM5102A XSMT pad'i ↔ 3V3 direncini ölç, sert köprü varsa kes. "
+         "(2) XH-A232'de erişilebilir SD pad'i var mı, süreklilikle ara. (3) Açılışta TP30 ve TP31 LOW mu, "
+         "osiloskopla kaydet.", "panel-text"),
+        ("Bu üç ölçüm kaydedilmeden susturma katmanı DOĞRULANMAMIŞTIR; empedansı ölçülmemiş sürücülere "
+         "sinyal verilmez.", "panel-warn"),
     ])
 
     # gates + legend + title block
