@@ -64,7 +64,9 @@ Kilitli kararlar `AGENTS.md` içindedir ve yalnız supersede eden ADR ile deği�
 - [x] RGB LED durum sürücüsünü audio task'tan bağımsız düşük öncelikli görev olarak geliştir.
 - [ ] **Captive portal yok.** `wifi_prov_scheme_softap` sayfa sunmuyor; PRD-004'ün uygulamasız kurulum gereksinimi karşılanmıyor. Portalı yaz ya da ADR-0005'i revize et.
 - [x] ESP-IDF Unified Provisioning BLE transport ve Security 2 / benzersiz PoP ekle.
-- [ ] SRP6a kullanıcı adına karar ver: `harmankardom` mu, ekosistem varsayılanı `wifiprov` mu? ADR gerekir.
+- [x] SRP6a kullanıcı adına karar ver — ADR-0014: `wifiprov`, çünkü ad sır değil ve özel bir ad yalnız QR'sız yolu kırıyor.
+- [ ] Verifier değiştiği için QR'lı BLE kurulumunu donanımda **tekrar** doğrula.
+- [ ] QR'sız kurulumu (listeden seç + parolayı yaz) ilk kez dene; ADR-0014 bu yolu denenebilir hâle getirdi.
 - [x] Cihaz başına provisioning ve Wi-Fi QR kodu üret (`tools/provision_credentials.py`).
 - [x] Provisioning tamamlanınca BLE belleğinin serbest bırakıldığını doğrula (`BTDM memory released`, geliştirme kartı).
 - [x] iOS'ta Espressif BLE Provisioning uygulamasıyla kurulum testi yap — uçtan uca çalıştı.

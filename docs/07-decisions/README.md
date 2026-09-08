@@ -1,7 +1,7 @@
 ---
 status: active
 owner: orchestrator
-updated: 2026-09-05
+updated: 2026-09-08
 tags: [adr, decisions, moc]
 ---
 
@@ -22,3 +22,4 @@ Durumlar: `proposed`, `accepted`, `superseded`, `rejected`.
 - [[ADR-0011-audio-side-gpio-reservation|ADR-0011 — Ses tarafı GPIO rezervasyonu ve yasak pin maskesi]]
 - [[ADR-0012-n8r2-bringup-target|ADR-0012 — N8R2 geliştirme kartı bring-up hedefi]]
 - [[ADR-0013-airplay-integration-shape|ADR-0013 — AirPlay yığınının entegrasyon biçimi]]
+- [[ADR-0014-srp6a-username|ADR-0014 — SRP6a kullanıcı adı `wifiprov`]]

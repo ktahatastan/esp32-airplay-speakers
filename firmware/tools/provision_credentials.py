@@ -43,8 +43,16 @@ import sys
 from pathlib import Path
 
 #: Shared by the tool, the QR payload and the verifier computation. Not a
-#: secret: it identifies the scheme, and the password is what protects it.
-USERNAME = "harmankardom"
+#: secret: it is printed in the QR, on the label and sent in the clear, and the
+#: password is what protects the session.
+#:
+#: It is the ecosystem default rather than a product name on purpose (ADR-0014).
+#: The name goes into the verifier, so it has to match what the client sends.
+#: Over QR the app reads it from the payload below, but a user who picks the
+#: device out of a list and types the password gives the app no chance to know
+#: it, and every Espressif app defaults to this one. A custom name would buy no
+#: security and would break exactly that path.
+USERNAME = "wifiprov"
 
 #: Product surfaces, from docs/controls-and-provisioning-plan.md and ADR-0001.
 SOFTAP_NAME = "HarmanKardom-Setup-{device_id}"
