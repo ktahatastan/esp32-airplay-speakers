@@ -3,7 +3,8 @@
  * @brief Turning sound on and off in an order that does not damage anything.
  *
  * Three things have to move — the I2S clocks, the DAC's soft-mute, and the
- * amplifier's shutdown pin — and the order matters in both directions.
+ * four amplifiers' shutdown pins, which share one line — and the order matters
+ * in both directions.
  *
  * Coming up, the clock has to be running and stable before the DAC unmutes,
  * because a DAC unmuted into an absent or settling bit clock puts a step on its
@@ -67,7 +68,7 @@ typedef struct {
 typedef struct {
     bool i2s_running;   /**< Clocks and data are being produced */
     bool dac_unmuted;   /**< PCM5102A XSMT released */
-    bool amp_enabled;   /**< TPA3110 SD released */
+    bool amp_enabled;   /**< All four TPA3110 SD pads released (one line, HK_PIN_AMP_MUTE) */
 } hk_audio_outputs_t;
 
 /**

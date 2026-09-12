@@ -1,11 +1,59 @@
 ---
-status: proposed
-decision: proposed
+status: accepted
+decision: accepted
 owner: hardware-engineer
-updated: 2026-08-30
-tags: [adr, audio]
+reviewers: [orchestrator, firmware-engineer, acoustics-engineer]
+updated: 2026-09-12
+tags: [adr, audio, hardware]
 ---
 
-# ADR-0002: Kutubaşına bi-amp zinciri
+# ADR-0002: Bi-amp sinyal zinciri — tek DAC, dört özdeş amfi
 
-PCM5102A'nın iki analog kanalı stereo yerine mono programın woofer/tweeter DSP yolları olarak XH-A232'nin iki kanalına verilir. Kabul için kart topolojisi, kanal gücü, filtreleme, boot/mute ve G1-G2 ölçümleri geçmelidir.
+## Bağlam
+
+Ürün tek bir kabindir: dört Nova woofer ve dört Nova tweeter, tek bir mono program ([[ADR-0021-single-cabinet|ADR-0021]]). Sinyal kaynağı bir ESP32-S3 ve bir PCM5102A'dır; DAC'ın iki analog kanalı vardır. Sekiz sürücünün her biri kendi korumalı amfi kanalını ister (PRD-003), yani sekiz BTL kanal gerekir ve elde iki kanallı bir DAC vardır.
+
+Sorun, iki DAC kanalından sekiz korumalı amfi kanalı çıkarmak — DSP'yi bir kez çalıştırarak.
+
+## Karar
+
+DAC'ın iki kanalı stereo değil, **iki frekans bandıdır**. DSP zinciri (mono L+R toplamı, bant başına EQ, subsonic yüksek geçiren, LR4 crossover, dal başına birer limiter) tek programı iki banda böler:
+
+- PCM5102A **`LOUT` = woofer bandı**, **`ROUT` = tweeter bandı**. Bu eşleme firmware'in `Left = WOOFER, right = TWEETER` kuralıdır (`hk_dsp`, `hk_airplay_output_i2s`) ve stereo bir eşleme değildir.
+- `LOUT`, **dört özdeş XH-A232**'nin (TPA3110D2, 2 × BTL) L girişine paralel dağıtılır; `ROUT` dördünün R girişine.
+- Her amfinin L çıkışı **bir woofer**, R çıkışı **bir tweeter** sürer; tweeter, kendi seri `C_SAFE`'i üzerinden bağlanır. Dört amfi × iki kanal = sekiz BTL kanal, hepsi aynı programın kendi bandı.
+- Bir `AMP_MUTE` (GPIO21) dört amfinin `SD` pad'ine paralel gider; her amfinin `SD`'sinde kendi 10 kΩ pull-down'ı durur. Bir `DAC_XSMT` (GPIO13) DAC'ı susturur ([[ADR-0011-audio-side-gpio-reservation|ADR-0011]]).
+- BTL çıkışların hoparlör eksileri şasi toprağı değildir.
+
+```text
+                                  +-> XH-A232 #1  L -> woofer 1     R -> C_SAFE -> tweeter 1
+ESP32-S3 -> I2S -> PCM5102A LOUT -+-> XH-A232 #2  L -> woofer 2     R -> C_SAFE -> tweeter 2
+                            ROUT -+-> XH-A232 #3  L -> woofer 3     R -> C_SAFE -> tweeter 3
+                                  `-> XH-A232 #4  L -> woofer 4     R -> C_SAFE -> tweeter 4
+   (LOUT dört L girişine, ROUT dört R girişine paralel)
+```
+
+### Paralel giriş yükü
+
+XH-A232'nin hat girişi 10 kΩ sınıfındadır. Dört girişin paralel yükü yaklaşık **2,5 kΩ**'dur; PCM5102A'nın hat çıkışı bunu rahatça sürer. Bu bir aritmetiktir, ölçüm değildir: `G1`, DAC çıkışındaki seviye ve bozulmayı dört giriş bağlıyken kaydeder.
+
+### DSP zincirinin durumu
+
+Zincir çalışıyor ve host testleriyle doğrulanmış; sayıları henüz ölçülmüş değil. Crossover köşesi tweeter `Fs` ölçülene kadar muhafazakâr bir tahmindir; subsonic köşe pasif radyatör akordu ölçülene kadar yer tutucudur; subsonic filtre ikinci derecedir ve pasif radyatörlü kabin için dördüncü derece istenir. Bu boşluklar bilinir ve sonra kapatılır; zincir bitmiş sayılmaz ([[../04-acoustics/measurement-and-dsp-plan|ölçüm ve DSP planı]]).
+
+## Reddedilen seçenekler
+
+| Seçenek | Ret gerekçesi |
+|---|---|
+| Stereo: DAC L/R → iki amfi, sol ve sağ sürücü grupları | Tek kutuda tek program; stereo kapsam dışı (ADR-0021). Stereo yol, sekiz sürücüye tek DSP geçişinden bant vermeyi de imkânsız kılar. |
+| Sürücü tipi başına tek amfi kanalı, dört sürücü paralel | Dört adet 4 Ω sürücü paralel 1 Ω; TPA3110'un asgari yükünün çok altında. Sürücü başına koruma da kalmaz. |
+| Dört DAC / dört ESP32, her amfiye kendi kaynağı | Kazanç yok: aynı program dört kez çözülür, dört kurulum, dört saat, dört OTA hedefi. |
+| Pasif crossover, DAC'tan tam bant | Tweeter koruması yazılımda kalmalı (HPF + limiter + susturma sırası); pasif bir devre ölçülmemiş sürücülere göre tasarlanamaz. `C_SAFE` yalnız son sigortadır, crossover değil. |
+
+## Sonuçlar ve açık koşullar
+
+- Kablolama planı, SVG paftası ve KiCad üreteci tek DAC'tan beslenen **dört amfi** çizer; BOM dört `C_SAFE`, dört `SD` pull-down'ı ve dört amfi taşır.
+- Dört amfi kartı aynı revizyon olmalıdır; `SD` dalı ya dördünde ya hiçbirinde takılıdır. Farklı revizyonlar farklı giriş yükü ve farklı susturma davranışı demektir.
+- `G1` satırları: dört amfinin her biri dummy-load üzerinde ayrı ayrı; dört girişin paralel yükü DAC çıkışında; limiter tavanı 2,9 A adaptör bütçesinden dört amfi birlikte sürülürken türetilir ve `VIN` çökmesiyle doğrulanır ([[ADR-0020-dc-adapter-power|ADR-0020]]).
+- `G2` satırları: HPF, crossover ve limiter önce **tek woofer ve tek tweeter** ile, tek amfide; diğer üç amfi sürücülere ancak bundan sonra bağlanır.
+- Bu ADR topolojiyi kilitler; kabul `G1`-`G2` ölçümlerine **koşulludur**. Crossover köşesi, limiter eşikleri ve `C_SAFE` değeri bu ADR'nin değil, `G0`/`G2` ölçümlerinin çıktısıdır.

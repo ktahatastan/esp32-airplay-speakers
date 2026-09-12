@@ -2,15 +2,16 @@
  * @file hk_sched.h
  * @brief When to look for an update, and how to back off when looking fails.
  *
- * Four speakers on one network share one uplink and one GitHub. The scheduler
- * exists so they do not behave like one device with four times the appetite.
+ * The speaker asks GitHub whether a release exists at most once a day, and it
+ * does not ask at a fixed instant after every power cut. The scheduler exists
+ * so that cadence is written once, here, rather than at each caller.
  *
- * THE RANDOM DELAY IS THE POINT, not a refinement. Four speakers on the same
- * mains circuit come back from a power cut within milliseconds of each other,
- * join the same Wi-Fi at the same moment and would, without it, ask the same
- * server the same question simultaneously — forever, every day, at whatever
- * time the last power cut happened. Spreading the first check is what stops a
- * household from looking like a small denial of service.
+ * THE FIRST CHECK IS NOT ON THE BOOT INSTANT. A device rebooting in a loop
+ * would otherwise ask the server at every restart, and a fixed first delay
+ * would pin the daily check to the minute of the last power cut — forever,
+ * every day. A first delay chosen at random keeps even a boot loop bounded and
+ * off the boot instant, and it keeps a fleet of one from becoming a fleet of
+ * many hitting the same second if more are ever built.
  *
  * BACKOFF CAPS RATHER THAN GIVES UP. A device that stops checking is a device
  * that can never be fixed remotely, which is the opposite of what an update
@@ -43,8 +44,8 @@ typedef struct {
  * These are product decisions taken from the plan — "a random delay after
  * Wi-Fi is ready, then at most one check a day" — not measurements, so unlike
  * a driver-protection threshold they can be argued about and changed in a
- * line. They are named here rather than left to each caller so four speakers
- * cannot end up with three different ideas of a day.
+ * line. They are named here rather than left to each caller so the tree holds
+ * exactly one idea of what a day is.
  */
 #define HK_SCHED_INTERVAL_MS_DEFAULT    86400000u  /* 24 h */
 #define HK_SCHED_FIRST_DELAY_MS_DEFAULT  3600000u  /* up to 1 h after boot */
@@ -76,7 +77,7 @@ bool hk_sched_limits_sane(const hk_sched_limits_t *limits);
  * Arm the first check.
  *
  * @param random any number; only its remainder is used, so a weak source is
- *               fine — the goal is that four devices differ, not secrecy.
+ *               fine — the goal is spread, not secrecy.
  */
 void hk_sched_init(hk_sched_t *sched, uint32_t now_ms, uint32_t random,
                    const hk_sched_limits_t *limits);

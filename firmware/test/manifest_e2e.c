@@ -5,8 +5,8 @@
  * device may install what it describes. Until this existed the two were only
  * ever compared by FIELD NAME — a mismatch in a VALUE (a version the parser
  * spells differently, a digest in the wrong case, a size that overflows) would
- * have passed every test in the repository and been discovered by four
- * speakers refusing every release.
+ * have passed every test in the repository and been discovered by the
+ * speaker refusing every release.
  *
  * So this reads a real generated manifest, runs the real parser and the real
  * validator over it, and reports what a device would have concluded.

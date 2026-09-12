@@ -132,7 +132,7 @@ void test_ota(void)
 
     /* ===== the address this firmware actually builds =====
      * Pinned so a typo cannot reach a device: an address the validator refuses
-     * would leave every speaker checking nothing, silently, and one too long
+     * would leave the speaker checking nothing, silently, and one too long
      * for the manifest buffer would arrive as a missing field. */
     {
         char url[HK_OTA_URL_MAX];

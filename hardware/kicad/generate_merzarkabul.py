@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Generate the Merzarkabul Airplay Speakers single-speaker KiCad schematic.
+"""Generate the Merzarkabul Airplay Speakers single-cabinet KiCad schematic.
+
+One cabinet: one ESP32-S3, one PCM5102A, four identical XH-A232 amplifiers
+fed in parallel from the DAC, eight drivers, one programme (ADR-0002,
+ADR-0021). Every amplifier, every C_SAFE and every pull-down is its own
+connector or part so that ERC sees every net.
 
 This is the electrical source of truth: real symbols, drawn wires, junctions
 and power ports, so KiCad ERC actually checks connectivity instead of trusting
@@ -30,6 +35,12 @@ Safety notes carried on the sheet itself
 * The jack polarity is verified with a meter before the first power-up; the
   series reverse-polarity diode is a candidate until G1 measures its drop
   (ADR-0020).
+* The adapter's no-load output is measured before it is ever connected and
+  must read below 25.5 V: 24 V sits 2 V under the TPA3110's 26 V maximum
+  (ADR-0020).
+* The first energised path is one amplifier, one woofer and one tweeter; the
+  other three amplifiers are wired to drivers only after G0-G2 pass on that
+  pair.
 """
 
 from __future__ import annotations
@@ -54,7 +65,7 @@ DEFAULT_OUTPUT = ROOT / "generated"
 
 #: kicad-sch-api snaps to 1.27 mm; 2.54 keeps symbol pins on grid as well.
 GRID = 2.54
-SHEET_REV = "0.8-candidate"
+SHEET_REV = "0.9-candidate"
 SHEET_DATE = "2026-09-12"
 
 
@@ -99,12 +110,17 @@ class Module:
 
 
 MODULES: tuple[Module, ...] = (
-    # ADR-0020. The jack is the whole power input: a 19 V desktop adapter on a
-    # 5.5x2.1 mm centre-positive barrel. There is no switch in V1; the device
-    # is turned off by unplugging the adapter.
-    Module("J1", "DC INPUT JACK 5.5x2.1 / 19 V DESKTOP ADAPTER / CENTRE POSITIVE VERIFY", (46, 36),
+    # ADR-0020. The jack is the whole power input: a 24 V / 2.9 A desktop
+    # adapter on a 5.5x2.1 mm centre-positive barrel. There is no switch in V1;
+    # the device is turned off by unplugging the adapter. The adapter's no-load
+    # output is measured before it is connected and must read below 25.5 V.
+    Module("J1", "DC INPUT JACK 5.5x2.1 / 24 V 2.9 A DESKTOP ADAPTER / CENTRE POSITIVE VERIFY / NO-LOAD < 25.5 V VERIFY", (46, 36),
            ("DC_IN", "POWER_GND")),
-    Module("U4", "MP1584 BUCK / SET 5.10 V UNLOADED", (56, 104), ("VIN", "POWER_GND", "V5_SYS", "STAR_GND")),
+    # Two bucks, not one: a shared buck put audible hiss into the DAC on the
+    # bench (owner's observation, ADR-0020). Buck A carries the USB backfeed
+    # jumper because only the ESP devkit has USB; buck B feeds the DAC directly.
+    Module("U3", "MP1584 BUCK A / ESP32-S3 / SET 5.10 V UNLOADED", (56, 96), ("VIN", "POWER_GND", "V5_A", "STAR_GND")),
+    Module("U4", "MP1584 BUCK B / PCM5102A / SET 5.10 V UNLOADED / NO JUMPER", (56, 122), ("VIN", "POWER_GND", "V5_DAC", "STAR_GND")),
     Module("U5", "ESP32-S3 DEVKIT N16R8 / 16 MB FLASH + 8 MB PSRAM", (140, 100), (
         "V5_LOGIC", "STAR_GND", "ESP_3V3", "BUTTON_N", "LED_R", "LED_G", "LED_B",
         "I2S_BCLK", "I2S_LRCLK", "I2S_DATA",
@@ -114,43 +130,58 @@ MODULES: tuple[Module, ...] = (
     # drive it and an external pull-down hold it, so it has to be in the netlist
     # or ERC is checking a circuit nobody is going to build.
     Module("U6", "PCM5102A I2S DAC MODULE / 3-WIRE PLL / MEASURE XSMT PAD BRIDGE BEFORE WIRING", (218, 100), (
-        "I2S_BCLK", "I2S_LRCLK", "I2S_DATA", "STAR_GND", "V5_LOGIC", "STAR_GND",
+        "I2S_BCLK", "I2S_LRCLK", "I2S_DATA", "STAR_GND", "V5_DAC", "STAR_GND",
         "DAC_XSMT", "DAC_LOUT", "DAC_ROUT", "DAC_AGND",
     )),
-    # `SD` is a TPA3110 pin; what is unconfirmed is whether the XH-A232 board
-    # exposes it, so the value string carries that and the wiring plan §9 keeps
-    # the open decision. The net is AMP_MUTE because a pull-down has to sit on
-    # the same net as the pad it holds down; a separate AMP_SD_TBD net would
-    # have made the pull-down a component connected to nothing.
-    Module("U7", "XH-A232 TPA3110 BTL AMP / 8-26 V / SD PAD ACCESS NOT CONFIRMED", (300, 100), (
+    # Four identical amplifiers on one DAC (ADR-0002): DAC_LOUT (woofer band)
+    # into every L input, DAC_ROUT (tweeter band) into every R input. `SD` is a
+    # TPA3110 pin; what is unconfirmed is whether the XH-A232 board exposes it,
+    # so the value string carries that and the wiring plan section 9 keeps the
+    # open decision. The net is AMP_MUTE on all four because a pull-down has to
+    # sit on the same net as the pad it holds down; the branch is fitted on all
+    # four boards or on none.
+    *(Module(f"U{7 + k}", f"XH-A232 #{k + 1} TPA3110 BTL AMP / 8-26 V / SD PAD ACCESS NOT CONFIRMED", (330, 92 + 26 * k), (
         "DAC_LOUT", "DAC_ROUT", "VIN", "POWER_GND",
-        "AMP_L_PLUS", "AMP_L_MINUS", "AMP_R_PLUS", "AMP_R_MINUS", "AMP_MUTE",
+        f"AMP{k + 1}_L_PLUS", f"AMP{k + 1}_L_MINUS", f"AMP{k + 1}_R_PLUS", f"AMP{k + 1}_R_MINUS", "AMP_MUTE",
+    )) for k in range(4)),
+    # One woofer and one tweeter per amplifier: J2/J3 on amp 1 ... J8/J9 on
+    # amp 4. Each tweeter reaches its amplifier through its own C_SAFE.
+    *(module for k in range(4) for module in (
+        Module(f"J{2 + 2 * k}", f"WOOFER {k + 1} / 4 R CLASS / FS TBD / G0", (390, 86 + 26 * k),
+               (f"AMP{k + 1}_L_PLUS", f"AMP{k + 1}_L_MINUS")),
+        Module(f"J{3 + 2 * k}", f"TWEETER {k + 1} / 4 R CLASS / FS TBD / G2", (390, 102 + 26 * k),
+               (f"TWEETER{k + 1}_POS", f"AMP{k + 1}_R_MINUS")),
     )),
-    Module("J2", "WOOFER / IMPEDANCE TBD / G0", (360, 104), ("AMP_L_PLUS", "AMP_L_MINUS")),
-    Module("J3", "TWEETER / IMPEDANCE TBD / G2", (360, 130), ("TWEETER_POS", "AMP_R_MINUS")),
     # Anodes carry the POST-resistor nets. Naming them LED_R/LED_G/LED_B here would
     # put the pre- and post-resistor net on one node and short out R3/R4/R5.
     Module("D1", "COMMON-CATHODE RGB STATUS LED", (140, 168), ("LED_R_A", "LED_G_A", "LED_B_A", "STAR_GND")),
 )
 
-#: Probe points TP0-TP21. The numbering is the single source shared with
-#: docs/02-hardware/circuit-and-wiring-plan.md; a mismatch here means the bring-up
-#: procedure and the schematic disagree, so they are generated from one table.
+#: Probe points TP0-TP34. The numbering is the single source shared with
+#: docs/02-hardware/circuit-and-wiring-plan.md section 7.1 and the SVG sheet; a
+#: mismatch here means the bring-up procedure and the schematic disagree, so
+#: they are generated from one table.
 TEST_POINTS: tuple[tuple[int, str], ...] = (
     # TP0 is the raw jack pin and TP1 the rail behind the reverse-polarity
     # candidate: the difference is D2's forward drop under load, which is the
     # G1 measurement that decides whether D2 stays or becomes a 0 R link.
-    (0, "DC_IN"), (1, "VIN"), (2, "POWER_GND"), (3, "V5_SYS"),
-    (4, "ESP_3V3"), (5, "I2S_BCLK"), (6, "I2S_LRCLK"), (7, "I2S_DATA"),
-    # TP8/TP10 and TP9/TP11 are two probe points on one net: the DAC output pad
-    # and the amplifier input pad of the same wire.
-    (8, "DAC_LOUT"), (9, "DAC_ROUT"), (10, "DAC_LOUT"), (11, "DAC_ROUT"),
-    (12, "AMP_L_PLUS"), (13, "AMP_L_MINUS"), (14, "AMP_R_PLUS"), (15, "AMP_R_MINUS"),
-    (16, "BUTTON_N"), (17, "LED_R"), (18, "LED_G"), (19, "LED_B"),
-    # TP20/TP21 are the mute lines: the only way to tell whether the pull-downs
+    (0, "DC_IN"), (1, "VIN"), (2, "POWER_GND"),
+    # One probe per buck output: the two 5 V rails are separate supplies.
+    (3, "V5_A"), (4, "V5_DAC"),
+    (5, "ESP_3V3"), (6, "I2S_BCLK"), (7, "I2S_LRCLK"), (8, "I2S_DATA"),
+    # TP9/TP11 and TP10/TP12 are two probe points on one net: the DAC output
+    # pad and the amplifier-bank end of the same bus, where the four inputs
+    # are paralleled.
+    (9, "DAC_LOUT"), (10, "DAC_ROUT"), (11, "DAC_LOUT"), (12, "DAC_ROUT"),
+    # Four BTL pairs per amplifier, amp 1 first.
+    *((13 + 4 * k + i, f"AMP{k + 1}_{net}")
+      for k in range(4) for i, net in enumerate(("L_PLUS", "L_MINUS", "R_PLUS", "R_MINUS"))),
+    (29, "BUTTON_N"), (30, "LED_R"), (31, "LED_G"), (32, "LED_B"),
+    # TP33/TP34 are the mute lines: the only way to tell whether the pull-downs
     # are actually holding the pads low through reset is to put a probe on them
-    # at power-up.
-    (20, "DAC_XSMT"), (21, "AMP_MUTE"),
+    # at power-up. TP34 is the shared SD bus; every amplifier has its own
+    # pull-down on it.
+    (33, "DAC_XSMT"), (34, "AMP_MUTE"),
 )
 
 #: Nets that are deliberately left with a single connection. The set is empty:
@@ -160,11 +191,11 @@ TEST_POINTS: tuple[tuple[int, str], ...] = (
 EXPECTED_OPEN_NETS: frozenset[str] = frozenset()
 
 SECTIONS: tuple[tuple[str, tuple[float, float], tuple[float, float]], ...] = (
-    ("A. 19 V DC INPUT, REVERSE-POLARITY CANDIDATE AND BULK CAPACITOR  (ADR-0020)", (25, 15), (400, 70)),
-    ("B. 5 V LOGIC SUPPLY", (25, 78), (120, 150)),
+    ("A. 24 V DC INPUT, REVERSE-POLARITY CANDIDATE AND BULK CAPACITOR  (ADR-0020)", (25, 15), (400, 70)),
+    ("B. 5 V LOGIC SUPPLIES (TWO BUCKS)", (25, 78), (120, 150)),
     ("C. ESP32-S3 N16R8 AND USER INTERFACE  (ADR-0010)", (126, 78), (200, 190)),
-    ("D. I2S DAC, BTL BI-AMP, MUTE LINES AND DRIVERS  (ADR-0002, ADR-0011)", (208, 78), (400, 166)),
-    ("E. TEST POINT ACCESS  TP0-TP21", (25, 196), (400, 250)),
+    ("D. I2S DAC, FOUR BTL AMPS, MUTE BUS AND EIGHT DRIVERS  (ADR-0002, ADR-0011)", (208, 78), (400, 190)),
+    ("E. TEST POINT ACCESS  TP0-TP34", (25, 196), (400, 250)),
 )
 
 
@@ -246,28 +277,32 @@ def draw_dc_input(builder: Builder) -> None:
     builder.label("D2", "1", "VIN")
     builder.route(builder.module_pin("J1", "DC_IN"), builder.pin("D2", "2"), 75)
 
-    builder.add_part("Device:C_Polarized", "C1", "C_A / 1000 uF / 25 V / 105 C LOW-ESR TARGET", (150, 36))
+    builder.add_part("Device:C_Polarized", "C1", "C_A / 1000 uF / 35 V / 105 C LOW-ESR TARGET", (150, 36))
     builder.label("C1", "1", "VIN")
     builder.label("C1", "2", "POWER_GND")
     builder.route(builder.pin("D2", "1"), builder.pin("C1", "1"), 130)
 
     builder.text("VERIFY CENTRE-POSITIVE POLARITY AT THE JACK WITH A METER BEFORE THE FIRST POWER-UP (G1). "
                  "Reading the adapter label is not a measurement.", (30, 58), bold=True)
-    builder.text("19 V sits inside both input windows: TPA3110 8-26 V and MP1584 4.5-28 V. No power switch in V1: "
-                 "the device is turned off by unplugging the adapter.", (30, 62))
-    builder.text("First energisation from a current-limited lab supply, not the adapter. The adapter current "
-                 "rating comes from the G1 peak-current measurement, not from a guess.", (30, 66))
+    builder.text("MEASURE THE ADAPTER'S NO-LOAD OUTPUT BEFORE CONNECTING IT: below 25.5 V or it is refused. 24 V sits "
+                 "2 V under the TPA3110's 26 V maximum (G1). 24 V is inside both windows: TPA3110 8-26 V, MP1584 4.5-28 V.", (30, 62), bold=True)
+    builder.text("The adapter is given: 24 V / 2.9 A (about 70 W). The limiter ceiling is derived from that budget with all four "
+                 "amps driven and verified by VIN sag in G1. No power switch in V1: unplug the adapter to turn off.", (30, 66))
+    builder.text("First energisation from a current-limited lab supply, not the adapter. C_A is one part at the jack; "
+                 "per-amp bulk only if the G1 ripple measurement asks for it. D2 at 2.9 A dissipates about 1 W or more.", (30, 69))
 
 
 def draw_logic_supply(builder: Builder) -> None:
-    """MP1584 5.10 V rail and the USB backfeed isolation jumper."""
-    builder.add_part("Connector_Generic:Conn_01x02", "JP1", "USB / SYSTEM 5 V ISOLATION JUMPER", (96, 100))
-    builder.label("JP1", "1", "V5_SYS")
+    """Two MP1584 5.10 V rails; the USB backfeed isolation jumper sits on buck A only."""
+    builder.add_part("Connector_Generic:Conn_01x02", "JP1", "USB / SYSTEM 5 V ISOLATION JUMPER / BUCK A ONLY", (96, 96))
+    builder.label("JP1", "1", "V5_A")
     builder.label("JP1", "2", "V5_LOGIC")
-    builder.text("Adjust U4 to 5.10 V before connecting the ESP32 and DAC. "
-                 "Keep JP1 open while programming over USB.", (28, 132))
-    builder.text("TP3 target: <=50 mVpp under normal load; the 5 V rail must not dip below 4.75 V "
-                 "on Wi-Fi current bursts.", (28, 136))
+    builder.text("Adjust U3 and U4 to 5.10 V before connecting the ESP32 and DAC. "
+                 "Keep JP1 open while programming over USB.", (28, 140))
+    builder.text("Two bucks because a shared buck put audible hiss into the DAC on the bench (ADR-0020). "
+                 "Buck B has no jumper: only the devkit has USB.", (28, 144))
+    builder.text("TP3/TP4 target: <=50 mVpp under normal load; neither 5 V rail may dip below 4.75 V "
+                 "on Wi-Fi current bursts.", (28, 148))
 
 
 def draw_user_interface(builder: Builder) -> None:
@@ -278,12 +313,12 @@ def draw_user_interface(builder: Builder) -> None:
     builder.add_part("Device:R", "R1", "10 k PULL-UP CANDIDATE", (150, 134), rotation=90)
     builder.label("R1", "1", "ESP_3V3")
     builder.label("R1", "2", "BUTTON_N")
-    builder.add_part("Device:C", "C3", "C_DB / 100 nF HARDWARE DEBOUNCE / OPTIONAL", (166, 150), rotation=90)
-    builder.label("C3", "1", "BUTTON_N")
-    builder.label("C3", "2", "STAR_GND")
+    builder.add_part("Device:C", "C6", "C_DB / 100 nF HARDWARE DEBOUNCE / OPTIONAL", (166, 150), rotation=90)
+    builder.label("C6", "1", "BUTTON_N")
+    builder.label("C6", "2", "STAR_GND")
     # Pull-up, button and debounce cap share one node, so it is drawn as a node.
     builder.route(builder.pin("R1", "2"), builder.pin("SW1", "1"), 150)
-    builder.route(builder.pin("R1", "2"), builder.pin("C3", "1"), 158)
+    builder.route(builder.pin("R1", "2"), builder.pin("C6", "1"), 158)
     builder.junction(builder.pin("R1", "2"))
 
     for reference, value, net in (("R3", "R_R / 680 R CANDIDATE", "LED_R"),
@@ -300,18 +335,41 @@ def draw_user_interface(builder: Builder) -> None:
 
 
 def draw_audio_chain(builder: Builder) -> None:
-    """DAC output to amplifier input, and the tweeter series safety capacitor."""
-    builder.add_part("Device:C", "C2", "C_SAFE / NON-POLARISED FILM / VALUE TBD UNTIL G2", (338, 130), rotation=90)
-    builder.label("C2", "1", "AMP_R_PLUS")
-    builder.label("C2", "2", "TWEETER_POS")
-    builder.route(builder.pin("C2", "2"), builder.module_pin("J3", "TWEETER_POS"), 348)
+    """DAC bus to four amplifier inputs, one C_SAFE per tweeter, one pull-down per amp."""
+    # One series safety capacitor per tweeter, wired to its own driver
+    # connector so that every tweeter's fuse is a part on the sheet: C2-C5 for
+    # amps 1-4. The amplifier side is a label on the amp's R+ net.
+    for k in range(4):
+        n = k + 1
+        reference = f"C{2 + k}"
+        builder.add_part("Device:C", reference, f"C_SAFE {n} / NON-POLARISED FILM / 10 uF CANDIDATE UNTIL G2",
+                         (372, 102 + 26 * k), rotation=90)
+        builder.label(reference, "1", f"AMP{n}_R_PLUS")
+        builder.label(reference, "2", f"TWEETER{n}_POS")
+        builder.route(builder.pin(reference, "2"), builder.module_pin(f"J{3 + 2 * k}", f"TWEETER{n}_POS"), 382)
 
-    builder.text("DANGER: AMP_L_MINUS and AMP_R_MINUS are BTL switching outputs, not ground. "
-                 "Never clip a scope ground to them.", (212, 138), size=1.5, bold=True)
-    builder.text("C_SAFE is not a crossover. It is the last line of defence behind the DSP high-pass "
-                 "and limiter; its value comes from the G2 report.", (212, 142), bold=True)
-    builder.text("Left digital channel drives the woofer path, right drives the tweeter path. "
-                 "This is a bi-amp split of one mono program, not a stereo box.", (212, 146))
+    # Notes sit under the DAC and the pull-downs, left of the amplifier column:
+    # the column is full from top to bottom, so a line longer than that lane
+    # would run across a connector symbol.
+    notes = (
+        ("DANGER: AMPn_L_MINUS / AMPn_R_MINUS on all four amps are BTL switching", True),
+        ("outputs, not ground. Never clip a scope ground to them.", True),
+        ("DAC_LOUT (woofer band) feeds the L input of all four XH-A232 in parallel,", False),
+        ("DAC_ROUT (tweeter band) the four R inputs: one mono programme, two bands,", False),
+        ("eight BTL channels (ADR-0002). Four 10 k class inputs in parallel are about", False),
+        ("2.5 k, comfortable for the PCM5102A: arithmetic, G1 records the DAC level.", False),
+        ("C_SAFE is not a crossover: last line of defence behind the DSP high-pass and", True),
+        ("limiter, one per tweeter (C2-C5), value from the G2 report.", True),
+        ("All four boards must be the same revision. First energised path: one amp, one", False),
+        ("woofer, one tweeter; the other three reach drivers after G0-G2 pass on that pair.", False),
+        ("MUTE: R6 and R7-R10 are not optional. Every candidate GPIO leaves reset", True),
+        ("high-impedance through ROM, bootloader and app init; the resistor holds mute,", True),
+        ("firmware only RELEASES it (ADR-0011). Measure the XSMT pad to 3V3 before", False),
+        ("soldering; a hard bridge makes GPIO13 fight the rail. AMP_MUTE reaches U7-U10", False),
+        ("only if an accessible SD pad exists on all four boards (wiring plan section 9).", False),
+    )
+    for index, (message, bold) in enumerate(notes):
+        builder.text(message, (212, 132 + 4 * index), bold=bold)
 
     # ADR-0011. The pull-down is the mute; the GPIO only releases it. Drawn as
     # parts so they are ordered, stuffed and checked rather than remembered.
@@ -319,45 +377,42 @@ def draw_audio_chain(builder: Builder) -> None:
                      (240, 122), rotation=90)
     builder.label("R6", "1", "DAC_XSMT")
     builder.label("R6", "2", "STAR_GND")
-    builder.add_part("Device:R", "R7", "10 k PULL-DOWN / AMP SD / FIT ONLY IF AN ACCESSIBLE SD PAD IS FOUND",
-                     (272, 122), rotation=90)
-    builder.label("R7", "1", "AMP_MUTE")
-    builder.label("R7", "2", "POWER_GND")
-
-    builder.text("MUTE: R6 and R7 are not optional. Every candidate GPIO on this part leaves reset "
-                 "high-impedance and stays that way through ROM, bootloader and app init, so the resistor "
-                 "is what holds mute; firmware only RELEASES it (ADR-0011).", (212, 150), bold=True)
-    builder.text("BEFORE SOLDERING: measure the PCM5102A XSMT pad to 3V3. A hard bridge there makes "
-                 "GPIO13 fight the rail when it drives low; cut the bridge first.", (212, 154))
-    builder.text("AMP_MUTE reaches U7 only if the XH-A232 exposes an accessible SD pad, which is still an "
-                 "open decision (wiring plan section 9). If it does not, R7 and this net are not fitted and "
-                 "there is no firmware-controllable amplifier mute.", (212, 158))
+    # One pull-down per amplifier, mounted at that amplifier's SD pad: R7-R10
+    # for amps 1-4. Four 10 k in parallel on the shared AMP_MUTE bus is 2.5 k,
+    # about 1.3 mA when GPIO21 drives high, comfortable for the pin.
+    for k in range(4):
+        reference = f"R{7 + k}"
+        builder.add_part("Device:R", reference,
+                         f"10 k PULL-DOWN / AMP {k + 1} SD / FIT ON ALL FOUR OR ON NONE / ONLY IF AN ACCESSIBLE SD PAD IS FOUND",
+                         (262 + 14 * k, 122), rotation=90)
+        builder.label(reference, "1", "AMP_MUTE")
+        builder.label(reference, "2", "POWER_GND")
 
 
 def draw_test_points(builder: Builder) -> None:
     """One test point symbol per TP number, generated from the shared table."""
     for number, net in TEST_POINTS:
-        # Sixteen to a row: two rows for TP0-TP21, clear of the section's own
+        # Twelve to a row: three rows for TP0-TP34, clear of the section's own
         # footer text. Fewer per row would push the last points onto it.
-        column, row = number % 16, number // 16
+        column, row = number % 12, number // 12
         builder.add_part("Connector:TestPoint", f"TP{number}", net,
-                         (34 + column * 22, 210 + row * 14))
+                         (34 + column * 30, 206 + row * 12))
         builder.label(f"TP{number}", "1", net)
-    builder.text("Scope ground goes to POWER_GND or STAR_GND only. For BTL outputs use a differential "
+    builder.text("Scope ground goes to POWER_GND or STAR_GND only. For BTL outputs (TP13-TP28) use a differential "
                  "probe, or two 10x probes with BOTH ground clips on TP2 and MATH = CH1 - CH2.",
-                 (30, 246), bold=True)
+                 (30, 244), bold=True)
 
 
 def build_schematic():
     schematic = ksa.create_schematic("merzarkabul")
     schematic.set_paper_size("A3")
     schematic.set_title_block(
-        title="Merzarkabul Airplay Speakers - Single Speaker, Module Level",
+        title="Merzarkabul Airplay Speakers - Single Cabinet, Module Level",
         date=SHEET_DATE, rev=SHEET_REV, company="Merzarkabul Airplay Speakers",
         comments={
-            1: "19 V DC adapter -> 5.5x2.1 jack -> VIN | ESP32-S3 N16R8 | PCM5102A | XH-A232 bi-amp",
+            1: "24 V / 2.9 A DC adapter -> 5.5x2.1 jack -> VIN | 2 x MP1584 | ESP32-S3 N16R8 | PCM5102A | 4 x XH-A232 | 8 drivers",
             2: "DO NOT ENERGISE DRIVERS BEFORE G0-G2. BTL OUTPUT NEGATIVES ARE NOT GROUND.",
-            3: "Verify jack polarity with a meter before the first power-up (ADR-0020, G1).",
+            3: "Measure adapter no-load < 25.5 V and verify jack polarity before the first power-up (ADR-0020, G1).",
             4: "Generated by hardware/kicad/generate_merzarkabul.py - do not hand-edit the output.",
         },
     )
@@ -378,15 +433,15 @@ def build_schematic():
 
     # Rails that would otherwise need a wire across the whole sheet.
     for index, (net, position) in enumerate((
-        ("VIN", (290, 46)), ("V5_LOGIC", (110, 96)), ("ESP_3V3", (128, 120)),
-        ("POWER_GND", (290, 56)), ("STAR_GND", (110, 120)), ("DAC_AGND", (250, 128)),
+        ("VIN", (290, 46)), ("V5_LOGIC", (110, 96)), ("V5_DAC", (110, 122)), ("ESP_3V3", (128, 120)),
+        ("POWER_GND", (290, 56)), ("STAR_GND", (110, 140)), ("DAC_AGND", (250, 128)),
     )):
         pin = builder.power(net, position, f"#PWR{index:02d}")
         builder.schematic.add_label(net, pin=(f"#PWR{index:02d}", "1"), size=1.0)
         del pin
 
     schematic.add_text(
-        "G0 driver impedance curve and Fs BLOCKED | G1 dummy-load amp, jack polarity, supply dip and pop BLOCKED | "
+        "G0 driver impedance curve and Fs BLOCKED | G1 dummy-load amp, adapter no-load, jack polarity, four-amp VIN sag and pop BLOCKED | "
         "G2 tweeter HPF and C_SAFE BLOCKED",
         point(30, 254), size=1.4, bold=True)
     schematic.add_text(

@@ -103,7 +103,8 @@ static void signal_ended(void)
  *    sits downstream of it: a class-D amplifier of unknown and possibly 36 dB
  *    gain (docs/06-testing/bench-measurement-order.md, C3), feeding an
  *    unmeasured driver with no crossover, no protective high-pass and no
- *    limiter. Whatever is written there is multiplied by that gain and
+ *    limiter, because the tone is written straight to I2S and never passes
+ *    through hk_dsp. Whatever is written there is multiplied by that gain and
  *    delivered. Here the amplifier is absent and 470 ohms is in its place. The
  *    PCM5102A gives about 2.1 Vrms at full scale, so -6 dBFS is ~1.05 Vrms
  *    behind 470 ohms: about 2.2 mA rms through the driver, whatever the driver
@@ -673,10 +674,12 @@ static void sweep_task(void *arg)
  *     docs/02-hardware/driver-measurements.md), and it is what decides the
  *     safe amplifier level. Without it, "how much power does this become at
  *     the driver" has no answer at all -- not a conservative one, not any.
- *   - There is no crossover and no protective high-pass. A tweeter connected
- *     to this output sees the full band.
- *   - There is no limiter. Firmware stage F3 owns all three of those and F3
- *     waits on the G0 measurement.
+ *   - There is no crossover and no protective high-pass in this path. A
+ *     tweeter connected to this output sees the full band.
+ *   - There is no limiter in this path either. All three live in hk_dsp
+ *     (firmware stage F3) on the AirPlay side; this tone is written straight
+ *     to I2S and does not pass through it, and the numbers hk_dsp runs on wait
+ *     on the G0 measurement anyway.
  *
  * So between this constant and a voice coil there is a power amplifier with a
  * fixed gain and nothing else. Whatever number is written here is multiplied
@@ -737,10 +740,10 @@ static void fill_block(void)
         const float phase = 2.0f * (float)M_PI * (float)HK_TONE_CYCLES
                           * (float)i / (float)HK_TONE_FRAMES;
         const int16_t sample = (int16_t)lrintf((float)HK_TONE_PEAK_LSB * sinf(phase));
-        /* The same sample in both slots. The XH-A232 is two channels of one
-         * amplifier and the operator may have only one of them wired; a tone
-         * that came out of one channel would be indistinguishable from a
-         * broken channel. */
+        /* The same sample in both slots. An XH-A232 is two channels of one
+         * amplifier, and on the bench the operator may have only one of the
+         * four boards, or one of its channels, wired; a tone that came out of
+         * one channel would be indistinguishable from a broken channel. */
         s_frames[2 * i]     = sample;
         s_frames[2 * i + 1] = sample;
     }
@@ -876,9 +879,9 @@ esp_err_t hk_tone_start(hk_tone_done_fn on_done, void *context)
              HK_TONE_HZ, HK_TONE_RATE_HZ,
              HK_PIN_I2S_BCLK, HK_PIN_I2S_LRCLK, HK_PIN_I2S_DATA);
     ESP_LOGW(TAG, "amplitude %d dBFS (%d of 32767 counts, about 1/32 of full scale). "
-                  "Low on purpose: driver impedance is unmeasured (G0) and there is no "
-                  "crossover, no high-pass and no limiter (F3), so the amplifier gets "
-                  "this with nothing in front of it.",
+                  "Low on purpose: driver impedance is unmeasured (G0) and this tone "
+                  "does not pass through hk_dsp -- no crossover, no high-pass and no "
+                  "limiter -- so the amplifier gets it with nothing in front of it.",
              HK_TONE_DBFS, HK_TONE_PEAK_LSB);
     ESP_LOGI(TAG, "the AirPlay receiver is NOT running in this build; these samples are "
                   "generated locally, so nothing that follows involves the network");

@@ -11,12 +11,12 @@ Güncelleme: 2026-09-05
 
 ## Karar özeti
 
-Her hoparlörde iki kullanıcı arayüzü öğesi bulunacak:
+Hoparlörde iki kullanıcı arayüzü öğesi bulunacak:
 
 1. Bir adet çok-fonksiyonlu anlık buton: provisioning, ağ sıfırlama ve fabrika sıfırlama.
 2. Bir adet RGB durum LED'i: açılış, provisioning, Wi-Fi, AirPlay ve hata durumları.
 
-V1'de fiziksel güç anahtarı yoktur: cihaz 19 V adaptörü çekilerek kapatılır, gerisini firmware'in boşta bekleme durumu karşılar ([[07-decisions/ADR-0020-dc-adapter-power|ADR-0020]]).
+V1'de fiziksel güç anahtarı yoktur: cihaz 24 V adaptörü çekilerek kapatılır, gerisini firmware'in boşta bekleme durumu karşılar ([[07-decisions/ADR-0020-dc-adapter-power|ADR-0020]]).
 
 Wi-Fi kurulumu iki yöntemle sunulacak:
 
@@ -73,7 +73,7 @@ QR yükü SRP6a kullanıcı adını da taşıyor. Sonucu şu: QR ile kurulan bir
 
 ### Provisioning'de seçilen ağ ürünü belirliyor
 
-Kart geliştirme sırasında yönlendiricinin misafir ağındaydı ve o ağ tasarımı gereği yalıtık olduğu için ana ağdaki bir Mac cihazı hiç göremedi. AirPlay keşfi mDNS çoklu yayınıyla, saat senkronu PTP çoklu yayınıyla çalışır ve ikisi de yalıtılmış bir misafir ağını aşmaz: hoparlör ile telefon aynı L2 ağında olmak zorundadır. Bu, provisioning'i doğrudan ilgilendiriyor, çünkü ağı seçen adım burasıdır. Ölçüm ve ayrıntı [[06-testing/devkit-bring-up|bring-up kaydında]].
+Kart geliştirme sırasında yönlendiricinin misafir ağındaydı ve o ağ tasarımı gereği yalıtık olduğu için ana ağdaki bir Mac cihazı hiç göremedi. AirPlay keşfi mDNS çoklu yayınıyla, AirPlay 2'nin saati PTP çoklu yayınıyla çalışır ve ikisi de yalıtılmış bir misafir ağını aşmaz: hoparlör ile telefon aynı L2 ağında olmak zorundadır. Bu, provisioning'i doğrudan ilgilendiriyor, çünkü ağı seçen adım burasıdır. Ölçüm ve ayrıntı [[06-testing/devkit-bring-up|bring-up kaydında]].
 
 ## Otomatik tanıma için gerçekçi platform sınırı
 
@@ -114,7 +114,7 @@ iOS AccessorySetupKit ve Android Companion Device Manager bir uygulama tarafınd
 | Captive portal başlığı | `Merzarkabul Kurulum` |
 | QR ürün etiketi | `Merzarkabul Airplay Speakers` |
 
-`XXXX`, MAC adresinden türetilen kısa benzersiz cihaz kimliğidir. Kullanıcı AirPlay adını değiştirebilir; BLE ve SoftAP adlarında benzersiz son ek korunur. Dört hoparlör ilk açılışta birbirinden bu kimlikle ayrılır.
+`XXXX`, MAC adresinden türetilen kısa benzersiz cihaz kimliğidir. Kullanıcı AirPlay adını değiştirebilir; BLE ve SoftAP adlarında benzersiz son ek korunur. Son ek cihazı aynı ağdaki başka her AirPlay/BLE hedefinden ayırır: bir ad herhangi bir ağda benzersiz olmalıdır.
 
 ## Provisioning durum makinesi
 
@@ -185,13 +185,13 @@ LED animasyonları audio task üzerinde çalışmayacak; düşük öncelikli ayr
 
 ## Güç: açma ve kapatma
 
-- V1'de güç anahtarı yoktur ([[07-decisions/ADR-0020-dc-adapter-power|ADR-0020]]). Cihaz 19 V adaptörü takılınca açılır, çekilince kapanır; adaptör hem amfiyi hem 5 V buck üzerinden dijital katı besler.
+- V1'de güç anahtarı yoktur ([[07-decisions/ADR-0020-dc-adapter-power|ADR-0020]]). Cihaz 24 V adaptörü takılınca açılır, çekilince kapanır; adaptör dört amfiyi doğrudan, ESP32-S3'ü buck A ve DAC'ı buck B üzerinden (iki ayrı 5 V) besler.
 - Boşta bekleme kullanıcı ayarı `standby_min` ile zamanlanır (varsayılan 30 dk, `0` kapatır). Davranışın kendisi henüz yazılmadı; yazıldığında amfi mute sıralayıcısı üzerinden geçecek ve AirPlay hedefi görünür kalacak.
 - Adaptör takılırken ve çalarken çekilirken amfi mute sıralaması ve pop sesi G1'de dummy-load üzerinde ölçülür; kapanış pop'u `PRD-007`'nin konusudur.
 
 ## Güvenlik ve gizlilik
 
-- Her cihaz için benzersiz provisioning PoP üretilecek; tüm cihazlarda ortak parola kullanılmayacak.
+- PoP cihaza özgü üretilir; ürün genelinde sabit bir parola yoktur.
 - SoftAP mümkünse cihaza özel parola ile korunacak; QR kod bu bilgiyi taşıyacak.
 - BLE provisioning yalnız ilk kurulumda veya fiziksel butonla zaman sınırlı olarak açılacak.
 - Provisioning istekleri hız sınırlı olacak ve başarısız kimlik doğrulamalar loglarda parola içermeyecek.

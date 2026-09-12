@@ -55,6 +55,11 @@
 #define PROVISIONAL_SUBSONIC_HZ  70.0f
 #define PROVISIONAL_TWEETER_GAIN 0.70794578f /* -3.0 dB */
 
+/* The 24 V adapter (ADR-0020). The fixture is referenced to the same supply it
+ * is built at, so the ceilings pass through unscaled and the tests below
+ * measure the filters, not the supply arithmetic (test_profile.c does that). */
+#define SUPPLY_MV 24000.0f
+
 static hk_profile_t fixture_profile(void)
 {
     hk_profile_t p;
@@ -70,7 +75,7 @@ static hk_profile_t fixture_profile(void)
     p.crossover_hz = PROVISIONAL_CROSSOVER_HZ;
     p.woofer_gain = 1.0f;
     p.tweeter_gain = PROVISIONAL_TWEETER_GAIN;
-    p.reference_supply_mv = 19000.0f;
+    p.reference_supply_mv = SUPPLY_MV;
     p.woofer_ceiling = 1.0f;
     p.tweeter_ceiling = 1.0f;
     p.release_ms = 100u;
@@ -90,7 +95,7 @@ static bool build(hk_dsp_t *dsp, const hk_profile_t *profile,
                   const hk_eq_settings_t *eq)
 {
     hk_profile_chain_t chain;
-    if (hk_profile_build(profile, FS_HZ, 19000.0f, &chain) != HK_PROFILE_OK) {
+    if (hk_profile_build(profile, FS_HZ, SUPPLY_MV, &chain) != HK_PROFILE_OK) {
         return false;
     }
     return hk_dsp_init(dsp, &chain, eq, FS_HZ);
@@ -326,7 +331,7 @@ static void dsp_refuses_a_chain_from_another_rate(void)
 {
     const hk_profile_t p = fixture_profile();
     hk_profile_chain_t chain;
-    HK_CHECK_EQ_INT(hk_profile_build(&p, 48000.0f, 19000.0f, &chain), HK_PROFILE_OK);
+    HK_CHECK_EQ_INT(hk_profile_build(&p, 48000.0f, SUPPLY_MV, &chain), HK_PROFILE_OK);
 
     /* The filters would work; the limiters' release times would not, because
      * they were converted to sample counts at 48 kHz. */
@@ -339,7 +344,7 @@ static void dsp_refuses_a_corrupt_chain(void)
 {
     const hk_profile_t p = fixture_profile();
     hk_profile_chain_t chain;
-    HK_CHECK_EQ_INT(hk_profile_build(&p, FS_HZ, 19000.0f, &chain), HK_PROFILE_OK);
+    HK_CHECK_EQ_INT(hk_profile_build(&p, FS_HZ, SUPPLY_MV, &chain), HK_PROFILE_OK);
 
     hk_dsp_t dsp;
 

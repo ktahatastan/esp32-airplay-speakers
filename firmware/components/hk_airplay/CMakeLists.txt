@@ -68,7 +68,7 @@ set(HK_OWN_SRCS hk_airplay.c shim/hk_airplay_shim.c)
 # the rest. There are three to choose from and exactly one may be listed.
 #
 #   audio_output.c            upstream's I2S stage. No crossover, no limiter:
-#                             whatever arrives is what the amplifier gets.
+#                             whatever arrives is what the amplifiers get.
 #   audio_output_spdif.c      a bench output that lets the audio path be heard
 #                             before the product's DAC exists; see Kconfig for
 #                             the circuit it needs.
@@ -106,7 +106,7 @@ idf_component_register(
     INCLUDE_DIRS "include"
     PRIV_INCLUDE_DIRS "vendor" "vendor/audio" "vendor/rtsp" "vendor/plist"
                       "vendor/hap" "vendor/network"
-    REQUIRES hk_identity hk_pins hk_settings hk_storage hk_ui
+    REQUIRES hk_identity hk_pins hk_storage hk_ui
     PRIV_REQUIRES driver nvs_flash esp_wifi esp_netif esp_event esp_ringbuf
                   esp_driver_i2s esp_timer esp_http_client esp_driver_ledc
                   app_update json mbedtls espressif__mdns dac audio-resampler

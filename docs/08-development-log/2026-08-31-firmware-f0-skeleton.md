@@ -81,4 +81,4 @@ Ayrıca kendi yazdığım bir test yanlıştı: dokuz haneli sürüm bileşenler
 
 - **Hiçbir şey donanımda çalıştırılmadı.** Açılış raporu, GPIO ataması ve PSRAM algılaması denenmedi. Pin tablosu bu yüzden `candidate` kalıyor.
 - `firmware/build` çıktısı Git'e alınmıyor; CI kendi derlemesini yapar.
-- Sıradaki iş `F1`: AirPlay yığını fizibilite spike'ı ve [[../07-decisions/ADR-0007-airplay-stack|ADR-0007]]'nin kapatılması. Pahalı donanım işinden önce gelmesinin nedeni, başarısız olması hâlinde PRD-002'nin yeniden müzakere edilmesi gerekmesi.
+- Sıradaki iş `F1`: AirPlay yığını fizibilite spike'ı ve [[../07-decisions/ADR-0007-airplay-stack|ADR-0007]]'nin kapatılması. Pahalı donanım işinden önce gelmesinin nedeni, başarısız olması hâlinde alıcı seçiminin yeniden açılması gerekmesi.

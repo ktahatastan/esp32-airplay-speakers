@@ -7,9 +7,8 @@
  * ADR-0008 and the manifest contract in docs/03-firmware/ota-and-release-plan.md.
  *
  * Almost every test here is a refusal. An update client that installs an image
- * it could not fully check is how four speakers brick at the same moment, which
- * is the exact failure the two-slot layout and the canary rollout exist to
- * prevent.
+ * it could not fully check is how a speaker bricks, which is the exact failure
+ * the two-slot layout and the canary channel exist to prevent.
  */
 
 static const char VALID_SHA[] =

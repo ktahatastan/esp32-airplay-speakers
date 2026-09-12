@@ -9,7 +9,7 @@ tags: [development-log, firmware, ota, release]
 
 ## Amaç
 
-GitHub Releases tabanlı otomatik firmware güncelleme, sürümleme, güvenli A/B OTA, rollback ve dört cihazlık dağıtım planını proje kaydına eklemek.
+GitHub Releases tabanlı otomatik firmware güncelleme, sürümleme, güvenli A/B OTA, rollback ve dağıtım planını proje kaydına eklemek.
 
 ## Değişiklikler
 

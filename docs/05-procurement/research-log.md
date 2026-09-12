@@ -18,8 +18,8 @@ Her tarama kaydı tarihli tutulur. Fiyat ve stok geçmiş bilgi sayılır; yeni 
 
 - Kullanıcının seçtiği PCM5102A satın alma kaynağı [Aletler](https://www.aletler.com.tr/urun/pcm5102a-dac-modul) olarak listeye alındı. Önce bir adet prototip alımı önerildi.
 - ESP32-S3 için PSRAM'siz `N8` yerine **8 MB PSRAM içeren `N8R8`** varyantı şart koşuldu. Mouser'daki `DevKitC-1U-N8R8` stok kaydı görüldü; `1U` varyantının harici anten gerektirdiği için PCB antenli `DevKitC-1-N8R8` alternatifi de kaydedildi.
-- TPA3110D2 üretici verisi 8-26 V besleme aralığını ve 16 V / 8 ohm koşulunda 15 W/kanalı doğruluyor. Bu değer %10 THD+N'dir; `30 W` kart etiketi dört hoparlör için gerçek temiz ses gücü kabul edilmedi.
-- TPA3110'un 8-26 V aralığı 19 V masaüstü adaptörü kapsar; amfi adaptörden doğrudan beslenir. ESP32 ve DAC için ayrı 5 V buck gerekir.
+- TPA3110D2 üretici verisi 8-26 V besleme aralığını ve 16 V / 8 ohm koşulunda 15 W/kanalı doğruluyor. Bu değer %10 THD+N'dir; `30 W` kart etiketi dört amfi kartı için gerçek temiz ses gücü kabul edilmedi.
+- TPA3110'un 8-26 V aralığı 24 V masaüstü adaptörü kapsar (26 V tavanına 2 V); dört amfi adaptörden doğrudan beslenir. ESP32 ve DAC için birer 5 V buck gerekir.
 
 ### Bulunan ürünler ve gözlem
 
@@ -40,10 +40,10 @@ Her tarama kaydı tarihli tutulur. Fiyat ve stok geçmiş bilgi sayılır; yeni 
 ### Bir sonraki tarama
 
 - [ ] Satıcılardan teknik doğrulama yanıtlarını tarihli olarak ekle.
-- [ ] İlk prototipin ölçülen tepe ve ortalama akımına göre adaptör akım sınıfını ve kabloyu boyutlandır.
+- [ ] Adaptör 24 V / 2,9 A ile verilidir; kabloyu ve jak kontağını 2,9 A sürekli akıma göre boyutlandır, adaptör adayının yüksüz çıkışını (< 25,5 V) satıcıdan iste.
 - [ ] Hoparlör empedans ölçümünden sonra tweeter koruma parçaları için değer ve tedarikçi belirle.
 - [ ] Kasa çizimi çıkınca panel butonu, LED lensi ve DC giriş jakının mekanik ölçülerini dondur.
-- [ ] Dört ünite toplu alımından hemen önce stok/fiyat taramasını yenile.
+- [ ] Kabin montajından hemen önce stok/fiyat taramasını yenile.
 
 ## 2026-08-30 — Fiyatlı sepet taraması
 
@@ -54,9 +54,9 @@ Her tarama kaydı tarihli tutulur. Fiyat ve stok geçmiş bilgi sayılır; yeni 
 
 - Şemadaki `R_PU`, RGB kanal dirençleri, isteğe bağlı `C_DB`, `C_A`, `C_SAFE`, `JP1` ve prototip bağlantıları BOM ile karşılaştırıldı.
 - Robotistan'da 10'lu 1/4 W direnç paketleri 10 kΩ, 330 Ω ve 680 Ω için 0,23 TL/paket; 10'lu 100 nF seramik paket 1,11 TL olarak görüldü.
-- Direnc.net 1.000 µF / 25 V elektrolitik 4,65 TL/adet olarak görüldü. Ürün sayfası düşük ESR/105 °C sınıfını doğrulamadığı için yalnız G1 prototip adayıdır.
+- Direnc.net 1.000 µF / 25 V elektrolitik 4,65 TL/adet olarak görüldü. 25 V sınıfı 24 V rayda kullanılamaz; `C_A` için 35 V sınıfı, düşük ESR/105 °C bir parça fiyatlanacak.
 - 2,2 µF / 400 V kutupsuz polyester kondansatör 19,89 TL/adet olarak görüldü. Dört adet paralel kombinasyonla 2,2 / 4,4 / 6,6 / 8,8 µF deney bankası oluşturabilir; bu **nihai tweeter filtresi seçimi değildir**.
-- Header, jumper cap, prototip klemens, pertinaks ve düşük akımlı jumper kablo eklendi. Dört cihazı kapsayan açık yardımcı sepet 272,89 TL; ilk prototipte kullanılabilecek bölüm 178,63 TL hesaplandı.
+- Header, jumper cap, prototip klemens, pertinaks ve düşük akımlı jumper kablo eklendi. Tek kabini kapsayan açık yardımcı sepet 252,82 TL (35 V `C_A` fiyatsız); ilk tek-amfi prototipinde kullanılabilecek bölüm 187,12 TL hesaplandı.
 - Buton ve RGB modülü ana fiyat tablosunda zaten bulunduğu için yardımcı sepette ikinci kez maliyete eklenmedi.
 - Yardımcı sepet mevcut sarf/izolasyon bütçesinin içinde tutuldu; genel maliyet toplamları değişmedi. Fiyat ve stok 2026-08-30 erişim görüntüsüdür ve siparişten önce yenilenecektir.
 

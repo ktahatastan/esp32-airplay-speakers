@@ -27,7 +27,7 @@ Root YR guvenilir  -> OK
 ```
 
 Çapraz imza geçicidir. GitHub onu zincirden çıkardığı gün — ki bunu duyurmak
-zorunda değil — sahadaki her hoparlör OTA'yı sessizce kaybeder ve geri dönüş
+zorunda değil — sahadaki hoparlör OTA'yı sessizce kaybeder ve geri dönüş
 yolu USB'den yeniden flash'tır. Kökü şimdi eklemek 606 bayt tutar ve olayı
 olaysızlaştırır.
 

@@ -10,7 +10,7 @@ tags: [testing, product-board, bring-up, firmware, evidence]
 
 Bu, deponun firmware'inin **ürün kartında** ilk kez çalıştığı kayıt. Kart, [[../07-decisions/ADR-0010-esp32-s3-n16r8-board|ADR-0010]]'un kilitlediği `N16R8`'dir — [[devkit-bring-up|geliştirme kartı]] değil.
 
-> Buradaki hiçbir satır bir fiziksel kapı (`G0`-`G8`) açmaz. Karta sürücü, amfi, DAC bağlı değildi; ölçülen tek şey işlemci, bellek ve bölüm yerleşimidir.
+> Buradaki hiçbir satır bir fiziksel kapı (`G0`-`G2`, `G6`, `G8`) açmaz. Karta sürücü, amfi, DAC bağlı değildi; ölçülen tek şey işlemci, bellek ve bölüm yerleşimidir.
 
 ## Kart kimliği
 

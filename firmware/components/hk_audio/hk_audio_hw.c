@@ -89,11 +89,13 @@ _Static_assert((HK_AUDIO_HW_MUTE_MASK & HK_PIN_FORBIDDEN_MASK) == 0,
  *                    amplified and a generous value costs nothing audible.
  *                    50 ms is longer than any plausible SD-to-output-off time
  *                    for a TPA3110-class part — but note that this project has
- *                    not confirmed the amplifier board even exposes an
+ *                    not confirmed the amplifier boards even expose an
  *                    accessible SD pad: hk_pins.h calls HK_PIN_AMP_MUTE a
- *                    RESERVATION. If it is not connected, this line moves and
- *                    nothing happens, and the operator will only find that out
- *                    by measuring.
+ *                    RESERVATION. The line goes to all four SD pads in
+ *                    parallel, each with its own pull-down at the amplifier.
+ *                    If none is connected, this line moves and nothing
+ *                    happens, and the operator will only find that out by
+ *                    measuring.
  */
 static const hk_audio_timing_t HK_AUDIO_HW_TIMING = {
     .clock_settle_ms = 200,
@@ -237,8 +239,10 @@ static void apply(hk_audio_outputs_t out)
  *
  * The internal pull-downs are enabled as well. They are not the mechanism —
  * hk_pins.h is explicit that a 10 k external pull-down is, and that it dominates
- * the part's own weak pull four to one — but they cost nothing and they keep the
- * line defined on a board where that resistor has not been fitted yet.
+ * the part's own weak pull four to one (the amplifier mute line sees four of
+ * them in parallel, one per board, 2.5 k effective) — but they cost nothing and
+ * they keep the line defined on a board where that resistor has not been fitted
+ * yet.
  *
  * GPIO_MODE_INPUT_OUTPUT rather than GPIO_MODE_OUTPUT, and that is a deliberate
  * change made on 2026-09-08. Plain OUTPUT leaves the pad's input buffer

@@ -42,7 +42,7 @@ Dört durumun dördü de sınandı: depodaki anahtar → red; sabitlenmiş anaht
 
 Anahtar araştırması sırasında `release.yml`'de üç kusur çıktı ve üçü de düzeltildi.
 
-**İmza doğrulaması totolojikti.** `verify_signature --keyfile signing_key.pem`, imzayı az önce imzalayan anahtarla doğruluyordu; her geçerli RSA-3072 anahtarı geçer. Önemli olan cihazların **zaten güvendiği** anahtar olup olmadığı, çünkü güven çıpası çalışan uygulamanın kendi imza bloğu. Yanlış ama geçerli bir anahtarla yayımlanan sürümü dört hoparlör de sessizce reddederdi ve tek kurtarma yolu dördünü USB'den yeniden yazmaktı. Artık sabitlenmiş açık anahtarla karşılaştırılıyor.
+**İmza doğrulaması totolojikti.** `verify_signature --keyfile signing_key.pem`, imzayı az önce imzalayan anahtarla doğruluyordu; her geçerli RSA-3072 anahtarı geçer. Önemli olan cihazların **zaten güvendiği** anahtar olup olmadığı, çünkü güven çıpası çalışan uygulamanın kendi imza bloğu. Yanlış ama geçerli bir anahtarla yayımlanan sürümü hoparlör sessizce reddederdi ve tek kurtarma yolu onu USB'den yeniden yazmaktı. Artık sabitlenmiş açık anahtarla karşılaştırılıyor.
 
 **Anahtar silme adımı imzalama bloğunun içindeydi.** İmzalama ya da karşılaştırma başarısız olursa `signing_key.pem` çalışma alanında kalırdı. Ayrı bir `if: always()` adımına taşındı.
 

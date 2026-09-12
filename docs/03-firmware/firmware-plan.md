@@ -19,13 +19,14 @@ Bu belge firmware'in **ne olduğunu** ve **hangi sırayla yapıldığını** bir
 | Girdi | Değer | Kaynak |
 |---|---|---|
 | Kart | ESP32-S3, 16 MB flash + 8 MB PSRAM | [[../07-decisions/ADR-0010-esp32-s3-n16r8-board\|ADR-0010]] |
-| Ses topolojisi | Mono program, bi-amp: sol yol woofer, sağ yol tweeter | [[../07-decisions/ADR-0002-biamp-signal-chain\|ADR-0002]] |
+| Ses topolojisi | Mono program, bi-amp: DAC sol kanalı woofer bandı, sağ kanalı tweeter bandı; dört özdeş XH-A232'ye hat seviyesinde paralel | [[../07-decisions/ADR-0002-biamp-signal-chain\|ADR-0002]] |
+| Kabin | Tek kabin, pasif radyatörlü; 4 woofer + 4 tweeter, tek program, ağda tek cihaz | [[../07-decisions/ADR-0021-single-cabinet\|ADR-0021]] |
 | Provisioning | SoftAP/captive portal ve BLE, **sırayla**; transport girişten türetilir | [[../07-decisions/ADR-0005-dual-provisioning\|ADR-0005]] |
 | Dağıtım | SemVer tag -> GitHub Releases -> imzalı A/B OTA | [[../07-decisions/ADR-0008-github-releases-ota\|ADR-0008]] |
-| Besleme | 19 V DC adaptör, barrel jak; `CONFIG_HK_SUPPLY_MV` (8-26 V) | [[../07-decisions/ADR-0020-dc-adapter-power\|ADR-0020]] |
+| Besleme | 24 V / 2,9 A DC adaptör, barrel jak; `CONFIG_HK_SUPPLY_MV` varsayılan 24000 (8-26 V), tezgâh referansı `HK_BENCH_REFERENCE_SUPPLY_MV` 12000 | [[../07-decisions/ADR-0020-dc-adapter-power\|ADR-0020]] |
 | AirPlay yığını | `rbouteiller/airplay-esp32`, `38027441ff43`'e vendor edildi | [[../07-decisions/ADR-0007-airplay-stack\|ADR-0007]], [[../07-decisions/ADR-0013-airplay-integration-shape\|ADR-0013]] |
 
-`F1` spike'ının araştırma yarısı tamamlandı, `ADR-0007` kabul edildi ve yığın tek kartta gerçekten çalıştı; ölçüm yarısından geriye **dört kart isteyen** kısım kaldı. Yığının lisansı **ticari olmayan** kullanımla sınırlıdır ve bu tüm projeyi bağlar.
+`F1` spike'ının araştırma yarısı tamamlandı, `ADR-0007` kabul edildi ve yığın tek kartta gerçekten çalıştı; ölçüm yarısından geriye akış sırasındaki kaynak ölçümü kaldı. Yığının lisansı **ticari olmayan** kullanımla sınırlıdır ve bu tüm projeyi bağlar.
 
 ## Modüller
 
@@ -77,27 +78,27 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
 ### F1 — AirPlay yığını fizibilite spike'ı
 
 - **Önkoşul:** F0. Bir adet ESP32-S3 kartı. Hoparlör gerekmez.
-- **Çıktı:** aday yığınların kaynak kodu/lisans incelemesi, en küçük çalışan alıcı, dört sahte cihazın Apple istemcisinde birlikte görünüp görünmediğinin kanıtı, kaynak tüketimi ölçümü, `ADR-0007` doldurulmuş hâli.
+- **Çıktı:** aday yığınların kaynak kodu/lisans incelemesi, en küçük çalışan alıcı, bir Apple cihazının alıcıyı bulup bağlanıp akıtabildiğinin kanıtı, kaynak tüketimi ölçümü, `ADR-0007` doldurulmuş hâli.
 - **Kabul ölçütü:**
   - [x] Desteklenen AirPlay sürümü birincil kaynakla belgelendi — kaynakta HomeKit SRP-6a, FairPlay `/fp-setup`, IEEE-1588 PTP ve AirPlay 2'ye özgü RTSP metotları.
   - [x] Flash/DIRAM bütçesine sığdığı **derlenerek** gösterildi: ESP32-S3 + ESP-IDF v5.5.1, 1.460.192 baytlık imaj (bir OTA slotunun %20,3'ü), 136.495 bayt statik DIRAM.
   - [x] Lisans hedef kullanımla uyumlu; ticari olmayan sınırı kabul edildi ve kaydedildi.
-  - [x] `ADR-0007` `accepted` oldu ve `G7` sayısal eşikleri kilitlendi.
+  - [x] `ADR-0007` `accepted` oldu.
   - [x] Yığın vendor edildi ve **depodan derlenen imaj** bir Apple cihazıyla gerçek bir oturum taşıdı: mDNS ve RTSP dışarıdan doğrulandı, `ptp_clock: LOCKED`, ses duyuldu (2026-09-05, tek kart).
-  - [ ] Dört hedefin Apple cihazında **birlikte seçilebildiği** gösterilmedi — dört kart gerekir, elde bir kart var.
   - [ ] Çalışma zamanı heap/PSRAM ve CPU yükü **akış sırasında** ölçülmedi. Ağa katıldıktan sonraki boş bellek ölçüldü (237.843 B dahili, 2.094.848 B PSRAM); alıcının akarken ne tükettiği ayrıştırılmadı.
-- **Gate:** `G7`'nin ön koşulu. **`G7` başarısız olursa** yığının `CONFIG_AIRPLAY_FORCE_V1` yoluyla AirPlay 1'e geri çekilme seçeneği vardır; senkron çoklu-oda düşer ve PRD-002 yeniden müzakere edilir.
+- **Gate:** yok; `F2`'nin ön koşulu. AirPlay 2 eşleşmesi bir iOS güncellemesiyle kırılırsa yığının `CONFIG_AIRPLAY_FORCE_V1` yoluyla AirPlay 1'e geri çekilme seçeneği vardır.
 
 > [!note] F1 kısmen tamamlandı
-> Araştırma ve derleme yarısı bitti. Ölçüm yarısı 2026-09-05'te tek kartta ilerledi: alıcı çalıştı, bir Apple cihazı bağlandı, PTP kilitlendi. Geriye kalan **dört kart ister** ve `G7`'nin kendisidir. Yığın seçimi bu yüzden `accepted`, senkron iddiası hâlâ değil.
+> Araştırma ve derleme yarısı bitti. Ölçüm yarısı 2026-09-05'te tek kartta ilerledi: alıcı çalıştı, bir Apple cihazı bağlandı, PTP kilitlendi. Geriye kalan, akış sırasındaki heap/PSRAM/CPU ölçümüdür. Yığın seçimi bu yüzden `accepted`.
 
 > [!warning] Bu aşama projenin en büyük teknik riskidir
-> Multiroom senkron kanıtlanamazsa dört senkron hoparlör hedefi düşer. Bu nedenle F1, pahalı donanım işinden **önce** yapılır.
+> Telefonun bulup bağlanıp akıtabildiği bir alıcı olmadan ürün yoktur. Bu nedenle F1, pahalı donanım işinden **önce** yapılır.
 
 ### F2 — Ses yolu bring-up
 
 - **Önkoşul:** F1 kabul. Donanım tarafında `G1` (amfi + dummy-load) geçmiş olmalı.
-- **Not (2026-09-05):** geliştirme kartında bir **tezgâh** çıkışı var — vendor edilen yığının S/PDIF çıkışı `GPIO6`'dan, üç pasif parçayla operatörün kendi DAC'ına. Bu F2 değildir ve hiçbir kapıya dokunmaz: ürünün I2S/PCM5102A yolu hâlâ susturulu ve dönüşümü başka bir cihaz yapıyor.
+- **Not (2026-09-05):** geliştirme kartında bir **tezgâh** çıkışı var — vendor edilen yığının S/PDIF çıkışı `GPIO6`'dan, üç pasif parçayla operatörün kendi DAC'ına. Bu F2 değildir ve hiçbir kapıya dokunmaz: o gün ürünün I2S/PCM5102A yolu susturuluydu ve dönüşümü başka bir cihaz yapıyordu.
+- **Not (2026-09-08):** ürün kartında zincir ilk kez çaldı — AirPlay → I²S → PCM5102A → XH-A232 → ses, mono ve temiz ([[../06-testing/bench-measurement-order#KAPANDI — ses zinciri uçtan uca çalışıyor (2026-09-08)|tezgâh kaydı]]). Bu bir dinleme kaydıdır; aşağıdaki ölçütlerin osiloskop ve dummy-load yarısı açık.
 - **Çıktı:** I2S sürücü, PCM5102A 3-wire yapılandırma, mono programın iki DSP yoluna ayrılması, test sinyali üreteci, boot/mute sıralaması.
 - **Kabul ölçütü:**
   - I2S test noktalarında beklenen saatler osiloskopla doğrulandı.
@@ -111,11 +112,11 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
 
 - **Önkoşul:** F2. Donanım tarafında `G0` (sürücü empedansı) **kapanmış** olmalı.
 - **Çıktı:** woofer HPF, aktif crossover, kanal gain/delay, RMS ve tepe limiter, clipping davranışı, `factory_cal` profil formatı.
-- **Durum (2026-09-08):** matematik ve **profil biçimi** yazıldı, sayılar bekliyor. `hk_biquad` (LR4, DF2T), `hk_limiter` (attack'sız tepe limiter) ve `hk_profile` (profilin kendisi, doğrulaması, zincire dönüşmesi) host'ta testli. Hiçbirinde sürücü değeri yok; `G0` kapandığında yapılacak iş bir struct doldurmaktır. Ayrıntı: [[../04-acoustics/measurement-and-dsp-plan#Profil: biçim yazıldı, sayılar bekliyor|ölçüm ve DSP planı]].
+- **Durum (2026-09-08):** zincir çalışıyor, sayılar bekliyor. `hk_dsp` (mono toplam, kullanıcı EQ'su, subsonic yüksek-geçiren, LR4 ayrımı, dal başına kazanç ve limiter), `hk_biquad` (LR4, DF2T), `hk_limiter` (attack'sız tepe limiter) ve `hk_profile` (profilin kendisi, doğrulaması, zincire dönüşmesi) host'ta testli; tezgâh profili yer tutucu köşelerle (55 Hz subsonic, 2800 Hz crossover) tezgâh yapısına derleniyor ve her açılışta ölçülmediğini söylüyor; zincirin ürün kartında çaldığının tek kaydı `86f629c` commit mesajıdır, `docs/06-testing/` altında tezgâh kaydı yoktur. Hiçbirinde ölçülmüş sürücü değeri yok; `G0` kapandığında yapılacak iş bir struct doldurmaktır. Zincir bitmiş değildir: bilinen boşluklar sonraya bırakıldı. Ayrıntı: [[../04-acoustics/measurement-and-dsp-plan#Profil: biçim yazıldı, sayılar bekliyor|ölçüm ve DSP planı]].
 - **Kabul ölçütü:**
   - Filtre katsayıları ölçülmüş sürücü empedansından türetildi; tahmin yok.
   - Tweeter yolu HPF'i ölçümle doğrulandı; `C_SAFE` değeri G2 raporundan geldi.
-  - Tavan ölçüldüğü besleme gerilimiyle saklanır ve yapılandırılan beslemeye (`CONFIG_HK_SUPPLY_MV`, varsayılan 19 V) ölçeklenir. Firmware tarafı hazır: `hk_profile_ceiling_at()` bunu yapıyor ve iki gerilimde inşa edilen zincirde yalnız tavanlar değişiyor. Limiter 19 V adaptör beslemesinde dummy-load üzerinde doğrulanacak; ölçüm hâlâ gerekli.
+  - Tavan ölçüldüğü besleme gerilimiyle saklanır ve yapılandırılan beslemeye (`CONFIG_HK_SUPPLY_MV`, varsayılan 24 V) ölçeklenir. Firmware tarafı hazır: `hk_profile_ceiling_at()` bunu yapıyor ve iki gerilimde inşa edilen zincirde yalnız tavanlar değişiyor. Profil tezgâhta 12 V referansta (`HK_BENCH_REFERENCE_SUPPLY_MV`) ölçülür ve 24 V'a ölçeklenir. Limiter 24 V adaptör beslemesinde dummy-load üzerinde doğrulanacak; tavan, dört amfi birden sürülürken 2,9 A adaptör bütçesinden türetilir ve `VIN` çökmesiyle sınanır (`G1` satırı). Ölçüm hâlâ gerekli.
   - Kullanıcı reseti koruma profilini silmiyor (otomatik test).
   - DSP zinciri ses görevinde deterministik süre içinde bitiyor.
 - **Gate:** `G2` zorunlu.
@@ -163,7 +164,7 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
 
 - **Önkoşul:** F0. Tüm ayrıntı: [[ota-and-release-plan\|OTA ve sürüm yönetimi planı]].
 - **Çıktı:** manifest ayrıştırıcı ve donanım eşleme, HTTPS indirme, güncelleme kapıları durum makinesi, ilk-boot sağlık kontrolü, rollback, `esp_ghota` spike sonucu, imzalama ve GitHub Actions release hattı, canary/stable kanal politikası, USB/UART recovery prosedürü.
-- **Kabul ölçütü:** [[ota-and-release-plan#G6 kabul matrisi\|G6 kabul matrisinin]] on bir satırının tamamı test raporlu.
+- **Kabul ölçütü:** [[ota-and-release-plan#G6 kabul matrisi\|G6 kabul matrisinin]] on satırının tamamı test raporlu.
 - **Gate:** `G6` zorunlu.
 - **Durum (2026-08-31):** yazma yarısı bitti, ölçme yarısı donanım bekliyor.
   - [x] `esp_ghota` spike'ı yapıldı ve aday **reddedildi** (ADR-0008). Yerine `esp_https_ota` üstünde kendi istemcimiz.
@@ -178,14 +179,14 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
   - [x] `esp_ota_mark_app_valid_cancel_rollback()` çağrısı ve alt sistem raporlayıcıları (`hk_health_monitor`). `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` aynı değişiklikte açıldı; yayın hattı eşleşmeyi denetliyor. Monitor **yalnız imaj `PENDING_VERIFY`** iken iş yapar, yani USB'den yazılan bir yapı bu yolun dışındadır ve ilk kez `G6`'da devreye girer.
   - [x] Güncelleme döngüsü ve LED entegrasyonu bağlandı. Sürüm kaynağı seçilmedi: private depo tokensiz erişilemiyor (ADR-0008 §7, risk kaydı).
   - [x] USB/UART kurtarma prosedürü ve betiği ([[usb-recovery]]). Donanımda çalıştırılmadı.
-  - [ ] `G6` matrisinin on bir satırı — **donanım gerekir**, hiçbiri çalıştırılmadı.
+  - [ ] `G6` matrisinin on satırı — **donanım gerekir**, hiçbiri çalıştırılmadı.
 
-### F8 — Çoklu cihaz ve dayanıklılık
+### F8 — Dayanıklılık
 
-- **Önkoşul:** F1'den F7'ye kadar tümü. Donanım tarafında `G0`-`G2` geçmiş dört ünite.
-- **Çıktı:** dört cihazda senkron ölçümü, drift/jitter kaydı, yeniden bağlanma ve tek cihaz kapanması senaryoları, 24 saat soak, besleme kaybında pop'suz kapanış, cihazlar arası kalibrasyon toleransı.
-- **Kabul ölçütü:** `G7` sayısal eşikleri (ADR-0007 ile kesinleşecek) ve `G8` soak testi geçti.
-- **Gate:** `G7`, `G8`.
+- **Önkoşul:** F1'den F7'ye kadar tümü. Donanım tarafında `G0`-`G2` geçmiş kabin.
+- **Çıktı:** 24 saat soak, Wi-Fi kopması ve yeniden bağlanma, besleme kaybında pop'suz kapanış.
+- **Kabul ölçütü:** `G8` soak testi geçti.
+- **Gate:** `G8`.
 
 ---
 
@@ -194,13 +195,13 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
 | Aşama | Donanım önkoşulu | Kapatmaya katkı |
 |---|---|---|
 | F0 | — | G6 hazırlığı, PRD-008 |
-| F1 | — | G7 hazırlığı, ADR-0007 |
+| F1 | — | ADR-0007 |
 | F2 | G1 | — |
 | F3 | G0, G2 | G2 |
 | F4 | — | PRD-004 |
 | F5 | — | PRD-005 |
 | F7 | — | G6 |
-| F8 | G0-G2 (dört ünite) | G7, G8 |
+| F8 | G0-G2 | G8 |
 
 Paralel çalıştırılabilir: `F4` ve `F5` ile `F2`/`F3`. Aynı anda tek yazma sahibi kuralı korunur; `audio` ve `network` modülleri farklı çalışanlara verilebilir.
 

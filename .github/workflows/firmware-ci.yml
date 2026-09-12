@@ -3,7 +3,7 @@
 # This is the pull-request gate from docs/03-firmware/firmware-plan.md stage F0.
 # It proves the repository is internally consistent and that the firmware builds
 # and its logic behaves. It proves nothing about hardware: every physical gate
-# (G0-G2, G6-G8) needs recorded operator measurements and cannot run here.
+# (G0-G2, G6, G8) needs recorded operator measurements and cannot run here.
 
 name: firmware-ci
 

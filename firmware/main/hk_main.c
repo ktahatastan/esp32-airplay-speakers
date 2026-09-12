@@ -10,10 +10,17 @@
  * What it does not do, and why — each of these waits on a measurement, not on
  * someone finding the time:
  *
- *   F2  the amplifier has never been run into a dummy load; G1 decides the
- *       settle times hk_audio_hw is currently guessing
- *   F3  no crossover, no protective high-pass and no limiter. The DSP
- *       coefficients need G0, the driver impedance measurement
+ *   F2  the amplifiers have never been run into a dummy load; G1 decides the
+ *       settle times hk_audio_hw is currently guessing, fixes the limiter
+ *       ceiling against the adapter's 2.9 A budget with all four driven, and
+ *       measures the adapter's no-load output before it is connected
+ *   F3  the DSP chain exists -- EQ, subsonic high-pass, LR4 crossover and a
+ *       limiter per branch (hk_dsp) -- and runs in the
+ *       CONFIG_HK_AIRPLAY_OUTPUT_DSP backend. Its numbers are placeholders:
+ *       the corners and ceilings need G0, the driver impedance measurement,
+ *       and G2. The product default still selects the vendored output stage,
+ *       which has none of it, so which build is running decides what sits in
+ *       front of the amplifiers
  *   F7  OTA client compiles but nothing runs it; needs G6
  *
  * Most of the policy modules below are still pure logic with no driver behind
@@ -204,10 +211,27 @@ static void report_policies(void)
     if (audio_permitted_now()) {
         /* Loud, and only when the verdict has actually become a released
          * amplifier. This is the state the bench exception exists to make
-         * visible rather than to make convenient. */
-        ESP_LOGW(TAG, "audio       THE AMPLIFIER WILL BE RELEASED when a stream arrives. "
-                      "There is no crossover, no protective high-pass and no limiter "
-                      "(F3 waits on G0). Check what is on the speaker terminals.");
+         * visible rather than to make convenient. What sits in front of the
+         * amplifiers depends on which output backend this build selected, and
+         * the line says which, because "protected" printed over the vendored
+         * stage would be the wrong thing to leave next to a released SD line. */
+#if CONFIG_HK_BENCH_TONE_INSTEAD_OF_AIRPLAY
+        ESP_LOGW(TAG, "audio       THE AMPLIFIERS WILL BE RELEASED when the tone starts. "
+                      "The bench tone is written straight to I2S, past hk_dsp: no "
+                      "crossover, no protective high-pass and no limiter in front of "
+                      "them. Check what is on the speaker terminals.");
+#elif CONFIG_HK_AIRPLAY_OUTPUT_DSP
+        ESP_LOGW(TAG, "audio       THE AMPLIFIERS WILL BE RELEASED when a stream arrives. "
+                      "The DSP chain (EQ, subsonic high-pass, LR4 crossover, limiter "
+                      "per branch) is in the path, on numbers that are placeholders "
+                      "until G0/G2. Check what is on the speaker terminals.");
+#else
+        ESP_LOGW(TAG, "audio       THE AMPLIFIERS WILL BE RELEASED when a stream arrives. "
+                      "This build selects the vendored output stage: no crossover, no "
+                      "protective high-pass and no limiter in front of them "
+                      "(CONFIG_HK_AIRPLAY_OUTPUT_DSP is not set). Check what is on the "
+                      "speaker terminals.");
+#endif
     }
 
     /* The output chain starts muted: the amplifier is held down by an external
@@ -261,9 +285,9 @@ static void report_policies(void)
              hk_health_verdict_name(verdict), hk_health_reason_name(why));
 
     /* When this speaker would look for an update, if there were one to find.
-     * The delay is drawn per device so four of them on the same mains circuit
-     * do not come back from a power cut and ask the same server at the same
-     * instant, every day, forever. */
+     * The first check waits a random while after boot rather than landing on
+     * the instant Wi-Fi comes up, so a power cut does not put the check at a
+     * fixed instant after every restart (see hk_sched.h). */
     hk_sched_init(&s_update_schedule, now_ms(), esp_random(), &s_sched_limits);
     ESP_LOGI(TAG, "update      first check in %" PRIu32 " s (no release source configured yet)",
              hk_sched_remaining(&s_update_schedule, now_ms()) / 1000u);
@@ -341,10 +365,10 @@ static void run_update_check(void)
             .product = app->project_name,
             .target = "esp32s3",
             .hw_revision = HK_HW_REVISION,
-            /* From storage, so the canary step can put ONE speaker on the
-             * candidate channel without building it a different image — a
-             * canary running different firmware is not testing the release the
-             * others will get. */
+            /* From storage, so the device can be moved to the canary channel
+             * to try a release before it is promoted, without building it a
+             * different image — a canary running different firmware is not
+             * testing the release that will be promoted. */
             .channel = hk_ota_channel_name(setting_u32("channel")),
             .running_version = app->version,
             .running_secure_version = app->secure_version,
@@ -909,9 +933,9 @@ void app_main(void)
 #if CONFIG_HK_BENCH_TONE_INSTEAD_OF_AIRPLAY
     ESP_LOGW(TAG, "BENCH TONE BUILD: the AirPlay receiver is NOT started, whether or not "
                   "it was compiled in, because it and the tone cannot both own I2S. This "
-                  "speaker will not appear on any phone. The DSP chain is absent here "
-                  "too: no crossover, no protective high-pass and no limiter until G0/G2 "
-                  "produce a profile. See docs/03-firmware/firmware-plan.md stage F3.");
+                  "speaker will not appear on any phone. The tone is written straight to "
+                  "I2S and does not pass through hk_dsp: no crossover, no protective "
+                  "high-pass and no limiter in front of the amplifiers in this build.");
 #if CONFIG_HK_BENCH_SWEEP
     /* Said again here, at the end of the boot report, because this is the last
      * thing on the console before the sweep's own banner and it is the one
@@ -925,10 +949,16 @@ void app_main(void)
                   "amplifier input before the ten second lead-in runs out. The procedure "
                   "is docs/02-hardware/driver-measurements.md.");
 #endif
+#elif CONFIG_HK_AIRPLAY && CONFIG_HK_AIRPLAY_OUTPUT_DSP
+    ESP_LOGI(TAG, "the AirPlay receiver is built in, with the DSP chain in its output: "
+                  "EQ, subsonic high-pass, LR4 crossover and a limiter per branch. Its "
+                  "corners and ceilings are placeholders until G0/G2 produce a measured "
+                  "profile. See docs/03-firmware/firmware-plan.md stage F3.");
 #elif CONFIG_HK_AIRPLAY
-    ESP_LOGI(TAG, "the AirPlay receiver is built in. The DSP chain is not: there is no "
-                  "crossover, no protective high-pass and no limiter until G0/G2 produce "
-                  "a profile. See docs/03-firmware/firmware-plan.md stage F3.");
+    ESP_LOGW(TAG, "the AirPlay receiver is built in with a vendored output stage that has "
+                  "no DSP in it: no crossover, no protective high-pass and no limiter in "
+                  "this build. The protected path is CONFIG_HK_AIRPLAY_OUTPUT_DSP. See "
+                  "docs/03-firmware/firmware-plan.md stage F3.");
 #else
     ESP_LOGW(TAG, "no audio in this build. The button, LED and provisioning policy are "
                   "live. See docs/03-firmware/firmware-plan.md for what comes next.");

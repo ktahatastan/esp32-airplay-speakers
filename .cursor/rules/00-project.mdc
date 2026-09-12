@@ -4,4 +4,4 @@ globs: ""
 alwaysApply: true
 ---
 
-Follow root `AGENTS.md`. The product name is Merzarkabul Airplay Speakers. Read `docs/Home.md` and relevant ADRs before changes. Do not claim driver impedance or AirPlay multiroom support is confirmed. Keep material decisions, development evidence and handoffs under `docs/`.
+Follow root `AGENTS.md`. The product name is Merzarkabul Airplay Speakers: one cabinet with eight drivers (ADR-0021), one device on the network, fed from a 24 V DC adapter (ADR-0020). Read `docs/Home.md` and relevant ADRs before changes. Never present unverified driver impedance as confirmed, and do not describe the DSP chain as finished. Keep material decisions, development evidence and handoffs under `docs/`.

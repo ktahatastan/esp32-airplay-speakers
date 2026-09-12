@@ -207,7 +207,7 @@ class TestGeneratorAgreesWithFirmware(unittest.TestCase):
     hk_manifest_json.c names every field it will read; hk_manifest.h says all of
     them are required and a missing one is refused. If this generator spells
     one differently — hw_rev for hw_revision, say — nothing fails at build
-    time, nothing fails in CI, and every device refuses every update forever
+    time, nothing fails in CI, and the device refuses every update forever
     with a message about a missing field. Comparing the two lists is the only
     place that mismatch is cheap to catch.
     """
@@ -293,7 +293,7 @@ class TestEndToEnd(unittest.TestCase):
     them by VALUE, which is the half that was never checked: a version the
     parser spells differently, a digest in the wrong case, a size that
     overflows, a URL longer than the buffer — each of those would have passed
-    the whole suite and been discovered by four speakers refusing every
+    the whole suite and been discovered by the speaker refusing every
     release.
     """
 

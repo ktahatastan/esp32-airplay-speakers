@@ -6,10 +6,14 @@
 
 /*
  * NOT DRIVER VALUES. Every number below is invented for the arithmetic and
- * must never be copied into a device: the Nova woofer and tweeter have not
- * been measured (G0). What is under test is the FORM -- which profiles are
- * refused, and how a ceiling moves with the supply voltage -- and none of that
- * depends on the numbers being the real ones.
+ * must never be copied into a device: beyond their DC resistances the Nova
+ * woofer and tweeter have not been measured (G0). What is under test is the
+ * FORM -- which profiles are refused, and how a ceiling moves with the supply
+ * voltage -- and none of that depends on the numbers being the real ones.
+ *
+ * The two supplies that appear are the product's: 24000 mV is the adapter
+ * (ADR-0020) and 12000 mV is the bench reference a profile may have been
+ * listened to at (HK_BENCH_REFERENCE_SUPPLY_MV).
  */
 static hk_profile_t sample(void)
 {
@@ -24,7 +28,7 @@ static hk_profile_t sample(void)
     p.crossover_hz = 2200.0f;
     p.woofer_gain = 0.9f;
     p.tweeter_gain = 0.7f;
-    p.reference_supply_mv = 19000.0f;
+    p.reference_supply_mv = 24000.0f;
     p.woofer_ceiling = 0.8f;
     p.tweeter_ceiling = 0.5f;
     p.release_ms = 120u;
@@ -150,29 +154,32 @@ void test_profile(void)
     /* ===== the ceiling follows the supply, the other way round ===== */
     {
         /* At the voltage it was measured at, it is itself. */
-        HK_CHECK(close_to(hk_profile_ceiling_at(0.5f, 19000.0f, 19000.0f), 0.5f));
+        HK_CHECK(close_to(hk_profile_ceiling_at(0.5f, 24000.0f, 24000.0f), 0.5f));
 
         /* A higher supply puts more volts on the driver per digital unit, so
-         * the digital ceiling has to come DOWN. This is the direction that
-         * keeps a tweeter alive when someone plugs in a 24 V adapter, so it is
-         * asserted rather than assumed. */
-        HK_CHECK(hk_profile_ceiling_at(0.5f, 19000.0f, 24000.0f) < 0.5f);
-        HK_CHECK(close_to(hk_profile_ceiling_at(0.5f, 19000.0f, 24000.0f),
-                          0.5f * 19000.0f / 24000.0f));
+         * the digital ceiling has to come DOWN. This is the design case: a
+         * bench profile listened to at 12 V meeting the 24 V adapter, where the
+         * ceiling must halve. It is asserted rather than assumed. */
+        HK_CHECK(hk_profile_ceiling_at(0.5f, 12000.0f, 24000.0f) < 0.5f);
+        HK_CHECK(close_to(hk_profile_ceiling_at(0.5f, 12000.0f, 24000.0f),
+                          0.5f * 12000.0f / 24000.0f));
 
-        /* A lower supply allows more digital level for the same volts. */
-        HK_CHECK(hk_profile_ceiling_at(0.5f, 19000.0f, 12000.0f) > 0.5f);
-        HK_CHECK(close_to(hk_profile_ceiling_at(0.5f, 19000.0f, 12000.0f),
-                          0.5f * 19000.0f / 12000.0f));
+        /* A lower supply allows more digital level for the same volts: a
+         * profile measured on the adapter, played from the 12 V bench supply.
+         * 0.4 rather than 0.5 so the answer (0.8) stays below full scale and
+         * the clamp is not what is being measured here. */
+        HK_CHECK(hk_profile_ceiling_at(0.4f, 24000.0f, 12000.0f) > 0.4f);
+        HK_CHECK(close_to(hk_profile_ceiling_at(0.4f, 24000.0f, 12000.0f),
+                          0.4f * 24000.0f / 12000.0f));
 
         /* Full scale is the end of the signal; there is nothing above it. */
-        HK_CHECK(close_to(hk_profile_ceiling_at(0.9f, 19000.0f, 12000.0f), 1.0f));
+        HK_CHECK(close_to(hk_profile_ceiling_at(0.9f, 24000.0f, 12000.0f), 1.0f));
 
         /* Nonsense in, zero out -- and zero means do not play, not silence. */
-        HK_CHECK(hk_profile_ceiling_at(0.5f, 19000.0f, 0.0f) == 0.0f);
-        HK_CHECK(hk_profile_ceiling_at(0.5f, 19000.0f, -1.0f) == 0.0f);
-        HK_CHECK(hk_profile_ceiling_at(0.0f, 19000.0f, 19000.0f) == 0.0f);
-        HK_CHECK(hk_profile_ceiling_at(0.5f, NAN, 19000.0f) == 0.0f);
+        HK_CHECK(hk_profile_ceiling_at(0.5f, 24000.0f, 0.0f) == 0.0f);
+        HK_CHECK(hk_profile_ceiling_at(0.5f, 24000.0f, -1.0f) == 0.0f);
+        HK_CHECK(hk_profile_ceiling_at(0.0f, 24000.0f, 24000.0f) == 0.0f);
+        HK_CHECK(hk_profile_ceiling_at(0.5f, NAN, 24000.0f) == 0.0f);
     }
 
     /* ===== building a chain ===== */
@@ -180,7 +187,7 @@ void test_profile(void)
         const hk_profile_t p = sample();
         hk_profile_chain_t chain;
 
-        HK_CHECK_EQ_INT(hk_profile_build(&p, 44100.0f, 19000.0f, &chain), HK_PROFILE_OK);
+        HK_CHECK_EQ_INT(hk_profile_build(&p, 44100.0f, 24000.0f, &chain), HK_PROFILE_OK);
         HK_CHECK(hk_biquad_stable(&chain.woofer_hpf));
         HK_CHECK(hk_biquad_stable(&chain.woofer_low.section[0]));
         HK_CHECK(hk_biquad_stable(&chain.woofer_low.section[1]));
@@ -195,7 +202,7 @@ void test_profile(void)
         /* The built ceiling is the scaled one, not the stored one. */
         HK_CHECK(close_to(chain.tweeter_limit.ceiling,
                           hk_profile_ceiling_at(p.tweeter_ceiling, p.reference_supply_mv,
-                                                19000.0f)));
+                                                24000.0f)));
 
         /* Same profile, lower supply: the ceilings move and nothing else does. */
         hk_profile_chain_t low;
@@ -211,21 +218,21 @@ void test_profile(void)
          * would produce a crossover nobody chose. */
         p.crossover_hz = 30000.0f;
         hk_profile_chain_t chain;
-        HK_CHECK_EQ_INT(hk_profile_build(&p, 44100.0f, 19000.0f, &chain),
+        HK_CHECK_EQ_INT(hk_profile_build(&p, 44100.0f, 24000.0f, &chain),
                         HK_PROFILE_UNBUILDABLE);
 
         p = sample();
-        HK_CHECK_EQ_INT(hk_profile_build(&p, 0.0f, 19000.0f, &chain),
+        HK_CHECK_EQ_INT(hk_profile_build(&p, 0.0f, 24000.0f, &chain),
                         HK_PROFILE_UNBUILDABLE);
         HK_CHECK_EQ_INT(hk_profile_build(&p, 44100.0f, 0.0f, &chain),
                         HK_PROFILE_UNBUILDABLE);
-        HK_CHECK_EQ_INT(hk_profile_build(NULL, 44100.0f, 19000.0f, &chain),
+        HK_CHECK_EQ_INT(hk_profile_build(NULL, 44100.0f, 24000.0f, &chain),
                         HK_PROFILE_BAD_SCHEMA);
 
         /* An invalid profile fails with its own reason, not a generic one. */
         p = sample();
         p.tweeter_gain = 2.0f;
-        HK_CHECK_EQ_INT(hk_profile_build(&p, 44100.0f, 19000.0f, &chain),
+        HK_CHECK_EQ_INT(hk_profile_build(&p, 44100.0f, 24000.0f, &chain),
                         HK_PROFILE_BAD_GAIN);
     }
 

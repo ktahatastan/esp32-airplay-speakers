@@ -1,25 +1,30 @@
 # Bench-only fragment. NEVER part of a release.
 #
-# It adds ONE exception to the product profile, and it is a named symbol rather
-# than a quiet default because the record of which safety evidence a build went
-# without is the entire point of having it:
+# It adds two exceptions to the product profile, and each is a named symbol
+# rather than a quiet default because the record of which safety evidence a
+# build went without is the entire point of having it:
 #
-#   HK_BENCH_AUDIO_WITHOUT_PROFILE   No G0/G2 driver-protection profile exists,
-#                                    so there is no crossover, no protective
-#                                    high-pass and no limiter ceiling in front
-#                                    of the amplifier.
+#   HK_BENCH_AUDIO_WITHOUT_PROFILE   No G0/G2 driver-protection profile exists
+#                                    and the gate that keeps the amplifiers
+#                                    muted for that reason is lifted anyway.
+#   HK_BENCH_PROVISIONAL_PROFILE     The DSP chain runs on a compiled-in
+#                                    profile nobody measured, in place of the
+#                                    crossover corner, protective high-pass
+#                                    corner and limiter ceilings G0/G2 will
+#                                    produce.
 #
-# THIS RELEASES THE AMPLIFIER. hk_audio_hw drives HK_PIN_AMP_MUTE and
-# HK_PIN_DAC_XSMT, and with this symbol set it releases both: a DAC on the I2S
-# pins and an amplifier on the mute line means full-scale AirPlay audio reaches
-# whatever is wired to that amplifier's output, with nothing in front of it.
+# THIS RELEASES THE AMPLIFIERS. hk_audio_hw drives HK_PIN_AMP_MUTE and
+# HK_PIN_DAC_XSMT, and with the first symbol set it releases both: a DAC on the
+# I2S pins and the amplifiers on the mute line means AirPlay audio reaches
+# whatever is wired to their outputs, with nothing in front of it but numbers
+# nobody measured.
 #
 # So the standard for "defensible" is narrow. This is defensible into a dummy
 # load, into a scope, or into nothing at all. It is NOT defensible into the Nova
 # drivers: their impedance curve is still the open G0 blocker, and without it
-# there is no informed limit on what the amplifier may be asked to produce. Look
-# at what is connected to the speaker terminals before you flash a build made
-# from this file.
+# there is no informed limit on what the amplifiers may be asked to produce.
+# Look at what is connected to the speaker terminals before you flash a build
+# made from this file.
 #
 # Build with it:
 #   idf.py -C firmware -B firmware/build-bench \
@@ -32,13 +37,15 @@ CONFIG_HK_BENCH_AUDIO_WITHOUT_PROFILE=y
 CONFIG_HK_BENCH_PROVISIONAL_PROFILE=y
 
 # The DSP output backend: mono downmix, EQ, subsonic, LR4 crossover into the two
-# amplifier channels, and a per-branch limiter last. Left = woofer, right =
-# tweeter, which is the bi-amp mapping ADR-0002 fixed.
+# DAC channels, each paralleled into four amplifiers, and a per-branch limiter
+# last. Left = woofer, right = tweeter, which is the bi-amp mapping ADR-0002
+# fixed.
 CONFIG_HK_AIRPLAY_OUTPUT_DSP=y
 
 # NOT set: the bench board's crossed leads were fixed in the harness instead.
 # The switch stays in the tree because the failure it catches is real and was
 # found here -- with a mono programme a crossed pair is completely invisible,
 # and it only announces itself by putting bass into a tweeter the first time a
-# crossover works. Four speakers get wired by hand.
+# crossover works. The DAC's two lines are paralleled into four amplifier inputs
+# by hand.
 # CONFIG_HK_OUTPUT_SWAP_BRANCHES is not set

@@ -7,9 +7,10 @@
  * hand them the real ones: a versioned record stored in `factory_cal`, and the
  * one function that turns it into a configured chain.
  *
- * NOTHING HERE CONTAINS A DRIVER VALUE, and it cannot: the woofer and tweeter
- * impedances have not been measured (`G0`), so any number written here today
- * would be indistinguishable from a measured one tomorrow. What is defined is
+ * NOTHING HERE CONTAINS A DRIVER VALUE, and it cannot: the woofer's and the
+ * tweeter's impedance curves and `Fs` have not been measured (`G0`; only the
+ * two DC resistances have), so any number written here today would be
+ * indistinguishable from a measured one tomorrow. What is defined is
  * the FORM -- which fields exist, which combinations are refused, and how a
  * ceiling measured at one supply voltage becomes a ceiling at another. When the
  * measurements land, the work is filling a struct in, not designing one.
@@ -27,12 +28,18 @@
  * A limiter ceiling is a digital number, and what reaches the driver is volts.
  * For a class-D amplifier at a fixed digital level, those volts follow the
  * supply -- and the supply here is whatever DC adapter is plugged into the
- * barrel jack: 19 V nominal (ADR-0020), while the XH-A232 accepts anything
- * from 8 V to 26 V. So a single stored ceiling protects the driver at exactly
- * one supply voltage and is either unsafe or needlessly quiet at every other,
- * and a bench profile listened to at 12 V would be too loud by half on a 24 V
- * adapter. The profile stores the ceiling WITH the supply voltage it was
- * measured at, and hk_profile_ceiling_at() moves it to the configured one.
+ * barrel jack: 24 V nominal (ADR-0020), feeding four XH-A232 in parallel,
+ * while each XH-A232 accepts anything from 8 V to 26 V. So a single stored
+ * ceiling protects the driver at exactly one supply voltage and is either
+ * unsafe or needlessly quiet at every other -- and that is the product case,
+ * not a hypothetical: the bench profile was listened to at 12 V, and replayed
+ * unscaled on the 24 V adapter it would be too loud by half. The profile
+ * stores the ceiling WITH the supply voltage it was measured at, and
+ * hk_profile_ceiling_at() moves it to the configured one.
+ *
+ * The ceiling a profile stores is bounded twice on the bench: by G1's
+ * supply-current budget (2.9 A with all four amplifiers driven) and by G2's
+ * measured driver behaviour, whichever is lower.
  */
 #ifndef HK_PROFILE_H
 #define HK_PROFILE_H
@@ -142,7 +149,7 @@ hk_profile_verdict_t hk_profile_from_blob(const void *blob, size_t length,
  * constant means moving the level the other way. A supply below the reference
  * allows a HIGHER digital ceiling for the same volts, capped at full scale --
  * past that there is no more signal to give. A supply above it, which is the
- * case when a bench profile meets a 19 V adapter, lowers the ceiling.
+ * case when a bench profile meets the 24 V adapter, lowers the ceiling.
  *
  * Returns 0 when it cannot answer, which every caller must treat as "do not
  * play" rather than as silence.

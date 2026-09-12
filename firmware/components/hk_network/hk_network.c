@@ -689,7 +689,7 @@ hk_net_scheme_t hk_network_scheme_for(bool has_credentials)
     (void)has_credentials;
     return HK_NET_SCHEME_BLE;
 #elif CONFIG_HK_FIRST_BOOT_BLE
-    /* Interim, and it does change that rule: the owner sets these speakers up
+    /* Interim, and it does change that rule: the owner sets this speaker up
      * over BLE with a QR, so BLE is the transport a new device should offer. */
     (void)has_credentials;
     return HK_NET_SCHEME_BLE;

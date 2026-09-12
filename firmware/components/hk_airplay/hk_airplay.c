@@ -27,7 +27,6 @@
 
 #include "hk_identity.h"
 #include "hk_pins.h"
-#include "hk_settings.h"
 #include "hk_storage.h"
 
 /* Vendored, and reachable only through PRIV_INCLUDE_DIRS: nothing outside this
@@ -227,29 +226,17 @@ esp_err_t hk_airplay_start(hk_airplay_state_cb_t on_state, void *context)
                       "will not show playback");
     }
 
-    /* Which part of the image this box plays, from the owner's setting.
-     *
-     * The receiver already knows how to do this -- apply_channel_mode() in the
-     * vendored output stage -- and it defaults to stereo, which is wrong for
-     * this product. Nothing here modifies vendored code; it just stops
-     * accepting a default that was written for a different kind of speaker. */
-    static const audio_channel_mode_t MODES[] = {
-        AUDIO_CHANNEL_MONO,   /* 0, and the default: see hk_settings.c */
-        AUDIO_CHANNEL_LEFT,   /* 1 */
-        AUDIO_CHANNEL_RIGHT,  /* 2 */
-    };
-    const hk_setting_def_t *chan = hk_settings_find("chan_mode");
-    uint32_t stored = 0;
-    const bool present = (chan != NULL) && hk_storage_user_read_u32("chan_mode", &stored);
-    const uint32_t choice = hk_settings_resolve(chan, stored, present, NULL);
-    const audio_channel_mode_t mode =
-        MODES[choice < (sizeof(MODES) / sizeof(MODES[0])) ? choice : 0];
-    audio_output_set_channel_mode(mode);
-    ESP_LOGI(TAG, "channel mode %s (setting chan_mode=%u)",
-             mode == AUDIO_CHANNEL_MONO ? "mono -- both amplifier channels get "
-                                          "the same programme, as the bi-amp needs"
-             : (mode == AUDIO_CHANNEL_LEFT ? "left" : "right"),
-             (unsigned)choice);
+    /* Mono, always. The receiver already knows how to fold a stereo pair --
+     * apply_channel_mode() in the vendored output stage -- and it defaults to
+     * STEREO, which is wrong for a bi-amp box: the two DAC channels are a
+     * woofer band and a tweeter band (ADR-0002), not a left and a right, and
+     * mono is the only programme this product has (ADR-0021). Nothing here
+     * modifies vendored code; it just stops accepting a default that was
+     * written for a different kind of speaker. There is no setting behind
+     * this, because there is nothing for a setting to choose. */
+    audio_output_set_channel_mode(AUDIO_CHANNEL_MONO);
+    ESP_LOGI(TAG, "channel mode mono -- both DAC channels carry the same programme, "
+                  "split by frequency, as the bi-amp needs");
 
     playback_control_set_source(PLAYBACK_SOURCE_AIRPLAY);
     s_running = true;

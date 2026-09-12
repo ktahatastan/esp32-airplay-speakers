@@ -23,7 +23,7 @@ Bu sayfa ortak Obsidian kasasının ana haritasıdır.
 - [[00-project/vision-and-scope|Vizyon ve kapsam]]
 - [[00-project/requirements|Gereksinimler]]
 - [[01-architecture/system-architecture|Sistem mimarisi]]
-- [[01-architecture/audio-network-feasibility|AirPlay senkron fizibilitesi]]
+- [[01-architecture/audio-network-feasibility|AirPlay fizibilitesi]]
 - [[02-hardware/audio-signal-chain|Ses sinyal zinciri]]
 - [[02-hardware/circuit-and-wiring-plan|Devre ve bağlantı şemaları]]
 - [[02-hardware/kicad-schematic|KiCad şeması ve üretim scripti]]
@@ -36,6 +36,7 @@ Bu sayfa ortak Obsidian kasasının ana haritasıdır.
 - [[02-hardware/README|Donanım]]
 - [[03-firmware/README|Firmware]]
 - [[04-acoustics/README|Akustik ve DSP]]
+- [[04-acoustics/cabinet-plan|Kabin planı]]
 - [[05-procurement/bom|Satın alma/BOM]]
 - [[06-testing/test-strategy|Test]]
 
@@ -48,9 +49,6 @@ Bu sayfa ortak Obsidian kasasının ana haritasıdır.
 - [[templates/README|Şablonlar]]
 
 > [!IMPORTANT]
-> Woofer/tweeter ohm değerleri ölçülmedi. Üçüncü taraf “8 ohm sistem” bilgisi tek tek sürücüler için kanıt değildir.
-
-> [!WARNING]
-> AirPlay 2 grup/multiroom senkronu gerçek testle kanıtlanmadan “4 senkron hoparlör” gereksinimi tamamlanmış sayılmaz.
+> Woofer/tweeter DC dirençleri ölçüldü (4,0 Ω ve 3,5 Ω, ikisi de 4 Ω sınıfı); empedans eğrisi ve `Fs` ölçülmedi. Üçüncü taraf “8 ohm sistem” bilgisi tek tek sürücüler için kanıt değildir; crossover köşesi G0 kapanana kadar tahmindir.
 
 Birleşme öncesi `python3 scripts/check_docs.py` çalıştırılır.

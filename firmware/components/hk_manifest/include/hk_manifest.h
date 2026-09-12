@@ -8,9 +8,9 @@
  * cycles, and neither is free.
  *
  * The rule throughout is that anything not understood is refused. An update
- * client that installs an image it could not fully check is how four speakers
- * become four bricks at the same moment, which is exactly the failure ADR-0008
- * builds two slots and a canary rollout to avoid.
+ * client that installs an image it could not fully check is how a speaker
+ * becomes a brick, which is exactly the failure ADR-0008 builds two slots and
+ * a canary channel to avoid.
  *
  * JSON parsing lives in the ESP-IDF layer. This module takes an already
  * populated struct plus a record of which fields were actually present, so the
@@ -38,7 +38,7 @@
  * GitHub answers with is longer still. A URL that does not fit is refused as
  * a missing field, so a buffer one byte too short would not look like a
  * length problem — it would look like every update being rejected, forever,
- * on all four speakers, from the first release onwards.
+ * from the first release onwards.
  */
 #define HK_MANIFEST_ASSET_MAX     256
 #define HK_MANIFEST_SHA256_CHARS  64

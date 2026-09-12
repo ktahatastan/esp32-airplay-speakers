@@ -10,9 +10,9 @@ tags: [firmware, ota, github-actions, releases, semver, recovery]
 
 ## Hedef
 
-Merzarkabul Airplay Speakers cihazları, kararlı bir firmware GitHub Release olarak yayımlandıktan sonra güncellemeyi internet üzerinden otomatik olarak bulur, güvenli koşullarda indirir, kullanılmayan OTA slotuna yazar, yeniden başlatır ve açılış öz-testinden sonra sürümü onaylar. Başarısız açılışta önceki çalışan imaja geri döner.
+Merzarkabul Airplay Speakers cihazı, kararlı bir firmware GitHub Release olarak yayımlandıktan sonra güncellemeyi internet üzerinden otomatik olarak bulur, güvenli koşullarda indirir, kullanılmayan OTA slotuna yazar, yeniden başlatır ve açılış öz-testinden sonra sürümü onaylar. Başarısız açılışta önceki çalışan imaja geri döner.
 
-F7 aşamasında manifest doğrulayıcı, güncelleme kapıları, OTA istemcisi, imzalama profili ve etiket/yayın hattı yazıldı ve ana makinede doğrulandı. Durum yine de `planned`: **hiçbiri cihaz üzerinde çalıştırılmadı**, donanım henüz elde değil ve otomatik güncelleme G6 kanıtı olmadan tamamlanmış sayılmaz. Bu belgede "yazıldı" ile "kanıtlandı" ayrı tutulur.
+F7 aşamasında manifest doğrulayıcı, güncelleme kapıları, OTA istemcisi, imzalama profili ve etiket/yayın hattı yazıldı ve ana makinede doğrulandı. Durum yine de `planned`: **hiçbiri cihaz üzerinde çalıştırılmadı** ve otomatik güncelleme G6 kanıtı olmadan tamamlanmış sayılmaz. Bu belgede "yazıldı" ile "kanıtlandı" ayrı tutulur.
 
 ## Mimari
 
@@ -34,8 +34,8 @@ flowchart LR
 ## Kabul edilmiş ürün davranışı
 
 - Sürüm biçimi SemVer ve Git etiketi olarak `vMAJOR.MINOR.PATCH` olur.
-- Normal cihazlar yalnız yayımlanmış, prerelease olmayan ve kendi donanım kimliğiyle eşleşen daha yeni sürüme geçer.
-- Güncelleme kontrolü Wi-Fi hazır olduktan sonra rastgele gecikmeyle ve ardından en fazla günde bir yapılır; dört cihazın aynı anda GitHub'a ve Wi-Fi ağına yük bindirmesi önlenir.
+- Cihaz yalnız yayımlanmış, prerelease olmayan ve kendi donanım kimliğiyle eşleşen daha yeni sürüme geçer.
+- Güncelleme kontrolü Wi-Fi hazır olduktan sonra rastgele gecikmeyle ve ardından en fazla günde bir yapılır; başarısızlıkta backoff tavanlanır, hiç vazgeçilmez. Gecikmenin rastgele olmasının sebebi her elektrik kesintisinden sonra GitHub'a sabit bir anda gitmemek, ve bir tanelik filonun ileride birden fazla yapılırsa aynı saniyeye yığılan bir filoya dönüşmemesidir.
 - Oynatma sırasında indirme/yazma başlatılmaz. Aktif ses bittiğinde uygun pencereye ertelenir.
 - Kararsız Wi-Fi veya başka bir OTA devam ediyorsa güncelleme ertelenir.
 - OTA boyunca RGB LED camgöbeği yanıp söner; hata halinde hızlı kırmızı, başarılı yeniden açılışta üç saniye yeşil gösterir.
@@ -105,9 +105,9 @@ Bu, `release` ortamının **korunmuş olmasına** bağlıdır ve şu an değildi
 `publish` işi imzalamadan önce iki şeyi denetler:
 
 1. Anahtarın açık yarısının parmak izi `docs/credentials/burned-keys.txt` içindeyse **reddeder**. Liste konum değil parmak izi üzerinden çalışır: bir anahtar dosyasını silmek onu ifşa edilmemiş yapmaz, çünkü geçmişte durur.
-2. Sabitlenmiş `firmware/certs/hk-signing-key.pub.bin` ile eşleşmiyorsa **reddeder**. İmzayı imzalayan anahtarla doğrulamak hiçbir şey kanıtlamaz; her geçerli RSA-3072 anahtarı o denetimden geçer. Önemli olan cihazların **zaten güvendiği** anahtar olup olmadığıdır, çünkü güven çıpası çalışan uygulamanın kendi imza bloğudur. Yanlış ama geçerli bir anahtarla yayımlanan sürümü dört hoparlör de sessizce reddeder ve kurtarma yolu dört cihazı USB'den yeniden yazmaktır.
+2. Sabitlenmiş `firmware/certs/hk-signing-key.pub.bin` ile eşleşmiyorsa **reddeder**. İmzayı imzalayan anahtarla doğrulamak hiçbir şey kanıtlamaz; her geçerli RSA-3072 anahtarı o denetimden geçer. Önemli olan cihazların **zaten güvendiği** anahtar olup olmadığıdır, çünkü güven çıpası çalışan uygulamanın kendi imza bloğudur. Yanlış ama geçerli bir anahtarla yayımlanan sürümü hoparlör sessizce reddeder ve kurtarma yolu cihazı USB'den yeniden yazmaktır.
 
-Üretici ile aygıt yazılımının **değerler** üzerinde anlaştığı ayrıca doğrulanıyor. Önceden yalnız alan **adları** karşılaştırılıyordu; bir değer uyuşmazlığı (ayrıştırıcının farklı yazdığı bir sürüm, yanlış kutuda bir özet, taşan bir boyut, tampona sığmayan bir URL) tüm test paketinden geçer ve dört hoparlörün her sürümü reddetmesiyle keşfedilirdi.
+Üretici ile aygıt yazılımının **değerler** üzerinde anlaştığı ayrıca doğrulanıyor. Önceden yalnız alan **adları** karşılaştırılıyordu; bir değer uyuşmazlığı (ayrıştırıcının farklı yazdığı bir sürüm, yanlış kutuda bir özet, taşan bir boyut, tampona sığmayan bir URL) tüm test paketinden geçer ve hoparlörün her sürümü reddetmesiyle keşfedilirdi.
 
 Bunun için JSON ayrıştırma ESP-IDF katmanından çıkarılıp saf C'ye taşındı (`hk_manifest_json.c`); cJSON zaten bağımsız C99. Artık `build/host-tests/manifest_e2e` gerçek üretilmiş bir manifest'i gerçek ayrıştırıcıdan ve gerçek doğrulayıcıdan geçiriyor ve cihazın ne karar vereceğini yazdırıyor.
 
@@ -179,13 +179,14 @@ Sıralama tasarımın kendisidir: manifest **indirmeden önce**, kapılar **soke
 
 `hk_ota_image_check()` neden var: ESP-IDF v5.5.1 `esp_https_ota_get_img_desc` yalnız `magic_word` denetler ve `project_name`'i OTA yolunda hiç karşılaştırmaz. Başka bir projenin doğru derlenmiş ESP32-S3 görüntüsü IDF'in tüm denetimlerinden geçer. Bu karşılaştırma onu yakalayan tek yerdir.
 
-## Dört cihaz için dağıtım
+## Dağıtım
 
-1. `prerelease/canary`: yalnız bir test hoparlörüne manuel olarak aday kanal atanır.
+Bir sürüm aday olarak doğar ve bring-up geliştirme kartında (ADR-0012) ya da aday kanala alınmış kabinde çalıştıktan sonra terfi eder ([[../07-decisions/ADR-0008-github-releases-ota|ADR-0008]]).
+
+1. `prerelease/canary`: cihaz aday kanala alınır.
 2. Canary; yeniden başlatma, Wi-Fi, AirPlay, I2S, NVS migration ve 2 saat çalışma testinden geçer.
 3. Release stable olarak terfi ettirilir.
-4. Diğer üç cihaz rastgele gecikmeyle otomatik günceller; hepsi aynı anda yeniden başlamaz.
-5. Her cihaz yerel olarak son başarılı sürüm, son hata kodu ve rollback sayacını saklar; parola/token içermez.
+4. Cihaz yerel olarak son başarılı sürüm, son hata kodu ve rollback sayacını saklar; parola/token içermez.
 
 ## G6 kabul matrisi
 
@@ -200,7 +201,6 @@ Sıralama tasarımın kendisidir: manifest **indirmeden önce**, kapılar **soke
 | İlk boot öz-test hatası/reset | Otomatik rollback |
 | NVS migration hatası | Eski şema korunur veya rollback |
 | GitHub erişilemiyor/rate limit | Backoff; normal çalışma sürer |
-| Dört cihaz stable rollout | Rastgele gecikme, sürüm tutarlılığı |
 | USB/UART recovery | Belgelenmiş fiziksel kurtarma başarılı |
 
 Her satır [[../templates/test-report|test raporu]] ile kanıtlanır. G6 geçmeden “otomatik güncelleme hazır” denmez.
@@ -232,7 +232,7 @@ Yazıldı ve ana makinede doğrulandı:
 Açık:
 
 - [x] Güncelleme döngüsü ve LED entegrasyonu `hk_main` gözetim döngüsünde: `hk_sched` zamanlar, `hk_ota_client` çalışır, `hk_ui_set_ota()` LED'i sürer. Kaynak `releases/latest/download/manifest.json`; depo public olduğu için tokensiz erişilebilir.
-- [x] Kanal saklanan bir ayar (`channel`: 0 stable, 1 canary), yani canary adımı **tek** hoparlörü aday kanala alabilir. Ona farklı bir imaj derlemek, canary'nin diğerlerinin alacağı sürümü test etmemesi demek olurdu.
+- [x] Kanal saklanan bir ayar (`channel`: 0 stable, 1 canary), yani canary adımı cihazı aday kanala alır; canary'de sınanan imaj stable'a terfi eden imajın kendisidir. Ona farklı bir imaj derlemek, sınananla yayımlananın aynı şey olmaması demek olurdu.
 - [x] Geri alma sayacı (`rollbacks`) NVS'de tutuluyor ve üç ardışık geri almadan sonra otomatik güncelleme duruyor. Geri alma yeniden başlatıyor, o yüzden sayaç açılışı aşmak zorunda.
 - [x] Kanal başına sabit adres: `channel-stable` ve `channel-canary` işaretçi sürümleri. Cihazın adresi değişmiyor, etiketin taşıdığı değişiyor.
 - [x] İlk-boot health check ve `esp_ota_mark_app_valid_cancel_rollback()` çağrısı (`hk_health_monitor`); rollback bayrağı aynı değişiklikte açıldı. Ses, sürücüsü olmadığı için `SKIP` ile geçiliyor — "bu yapıya uygulanmaz" ile "henüz cevap vermedi" arasındaki fark, ilki imajı onaylatır ikincisi geri aldırır.

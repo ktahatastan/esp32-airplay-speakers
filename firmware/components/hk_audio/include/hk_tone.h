@@ -61,7 +61,8 @@
  * rule -- it is the same rule applied to a different circuit. -30 dBFS is
  * chosen for what sits downstream of the fixed tone: a power amplifier of
  * unknown, possibly 36 dB gain, feeding an unmeasured driver with no crossover,
- * no high-pass and no limiter. The sweep has none of that downstream: 470 ohms
+ * no high-pass and no limiter, because the tone is written straight to I2S
+ * and never passes through hk_dsp. The sweep has none of that downstream: 470 ohms
  * and a voice coil, so at -6 dBFS the driver dissipates tens of microwatts and,
  * at the worst point of a resonance peak, under half a milliwatt.
  *

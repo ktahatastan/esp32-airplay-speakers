@@ -11,7 +11,7 @@ tags: [development-log, firmware, f2, audio, safety]
 
 ## Neden bu modül
 
-ADR-0011 susturma hatlarına gerçek aktüatör verdi (`GPIO21` amfi `SD`, `GPIO13` DAC `XSMT`). Aktüatör olunca sıralama yazılabilir hale geldi — ve sıralama, yazılımda onarılamayacak iki şeyi koruyor: empedansı henüz ölçülmemiş bir tweeter, ve dinleyicinin kulağı.
+ADR-0011 susturma hatlarına gerçek aktüatör verdi (`GPIO21` amfi `SD` — dört amfinin `SD` padleri paralel —, `GPIO13` DAC `XSMT`). Aktüatör olunca sıralama yazılabilir hale geldi — ve sıralama, yazılımda onarılamayacak iki şeyi koruyor: empedansı henüz ölçülmemiş bir tweeter, ve dinleyicinin kulağı.
 
 ## Sıra iki yönde de önemli
 

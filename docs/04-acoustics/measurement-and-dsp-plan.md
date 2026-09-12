@@ -8,13 +8,13 @@ tags: [acoustics, crossover, limiter]
 # Ölçüm ve DSP planı
 
 1. DC direnç, empedans ve rezonans.
-2. Dummy-load üzerinde iki kanal gain/faz.
+2. Dummy-load üzerinde dört amfinin sekiz kanalı: gain/faz ve amfiler arası eşleşme.
 3. Tweeter bağlı değilken HPF ve boot/mute.
 4. Çok düşük seviyede tek tek sürücü taraması.
 5. Crossover frekansı/eğim, polarite ve delay.
 6. Woofer excursion/tweeter gücüne göre RMS/peak limiter.
 7. Kabin içinde yakın alan + dinleme ekseni ölçümü.
-8. Dört ünitede tolerans/kalibrasyon karşılaştırması.
+8. Aynı kabindeki dört woofer ve dört tweeter arasında tolerans; dört amfi kazanç eşleşmesi.
 
 Her profil kaynak ölçüm, firmware sürümü, tarih ve rollback değeriyle saklanır. Bu cümlenin karşılığı 2026-09-08'de yazıldı: aşağıdaki "Profil" bölümüne bakın.
 
@@ -24,7 +24,7 @@ Peak limiter `firmware/components/hk_audio/hk_limiter.c` içinde yazıldı ve ho
 
 İki tasarım kararı kayda değer, çünkü ikisi de alışılmış limiter tercihlerinin tersi.
 
-**Attack yok, lookahead yok.** Bir örneği tavanın altına indiren kazanç, o örnekten hesaplanıp o örneğe uygulanıyor; yani `|çıkış|` tavanı **hiçbir zaman** aşmıyor. Ders kitabı alternatifi kazanç indirimini bir attack süresine yayar: daha yumuşak duyulur ve kazanç düşerken tepelerin geçmesine izin verir. Tepe geçiren şey koruma değildir. Diğer alternatif lookahead gecikme hattıdır; bozulmayı kaldırır ama **gecikme ekler**, ve bu cihazın harcayamayacağı bir gecikme bütçesi var: [[../07-decisions/ADR-0007-airplay-stack|ADR-0007]] odalar arası senkrona ≤1 ms veriyor. Nadiren devreye giren bir koruma katının, devreye girdiği anda daha hoş duyulması için o bütçeyi harcamak yanlış takas.
+**Attack yok, lookahead yok.** Bir örneği tavanın altına indiren kazanç, o örnekten hesaplanıp o örneğe uygulanıyor; yani `|çıkış|` tavanı **hiçbir zaman** aşmıyor. Ders kitabı alternatifi kazanç indirimini bir attack süresine yayar: daha yumuşak duyulur ve kazanç düşerken tepelerin geçmesine izin verir. Tepe geçiren şey koruma değildir. Diğer alternatif lookahead gecikme hattıdır; bozulmayı kaldırır ama **gecikme ekler**: çıkış, gönderenin verdiği AirPlay sunum zamanına göre geç kalır ve o gecikme her örnekte ödenir. Nadiren devreye giren bir koruma katının, devreye girdiği anda daha hoş duyulması için bütün akışı geciktirmek yanlış takas.
 
 Bedeli dürüstçe: anlık kazanç değişimi bozulmadır. Normal kullanımda duyulmaması ve yalnız bir şey zaten ters gittiğinde devreye girmesi gereken bir katta, takas bu yönde doğru.
 
@@ -46,21 +46,23 @@ Doğrulama katsayı tablosuna değil **frekans yanıtına** bakıyor — yanlı�
 
 ## Profil: biçim yazıldı, sayılar bekliyor
 
-`firmware/components/hk_audio/hk_profile.c`. `G0` ve `G2` sayıları ürettiğinde yapılacak iş **bir struct doldurmak** olsun diye, o struct'ın kendisi ve reddettiği şeyler şimdiden tanımlandı. İçinde tek bir sürücü değeri yok ve olamaz: Nova woofer/tweeter ölçülmedi, bugün yazılacak herhangi bir sayı yarın ölçülmüş olandan ayırt edilemezdi.
+`firmware/components/hk_audio/hk_profile.c`. `G0` ve `G2` sayıları ürettiğinde yapılacak iş **bir struct doldurmak** olsun diye, o struct'ın kendisi ve reddettiği şeyler şimdiden tanımlandı. İçinde tek bir sürücü değeri yok ve olamaz: Nova woofer/tweeter'ın empedans eğrisi ve `Fs`'si ölçülmedi (DC dirençler ölçüldü, ikisi de 4 Ω sınıfı), bugün yazılacak herhangi bir köşe yarın ölçülmüş olandan ayırt edilemezdi.
 
 **Profil kendi kaynağını taşıyor.** Ölçülen DC dirençler saklanıyor, ama çalışma zamanı onlarla hiçbir hesap yapmıyor. Crossover'ı türetmek tezgâhta bir insanın işi; cihaz yalnız sonucu taşır. Sonucun **neyden** türetildiğini kaydetmek, profili bir ölçüme bağlanabilir kılan şeydir — ve ölçümünü adlandıramayan bir profil, bu projenin çalıştırmayı reddettiği tahminin kendisidir. Doğrulayıcı bu yüzden kaynağı olmayan profili reddediyor.
 
-**Tavanın yanında bir gerilim var, ve olmak zorunda.** Limiter tavanı dijital bir sayı; sürücüye ulaşan şey volt. Sabit bir dijital seviyede class-D bir amfinin çıkışı besleme ile ölçeklenir, ve buradaki besleme kutuya takılan DC adaptördür ([[../07-decisions/ADR-0020-dc-adapter-power|ADR-0020]]): nominali 19 V, ama amfinin kabul ettiği pencere 8-26 V ve "19 V" bir adaptörün etiketidir, bir ölçüm değil. Yani tek bir saklanmış tavan sürücüyü **tek bir besleme geriliminde** korur; başka bir adaptörde ya güvensiz ya gereksiz kısıktır.
+**Tavanın yanında bir gerilim var, ve olmak zorunda.** Limiter tavanı dijital bir sayı; sürücüye ulaşan şey volt. Sabit bir dijital seviyede class-D bir amfinin çıkışı besleme ile ölçeklenir, ve buradaki besleme kabine takılan DC adaptördür ([[../07-decisions/ADR-0020-dc-adapter-power|ADR-0020]]): nominali 24 V, ama amfinin kabul ettiği pencere 8-26 V ve "24 V" bir adaptörün etiketidir, bir ölçüm değil. Yani tek bir saklanmış tavan sürücüyü **tek bir besleme geriliminde** korur; başka bir adaptörde ya güvensiz ya gereksiz kısıktır.
 
-Profil bu yüzden tavanı, ölçüldüğü besleme gerilimiyle **birlikte** saklıyor ve `hk_profile_ceiling_at()` onu firmware'in bildiği nominal beslemeye (`CONFIG_HK_SUPPLY_MV`, varsayılan 19 V) taşıyor:
+Profil bu yüzden tavanı, ölçüldüğü besleme gerilimiyle **birlikte** saklıyor ve `hk_profile_ceiling_at()` onu firmware'in bildiği nominal beslemeye (`CONFIG_HK_SUPPLY_MV`, varsayılan 24 V) taşıyor:
 
 ```text
 tavan(V) = min(1, tavan_ref x V_ref / V_besleme)
 ```
 
-Yön önemli ve tersi hayat pahasına yanlış: besleme **yüksekken** dijital birim başına daha çok volt düşer, yani dijital tavan **aşağı** inmelidir. Besleme düştükçe aynı volt için daha çok dijital seviye kalır, ve üst sınır tam ölçektir — orada artık gönderilecek sinyal kalmadığı için, güvenlik kararı değil aritmetik. Bu yön testte ayrıca iddia ediliyor, çünkü sessizce ters yazılırsa sonuç "biraz kısık bir hoparlör" gibi değil, 24 V adaptör takılan gün ölen bir tweeter gibi görünür.
+Yön önemli ve tersi hayat pahasına yanlış: besleme **yüksekken** dijital birim başına daha çok volt düşer, yani dijital tavan **aşağı** inmelidir. Besleme düştükçe aynı volt için daha çok dijital seviye kalır, ve üst sınır tam ölçektir — orada artık gönderilecek sinyal kalmadığı için, güvenlik kararı değil aritmetik. Bu yön testte ayrıca iddia ediliyor, çünkü sessizce ters yazılırsa sonuç "biraz kısık bir hoparlör" gibi değil, etiketi 24 V olan ama yüksüz 26 V'a çıkan bir adaptör takılan gün ölen bir tweeter gibi görünür. O adaptörü ürüne sokmayan şey de bu çarpım değil, ADR-0020'nin `G1` kuralıdır: yüksüz çıkış bağlanmadan önce ölçülür ve 25,5 V'un altında değilse adaptör reddedilir.
 
-Tezgâhtaki tavanlar 12 V'ta alındı (`HK_BENCH_REFERENCE_SUPPLY_MV`); 19 V'luk üründe aynı tavanın aşağı ölçeklenmesi tam da istenen yöndür. Bir alan ve bir çarpım: bedeli yok, ve yanlış adaptörü ölü bir tweeter yerine kısık bir hoparlör yapıyor. Aynı profil iki besleme değerinde inşa ediliyor, yalnız tavanlar değişiyor, filtre katsayıları aynı kalıyor; F3'ün limiter ölçütü bunun firmware tarafıdır.
+Tezgâhtaki tavanlar 12 V'ta alındı (`HK_BENCH_REFERENCE_SUPPLY_MV`); 24 V'luk üründe aynı tavanın aşağı ölçeklenmesi tam da istenen yöndür. Bir alan ve bir çarpım: bedeli yok, ve yanlış adaptörü ölü bir tweeter yerine kısık bir hoparlör yapıyor. Aynı profil iki besleme değerinde inşa ediliyor, yalnız tavanlar değişiyor, filtre katsayıları aynı kalıyor; F3'ün limiter ölçütü bunun firmware tarafıdır.
+
+**Tavanın ikinci sınırı besleme bütçesidir.** Adaptör 24 V / 2,9 A (yaklaşık 70 W) ile verilidir ve sekiz BTL kanal bunun çok üstünü çekebilir; çöken `VIN` ESP32-S3'ü şarkı ortasında sıfırlar. `G2` tavanı iki şeyden düşük olanına koyar: sürücü korumasının verdiği tavan ve `G1`'de dört amfi birlikte sürülürken 2,9 A'yı aşmayan, `VIN` çöküşüyle doğrulanmış tavan (ADR-0020).
 
 **Reddetmek, düzeltmekten iyidir.** Subsonic filtre crossover'ın üstündeyse woofer dalında hiçbir şey kalmaz; bu iki sayının yer değiştirmesidir ve düzeltilmez, reddedilir. Aynı şekilde bu örnekleme hızında kurulamayan bir köşe sessizce aşağı çekilmez: sonucu kimsenin seçmediği bir crossover olurdu. Her ret kendi adını veriyor (`schema`, `source`, `frequency`, `ceiling`, …), yani tezgâhta bir profil reddedildiğinde hangi alanın sorunlu olduğu log satırında yazıyor.
 

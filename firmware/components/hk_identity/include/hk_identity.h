@@ -3,8 +3,10 @@
  * @brief Device naming for every user-visible surface.
  *
  * Implements the identity table in docs/controls-and-provisioning-plan.md and
- * ADR-0001. Four speakers on one network must be distinguishable at first boot,
- * so every name carries a short suffix derived from the device MAC.
+ * ADR-0001. Every name carries a short suffix derived from the device MAC so
+ * the device is unique on any network it joins — beside another board running
+ * this firmware (the bench devkit, a replacement board) or anyone else's
+ * device.
  *
  * Pure C: no ESP-IDF dependency, so the naming rules can be tested on the host.
  */

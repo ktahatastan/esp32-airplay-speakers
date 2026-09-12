@@ -8,32 +8,39 @@ tags: [power, hardware]
 
 # Güç planı
 
-Merzarkabul Airplay Speakers'ın her hoparlörü prizden beslenen bir masaüstü hoparlördür. Bu belge o beslemenin kutuya nasıl girdiğini, iki raya nasıl dağıldığını ve hangi ölçümlerle kabul edildiğini toplar.
+Merzarkabul Airplay Speakers prizden beslenen tek bir kabindir. Bu belge o beslemenin kabine nasıl girdiğini, üç raya (`VIN`, 5 V ESP, 5 V DAC) nasıl dağıldığını ve hangi ölçümlerle kabul edildiğini toplar.
 
-Kanonik kararlar: [[07-decisions/ADR-0020-dc-adapter-power|ADR-0020 (19 V DC adaptörle besleme)]], [[07-decisions/ADR-0010-esp32-s3-n16r8-board|ADR-0010 (N16R8 kart)]].
+Kanonik kararlar: [[07-decisions/ADR-0020-dc-adapter-power|ADR-0020 (24 V DC adaptörle besleme)]], [[07-decisions/ADR-0002-biamp-signal-chain|ADR-0002 (tek DAC, dört amfi)]], [[07-decisions/ADR-0010-esp32-s3-n16r8-board|ADR-0010 (N16R8 kart)]].
 
 ## Karar özeti
 
-- Her hoparlör **19 V DC masaüstü adaptörle** beslenir. Adaptör kutuya **5,5 × 2,1 mm, merkez pozitif** barrel jak üzerinden girer; jaktan gelen ray şemada `VIN`'dir.
-- `VIN`, XH-A232 / TPA3110 amfiyi **doğrudan** besler. Kartın giriş aralığı 8-26 V'tur ve 19 V bu pencerenin içindedir; arada regülatör yoktur.
-- ESP32-S3 ve PCM5102A'yı ayrı bir 5 V buck (MP1584EN sınıfı) besler: girişi `VIN`, çıkışı yüksüz `5,10 V`'a ayarlanır.
+- Kabin **24 V / 2,9 A (yaklaşık 70 W) DC masaüstü adaptörle** beslenir. Adaptör kabine **5,5 × 2,1 mm, merkez pozitif** barrel jak üzerinden girer; jaktan gelen ray şemada `VIN`'dir.
+- `VIN`, dört XH-A232 / TPA3110 amfiyi **doğrudan** besler. Kartın giriş aralığı 8-26 V'tur; 24 V bu pencerenin içindedir ve 26 V tavanına 2 V kalır. Arada regülatör yoktur.
+- Lojik tarafını iki MP1584EN sınıfı buck besler, ikisinin de girişi `VIN`, çıkışı yüksüz `5,10 V`'a ayarlanır: **buck A** (`U3`) ESP32-S3'ü, **buck B** (`U4`) PCM5102A'yı. Ayrı olmalarının sebebi tezgâhta duyulan bir şeydir: paylaşılan tek buck DAC'a duyulur hışırtı verdi (sahibin gözlemi, 2026-09-12; düzenek ayrıntısı kaydedilmedi, bu bir kapı geçişi değildir). Buck B'de USB geri besleme jumperı yoktur; `JP1` yalnız buck A'nın ESP geliştirme kartı tarafındadır.
 - **V1'de güç anahtarı yoktur.** Cihaz adaptörü çekilerek kapatılır; boşta beklemeyi firmware'in idle standby'ı (`standby_min`) karşılar.
-- Firmware nominal beslemeyi tek bir yerden bilir: `CONFIG_HK_SUPPLY_MV`, varsayılan `19000`, aralık `8000-26000`. Ses profilindeki limiter tavanı, ölçüldüğü besleme gerilimiyle birlikte saklanır ve bu değere ölçeklenir. Tezgâh referansı `HK_BENCH_REFERENCE_SUPPLY_MV = 12000`'dir; 19 V'ta tavanın aşağı inmesi doğru yöndür ve biri 24 V'luk bir adaptör takarsa tweeter'ı koruyan şey yine bu tek çarpımdır.
+- Firmware nominal beslemeyi tek bir yerden bilir: `CONFIG_HK_SUPPLY_MV`, varsayılan `24000`, aralık `8000-26000`. Ses profilindeki limiter tavanı, ölçüldüğü besleme gerilimiyle birlikte saklanır ve bu değere ölçeklenir. Tezgâh referansı `HK_BENCH_REFERENCE_SUPPLY_MV = 12000`'dir; 24 V'ta tavanın aşağı inmesi doğru yöndür. Etiketi 24 V olan ama yüksüz 26 V'a çıkan bir adaptörü ürünün dışında tutan şey ise aşağıdaki yüksüz ölçüm kuralıdır, çarpım değil.
 
-Çalışma noktası veri sayfasından değil ölçümden gelir: TPA3110D2'nin 19 V'ta 4 Ω sınıfı Nova sürücülere vereceği güç `G1`'de dummy-load üzerinde kaydedilir. Seviye tavanını besleme gerilimi değil, `G1`/`G2` ölçümleri ve limiter belirler. Sürücülerin empedans eğrisi ve `Fs` ölçülmeden amfi seviyesi ve limiter kilitlenmez.
+İki `G1` kuralı adaptörün kendisine aittir:
+
+- **Yüksüz çıkış, bağlanmadan önce ölçülür:** `< 25,5 V` değilse adaptör bağlanmaz, derate edilmez, reddedilir.
+- **Limiter tavanı 2,9 A bütçesinden türetilir:** sekiz BTL kanal 70 W'ın çok üstünü çekebilir ve çöken `VIN` ESP32-S3'ü şarkı ortasında sıfırlar. Tavan, dört amfi birlikte sürülürken 2,9 A'yı aşmayacak biçimde belirlenir ve `G1`'de tam yükte `VIN` çöküşüyle doğrulanır.
+
+Çalışma noktası veri sayfasından değil ölçümden gelir: TPA3110D2'nin 24 V'ta 4 Ω sınıfı Nova sürücülere vereceği güç `G1`'de dummy-load üzerinde kaydedilir. Seviye tavanını `G1`/`G2` ölçümleri ve limiter belirler; sürücülerin empedans eğrisi ve `Fs` ölçülmeden amfi seviyesi ve limiter kilitlenmez.
 
 ## Blok şema
 
 ```text
-19 V DC masaüstü adaptör
+24 V / 2,9 A DC masaüstü adaptör  (yüksüz çıkış bağlanmadan önce ölçülür: < 25,5 V)
              |
      5,5 × 2,1 mm jak (merkez pozitif) -- TP0 DC_IN
              |
      D2 seri Schottky / ideal-diyot (ADAY; yoksa 0 Ω köprü)
              |
-            VIN -- TP1 ------------------> XH-A232 / TPA3110 (8-26 V)
-             |
-             +--> MP1584 5,10 V -- TP3 --> ESP32-S3 + PCM5102A
+            VIN -- TP1 --+--> 4 × XH-A232 / TPA3110 (8-26 V), C_A tek, jak girişinde
+                         |
+                         +--> U3 MP1584 buck A 5,10 V -- TP3 --> ESP32-S3 (JP1 üzerinden)
+                         |
+                         `--> U4 MP1584 buck B 5,10 V -- TP4 --> PCM5102A
 ```
 
 Kablo, konnektör ve test noktası ayrıntıları [[02-hardware/circuit-and-wiring-plan|devre ve bağlantı planında]] tutulur; bu belge onları tekrarlamaz.
@@ -42,8 +49,8 @@ Kablo, konnektör ve test noktası ayrıntıları [[02-hardware/circuit-and-wiri
 
 Ters polarite koruması iki katmandır ve ikisi de `G1` satırıdır:
 
-1. **Ölçüm.** İlk enerjilendirmeden önce satın alınan adaptörün ucu ve kutudaki jak ölçü aletiyle doğrulanır: merkez pozitif. Etiket okumak ölçüm yerine geçmez; 5,5 × 2,1 mm uçlu merkez negatif adaptörler de satılır.
-2. **Parça.** `VIN` üzerinde seri bir Schottky veya ideal-diyot modülü (`D2`) kablolama planında **aday** olarak durur. Kabulü `G1`'de ölçülen ileri düşüme ve ısınmaya bağlıdır: düşüm amfinin headroom'undan ve buck'ın girişinden gider. Takılmazsa yerine 0 Ω köprü gelir; `DC_IN` ile `VIN` o zaman tek nettir.
+1. **Ölçüm.** İlk enerjilendirmeden önce satın alınan adaptörün ucu ve kabindeki jak ölçü aletiyle doğrulanır: merkez pozitif. Etiket okumak ölçüm yerine geçmez; 5,5 × 2,1 mm uçlu merkez negatif adaptörler de satılır.
+2. **Parça.** `VIN` üzerinde seri bir Schottky veya ideal-diyot modülü (`D2`) kablolama planında **aday** olarak durur. Kabulü `G1`'de ölçülen ileri düşüme ve ısınmaya bağlıdır: düşüm amfilerin headroom'undan ve buck'ların girişinden gider, ve 2,9 A'da bir Schottky yaklaşık 1 W veya üstü ısınır — bu, 0 Ω köprü sonucunu güçlendirir ama kararı ölçüm verir. Takılmazsa yerine 0 Ω köprü gelir; `DC_IN` ile `VIN` o zaman tek nettir.
 
 ## G1 satırları
 
@@ -51,48 +58,52 @@ Adaptör beslemesinin `G1`'e (amfi + dummy-load) eklediği ölçümler:
 
 | Ölçüm | Nerede | Kabul |
 |---|---|---|
+| Adaptör yüksüz çıkışı | Adaptör ucu, bağlamadan önce, DMM | `< 25,5 V`, kayıtlı; değilse adaptör reddedilir |
 | Jak polaritesi | TP0/TP2, enerjisiz adaptör ucu | Merkez pozitif, kayıtlı |
-| `D2` düşümü ve ısısı | TP0 − TP1, yükte | Kabul/ret kararı kayıtlı; ret ise 0 Ω köprü |
-| Besleme çöküşü | TP1 bas tepesinde, TP3 Wi-Fi sıçramasında | `VIN` adaptör akım sınırına girmiyor; 5 V hattı 4,75 V altına düşmüyor |
-| Brownout | TP4 | Reset üreten çökme yok |
-| Açma/kapama pop | TP1 + TP20/TP21 + TP8/TP9 single-shot | Kapanış adaptör çekilerek kaydedilir; pop yok, susturma hatları açılış penceresi boyunca LOW |
+| `D2` düşümü ve ısısı | TP0 − TP1, 2,9 A'ya yakın yükte | Kabul/ret kararı kayıtlı; ret ise 0 Ω köprü |
+| Besleme bütçesi ve çöküşü | TP1, dört amfi limiter tavanında birlikte sürülürken; TP3/TP4 Wi-Fi sıçramasında | Toplam akım 2,9 A'yı aşmıyor; `VIN` çökmüyor, ESP reset yok; iki 5 V hattı da 4,75 V altına düşmüyor |
+| Brownout | TP5 | Reset üreten çökme yok |
+| Buck gürültüsü | TP4 ve DAC çıkışı (TP9/TP10), amfi girişleri (TP11/TP12) | DAC hattında hışırtı yok; lab kaynağıyla alınan tabana göre fark kayıtlı |
+| Açma/kapama pop | TP1 + TP33/TP34 + TP9/TP10 single-shot | Kapanış adaptör çekilerek kaydedilir; pop yok, susturma hatları açılış penceresi boyunca LOW |
 | Adaptör gürültüsü | Dip gürültü, cızırtı, ground-loop; adaptör bağlıyken | Lab kaynağıyla alınan tabana göre fark kayıtlı |
 
-Adaptörün akım değeri de buradan çıkar: seçilen seviyede amfinin sürekli çektiği akım artı dijital tarafın payı ölçülür, BOM'daki adaptör satırı o rakama göre kilitlenir. Bir sayı varsayılmaz.
+Adaptörün akım değeri sabittir: 2,9 A. Ondan türeyen şey limiter tavanıdır, tersi değil; `G1` bütçe satırı tavanın o akıma sığdığını gösterir.
 
-## Hoparlör başına güç BOM'u
+## Güç BOM'u
 
 | Kalem | Adet | Asgari özellik | Durum / aday |
 |---|---:|---|---|
-| 19 V DC masaüstü adaptör | 1 | 5,5 × 2,1 mm uç, merkez pozitif; sürekli akım en az `G1` tepe akımı | **Aday, marka/model ve fiyat yok.** Çıkışın PE'ye bağlı olup olmadığı sorulur |
-| DC giriş jakı | 1 | 5,5 × 2,1 mm panel tipi; kontak akımı en az ölçülen tepe akım + %50 | Direnc.net DC-005 adayı ([[05-procurement/suppliers|satıcılar]]) |
-| `D2` ters polarite | 1 koşullu | Seri Schottky veya ideal-diyot; `G1` tepe akımını taşır | Aday; ret ise 0 Ω köprü |
-| `C_A` bulk kondansatör | 1 | 470-1.000 µF / 25 V, 105 °C düşük-ESR hedef | Aday; değer `G1` ripple ölçümüyle |
-| 5 V regülatör | 1 | 4,5-28 V giriş, 5 V / en az 2 A | MP1584EN 3 A modül; 5,10 V'a ayarlanıp yük altında test edilecek |
+| 24 V / 2,9 A DC masaüstü adaptör | 1 | 5,5 × 2,1 mm uç, merkez pozitif; yüksüz çıkış < 25,5 V; 2,9 A sürekli | **Aday, marka/model ve fiyat yok.** Yüksüz çıkış ve çıkışın PE'ye bağlı olup olmadığı sorulur |
+| DC giriş jakı | 1 | 5,5 × 2,1 mm panel tipi; kontak akımı 2,9 A sürekli, belgeli | Direnc.net DC-005 adayı ([[05-procurement/suppliers|satıcılar]]); kontak değeri tedarikçi sorusu |
+| `D2` ters polarite | 1 koşullu | Seri Schottky veya ideal-diyot; 2,9 A sürekli taşır, ≈1 W ısı | Aday; ret ise 0 Ω köprü |
+| `C_A` bulk kondansatör | 1 | 470-1.000 µF / **35 V**, 105 °C düşük-ESR hedef; tek, jak girişinde | Aday; değer `G1` ripple ölçümüyle; amfi başına ek bulk yalnız G1 isterse |
+| 5 V regülatör, buck A (`U3`) | 1 | 4,5-28 V giriş, 5 V / en az 2 A | MP1584EN 3 A modül; ESP32-S3; 5,10 V'a ayarlanıp yük altında test edilecek |
+| 5 V regülatör, buck B (`U4`) | 1 | 4,5-28 V giriş, 5 V / en az 1 A | MP1584EN 3 A modül; PCM5102A; ayrı buck çünkü paylaşılan buck DAC'a hışırtı verdi |
 | Fonksiyon butonu | 1 | Anlık, normalde açık | Provisioning ve reset; aktif-low GPIO |
 | RGB durum LED'i | 1 | Ortak katot, 3 kanal | Her renge seri direnç ve PWM GPIO |
 
 ## Ses ve EMI kuralları
 
-- MP1584, PCM5102A'nın analog çıkışından ve amfi giriş kablolarından uzakta konumlandırılacak.
-- 5 V hattında buck çıkışına yakın düşük ESR kapasitör ve gerekirse ferrit/LC filtre denenecek.
-- Güç ve analog ses toprakları yıldız noktada birleştirilecek; amfi hoparlör eksi uçları hiçbir zaman şaseye bağlanmayacak.
+- İki MP1584, PCM5102A'nın analog çıkışından ve amfi giriş kablolarından uzakta konumlandırılacak; buck B beslediği DAC'ın giriş ucuna yakın, analog çıkışından uzak durur.
+- Her 5 V hattında buck çıkışına yakın düşük ESR kapasitör ve gerekirse ferrit/LC filtre denenecek.
+- Güç ve analog ses toprakları yıldız noktada birleştirilecek; dört amfinin dönüşü `POWER_GND` yıldızına; hoparlör eksi uçları hiçbir zaman şaseye bağlanmayacak.
 - Wi-Fi yayın akımı sıçramalarında ESP32 brownout testi yapılacak.
 - Adaptör bağlıyken dip gürültüsü, cızırtı ve ground-loop ölçülecek; adaptör bu cihazın olağan besleme kaynağıdır, istisnası değil.
 
 ## Mekanik ve güvenlik
 
 - Adaptör kabinin dışındadır; kabine yalnız jak girer.
-- Elektronik bölme akustik hacimden ayrılır; kablolar pasif radyatör ve woofer hareket alanına girmez.
-- İlk enerjilendirmeler tezgâhta, adaptörle değil akım sınırlı laboratuvar kaynağıyla yapılır.
+- Elektronik bölme akustik hacimden ayrılır; kablolar pasif radyatör ve woofer hareket alanına girmez ([[04-acoustics/cabinet-plan|kabin planı]]).
+- İlk enerjilendirmeler tezgâhta, adaptörle değil akım sınırlı laboratuvar kaynağıyla yapılır; ilk enerjilenen yol bir amfi, bir woofer ve bir tweeter'dır.
 - Adaptörle osiloskop kullanmadan önce adaptör çıkışının koruma toprağı ve DUT ile izolasyon ilişkisi ölçülür; belirsizse adaptörle scope bağlanmaz.
 - Kabin kapatılmadan önce polarite ve kısa devre kontrolü yapılır.
 
 ## Hâlâ aday olanlar
 
-- Adaptörün markası, modeli, akım sınıfı ve fiyatı (`G1` tepe akımından sonra).
-- `D2`'nin tipi, ya da hiç olmaması.
-- `C_A` değeri ve sınıfı.
+- Adaptörün markası, modeli ve fiyatı (değeri sabit: 24 V / 2,9 A; yüksüz çıkışı ölçülmeden alınmaz).
+- `D2`'nin tipi, ya da hiç olmaması; 2,9 A'daki düşüm ve ısı.
+- `C_A` değeri (35 V sınıfı).
+- Jak kontağının 2,9 A sürekli akım değeri (tedarikçi sorusu).
 - Sonraki sürüm için DC hattında güç anahtarı: ADR-0020 bunu V1 dışında bırakır; istenirse belgeli DC kontak değeri ve `G1` ark/yük testiyle yeni bir ADR açılır.
 
 ## Teknik kaynaklar

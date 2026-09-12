@@ -53,7 +53,7 @@
  * than four to one.
  *
  * So the firmware's job is to RELEASE mute, never to create it. If this
- * firmware never runs at all, the speakers stay quiet.
+ * firmware never runs at all, the speaker stays quiet.
  *
  * GPIO18, GPIO19 and GPIO20 are excluded from mute duty by name: the silicon
  * drives them HIGH during power-up. So are GPIO0, GPIO39, GPIO43 and GPIO44,
@@ -67,12 +67,16 @@
  * has to move after the board is in hand. Spending them on a convenience would
  * trade a safety reserve for it.
  *
- * HK_PIN_AMP_MUTE is a RESERVATION. Whether the XH-A232 board exposes an
+ * HK_PIN_AMP_MUTE is a RESERVATION. Whether the XH-A232 boards expose an
  * accessible SD pad is still an open item in the wiring plan, so this may end
  * up connected to nothing. Reserving it costs a pin that nothing else wanted;
- * discovering the need after the harness is soldered costs the harness.
+ * discovering the need after the harness is soldered costs the harness. One
+ * line serves all four amplifiers: it goes to the four SD pads in parallel,
+ * each board with its own 10 k pull-down, so the GPIO sees 2.5 k -- fine for
+ * an ESP32-S3 pad (ADR-0011). The branch is fitted on all four boards or on
+ * none, as the wiring plan requires.
  */
-#define HK_PIN_AMP_MUTE  21  /**< TPA3110 SD, active low. External pull-down. */
+#define HK_PIN_AMP_MUTE  21  /**< To all four TPA3110 SD pads in parallel, active low; one 10 k pull-down per amplifier board */
 #define HK_PIN_DAC_XSMT  13  /**< PCM5102A XSMT, active low. External pull-down. */
 
 /**

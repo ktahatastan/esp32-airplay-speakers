@@ -92,7 +92,7 @@ Alıcı "hazır" dedi. Mac'ten `dns-sd` ile arattım: **kart yok.** Ping %100 ka
 
 Sebep: kart TP-Link Deco'nun **misafir ağına** bağlıydı ve o ağ tasarımı gereği ana ağdan yalıtık. Firmware'de arıza yok.
 
-Bu, testi zorlaştıran bir ayrıntı değil, ürün için belirleyici bir kısıt: AirPlay keşfi mDNS çoklu yayınıyla, senkron PTP çoklu yayınıyla çalışır ve ikisi de yalıtılmış bir misafir ağını aşmaz. Hoparlör ile telefon aynı L2 ağında olmak zorundadır. Kurulum belgesine girmesi gereken bir cümle.
+Bu, testi zorlaştıran bir ayrıntı değil, ürün için belirleyici bir kısıt: AirPlay keşfi mDNS çoklu yayınıyla, AirPlay 2'nin saati PTP çoklu yayınıyla çalışır ve ikisi de yalıtılmış bir misafir ağını aşmaz. Hoparlör ile telefon aynı L2 ağında olmak zorundadır. Kurulum belgesine girmesi gereken bir cümle.
 
 Cihazın kendi logu bunu asla söyleyemezdi — o, kendi tarafında her şeyi doğru yapmıştı.
 

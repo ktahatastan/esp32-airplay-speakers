@@ -57,7 +57,9 @@ O not 2026-08-31'de, kaynağı okumadan önce yazılmış üç şeyi fazla karam
 
 ## Kanıtlanmamış olanlar
 
-- **Hiçbir Apple cihazı bu alıcıya bağlanmadı.** Kanıtlanan: yığın derleniyor, açılıyor, mDNS kaydını yapıyor ve RTSP 7000'i dinliyor.
-- Ses çalınmadı. DAC yok.
-- `G7` dört cihaz senkronu ölçülmedi ve tek kartla ölçülemez.
-- Çalışma zamanı PSRAM tüketimi **akış sırasında** ölçülmedi; yalnız boşta olan ölçüldü ve tamponun aritmetik olarak sığdığı gösterildi.
+Önce kanıtlanmış olan, dinleme kaydı olarak: bir Apple cihazı bu alıcıya bağlandı ve ses çaldı. 2026-09-05'te geliştirme kartında sahibinin iPhone'u oturum kurdu, DMAP meta verisi geldi ve `ptp_clock: LOCKED` görüldü ([[../06-testing/devkit-bring-up|devkit kaydı]]); 2026-09-08'de ürün kartında AirPlay → I²S → PCM5102A → tek bir XH-A232 üzerinden ses duyuldu ([[../06-testing/bench-measurement-order|tezgâh kaydı]]). İkisi de kulakla alınmış kayıttır, kapı geçişi değildir.
+
+Kanıtlanmamış olan:
+
+- Ses yolunun ölçümü: seviye, kırpma, DC ofset, açma/kapama pop. Bunlar `G1`'in konusudur; sesin duyulmuş olması hiçbirini kapatmaz.
+- Çalışma zamanı PSRAM ve CPU tüketimi **akış sırasında** ölçülmedi; yalnız boşta olan ölçüldü ve tamponun aritmetik olarak sığdığı gösterildi.

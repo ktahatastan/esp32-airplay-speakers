@@ -171,8 +171,8 @@ void test_settings(void)
     /* ===== deciding to convert is not the same as having a converter =====
      * hk_schema_resolve() answers MIGRATE for anything older, and this build
      * has no converters at all. Acting on that answer would read an old layout
-     * as though it were the current one — silently, on all four speakers, the
-     * first time anyone bumps a schema version. */
+     * as though it were the current one — silently, the first time anyone
+     * bumps a schema version. */
     HK_CHECK(!hk_schema_can_migrate(HK_STORE_USER, 0u));
     HK_CHECK(!hk_schema_can_migrate(HK_STORE_USER, 1u));
     HK_CHECK(!hk_schema_can_migrate(HK_STORE_FACTORY, 0u));
@@ -183,7 +183,7 @@ void test_settings(void)
      * classifies as corrupt, not as older — so the guard cannot be exercised
      * through hk_schema_plan(). Supplying the current version reaches it, and
      * this is the case that matters: the first time anyone bumps a version,
-     * every device in the field takes exactly this path. */
+     * the device in the field takes exactly this path. */
     {
         /* pretend this build writes version 3 and the store holds version 1 */
         HK_CHECK_EQ_INT(hk_schema_classify(true, 1u, 3u), HK_SCHEMA_FOUND_OLDER);

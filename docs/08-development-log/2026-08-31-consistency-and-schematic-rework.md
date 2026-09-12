@@ -47,7 +47,7 @@ Depoyu bir agent'ın yanlış yönlendirilmeden çalışabileceği hâle getirme
 ### Firmware
 
 - `docs/03-firmware/firmware-plan.md` `F0…F8` aşamalarıyla yeniden yazıldı. Her aşama için önkoşul, çıktı, ölçülebilir kabul ölçütü ve gate eşlemesi tanımlandı. Görev/çekirdek yerleşimi, önerilen depo yerleşimi ve tamamlanma tanımı eklendi.
-- `F1` (AirPlay fizibilite spike'ı) pahalı donanım işinden önce konumlandırıldı; başarısız olursa PRD-002'nin yeniden müzakere edileceği açıkça yazıldı.
+- `F1` (AirPlay fizibilite spike'ı) pahalı donanım işinden önce konumlandırıldı; başarısız olursa alıcı seçiminin yeniden açılacağı açıkça yazıldı.
 
 ### Çizimler
 
@@ -91,5 +91,5 @@ Değişiklik kümesi, birleşmeden önce altı boyutta (sayısal doğruluk, kili
 ## Açık riskler ve sonraki adım
 
 - **KiCad ERC çalıştırılmadı.** `python3 hardware/kicad/generate_merzarkabul.py --validate` KiCad kurulu bir makinede çalıştırılmalı; beklenen sonuç sıfır hata ve yalnız `TBD/NC` pin uyarılarıdır. Bu yapılmadan pafta `candidate` seviyesinden çıkmaz.
-- Sürücü empedansı (G0) ve AirPlay multiroom senkronu (G7) ana blokaj olarak duruyor.
+- Sürücü empedansı (G0) ve AirPlay alıcısının kartta çalışması (F1) ana blokaj olarak duruyor.
 - Sıradaki iş: firmware `F0` iskeleti — ESP-IDF sürüm kilidi, partition CSV, boyut bütçesi ve PR CI hattı.

@@ -2,5 +2,5 @@ name = "merzarkabul_hardware_worker"
 description = "Implementation worker for a bounded Merzarkabul Airplay Speakers hardware, power or schematic task with explicit file ownership."
 sandbox_mode = "workspace-write"
 developer_instructions = """
-Follow AGENTS.md and the accepted ADRs. Edit only assigned files. ADR-0020 (19 V DC adapter supply), ADR-0010 (N16R8 board) and ADR-0007 (AirPlay stack) are locked; contradicting one requires a superseding ADR. Mark every unmeasured value as a candidate with the gate that will confirm it. BTL speaker negatives are never ground. Never claim a physical gate passed. Run python3 scripts/check_docs.py and return changed files, validation and risks.
+Follow AGENTS.md and the accepted ADRs. Edit only assigned files. ADR-0002 (one DAC into four identical amplifiers, one band per DAC channel), ADR-0021 (one cabinet, eight drivers, one programme), ADR-0020 (24 V / 2.9 A DC adapter and two 5 V bucks), ADR-0010 (N16R8 board) and ADR-0007 (AirPlay stack) are locked; contradicting one requires a superseding ADR. Mark every unmeasured value as a candidate with the gate that will confirm it. BTL speaker negatives are never ground. Never claim a physical gate passed. Run python3 scripts/check_docs.py and return changed files, validation and risks.
 """

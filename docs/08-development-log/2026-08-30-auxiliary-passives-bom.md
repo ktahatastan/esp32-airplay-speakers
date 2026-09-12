@@ -16,7 +16,7 @@ Devre planında kullanılan fakat ana satın alma tablosunda yalnız genel “sa
 
 - `R_PU`, RGB seri dirençleri, `C_DB`, `C_A`, deneysel `C_SAFE`, `JP1`, test bağlantıları, klemens, pertinaks ve jumper kablo BOM'a eklendi.
 - Fonksiyon butonu ve RGB modülünün ana tabloda zaten fiyatlandırıldığı doğrulandı; çift maliyet önlendi.
-- Dört cihazı kapsayan yardımcı sepet 272,89 TL, ilk prototipte kullanılabilecek bölüm 178,63 TL olarak hesaplandı ve mevcut sarf bütçesine bağlandı.
+- Kabinin tamamını (dört amfi: 4x `R_MUTE`, 4x `C_SAFE`; tek jak, iki buck, tek `C_A`) kapsayan yardımcı sepet ve ilk prototipte kullanılabilecek bölümü hesaplandı ve mevcut sarf bütçesine bağlandı; tutarlar [[../05-procurement/bom|BOM]]'da, sarf kalemi bir tahmindir.
 - `C_SAFE` değerinin tweeter empedansı ile G2 süpürmesi tamamlanmadan nihai seçim olmadığı; 1.000 µF elektrolitiğin de düşük-ESR/105 °C bilgisi doğrulanmadan üretim parçası sayılamayacağı kaydedildi.
 
 ## Doğrulama
@@ -27,7 +27,7 @@ Devre planında kullanılan fakat ana satın alma tablosunda yalnız genel “sa
 ## Açık riskler
 
 - Woofer/tweeter empedansı hâlâ ölçülmedi; `C_SAFE` yalnız deney bankasıdır.
-- İlk prototipin 250 TL sarf bütçesinde açık sepetten sonra kalan 71,37 TL, silikon kablo için dar olabilir.
+- İlk prototipin sarf bütçesinde (tahmini 450 TL) açık sepetten sonra kalan pay, silikon kablo için dar olabilir; tutar BOM'da izlenir.
 - Nihai güç/sürücü konnektörleri kasa, akım ve titreşim testinden sonra seçilecektir.
 
 ## İlgili notlar

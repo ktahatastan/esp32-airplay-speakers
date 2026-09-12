@@ -65,8 +65,9 @@ void hk_sched_init(hk_sched_t *sched, uint32_t now_ms, uint32_t random,
     }
 
     /* The first check is spread across the whole window rather than placed at
-     * the nominal interval. Four speakers that came back from the same power
-     * cut are otherwise still synchronised a day later, and the day after. */
+     * the boot instant, so a device that reboots repeatedly does not check at
+     * every restart, and the daily check is not pinned to the minute it last
+     * booted — a day later, and the day after. */
     sched->due_ms = now_ms + spread(random, limits->first_delay_ms);
     sched->armed = true;
 }
@@ -125,9 +126,9 @@ void hk_sched_failure(hk_sched_t *sched, uint32_t now_ms, uint32_t random,
         wait = limits->backoff_max_ms;
     }
 
-    /* Jitter on the retry too. Four devices that lost the same network
-     * recover together otherwise, and hit the server together the moment it
-     * comes back. */
+    /* Jitter on the retry too, with the same spread() as the first check. A
+     * fixed retry cadence would buy nothing, and the one function serves both
+     * paths. */
     sched->due_ms = now_ms + wait + spread(random, limits->jitter_ms);
     sched->armed = true;
 }

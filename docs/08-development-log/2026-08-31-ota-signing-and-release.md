@@ -25,7 +25,7 @@ Yan bulgular: son commit 2024-02-17 (2,5 yıl), üç açık issue'nun üçü de 
 
 `CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK` bir yazılım ayarı sanılıyor; değil. Bootloader geçerli **her açılışta** `secure_version`'ı eFuse'a işliyor (`bootloader_utility.c:453-457`). ESP32-S3'te alan 16 bitlik unary: ömür boyu 16 artış, geri dönüş yok. Bir kez `secure_version=12` yayımlamak o yonganın 12 hakkını kalıcı harcar **ve o yongayı daha önce derlenmiş her görüntü için kalıcı olarak açılamaz yapar**.
 
-Dört prototip için bu takas kötü. `secure_version` manifest'te duruyor ve yalnız yazılımsal karşılaştırılıyor.
+Tek bir prototip için bu takas kötü. `secure_version` manifest'te duruyor ve yalnız yazılımsal karşılaştırılıyor.
 
 ### 3. İmzalama açık, ama `sdkconfig.defaults` içinde değil
 
@@ -53,7 +53,7 @@ capraz imza HARIC  -> verification failed (error 20, unable to get local issuer)
 Root YR guvenilir  -> OK
 ```
 
-Çapraz imza geçici. GitHub onu kırptığı gün — duyurmak zorunda değil — sahadaki dört hoparlör de OTA'yı sessizce kaybederdi ve geri dönüş USB'den yeniden flash olurdu. Kökü `firmware/certs/isrg-root-yr.pem` olarak ekledim (606 bayt) ve **üretilen paket içinde** doğruladım: ISRG kaydı 2'den 3'e çıktı.
+Çapraz imza geçici. GitHub onu kırptığı gün — duyurmak zorunda değil — sahadaki hoparlör OTA'yı sessizce kaybederdi ve geri dönüş USB'den yeniden flash olurdu. Kökü `firmware/certs/isrg-root-yr.pem` olarak ekledim (606 bayt) ve **üretilen paket içinde** doğruladım: ISRG kaydı 2'den 3'e çıktı.
 
 ## ESP-IDF'in yapmadığı kontrol
 
@@ -89,7 +89,7 @@ Mutasyon testi bir kez gerçek bir kusur gösterdi. URL doğrulayıcıda `@` ve 
 - Güncelleme zamanlayıcısı (rastgele gecikme, günde bir kontrol, backoff) ve LED entegrasyonu yok.
 - USB/UART recovery prosedürü yazılmadı.
 - `HK_SIGNING_KEY` üretilmedi ve `release` ortamı korumaya alınmadı. Bu sahibinin işi; anahtar çevrimdışı üretilmeli ve CI'da asla üretilmemeli.
-- `G6` matrisinin **on bir satırının hiçbiri çalıştırılmadı**. Donanım elde değil. Bu aşama "yazıldı", "kanıtlandı" değil.
+- `G6` matrisinin **on satırının hiçbiri çalıştırılmadı**. Donanım elde değil. Bu aşama "yazıldı", "kanıtlandı" değil.
 
 ## Sıradaki
 

@@ -147,19 +147,21 @@ static hk_dsp_t s_dsp;
 /**
  * The supply voltage a limiter ceiling has to be translated to.
  *
- * The amplifier runs from a fixed DC adapter (ADR-0020), and the firmware has
- * no way to measure it, so the supply the ceilings are scaled to is the
- * configured nominal: CONFIG_HK_SUPPLY_MV, 19 V by default. That is a
+ * The four amplifiers run from one fixed 24 V adapter (ADR-0020), and the
+ * firmware has no way to measure it, so the supply the ceilings are scaled to
+ * is the configured nominal: CONFIG_HK_SUPPLY_MV, 24 V by default. That is a
  * statement about the adapter the wiring plan names, not a reading, and it is
  * stated once in Kconfig so that a different adapter is a one-line change
  * rather than a hunt through the source.
  *
  * Scaling to the nominal matters in one direction. A ceiling listened to at
- * 12 V on a bench supply and replayed unscaled on a 19 V adapter would let
- * through more volts than the tweeter was heard to take; scaled by 12/19 it
+ * 12 V on a bench supply and replayed unscaled on the 24 V adapter would let
+ * through more volts than the tweeter was heard to take; scaled by 12/24 it
  * lands below the bench level, which costs a little loudness and nothing else.
- * A 24 V adapter plugged in by mistake scales it further down still. The
- * mechanism is one field and one multiply, and that is what it buys.
+ * The error cases are not symmetric: a lower adapter left unconfigured errs
+ * quiet, a higher one is the danger -- which is why G1 measures the adapter's
+ * no-load output against the amplifier's 26 V maximum before it is connected.
+ * The mechanism is one field and one multiply, and that is what it buys.
  */
 static float supply_mv_now(void);
 
@@ -187,11 +189,13 @@ static float supply_mv_now(void);
  * own flat impedance sweep. A 60 mm cone beams above about 1.8 kHz, so lower is
  * better for sound and this is expected to fall again once Fs is known.
  *
- * subsonic 55 Hz. The cabinet will use the original passive radiators, and
- * below a passive radiator's tuning the woofer unloads: the cone moves freely,
- * excursion climbs, and no sound comes out. A sealed box at least has an air
- * spring; this does not. 55 Hz is just under the 60-65 Hz the original system
- * was tuned to.
+ * subsonic 55 Hz. The product is one cabinet, a reflex alignment by the Nova's
+ * own passive radiators, and its tuning waits on G0 (ADR-0021,
+ * docs/04-acoustics/cabinet-plan.md). Below the passive radiators'
+ * tuning the woofer unloads: the cone moves freely, excursion climbs, and no
+ * sound comes out. A sealed box at least has an air spring; this does not.
+ * 55 Hz is a placeholder just under the 60-65 Hz the original Nova was tuned
+ * to, until G0 sets it.
  *
  * gains 0.25 and 0.18, tweeter about 3 dB below the woofer. Both have come
  * down 6 dB in two steps, because the first 3 dB was not enough and the
@@ -223,8 +227,8 @@ static float supply_mv_now(void);
  * ceilings 0.7 and 0.35. A tweeter takes a small fraction of a woofer's power,
  * and neither driver's power handling is known. Conservative, and the tweeter's
  * far more so. They were listened to with the amplifier on a 12 V bench
- * supply, which is what HK_BENCH_REFERENCE_SUPPLY_MV records; on the 19 V
- * adapter hk_profile_build() scales both down by 12/19, so the volts at the
+ * supply, which is what HK_BENCH_REFERENCE_SUPPLY_MV records; on the 24 V
+ * adapter hk_profile_build() scales both down by 12/24, so the volts at the
  * driver stay what the bench heard rather than what the adapter allows.
  */
 static bool bench_provisional_chain(hk_profile_chain_t *out)
@@ -366,17 +370,6 @@ static TaskHandle_t      playback_task_handle = NULL;
 static volatile int      source_rate = 44100;
 static volatile bool     resample_reinit_needed = false;
 
-/*
- * Which part of the programme this box plays.
- *
- * MONO by default, and mono is what a bi-amp box normally wants: hk_settings'
- * `chan_mode` defaults to 0, which hk_airplay.c maps to AUDIO_CHANNEL_MONO.
- * Set before the first frame in practice, but defaulted correctly anyway
- * because audio_output_start() runs before hk_airplay.c gets to
- * audio_output_set_channel_mode().
- */
-static volatile audio_channel_mode_t channel_mode = AUDIO_CHANNEL_MONO;
-
 /* Live output cursor. Copied from vendor/audio/audio_output.c:76-120 together
  * with its comment, because the reasoning is the part that matters:
  *
@@ -490,43 +483,6 @@ static void apply_volume(int16_t *buf, size_t n)
 #endif
 }
 
-/**
- * Put the channel the owner asked for into both slots, ahead of the DSP.
- *
- * This is NOT upstream's apply_channel_mode(), and the difference is the whole
- * reason it is written out again rather than inherited. Upstream picks a
- * channel or downmixes because its two outputs are a left speaker and a right
- * speaker. Ours are not: ADR-0002 gives the left DAC channel to the WOOFER and
- * the right to the TWEETER. Downstream of the DSP there is no left and right to
- * choose between, and a channel selection applied there would not select a
- * channel -- it would mute a driver.
- *
- * So the selection happens here, upstream of everything, and it is exactly the
- * operation hk_dsp.h asks the caller for: "a speaker that should play only the
- * left channel of the programme is served by the CALLER duplicating that
- * channel into both slots before calling in -- 0.5 * (L + L) is exactly L".
- * Four of these boxes will sit in one room, so `chan_mode` is a real setting
- * with a real effect and not a leftover.
- *
- * MONO needs no work at all: the DSP's stage 1 sums the pair. STEREO means the
- * same thing here, because there is no stereo to keep -- it survives only
- * because it is the enum's zero value and the weak defaults in
- * audio_output_common.c report it.
- */
-static void select_channel(int16_t *buf, size_t frames)
-{
-    const audio_channel_mode_t mode = channel_mode;
-    if (mode != AUDIO_CHANNEL_LEFT && mode != AUDIO_CHANNEL_RIGHT) {
-        return;
-    }
-    const size_t src = (mode == AUDIO_CHANNEL_RIGHT) ? 1u : 0u;
-    for (size_t i = 0; i < frames; i++) {
-        const int16_t s  = buf[i * 2 + src];
-        buf[i * 2]       = s;
-        buf[i * 2 + 1]   = s;
-    }
-}
-
 /* --- The playback task ----------------------------------------------------
  *
  * Structurally the vendored playback_task (vendor/audio/audio_output.c:201-267)
@@ -540,8 +496,11 @@ static void select_channel(int16_t *buf, size_t frames)
  *      same iteration by something that is not the DSP, so in-place processing
  *      here cannot read back a previous output.
  *
- *   3. The DSP call sits where apply_channel_mode() used to, and the channel
- *      selection moved ahead of it.
+ *   3. The DSP call sits where apply_channel_mode() used to. There is no
+ *      channel selection anywhere: upstream picks a channel because its two
+ *      outputs are a left speaker and a right speaker, and ours are a woofer
+ *      band and a tweeter band (ADR-0002). The DSP's stage 1 sums the pair,
+ *      and mono is the only programme this product has (ADR-0021).
  */
 static void playback_task(void *arg)
 {
@@ -626,7 +585,6 @@ static void playback_task(void *arg)
                 play_buf     = resample_buf;
             }
             apply_volume(play_buf, play_samples * 2);
-            select_channel(play_buf, play_samples);
 
             /* Upstream feeds the buffer it is about to write; this feeds the
              * PROGRAMME, one line earlier, because after the next call the
@@ -748,7 +706,7 @@ static void playback_task(void *arg)
  *                                     vendor/audio/audio_timing.c:213,321,330,334
  *   audio_output_get_pipeline_us      vendor/audio/audio_timing.c:211   (weak default exists)
  *   audio_output_get_underruns        vendor/audio/audio_timing.c:849   (weak default exists)
- *   audio_output_set_channel_mode     hk_airplay.c:285                  (weak default exists)
+ *   audio_output_set_channel_mode     hk_airplay.c                      (weak default exists)
  *
  * The first five have no weak default and MUST be defined here. The next two
  * are defined because this backend genuinely has a completion cursor and a real
@@ -756,12 +714,12 @@ static void playback_task(void *arg)
  * throw away the measurement the timing engine prefers.
  *
  * audio_output_set_channel_mode is defined for a reason worth stating, because
- * the weak default would have compiled and linked and quietly done nothing:
- * hk_airplay.c reads the owner's `chan_mode` setting and calls it, and with the
- * no-op default a box set to "left only" would silently play the mono sum while
- * the boot log said "channel mode left". The selection has real work to do here
- * -- see select_channel() -- it just has to happen before the DSP rather than
- * after it. audio_output_get_channel_mode() comes with it so nothing can read
+ * the weak default would have compiled and linked and quietly done nothing --
+ * and its companion audio_output_get_channel_mode() would then report STEREO,
+ * the enum's zero value, for a box that has no stereo. This backend has
+ * nothing to select: the DSP's stage 1 sums the pair and mono is the only
+ * programme (ADR-0021). So the setter accepts the call hk_airplay.c makes,
+ * clamps everything to MONO, and the getter answers MONO, so nothing can read
  * back a mode this backend is not in. Cycle and locked are left to the weak
  * defaults: no compiled source calls them.
  *
@@ -781,7 +739,7 @@ static void playback_task(void *arg)
 esp_err_t audio_output_init(void)
 {
     /* Copied from vendor/audio/audio_output.c:286-353, minus the channel-mode
-     * restore from upstream's own NVS (this project stores that setting itself,
+     * restore from upstream's own NVS (there is no channel mode to restore,
      * see audio_output_set_channel_mode) and plus the DSP bring-up. */
     i2s_chan_config_t chan_cfg =
         I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
@@ -961,7 +919,8 @@ uint32_t audio_output_get_hardware_latency_us(void)
      * The DSP adds no latency to model. hk_dsp.h states it: every stage is a
      * recursive filter or a memoryless multiply, and the limiter has no
      * lookahead by deliberate design (hk_limiter.h), precisely so this number
-     * would stay true and ADR-0007's 1 ms synchronisation budget untouched. */
+     * would stay true and the pipeline model the timing engine is calibrated
+     * against unchanged. */
     return (uint32_t)((((uint64_t)(2 * I2S_DMA_DESC_NUM - 1) * I2S_DMA_FRAME_NUM *
                         1000000ULL) /
                        2) /
@@ -993,26 +952,27 @@ uint32_t audio_output_get_underruns(void)
 
 void audio_output_set_channel_mode(audio_channel_mode_t mode)
 {
-    /* Not persisted, unlike vendor/audio/audio_output.c:496-511. Upstream owns
-     * the preference and writes its own NVS key; here the owner's `chan_mode`
-     * setting is the record, hk_airplay.c reads it from hk_settings/hk_storage
-     * and pushes it in, and a second store for the same fact is a second thing
-     * that can disagree.
+    /* Not persisted, unlike vendor/audio/audio_output.c:496-511, and not
+     * stored anywhere at all: there is one mode. Upstream picks a channel or
+     * downmixes because its two outputs are a left speaker and a right
+     * speaker; ours are a woofer band and a tweeter band (ADR-0002), and the
+     * DSP's stage 1 already sums the pair. Any other request is clamped to
+     * MONO and said so, rather than silently honoured into a driver.
      *
      * Nor is it gated on audio_output_channel_mode_locked(): that guard exists
      * upstream for boards with two DACs, where the hardware already fixes the
      * routing. This board has one DAC and the routing is the crossover. */
-    if (mode > AUDIO_CHANNEL_MONO) {
-        mode = AUDIO_CHANNEL_MONO;
+    if (mode != AUDIO_CHANNEL_MONO) {
+        ESP_LOGW(TAG, "channel mode %d requested; this product has one programme, "
+                      "mono, and plays that",
+                 (int)mode);
     }
-    channel_mode = mode;
-    ESP_LOGI(TAG, "programme: %s",
-             mode == AUDIO_CHANNEL_LEFT    ? "LEFT channel only"
-             : mode == AUDIO_CHANNEL_RIGHT ? "RIGHT channel only"
-                                           : "MONO (L+R)/2");
+    ESP_LOGI(TAG, "programme: MONO (L+R)/2");
 }
 
 audio_channel_mode_t audio_output_get_channel_mode(void)
 {
-    return channel_mode;
+    /* Answered rather than left to the weak default, which would report
+     * STEREO -- the enum's zero value -- for a box that has none. */
+    return AUDIO_CHANNEL_MONO;
 }

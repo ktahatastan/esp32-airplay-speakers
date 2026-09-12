@@ -18,7 +18,7 @@ tags: [development-log, foundation]
 ## Kritik açıklar
 
 - Sürücü ohm/empedans değerleri ölçülmedi.
-- AirPlay multiroom senkron fizibilitesi doğrulanmadı.
+- AirPlay 2 alıcı fizibilitesi doğrulanmadı.
 - Kesin ESP32-S3 kart/pin seçilmedi.
 
 ## Doğrulama

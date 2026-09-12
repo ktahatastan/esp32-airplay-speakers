@@ -1,26 +1,27 @@
 # Merzarkabul Airplay Speakers
 
-Harman Kardon Nova sürücülerinden geliştirilen; adaptörle beslenen, aktif ve AirPlay üzerinden senkron çalışması hedeflenen dört bookshelf hoparlör projesi.
+Harman Kardon Nova sürücülerinden geliştirilen; adaptörle beslenen, tek kabinde sekiz sürücü (dört woofer, dört tweeter) taşıyan, AirPlay 2 ile çalan tek bir aktif hoparlör projesi.
 
 > [!WARNING]
-> Bu proje 19 V DC besleme, yüksek akımlı Class-D amfi ve hoparlör sürücüsü koruması içerir. Ölçüm ve kabul kapıları geçilmeden dört üniteye çoğaltma yapılmaz.
+> Bu proje 24 V DC besleme, dört yüksek akımlı Class-D amfi ve hoparlör sürücüsü koruması içerir. Ölçüm ve kabul kapıları geçilmeden sürücülere sinyal verilmez; ilk enerjilenen yol tek amfi, tek woofer ve tek tweeter'dır.
 
 ## Durum
 
-Proje araştırma ve tek-hoparlör prototipi aşamasındadır. Nova sürücülerinin gerçek empedansı ve seçilecek ESP32 AirPlay yığınının dört cihazlı multiroom senkron yeteneği henüz doğrulanmadı.
+Proje araştırma ve prototip aşamasındadır. Nova sürücülerinin DC dirençleri ölçüldü (woofer 4,0 Ω, tweeter 3,5 Ω; ikisi de 4 Ω sınıfı); empedans eğrisi ve `Fs` henüz ölçülmedi, crossover köşesi bu yüzden muhafazakâr bir tahmindir. AirPlay alıcısı bir iPhone tarafından bulundu, eşleşti ve akış aldı; ürün kartında ürünün kendi yolu (PCM5102A → XH-A232) tek amfiyle tezgâhta çaldı. Bunlar dinleme kayıtlarıdır; ses yolunun ölçümü (seviye, clipping, pop) G1'de dummy-load üzerinde alınır ve hiçbir kapı henüz geçilmedi.
 
 ## Hedef mimari
 
-Her kutuda ESP32-S3 N16R8, PCM5102A I2S DAC, XH-A232/TPA3110 iki kanallı amfi, woofer+tweeter aktif bölüşümü, 19 V masaüstü DC adaptör girişi (5,5 x 2,1 mm jak), BLE/SoftAP provisioning, çok işlevli buton ve RGB LED bulunur.
+Kutuda ESP32-S3 N16R8, PCM5102A I2S DAC, dört özdeş XH-A232/TPA3110 amfi (sekiz BTL kanal), dört woofer + dört tweeter, aktif bölüşüm (DAC `LOUT` woofer bandı, `ROUT` tweeter bandı), 24 V / 2,9 A masaüstü DC adaptör girişi (5,5 x 2,1 mm jak), BLE/SoftAP provisioning, çok işlevli buton ve RGB LED bulunur. Kabin, Nova'nın kendi pasif radyatörleriyle akortlu kapalı bir kutudur; başlangıç varsayımı tek paylaşılan hava hacmi, kararı G0 sonrası.
 
 ```text
-AirPlay/Wi-Fi -> ESP32-S3 N16R8 -> I2S -> PCM5102A -> XH-A232 -> woofer + tweeter
+AirPlay/Wi-Fi -> ESP32-S3 N16R8 -> I2S -> PCM5102A -> 4 x XH-A232 -> 4 woofer + 4 tweeter
 
-19 V DC adaptör -> 5,5x2,1 mm jak (VIN) -+-> XH-A232 amfi
-                                          `-> MP1584 5,10 V -> ESP32-S3 + DAC
+24 V DC adaptör -> 5,5x2,1 mm jak (VIN) -+-> 4 x XH-A232 amfi
+                                          +-> MP1584 A 5,10 V -> ESP32-S3
+                                          `-> MP1584 B 5,10 V -> PCM5102A
 ```
 
-Kilitli kararlar: [N16R8 kartı](docs/07-decisions/ADR-0010-esp32-s3-n16r8-board.md), [19 V DC adaptörle besleme](docs/07-decisions/ADR-0020-dc-adapter-power.md), [AirPlay yığını](docs/07-decisions/ADR-0007-airplay-stack.md).
+Kilitli kararlar: [N16R8 kartı](docs/07-decisions/ADR-0010-esp32-s3-n16r8-board.md), [bi-amp sinyal zinciri](docs/07-decisions/ADR-0002-biamp-signal-chain.md), [24 V DC adaptörle besleme](docs/07-decisions/ADR-0020-dc-adapter-power.md), [tek kabin, sekiz sürücü](docs/07-decisions/ADR-0021-single-cabinet.md), [AirPlay yığını](docs/07-decisions/ADR-0007-airplay-stack.md).
 
 ## Ürün kimliği
 
@@ -68,10 +69,10 @@ Birleşme öncesi zorunludur. Wikilink hedeflerini, `docs/` frontmatter alanlar�
 ## İlk çalışma sırası
 
 1. Sürücüleri ölç ve G0 kapısını kapat.
-2. AirPlay senkron fizibilitesini kanıtla.
-3. Tek hoparlör elektriksel prototipini dummy-load ile doğrula.
-4. DSP korumasını düşük seviyede gerçek sürücülerle doğrula.
+2. AirPlay alıcısının bir telefon tarafından bulunup eşleşip akış aldığını kanıtla (PRD-009).
+3. Elektriksel prototipi (bir amfi, dummy-load) doğrula; sonra dört amfiyi birlikte tam yükte.
+4. DSP korumasını düşük seviyede gerçek sürücülerle doğrula — önce tek woofer ve tek tweeter.
 5. Firmware `F0` iskeletini kur ve `F1` AirPlay spike'ını çalıştır.
-6. Kalan kapılar (G6-G8) geçildikten sonra dört ünite BOM'unu kilitle.
+6. Kalan kapılar (G6, G8) geçildikten sonra BOM'u kilitle.
 
 Güncel iş listesi: [TODO.md](TODO.md).

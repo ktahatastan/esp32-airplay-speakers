@@ -15,7 +15,7 @@ Tek Merzarkabul hoparlör için güç, I2S/DAC, bi-amp sürücüler, buton/LED, 
 
 - [[../02-hardware/circuit-and-wiring-plan|Devre ve bağlantı şemaları]] oluşturuldu.
 - ESP32-S3 için yalnız prototip adayı GPIO tablosu eklendi.
-- PCM5102A 3-wire I2S ve XH-A232 BTL bağlantıları açıklandı.
+- PCM5102A 3-wire I2S ile dört XH-A232'nin paralel giriş ve BTL çıkış bağlantıları açıklandı.
 - Tweeter koruması `C_SAFE` ölçüm bekleyen zorunlu bileşen olarak gösterildi.
 - USB/harici 5 V geri besleme riskine servis jumperı eklendi.
 - Test noktaları, beklenen gerilim/dalga biçimleri ve ölçüm referansları eklendi.

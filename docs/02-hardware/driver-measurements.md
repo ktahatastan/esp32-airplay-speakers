@@ -9,10 +9,14 @@ tags: [drivers, measurements, gate]
 
 ## Eldeki sürücüler (operatör kaydı, 2026-09-08)
 
-Harman Kardon Nova'dan sökülmüş. Etiketlerde yalnız üretici iç kodları var;
-bunlar veri sayfasına çevrilmiyor, dolayısıyla **ölçüm tek yol**.
+Harman Kardon Nova'dan sökülmüş sekiz sürücü: dört woofer/mid ve dört tweeter,
+hepsi tek kabine girecek ([[../04-acoustics/cabinet-plan|kabin planı]],
+[[../07-decisions/ADR-0021-single-cabinet|ADR-0021]]). Etiketlerde yalnız
+üretici iç kodları var; bunlar veri sayfasına çevrilmiyor, dolayısıyla **ölçüm
+tek yol**. Aşağıdaki kodlar okunan birer örnekten; sekiz sürücünün her biri
+kendi satırını ve kimliğini alır (bkz. "Sekiz sürücünün her biri için").
 
-| sürücü | etiketteki kodlar |
+| sürücü | etiketteki kodlar (okunan örnek) |
 |---|---|
 | woofer/mid | `66057-0001006` · `110066` · `06801` · `2313351` |
 | tweeter | `660056-0001004` · `310013` · `01007` · `2113356` |
@@ -25,10 +29,17 @@ yüzden isteğe bağlı değil.
 
 ## Ölçüldü — DC direnç (operatör, 2026-09-08)
 
+Bir woofer ve bir tweeter okundu; diğer altı sürücü henüz okunmadı ve aynı
+tablonun kendi satırlarını bekliyor.
+
 | sürücü | okunan `Re` | çıkarım |
 |---|---|---|
-| woofer/mid | **4,0 Ω** | nominal **4 Ω** |
-| tweeter | **3,5 Ω** | nominal **4 Ω** |
+| woofer/mid (1 adet) | **4,0 Ω** | nominal **4 Ω** |
+| tweeter (1 adet) | **3,5 Ω** | nominal **4 Ω** |
+
+Aynı programı aynı kutuda çalacakları için dört woofer birbirine, dört tweeter
+birbirine karşı da eşleştirilir: `Re` ve `Fs` farkı kaydedilir, ve sınıf dışı
+kalan bir sürücü kabine girmeden önce bilinir.
 
 Kural: `Re` genelde nominal empedansın 0,75–0,85 katıdır. 4 Ω'luk bir sürücü
 tipik olarak 3,0–3,6 Ω okur, 6 Ω'luk 4,4–5,0 Ω. Woofer'ın 4,0'ı iki aralığın
@@ -78,9 +89,13 @@ yapılacak ve bu bölüm silinecek.
 
 ## Kabin: pasif radyatör kullanılacak (2026-09-08)
 
-Orijinal Nova'nın pasif radyatörleri operatörün elinde ve yeni kabinde
-kullanılacak. Bu, subsonic filtreyi **daha önemli** hâle getiriyor, daha az
-değil — ve sebebi kapalı kutunun tersi:
+Orijinal Nova'nın pasif radyatörleri operatörün elinde ve kabinde kullanılacak:
+tek kabin, pasif radyatörle akortlanmış refleks hizalama, kanal yok
+([[../04-acoustics/cabinet-plan|kabin planı]], ADR-0021). Dört woofer o kabini
+paylaşır; başlangıç varsayımı tek ortak hava hacmidir, ayrı hacimler `G0`
+(`Fs`, `Vas`) sonrasında kararlaşır ve sürücü dizilimi henüz belirlenmedi. Bu,
+subsonic filtreyi **daha önemli** hâle getiriyor, daha az değil — ve sebebi
+kapalı kutunun tersi:
 
 Akort frekansının (`Fb`) altında pasif radyatör akustik yükü üstlenir ve woofer
 havasız kalır. Koni serbest salınır, eksürsiyon hızla artar, karşılığında ses
@@ -94,10 +109,12 @@ havasız kalır. Koni serbest salınır, eksürsiyon hızla artar, karşılığ�
 60–65 Hz orijinal kutunun iç hacminde geçerli. Yeni kabin daha büyükse akort
 aşağı, küçükse yukarı kayar; PR'a kütle eklemek `Fb`'yi düşürür.
 
-Tahmin etmeye gerek yok: **aynı empedans düzeneğiyle woofer kutunun içindeyken
-ölçülür.** PR'lı (veya bas refleks) bir sistemde empedans eğrisi **iki tepe**
-verir ve aradaki çukurun frekansı tam olarak `Fb`'dir. Kabin bittiğinde 10
-dakikalık bir ölçüm, subsonic frekansını tahminden çıkarır.
+Tahmin etmeye gerek yok: **aynı empedans düzeneğiyle woofer'lar kutunun
+içindeyken ölçülür.** Pasif radyatörlü bir sistemde empedans eğrisi **iki
+tepe** verir ve aradaki çukurun frekansı tam olarak `Fb`'dir. Ortak hacimde
+dört woofer'ın tamamı takılıyken tek bir eğri alınır; ayrı hacimlere gidilirse
+her hacim kendi eğrisini verir. Kabin bittiğinde 10 dakikalık bir ölçüm,
+subsonic frekansını tahminden çıkarır.
 
 ### Sonraki tur için not
 
@@ -109,7 +126,7 @@ biquad eklemek gerekiyor. İlk dinleme için 12 yeterli, ama bu açık bir madde
 
 ## Tweeter seri kondansatörü `C_SAFE` (2026-09-08)
 
-**Seçilen değer: 10 µF, kutupsuz film, ≥ 50 V.**
+**Seçilen değer: 10 µF, kutupsuz film, ≥ 50 V — dört adet, her tweeter'a biri.**
 
 Bu bir crossover değil, **emniyet supabı**: asıl filtreleme DSP'de olacak
 (LR4, 24 dB/oktav). Bunun işi firmware çökerse, DSP yanlış yüklenirse veya biri
@@ -130,14 +147,18 @@ rezonans devresi kurar ve yanıtı tepelendirir, yani korumak istediği yerde
 eksürsiyonu artırır.
 
 **Bedeli:** 3,5 kHz'de −3,6 dB, yani DSP kesimiyle üst üste biniyor ve akustik
-geçiş noktasını yukarı itiyor. `Fs` ölçülene kadar bu kabul ediliyor: şu anda
-DSP crossover'ı yok, dolayısıyla bu kondansatör tweeter'ın tek koruması, ve
-bilinmeyen bir `Fs`'ye karşı sağlamlık geçiş bandındaki 3 dB'den önce gelir.
+geçiş noktasını yukarı itiyor. `Fs` ölçülene kadar bu kabul ediliyor: DSP
+crossover'ının köşesi tahmini bir `Fs`'den türetilmiş bir yer tutucu, yani
+firmware doğru yüklenmediğinde ya da köşe yanlış tahmin edildiğinde bu
+kondansatör tweeter'ın tek koruması, ve bilinmeyen bir `Fs`'ye karşı sağlamlık
+geçiş bandındaki 3 dB'den önce gelir.
 
 **Kutupsuz olması şart, sebebi BTL:** amfi köprülü çıkışlı, hoparlörün eksi ucu
 toprak değil, o da salınıyor. Kutuplu bir kondansatör orada ters gerilim görür.
 
-`Fs` ölçüldükten sonra yeniden değerlendirilir; değiştirmek tek lehim noktasıdır.
+`Fs` ölçüldükten sonra yeniden değerlendirilir; değiştirmek dört lehim
+noktasıdır, her amfinin ucunda biri. Dört parça aynı seri ve lot olmalı: aynı
+kabinde dört tweeter arasındaki köşe farkı duyulur.
 
 ## Empedans eğrisi ve `Fs` — tezgâh yordamı
 
@@ -369,7 +390,7 @@ imzasıdır.
 | gözlem | anlamı |
 |---|---|
 | Tek, temiz tepe | Beklenen. |
-| İkinci, daha küçük tepe | Sürücü hâlâ bir kabinin içindeyse normaldir: kapalı kabinde tepe yukarı kayar, bas refleks kabinde **ikiye ayrılır** ve aradaki çukur port ayar frekansıdır. Sürücü serbest havadaysa mekaniktir — gevşek örümcek, ayrılmış tozluk, aralıkta yabancı madde. |
+| İkinci, daha küçük tepe | Sürücü hâlâ bir kabinin içindeyse normaldir: kapalı kabinde tepe yukarı kayar, pasif radyatörlü kabinde **ikiye ayrılır** ve aradaki çukur akort frekansı `Fb`'dir. Sürücü serbest havadaysa mekaniktir — gevşek örümcek, ayrılmış tozluk, aralıkta yabancı madde. |
 | Aynı frekansta **tekrarlanan** pürüz | Mekanik. `Fs` civarında kulağını da yaklaştır: sürtünme sesi aranıyor. DSP planındaki 4. madde ("düşük seviyede tek tek sürücü taraması; sürtünme/bozulma kontrolü") tam olarak budur. |
 | Rastgele, tekrarlamayan pürüz | Ölçüm. Krokodil uçlarını ve `Rs`'nin lehimini kontrol et; uzun ölçü kabloları 50 Hz şebeke gerilimi de toplar. Aynı adımı tekrar oku. |
 | Tepe çok alçak ve geniş | Ağır sönümleme. Tweeter'da ferro-sıvı bunu yapar ve normaldir. `Fs` daha zor yerleşir; ince taramayı yine de koş ve tepe yerine bir **aralık** kaydet. |
@@ -483,7 +504,8 @@ Ham veriler ve fotoğraflar: `docs/assets/measurements/drivers/`.
   karmaşıktır; akım sınırı için genlik iyi bir yaklaşım, tam cevap değil.
 - **`Qts`, `Vas`, `Mms` çıkmıyor.** Onlar için eklenen kütle ya da bilinen kabin
   yöntemi gerekir. Crossover köşesi ve limiter için şart değil; kabin tasarımı
-  için şart.
+  için şart — ortak hacim mi ayrı hacimler mi sorusu ve pasif radyatör akordu
+  bunları bekliyor ([[../04-acoustics/cabinet-plan|kabin planı]], ADR-0021).
 - **Küçük sinyal ölçümü.** Milivat mertebesinde. Büyük sinyalde süspansiyon
   yumuşar, `Fs` düşer ve `Z` değişir.
 - **Serbest hava ölçümü.** Woofer'ın `Fs`'si kabine girince yukarı çıkar.
@@ -504,12 +526,13 @@ Ham veriler ve fotoğraflar: `docs/assets/measurements/drivers/`.
 - Orijinal sistem bi-amp/DSP kullandığı için tek tek sürücü ohm değeri sistem ilanından çıkarılamaz.
 - ~~Kesin DC direnç ve nominal empedans henüz doğrulanmadı.~~ **Ölçüldü**, yukarıdaki `Ölçüldü — DC direnç` bölümüne bakın. Empedans eğrisi ve `Fs` hâlâ açık.
 
-## Her sürücü için
+## Sekiz sürücünün her biri için
 
-- Ön/arka/etiket/mıknatıs fotoğrafı ve benzersiz kimlik.
+- Ön/arka/etiket/mıknatıs fotoğrafı ve benzersiz kimlik (woofer 1-4, tweeter 1-4; amfi numarasıyla eşleşir).
 - Multimetreyle DC direnç; prob direnci dahil.
 - Polarite ve terminal işareti.
 - Empedans eğrisi ve rezonans bölgesi.
 - Düşük seviyeli tarama; sürtünme/bozulma kontrolü.
+- Aynı tipteki dört sürücü arasında `Re` ve `Fs` farkı; aynı kabinde çalacakları için eşleşme kaydı.
 
 Ham veriler `docs/assets/measurements/drivers/` altında tutulur. Tüm sürücüler ölçülmeden nominal ohm veya güvenli crossover kilitlenmez.

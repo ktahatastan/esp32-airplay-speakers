@@ -13,7 +13,7 @@ tags: [development-log, firmware, f7, ota, testing]
 
 OTA zincirinin iki ucu vardı: `make_manifest.py` manifest yazıyor, `hk_manifest_validate()` cihazın onu kurup kuramayacağına karar veriyor. İkisi yalnız **alan adları** üzerinden karşılaştırılıyordu.
 
-Bir **değer** uyuşmazlığı — ayrıştırıcının farklı yazdığı bir sürüm, yanlış kutuda bir özet, `uint32`'yi taşıran bir boyut, tampona sığmayan bir URL — depodaki her testten geçer ve dört hoparlörün her sürümü reddetmesiyle keşfedilirdi.
+Bir **değer** uyuşmazlığı — ayrıştırıcının farklı yazdığı bir sürüm, yanlış kutuda bir özet, `uint32`'yi taşıran bir boyut, tampona sığmayan bir URL — depodaki her testten geçer ve hoparlörün her sürümü reddetmesiyle keşfedilirdi.
 
 ## Kök sebep mimariydi
 

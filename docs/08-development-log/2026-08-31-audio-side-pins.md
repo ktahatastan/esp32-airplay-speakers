@@ -39,7 +39,7 @@ Dokuz negatif durumla sınadım — oktal PSRAM DQ6/DQS, flash MOSI, PSRAM CS1, 
 
 | Sinyal | GPIO | Not |
 |---|---|---|
-| `AMP_MUTE` | 21 | TPA3110 `SD`, aktif düşük |
+| `AMP_MUTE` | 21 | Dört TPA3110'un `SD` padleri paralel, aktif düşük; her amfide kendi pull-down'ı |
 | `DAC_XSMT` | 13 | PCM5102A `XSMT`, aktif düşük |
 
 Mevcut yedisini (GPIO4-10) değiştirmedim: hepsi geçerli ve yeniden kesmek üretilmiş şemaları ve prob haritasını bedelsiz geçersiz kılardı.
@@ -48,9 +48,9 @@ Mevcut yedisini (GPIO4-10) değiştirmedim: hepsi geçerli ve yeniden kesmek ür
 
 Bu parçadaki her aday GPIO reset'ten **yüksek empedanslı** çıkar ve ROM, bootloader ve uygulama başlangıcı boyunca öyle kalır — yüzlerce milisaniye. O pencerede amfi girişindeki her şeyi üretmekte serbesttir.
 
-Bu yüzden güvenli durumu **harici 10 kΩ pull-down** tutuyor, GPIO değil. Parçanın tipik 45 kΩ dahili pull'una karşı dörtten fazla kat baskın. Dirençler BOM'a `R_MUTE` olarak girdi ve "opsiyonel değil" diye işaretlendi.
+Bu yüzden güvenli durumu **harici 10 kΩ pull-down** tutuyor, GPIO değil. Parçanın tipik 45 kΩ dahili pull'una karşı dörtten fazla kat baskın. Dört direnç (amfi başına bir; paralelde 2,5 kΩ, GPIO için rahat) BOM'a `R_MUTE` olarak girdi ve "opsiyonel değil" diye işaretlendi.
 
-Yazılımın işi susturmayı **bırakmak**. Bu firmware hiç çalışmazsa hoparlörler sessiz kalır.
+Yazılımın işi susturmayı **bırakmak**. Bu firmware hiç çalışmazsa hoparlör sessiz kalır.
 
 `GPIO18/19/20` susturma görevinden adıyla dışlandı — silikon bunları açılışta HIGH sürüyor. `GPIO0/39/43/44` de dışlandı, zayıf dahili pull-up ile açılıyorlar. Herhangi biri aktif-düşük bir susturma hattında olsaydı, yazılım var olmadan amfiyi serbest bırakırdı; empedansı hâlâ açık `G0` engeli olan sürücülere. Bu, statik denetimlerin yakalayamayacağı bir şey — 18 ve 39 tamamen geçerli atamalar, sadece burada yanlış — o yüzden teste bağlandı.
 

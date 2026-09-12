@@ -48,7 +48,8 @@ config I2S_GND_IO
     default -1
     help
         Upstream supports small DAC breakout boards powered from spare GPIOs.
-        This design powers the DAC from the supply rail, so both are -1.
+        This design powers the DAC from its own 5 V buck (buck B, ADR-0020),
+        so both are -1.
 
 choice HK_AIRPLAY_OUTPUT
     prompt "Where the receiver sends audio"
@@ -62,10 +63,11 @@ config HK_AIRPLAY_OUTPUT_DSP
     help
         The same I2S output as above, with this project's DSP in it: the mono
         downmix, the LR4 crossover, the woofer's subsonic high-pass and the two
-        limiters. Left carries the WOOFER and right the TWEETER (ADR-0002).
-        This is not a stereo pair, and selecting it on a box wired as one sends
-        a low-passed signal to one speaker and a high-passed signal to the
-        other.
+        limiters. Left carries the WOOFER and right the TWEETER (ADR-0002), and
+        each DAC line is paralleled into the matching input of all four
+        amplifiers. This is not a stereo pair, and selecting it on a box wired
+        as one sends a low-passed signal to one driver and a high-passed signal
+        to the other.
 
         OFF BY DEFAULT, and it needs a calibration profile to do anything.
         The crossover corner, the subsonic corner, the branch gains and both
@@ -102,11 +104,17 @@ config HK_OUTPUT_SWAP_BRANCHES
         working. Until that moment it is invisible: with a mono programme both
         channels carry the same samples, so nothing can distinguish them.
 
-        Which is why this is a switch rather than a soldering iron. Four
-        speakers get wired by hand and they will not all be wired the same.
+        Which is why this is a switch rather than a soldering iron. The DAC's
+        two lines are paralleled into four amplifier inputs by hand. A module
+        labelled the other way round, or a crossed pair at the DAC end, swaps
+        all four amplifiers the same way, and this switch fixes it in one
+        place. A crossed pair at ONE amplifier's input swaps only that pair,
+        and no setting can fix it: that is a wiring fix, and the listening
+        check below is what finds it.
 
         HOW TO TELL: play quietly and listen close to each driver. If the bass
-        is coming from the tweeter this is the wrong way round -- and turn it
+        is coming from a tweeter this is the wrong way round -- or, if it is
+        only one of the four, that amplifier's input leads are -- and turn it
         down before you go looking, because that is the failure it prevents.
 
 config HK_AIRPLAY_OUTPUT_SPDIF
@@ -163,9 +171,10 @@ config AIRPLAY_FORCE_V1
     bool "Advertise AirPlay 1 only"
     default n
     help
-        Off: the receiver offers AirPlay 2, which is what PRD-002 needs for
-        multiroom. ADR-0007 keeps this switch as the documented retreat if the
-        G7 synchronisation measurement fails.
+        Off: the receiver offers AirPlay 2, which is what a current phone
+        expects to find, pair with and stream to (ADR-0007). On: AirPlay 1
+        (RAOP) only, the documented retreat if the AirPlay 2 path fails on the
+        bench.
 
 config ENABLE_AIRPLAY_ARTWORK
     bool "Receive cover art"

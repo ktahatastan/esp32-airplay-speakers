@@ -12,7 +12,8 @@ int hk_identity_from_mac(const uint8_t mac[6], hk_identity_t *out)
     }
 
     /* An all-zero MAC means the netif was read before it was initialised.
-     * Naming four speakers from that would give them all the same name. */
+     * A name derived from it would be the same on every board, so the suffix
+     * would distinguish nothing. */
     uint8_t seen = 0;
     for (int i = 0; i < 6; i++) {
         seen |= mac[i];

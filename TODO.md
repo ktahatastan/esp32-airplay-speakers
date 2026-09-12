@@ -7,18 +7,16 @@ Kilitli kararlar `AGENTS.md` içindedir ve yalnız supersede eden ADR ile deği�
 - [x] Dört woofer'ın DC dirençlerini ayrı ayrı ölç.
 - [x] Dört tweeter'ın DC dirençlerini ayrı ayrı ölç.
 - [ ] Sürücü etiketlerini ve bağlantı uçlarını fotoğraflandır.
-- [ ] Hedefi kesinleştir: dört bağımsız mono kutu mu, iki stereo çift mi?
-- [x] Aday AirPlay yığınının AirPlay 1/2 ve multiroom yeteneklerini kaynak kodu/lisansla doğrula.
-- [ ] Dört hedefin birlikte seçilebildiği en küçük ağ ses prototipini kur.
-- [x] İki saatlik drift/jitter ölçüm düzenini ve G7 sayısal kabul eşiklerini ADR-0007'de kilitle.
+- [x] Aday AirPlay yığınının AirPlay 1/2 yeteneğini ve lisansını kaynak kodundan doğrula.
 
-## P1 - Tek hoparlör güç prototipi
+## P1 - Güç prototipi
 
-- [ ] 19 V adaptörün boşta ve 2 A yükte gerilimini ölç; jak polaritesini (merkez artı) ilk güç vermeden önce ölçerek doğrula.
-- [ ] `VIN` üzerindeki seri Schottky/ideal diyot adayına karar ver: gerilim düşümünü ölç, reddedilirse 0 Ω köprüle (ADR-0020).
-- [ ] XH-A232'yi 12 V ve 19 V'ta dummy-load ile test et.
-- [ ] MP1584'ü 5,10 V'a ayarla; ESP32 Wi-Fi akım sıçramalarında brownout testi yap.
-- [ ] PCM5102A ve amfi girişinde buck kaynaklı gürültüyü ölç.
+- [ ] 24 V adaptörün boşta çıkışını bağlamadan önce ölç (25,5 V'un altında olmalı); 2,9 A yükte gerilimini ölç; jak polaritesini (merkez artı) ilk güç vermeden önce ölçerek doğrula.
+- [ ] `VIN` üzerindeki seri Schottky/ideal diyot adayına karar ver: gerilim düşümünü ve ısısını ölç (2,9 A'da yaklaşık 1 W veya üstü beklenir), reddedilirse 0 Ω köprüle (ADR-0020).
+- [ ] Bir XH-A232'yi 12 V ve 24 V'ta dummy-load ile test et; sonra dördünü birlikte 24 V'ta sürerken `VIN` çökmesini kaydet.
+- [ ] İki MP1584'ü (A: ESP32-S3, B: DAC) 5,10 V'a ayarla; ESP32 Wi-Fi akım sıçramalarında brownout testi yap.
+- [ ] PCM5102A'da (kendi buck'ı B ile) ve dört amfi girişinde buck kaynaklı gürültüyü ölç.
+- [ ] Dört amfi girişinin paralel yükünü (yaklaşık 2,5 kΩ) DAC çıkışında ölç; seviye düşümü ve bozulma kaydı G1'e girer.
 - [ ] Açılış ve kapanışta hoparlör çıkışında pop ölç; susturma sıralaması G1'de doğrulanır.
 
 ## P2 - Ses koruması
@@ -26,16 +24,16 @@ Kilitli kararlar `AGENTS.md` içindedir ve yalnız supersede eden ADR ile deği�
 - [x] **G0 kapısındaki deliği kapat:** ses izni artık `factory_cal` içindeki `profile` blob'unun varlığını istiyor, şema sürümünü değil.
 - [ ] Profilin **geçerliliğini** de denetle: `hk_profile_valid()` çağrısını `hk_main`'e ekle (G0 verisi gelince).
 - [ ] Tezgâh istisnasını kaldır: `G0`/`G2` profil ürettiğinde `sdkconfig.bench` gereksiz kalmalı.
-- [ ] Ölçülen sürücü empedansına göre güvenli amfi seviyesini onayla; 19 V'ta XH-A232 4 Ω sınıfı sürücülere önemli güç verir, tavanı limiter belirler.
+- [ ] Ölçülen sürücü empedansına göre güvenli amfi seviyesini onayla; 24 V'ta XH-A232 4 Ω sınıfı sürücülere önemli güç verir, tavanı limiter belirler.
 - [ ] Woofer HPF, aktif crossover ve tweeter limiter başlangıç değerlerini belirle. **Firmware tarafı hazır:** `hk_profile` profilin biçimini, doğrulamasını ve zincire dönüşmesini taşıyor; kalan iş ölçülen sayıları doldurmak.
-- [ ] Limiter tavanının besleme gerilimiyle ölçeklenmesini 12 V tezgâh referansı ve 19 V ürün beslemesinde doğrula (`HK_BENCH_REFERENCE_SUPPLY_MV`, `CONFIG_HK_SUPPLY_MV`).
+- [ ] Limiter tavanının besleme gerilimiyle ölçeklenmesini 12 V tezgâh referansı ve 24 V ürün beslemesinde doğrula (`HK_BENCH_REFERENCE_SUPPLY_MV`, `CONFIG_HK_SUPPLY_MV`).
+- [ ] Limiter tavanını 2,9 A adaptör bütçesinden, dört amfi birlikte sürülürken türet ve G1'de `VIN` çökmesiyle doğrula (ADR-0020).
 
-## P4 - Dört hoparlöre çoğaltma
+## P4 - Kabin
 
-- [ ] İlk prototip kabulünden sonra dört hoparlörlük toplam BOM'u kesinleştir.
-- [ ] Her cihaz için ayrı adaptör, jak ve seri numarası kullan.
-- [ ] Dört cihazda AirPlay senkronunu birlikte test et (G7).
-- [ ] Kabin içinde amfi ve buck ısısını kapalı kabinde ölç; havalandırmayı buna göre belirle (G8).
+- [ ] Dört amfi ve iki buck ısısını kapalı kabinde ölç; havalandırmayı buna göre belirle (G8).
+- [ ] Sürücü yerleşimini ve pasif radyatör akordunu G0 (`Fs`, `Vas`) sonrasında belirle; woofer'ların ayrı hacim alıp almayacağı da o zaman kararlaşır ([[docs/04-acoustics/cabinet-plan|kabin planı]]).
+- [ ] İlk prototip kabulünden sonra BOM'u kesinleştir.
 
 ## P5 - Buton, LED ve provisioning
 
@@ -58,7 +56,7 @@ Kilitli kararlar `AGENTS.md` içindedir ve yalnız supersede eden ADR ile deği�
 - [x] SRP6a kullanıcı adına karar ver — ADR-0014: `wifiprov`, çünkü ad sır değil ve özel bir ad yalnız QR'sız yolu kırıyor.
 - [ ] Verifier değiştiği için QR'lı BLE kurulumunu donanımda **tekrar** doğrula.
 - [ ] QR'sız kurulumu (listeden seç + parolayı yaz) ilk kez dene; ADR-0014 bu yolu denenebilir hâle getirdi.
-- [x] Cihaz başına provisioning ve Wi-Fi QR kodu üret (`tools/provision_credentials.py`).
+- [x] Provisioning ve Wi-Fi QR kodu üret (`tools/provision_credentials.py`).
 - [x] Provisioning tamamlanınca BLE belleğinin serbest bırakıldığını doğrula (`BTDM memory released`, geliştirme kartı).
 - [x] iOS'ta Espressif BLE Provisioning uygulamasıyla kurulum testi yap — uçtan uca çalıştı.
 - [ ] Android'de BLE kurulum testi yap; hiç denenmedi.
@@ -75,19 +73,19 @@ Ayrıntı, önkoşul ve kabul ölçütleri: [[docs/03-firmware/firmware-plan|fir
 - [x] `F0` kalan, birinci yarı: ürün kartına yazıldı ve açılış raporu doğrulandı (2026-09-08).
 - [ ] `F0` kalan, ikinci yarı: GPIO tablosunu satın alınan kartın **şemasıyla** karşılaştır ve `accepted` yap. Açılış testi tek başına yetmiyor (ADR-0011).
 - [x] `F1` araştırma yarısı: yığın seçildi, derlendi, lisans incelendi, ADR-0007 kabul edildi.
-- [x] `F1` ölçüm yarısı, tek kartlık kısmı: yığın vendor edildi, karta yüklendi, bir Apple cihazı bağlandı, PTP kilitlendi, ses duyuldu.
-- [ ] `F1` kalan: dört hedefin birlikte seçilebildiğini ve **akış sırasındaki** kaynak kullanımını ölç — dört kart ister.
+- [x] `F1` ölçüm yarısı: yığın vendor edildi, karta yüklendi, bir Apple cihazı bağlandı, PTP kilitlendi, ses duyuldu.
+- [ ] `F1` kalan: **akış sırasındaki** kaynak kullanımını (PSRAM, CPU) ölç.
 - [ ] `F2` I2S/DAC/bi-amp ses yolu bring-up (G1 sonrası).
-- [ ] `F3` HPF, crossover ve limiter zinciri (G0 kapandıktan sonra).
+- [ ] `F3` HPF, crossover ve limiter zinciri: kod çalışıyor (mono toplam, bant EQ, 55 Hz subsonic, LR4 bölme, dal başına limiter); sayılar G0 kapanana kadar yer tutucu, bilinen boşluklar sonra kapatılacak.
 - [x] `F4` Wi-Fi, mDNS ve BLE/SoftAP Unified Provisioning — geliştirme kartında uçtan uca. Portal kısmı hariç (yukarıya bakın).
 - [x] `F5` buton durum makinesi ve RGB LED animatörü — 12 sn senaryosu ve LED'in ses zamanlamasına etkisi hariç.
 - [ ] `F7` imzalı A/B OTA, release hattı ve recovery (G6).
-- [ ] `F8` dört cihaz senkronu ve soak (G7, G8).
+- [ ] `F8` soak (G8).
 
 ## P6b - Firmware güvenliği ve kurtarma
 
 - [x] `factory_cal` ile `user_settings` NVS şemasını ve migration testlerini yaz.
-- [ ] Cihaz başına benzersiz PoP/QR üretim, seri eşleme ve güvenli yedekleme prosedürünü tanımla.
+- [ ] Benzersiz PoP/QR üretimi, seri eşleme ve güvenli yedekleme prosedürünü tanımla.
 - [x] ESP-IDF sürümünü kilitle (`v5.5.1`); `esp_ghota` spike'ı tamamlandı ve aday reddedildi (ADR-0008).
 - [x] `otadata`, `ota_0`, `ota_1` ve kalibrasyon/NVS alanlarını içeren partition CSV ve size budget oluştur (iki kart için ayrı tablo, CI'da denetleniyor).
 - [x] SemVer `v*.*.*` tag ile test/build/sign/checksum/GitHub Release üreten GitHub Actions hattını kur. **Hiç sürüm yayımlanmadı.**

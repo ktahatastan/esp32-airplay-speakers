@@ -1,6 +1,7 @@
 /**
  * @file hk_dsp.h
- * @brief The signal path: one mono programme in, two driver branches out.
+ * @brief The signal path: one mono programme in, two branches out, each into
+ *        four amplifier channels.
  *
  * WHAT THE CHANNELS MEAN
  * ----------------------
@@ -13,11 +14,13 @@
  *     odd  slots -> TWEETER branch  (high-passed, its own gain, its own ceiling)
  *
  * That is ADR-0002 and `docs/02-hardware/audio-signal-chain.md`: the DAC's two
- * analogue channels feed a BI-AMP pair, not a stereo pair, so one mono
- * programme is split by FREQUENCY and each half drives a different driver.
- * Sending real stereo down this path puts half the mix into a 60 mm cone and
- * the other half into a 25 mm dome, which is what the speaker did before this
- * module existed.
+ * analogue channels feed a BI-AMP arrangement, not a stereo pair, so one mono
+ * programme is split by FREQUENCY and each half drives a different kind of
+ * driver. Each DAC channel is paralleled into the matching input of all four
+ * XH-A232 amplifiers, so the woofer branch drives four woofers and the tweeter
+ * branch four tweeters, all in one cabinet (ADR-0002, ADR-0021). Sending real
+ * stereo down this path puts half the mix into 60 mm cones and the other half
+ * into 25 mm domes, which is what the speaker did before this module existed.
  *
  * The consequence worth stating once: AFTER hk_dsp_process(), NOTHING
  * DOWNSTREAM MAY TREAT THE TWO CHANNELS AS INTERCHANGEABLE. No balance, no
@@ -27,14 +30,11 @@
  * lands after the limiters, so it can only make the output quieter than the
  * ceilings, never louder.
  *
- * MONO, AND WHERE "LEFT ONLY" GOES
- * --------------------------------
- * Stage 1 sums to mono. A speaker that should play only the left channel of
- * the programme (the `chan_mode` setting; four of these will sit in one room)
- * is served by the CALLER duplicating that channel into both slots before
- * calling in -- 0.5 * (L + L) is exactly L. Nothing about channel selection
- * belongs in here, and putting it here would give two places the power to
- * decide what mono means.
+ * MONO
+ * ----
+ * Stage 1 sums to mono, and mono is the only programme this product has: one
+ * cabinet, eight drivers, no stereo (ADR-0021). Nothing about channel
+ * selection belongs in here; there is no channel to select.
  *
  * THE ORDER, AND WHY IT IS THAT ORDER
  * -----------------------------------
@@ -123,22 +123,19 @@
  * unchanged.
  *
  * The filters still have GROUP DELAY, because a minimum-phase filter does.
- * Measured off this code on the woofer branch with the provisional 70 Hz
- * subsonic corner: 3.84 ms at 50 Hz, 3.35 ms at 70 Hz, 1.93 ms at 100 Hz,
- * 0.52 ms at 200 Hz, and under 0.2 ms above 500 Hz. Those numbers are larger
- * than ADR-0007's 1 ms group-synchronisation budget, and saying the budget is
- * "untouched" would be wrong.
+ * Measured off this code on the woofer branch with a 70 Hz subsonic corner:
+ * 3.84 ms at 50 Hz, 3.35 ms at 70 Hz, 1.93 ms at 100 Hz, 0.52 ms at 200 Hz,
+ * and under 0.2 ms above 500 Hz. Moving the corner from 70 Hz to 50 Hz shifts
+ * the low end by 0.57 ms; the crossover corner is cheap by comparison, 4000 ->
+ * 2000 Hz moves it by 0.15 ms.
  *
- * What actually saves it is that the delay is COMMON MODE. Four speakers
- * running the same protective corners are all delayed by the same amount at the
- * same frequency, and a delay every room shares is not a synchronisation error.
- * That holds only while the corners are shared: each speaker carries its own
- * `factory_cal`, so per-unit subsonic corners are physically possible, and
- * moving one box from 70 Hz to 50 Hz costs 0.57 ms of relative delay -- over
- * half the budget before the network is asked for anything. THE SUBSONIC CORNER
- * SHOULD THEREFORE BE A PRODUCT-WIDE CONSTANT even where the ceilings are
- * per-unit. The crossover corner is cheap by comparison: 4000 -> 2000 Hz moves
- * it by 0.15 ms.
+ * With one cabinet playing one programme there is no second device for that
+ * delay to be measured against, so none of those figures is a synchronisation
+ * error -- they are the frequency-dependent delay of one loudspeaker, the same
+ * kind a passive crossover has. What matters is the sentence above: the chain
+ * adds no samples, so the pipeline depth the timing engine models is
+ * unchanged and every frame's early/late decision against the sender's
+ * presentation timestamp stays true.
  */
 #ifndef HK_DSP_H
 #define HK_DSP_H

@@ -10,7 +10,7 @@ tags: [testing, devkit, bring-up, firmware, wifi, evidence]
 
 Bu, deponun firmware'inin **ilk kez gerçek silikonda çalıştığı** kayıt. Kart, [[../07-decisions/ADR-0012-n8r2-bringup-target|ADR-0012]]'nin tanımladığı N8R2 sınıfı geliştirme kartıdır — ürün kartı değildir.
 
-> Buradaki hiçbir satır bir fiziksel kapı (`G0`-`G8`) açmaz. Kartta sürücü, amfi, DAC yoktur; ölçülen tek şey işlemci, bellek ve ağdır.
+> Buradaki hiçbir satır bir fiziksel kapı (`G0`-`G2`, `G6`, `G8`) açmaz. Kartta sürücü, amfi, DAC yoktur; ölçülen tek şey işlemci, bellek ve ağdır.
 
 ## Kart kimliği
 
@@ -142,7 +142,7 @@ Sebep ağ yapılandırması: kart, yönlendiricinin (TP-Link Deco) ayrı 2,4 GHz
 
 > SSID'ler bu kayıtta bilerek yazılmıyor. Bu depo public ve bir SSID konum bilgisidir: kamuya açık veritabanları SSID'leri koordinatlara eşler. Hangi ağ olduğu bulgunun teknik içeriğine hiçbir şey katmıyor — önemli olan ağın **yalıtılmış** olması.
 
-Bu bir test kolaylığı sorunu değil, **ürün için belirleyici**: AirPlay keşfi mDNS çoklu yayınıyla, oturum RTSP ile, senkron PTP çoklu yayınıyla çalışır. Hiçbiri yalıtılmış bir misafir ağını aşmaz. Hoparlör ve telefon aynı L2 ağında olmak zorundadır.
+Bu bir test kolaylığı sorunu değil, **ürün için belirleyici**: AirPlay keşfi mDNS çoklu yayınıyla, oturum RTSP ile, AirPlay 2'nin saati PTP çoklu yayınıyla çalışır. Hiçbiri yalıtılmış bir misafir ağını aşmaz. Hoparlör ve telefon aynı L2 ağında olmak zorundadır.
 
 Kart bu yüzden saklanan kimlik bilgileri silinip provisioning'e alındı; ana ağa katılması kullanıcının parolayı kendi girmesiyle oldu.
 
@@ -154,7 +154,7 @@ Kart provisioning ile ana ağa katıldıktan sonra aynı `dns-sd` sorgusu bu kez
 - RTSP `OPTIONS` → `RTSP/1.0 200 OK`, `Server: AirTunes/377.40.00`; `Public` listesinde `SETPEERS`, `SETRATEANCHORTIME`, `FLUSHBUFFERED`.
 - Sahibinin iPhone'undan müzik çalındı, DMAP meta verisi geldi, `ptp_clock: LOCKED` `dev=973672 ns` `samples=62`.
 
-> `dev=973672 ns` **kartın kendi saat kilididir**, cihazlar arası fark değildir. `G7` dört kart ister ve elde bir kart var; bu satır o kapıya dokunmuyor.
+> `dev=973672 ns` **kartın kendi saat kilididir** — alıcının göndericiye kilitlenmesi; tek cihaz için saatten istenen budur.
 
 ## Provisioning ilk kez donanımda açıldı
 
@@ -273,6 +273,5 @@ hk_net: provisioning closed and its memory released
 
 ## Bu kartta kanıtlanamayacak olanlar
 
-- `G7` dört cihaz senkronu: tek kart var.
 - Gerçek DAC çıkışı, amfi davranışı, sürücü empedansı: donanım yok.
 - Ürün kartının PSRAM bant genişliği: quad 2 MB, oktal 8 MB'ın yerine geçmez.

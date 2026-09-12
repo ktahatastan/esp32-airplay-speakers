@@ -49,21 +49,33 @@ config HK_ONBOARD_STATUS_LED_GPIO
 config HK_SUPPLY_MV
     int "Amplifier supply voltage, in millivolts"
     range 8000 26000
-    default 19000
+    default 24000
     help
-        The DC adapter on the barrel jack, as the wiring plan names it: 19 V,
-        feeding the XH-A232 directly (ADR-0020). The amplifier accepts 8-26 V,
-        and the range here is that range -- a value outside it describes a
-        board that cannot exist.
+        The DC adapter on the 5.5 x 2.1 mm centre-positive jack, as the wiring
+        plan names it: 24 V / 2.9 A, about 70 W, the rail called VIN, feeding
+        all four XH-A232 amplifiers directly (ADR-0020). The amplifier accepts
+        8-26 V, and the range here is that range -- a value outside it
+        describes a board that cannot exist. 24 V sits 2 V under that 26 V
+        maximum, which is why G1 measures the adapter's no-load output (it
+        must read below 25.5 V) before the adapter is ever connected.
 
         This is the single place the supply voltage is stated. The firmware
         cannot measure it; it is a declaration about the adapter, and its one
         consumer is the limiter: every ceiling in a driver-protection profile
         is stored with the supply it was measured at, and hk_profile_build()
-        scales it to this value. A 24 V adapter plugged in by mistake needs
-        this number changed to be handled correctly -- but even unchanged, a
-        profile measured at 12 V is already scaled DOWN to 19 V, so the error
-        is in the quiet direction.
+        scales it to this value. The error cases are not symmetric. A LOWER
+        adapter left unconfigured errs quiet: a profile measured at 12 V is
+        already scaled DOWN to 24 V, and a smaller supply only lowers the volts
+        further. A HIGHER adapter is the danger, because the ceiling would be
+        scaled for fewer volts than the driver receives -- and that is the case
+        the no-load measurement exists to catch before it is plugged in.
+
+        The ceiling a profile stores is set on the bench in G1 against the
+        2.9 A budget with all four amplifiers driven, because eight channels
+        can ask for far more than 70 W, and a VIN that sags under the load
+        can drop buck A out and reset the ESP32 mid-song — which is what
+        G1's sag measurement checks. G2 lowers it further where the drivers
+        demand; whichever is lower is what the profile carries.
 
 config HK_BENCH_PROVISIONAL_PROFILE
     bool "Use a compiled-in provisional profile when factory_cal has none"
@@ -86,8 +98,8 @@ config HK_BENCH_PROVISIONAL_PROFILE
 
         Its ceilings are stored against the supply voltage they were listened
         to at, 12 V on the bench, and hk_profile_build() scales them to
-        HK_SUPPLY_MV like any other profile's. On the 19 V adapter that is a
-        scale-down: the volts at the driver stay what the bench heard.
+        HK_SUPPLY_MV like any other profile's. On the 24 V adapter that is a
+        scale-down (12/24): the volts at the driver stay what the bench heard.
 
         Off for any build that leaves the bench.
 
@@ -99,11 +111,11 @@ config HK_BENCH_AUDIO_WITHOUT_PROFILE
         can see that nothing is connected to the audio output.
 
         The gate this bypasses is the one that keeps an unmeasured tweeter
-        alive: without a profile from G0/G2 there is no crossover, no protective
-        high-pass and no limiter ceiling, and hk_audio refuses rather than
-        inventing them. On a bench board with no DAC, no amplifier and no driver
-        the risk is absent, and the receiver cannot be exercised at all while
-        the gate is shut.
+        alive: without a profile from G0/G2 the DSP chain has no crossover
+        corner, no protective high-pass corner and no limiter ceiling to run
+        on, and hk_audio refuses rather than inventing them. On a bench board
+        with no DAC, no amplifier and no driver the risk is absent, and the
+        receiver cannot be exercised at all while the gate is shut.
 
         It exists so that exception is written down and visible in the boot
         report, rather than being obtained by accident. Until 2026-09-08 the
@@ -116,7 +128,8 @@ config HK_BENCH_TONE_INSTEAD_OF_AIRPLAY
     default n
     help
         DANGEROUS ON A BOARD WITH DRIVERS ATTACHED, for exactly the reason the
-        symbol above is: this build makes sound, and there is still no
+        symbol above is: this build makes sound, and the tone is written
+        straight to I2S -- it does not pass through hk_dsp, so there is no
         crossover, no protective high-pass and no limiter in front of the
         amplifier. Leave it off unless you can see what is on the speaker
         terminals.

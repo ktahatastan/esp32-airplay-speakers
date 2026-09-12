@@ -62,7 +62,7 @@ typedef struct {
 /**
  * Brightness ceiling.
  *
- * These speakers sit in living rooms and bedrooms. A status LED at full
+ * This speaker sits in a living room or a bedroom. A status LED at full
  * brightness is unpleasant at night, so nothing is ever driven above this
  * except the states the user must not miss.
  */

@@ -52,7 +52,7 @@ Doğrulanan satırlar (tamamı kanıt kaydında):
 - `octal_psram: vendor id 0x0d (AP)`, `density 64 Mbit` → PSRAM gerçekten **oktal**, ve bu geliştirme kartından devralınamayacak tek şeydi.
 - `esp_psram: Found 8MB PSRAM device`, `Adding pool of 8192K` → 8.386.156 B boş PSRAM. Geliştirme kartında 2.094.848 B'ydi.
 - `hk: slot ota_0 at 0x00020000, 7208960 bytes` → ürün slotu (`0x6e0000`), geliştirme kartının `0x2e0000`'ı değil.
-- `hk: device id 932C` → MAC'in son iki baytıyla birebir; dört hoparlörü birbirinden ayıracak olan şey çalışıyor.
+- `hk: device id 932C` → MAC'in son iki baytıyla birebir; MAC'ten türeyen benzersiz son ek çalışıyor ve cihazı aynı ağdaki başka her AirPlay hedefinden ayırır.
 - `storage user=use calibration=fail_safe`, `audio NOT permitted`, `output SILENT (i2s=0 dac=0 amp=0)`.
 
 Son üç satır bu oturumun en önemli sonucudur ve **bir şeyin olmamasıdır**: kalibrasyon yokken cihaz ses çıkarmayı reddediyor, uydurma bir profil yazmıyor, ve çıkış hatları susturulu kalıyor. `G0` açıkken doğru davranış budur.

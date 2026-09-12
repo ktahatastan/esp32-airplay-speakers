@@ -22,7 +22,7 @@ Donanım gelene kadar sürücü katmanlarını yazmak; doğrulama karta kavuşun
 
 `hk_ui` kendi düşük öncelikli görevinde çalışıyor. Kontrol planı LED animasyonunun ses göreviyle aynı görevde çalışmamasını açıkça istiyor: oradaki uzun bir adım I2S underrun olarak görünür.
 
-LED PWM taşıyıcısı **25 kHz** seçildi — işitme bandının üstünde, çünkü LED hatları analog ses yolu ve Class-D amfiyle aynı kutuda. Bu bir gerekçe, ölçüm değil; nihai değeri G1 gürültü ölçümü belirler.
+LED PWM taşıyıcısı **25 kHz** seçildi — işitme bandının üstünde, çünkü LED hatları analog ses yolu ve dört Class-D amfiyle aynı kutuda. Bu bir gerekçe, ölçüm değil; nihai değeri G1 gürültü ölçümü belirler.
 
 Parlaklık gama düzeltmeli: algılanan parlaklık ışığın karekökü gibi davrandığından doğrusal duty rampası "parlak flaş sonra hiçlik" gibi okunur. Kareleme, nefes efektini nefes gibi gösteriyor.
 

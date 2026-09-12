@@ -60,8 +60,9 @@ void test_sched(void)
     }
 
     /* ===== the first check is spread, not immediate ===== */
-    /* This is the whole reason the module exists: four speakers coming back
-     * from one power cut must not ask the same server at the same instant. */
+    /* The first check honours the random argument across the whole
+     * first-delay window and lands on the boot instant only when
+     * random % window == 0. */
     {
         uint32_t earliest = 0xFFFFFFFFu, latest = 0u;
         for (uint32_t r = 0; r < 4000u; r++) {
@@ -72,8 +73,8 @@ void test_sched(void)
             if (wait < earliest) { earliest = wait; }
             if (wait > latest) { latest = wait; }
         }
-        /* Four devices really do land in different places: the spread has to
-         * cover most of the window, not cluster. */
+        /* Different random values land in different places: the spread covers
+         * most of the window, not a cluster. */
         HK_CHECK(latest - earliest > lim.first_delay_ms / 2u);
     }
 
@@ -133,8 +134,8 @@ void test_sched(void)
     HK_CHECK_EQ_INT(hk_sched_remaining(&s, 0u), lim.interval_ms);
 
     /* ===== retries are spread too ===== */
-    /* Four devices that lost the same network recover together and would hit
-     * the server together the moment it returns. */
+    /* Retries honour the random argument too, through the same spread() as the
+     * first check. */
     {
         uint32_t earliest = 0xFFFFFFFFu, latest = 0u;
         for (uint32_t r = 0; r < 2000u; r++) {

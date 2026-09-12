@@ -15,7 +15,7 @@
 
 # Merzarkabul KiCad şeması
 
-Bu klasör tek hoparlörün modül seviyesi **elektriksel kaynağını** tutar. Dört hoparlörde aynı şema tekrarlanır. Belgelerde kullanılan okunabilir tek sayfalık pafta ayrı bir çıktıdır: `hardware/diagrams/`.
+Bu klasör tek kabinin (bir ESP32-S3, bir PCM5102A, iki buck, dört XH-A232, sekiz sürücü) modül seviyesi **elektriksel kaynağını** tutar. Belgelerde kullanılan okunabilir tek sayfalık pafta ayrı bir çıktıdır: `hardware/diagrams/`.
 
 ## Üretme
 
@@ -29,7 +29,7 @@ python3 hardware/kicad/generate_merzarkabul.py
 Script her çalıştırmada bir **yapısal self-check** uygular ve sorun bulursa dosya yazmadan `1` ile çıkar:
 
 - Her tel ucu gerçekten bir pinin veya bir köşe noktasının üstünde mi? (Pinin *yanında* duran bir tel bağlıymış gibi görünür ama değildir; bu betiğin en çok maruz kaldığı hata budur.)
-- `TP0…TP21` boşluksuz ve tekrarsız mı?
+- `TP0…TP34` boşluksuz ve tekrarsız mı?
 - Tek bağlantılı net var mı? `EXPECTED_OPEN_NETS` boştur; tek pinli her net ya kablolanmamıştır ya da yazım hatasıdır.
 - Referans tekrarı var mı?
 
@@ -56,7 +56,7 @@ Beklenen ERC sonucu: sıfır hata ve tek bağlantılı net yok. `EXPECTED_OPEN_N
 
 - Her yerleşim `2.54 mm` ızgaradadır. `kicad-sch-api` konumları `1.27 mm` ızgaraya snap ettiği için ızgara dışı bir yerleşim pini sessizce kaydırır.
 - Tel uçları elle yazılmaz; `get_component_pin_position()` ile çözülür. Stok sembolün iç geometrisi varsayımdan farklı olsa bile tel pinin üstüne oturur.
-- Bitişik parçalar arası bağlantı **gerçek telle** çizilir: `J1 → D2 → C_A`, buton düğümü, `C_SAFE → tweeter`, susturma pull-down'ları.
+- Bitişik parçalar arası bağlantı **gerçek telle** çizilir: `J1 → D2 → C_A`, buton düğümü, dört `C_SAFE → tweeter`. Dört amfi ayrı konnektördür (`U7`-`U10`); `DAC_LOUT`, `DAC_ROUT` ve `AMP_MUTE` dağıtımı ile dört `R7` sınıfı pull-down (`R7`-`R10`) net etiketiyle bağlanır.
 - Sayfayı boydan boya geçmesi gereken raylar için net etiketi ve power sembolü kullanılır. Bu KiCad'in olağan pratiğidir; her ray için sayfa boyu tel çekmek okunabilirliği düşürür.
 - Satın alınan kartlar konektör olarak çizilir. Pin **sırası mantıksal tasarım sözleşmesidir**, satıcı kartının fiziksel header sırası değildir.
 
@@ -64,4 +64,4 @@ Beklenen ERC sonucu: sıfır hata ve tek bağlantılı net yok. `EXPECTED_OPEN_N
 
 Şema `candidate` seviyesindedir. Nova sürücü empedansları, `C_SAFE`, jak polaritesi, `D2` ters polarite adayının düşümü ve XH-A232 `SD/MUTE` erişimi ölçülmeden üretim tasarımı kabul edilmez.
 
-`AMP_L_MINUS` ve `AMP_R_MINUS` BTL anahtarlama çıkışıdır, GND değildir. Sürücülere G0-G2 geçilmeden enerji verilmez.
+`AMPn_L_MINUS` ve `AMPn_R_MINUS` (dört amfi) BTL anahtarlama çıkışıdır, GND değildir. Sürücülere G0-G2 geçilmeden enerji verilmez; ilk enerjilenen yol bir amfi, bir woofer ve bir tweeter'dır.

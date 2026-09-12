@@ -39,7 +39,7 @@ Firmware tam 16 baytlık salt ve 384 baytlık verifier istiyordu. Araç iki ciha
 
 Sebep: üreteç ikisini de büyük tam sayılardan türetip **minimum bayt sayısıyla** serileştiriyor, yani üst baytı sıfır olan bir değer bir bayt kısa çıkıyor. 600 üretim ölçtüm: salt bir kez 15 bayt, verifier dört kez 383 bayt — ikisi de aritmetiğin öngördüğü 1/256'ya yakın.
 
-Bu, **256 cihazdan birinin hiç provisioning yapamaması** demekti. Dört cihazla muhtemelen hiç görülmez, görüldüğünde de rastgele bir donanım arızası gibi görünürdü.
+Bu, **256 cihazdan birinin hiç provisioning yapamaması** demekti. Tek cihazla muhtemelen hiç görülmez, görüldüğünde de rastgele bir donanım arızası gibi görünürdü.
 
 Doldurmak çözüm değil: `calculate_x` salt'ı **ham bayt dizisi** olarak hashliyor, dolayısıyla cihazda sıfırla doldurmak el sıkışmayı bozardı. Firmware artık bir aralık kabul ediyor ve saklanan uzunluğu aynen kullanıyor.
 

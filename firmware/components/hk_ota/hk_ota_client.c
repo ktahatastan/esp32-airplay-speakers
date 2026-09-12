@@ -175,7 +175,7 @@ esp_err_t hk_ota_client_run(const hk_ota_request_t *request)
 
     while ((err = esp_https_ota_perform(handle)) == ESP_ERR_HTTPS_OTA_IN_PROGRESS) {
         /* Deliberately quiet. A progress log per chunk would drown every other
-         * line in the boot report for no benefit at four devices. */
+         * line in the boot report for no benefit. */
     }
 
     if (err != ESP_OK) {

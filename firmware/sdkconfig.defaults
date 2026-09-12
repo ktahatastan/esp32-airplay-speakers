@@ -69,11 +69,12 @@ CONFIG_HK_AIRPLAY=y
 
 # The part runs at 240 MHz, not the 160 MHz default.
 #
-# The DSP budget is what forces this. The playout task runs the whole
-# protection chain per sample at 44.1 kHz -- mono downmix, EQ, the subsonic
-# high-pass, an LR4 crossover into two branches and a limiter on each -- and
-# it runs it between the receiver's decode and the I2S DMA deadline, on a core
-# it shares with Wi-Fi and the RTSP session. Headroom there is what separates
+# The DSP budget is what forces this. With the CONFIG_HK_AIRPLAY_OUTPUT_DSP
+# backend the playout task runs the whole protection chain per sample at
+# 44.1 kHz -- mono downmix, EQ, the subsonic high-pass, an LR4 crossover into
+# two branches and a limiter on each -- and it runs it between the receiver's
+# decode and the I2S DMA deadline, on a core it shares with Wi-Fi and the RTSP
+# session. Headroom there is what separates
 # a clean stream from an underrun that sounds like a DAC fault. The cost is a
 # little heat on a part fed from a desktop adapter, which is the right way
 # round: a speaker that is awake is already spending far more on its amplifier

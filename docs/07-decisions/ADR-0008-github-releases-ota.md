@@ -13,7 +13,7 @@ tags: [adr, ota, github-releases, security]
 
 Merzarkabul Airplay Speakers firmware sürümleri SemVer Git etiketleriyle oluşturulacak ve GitHub Actions tarafından test/build sonrası GitHub Release asset'i olarak yayımlanacaktır. Cihazlar uygun ağ ve idle-audio koşullarında daha yeni stable sürümü HTTPS üzerinden otomatik olarak alacaktır.
 
-OTA; çift uygulama slotu, imzalı image, ilk-açılış sağlık kontrolü, rollback ve USB/UART recovery içerir. Dört cihazın tamamına doğrudan aynı anda dağıtım yapılmaz; bir canary cihazdan sonra stable terfisi uygulanır.
+OTA; çift uygulama slotu, imzalı image, ilk-açılış sağlık kontrolü, rollback ve USB/UART recovery içerir. Bir sürüm aday olarak doğar: önce canary kanalına çıkar, bring-up geliştirme kartında (ADR-0012) veya canary kanalına alınmış kabinde çalıştıktan sonra stable'a terfi eder.
 
 2026-08-31'de F7 kapsamında beş alt karar netleşti. Hepsi bu ADR'nin ilk sürümünün açık bıraktığı yerleri doldurur.
 
@@ -39,7 +39,7 @@ Bu gereklidir çünkü ESP-IDF v5.5.1 kendisi bu kontrolü yapmaz. `esp_https_ot
 Sürüm profili `firmware/sdkconfig.release` bu seçeneği açar. ESP32-S3'te:
 
 - **Hiçbir eFuse yakılmaz** ve karar geri alınabilir: `sdkconfig` düzeltilip USB'den yeniden flash'lanır.
-- Kapsam dürüstçe sınırlıdır: imza **yalnız OTA anında** doğrulanır, açılışta değil. Açılışta doğrulama `SECURE_SIGNED_ON_BOOT_NO_SECURE_BOOT`'a, o da `SECURE_BOOT_V1_SUPPORTED` üzerinden `SOC_SECURE_BOOT_V1`'e bağlıdır; ESP32-S3'te bu yetenek yoktur (`soc_caps.h` yalnız `SOC_SECURE_BOOT_V2_RSA` tanımlar). Yani bu ayar **uzaktan sahte güncellemeye karşı korur, fiziksel erişime karşı korumaz**. Dört cihaz kullanıcının evinde olduğu için kabul edilen takas budur.
+- Kapsam dürüstçe sınırlıdır: imza **yalnız OTA anında** doğrulanır, açılışta değil. Açılışta doğrulama `SECURE_SIGNED_ON_BOOT_NO_SECURE_BOOT`'a, o da `SECURE_BOOT_V1_SUPPORTED` üzerinden `SOC_SECURE_BOOT_V1`'e bağlıdır; ESP32-S3'te bu yetenek yoktur (`soc_caps.h` yalnız `SOC_SECURE_BOOT_V2_RSA` tanımlar). Yani bu ayar **uzaktan sahte güncellemeye karşı korur, fiziksel erişime karşı korumaz**. Cihaz kullanıcının evinde olduğu için kabul edilen takas budur.
 - Güven çıpası çalışan uygulamanın kendi imza bloğudur. Bu yüzden `sdkconfig.release` ile derlenen bir görüntü **imzalanmadan cihaza yazılamaz**: ESP-IDF açılışta `esp_efuse_startup.c:103` → `esp_secure_boot_init_checks()` → `check_signature_on_update_check()` yolunu işletir ve imzasız uygulamada `abort()` eder. Bu nedenle imzalama ayarı `sdkconfig.defaults` içinde **değildir**; düz bir `idf.py flash` geliştirme yapısı boot döngüsüne girerdi.
 - Şema RSA-3072'dir; ESP32-S3'te başka seçenek yoktur.
 
@@ -49,7 +49,7 @@ Anahtar **çevrimdışı, bir kez** üretilir ve CI'da asla üretilmez:
 idf.py secure-generate-signing-key --version 2 --scheme rsa3072 hk_signing_key.pem
 ```
 
-Kaybı felaket değildir: dört cihaz USB'den yeniden flash'lanır. Bu, dört prototip için doğru takastır; bir ürün için olmazdı.
+Kaybı felaket değildir: cihaz USB'den yeniden flash'lanır. Bu, bir prototip için doğru takastır; satılan bir ürün için olmazdı.
 
 ### 4. Geri alma koruması (anti-rollback) bilerek KAPALI
 
@@ -61,7 +61,7 @@ Manifest'teki `secure_version` alanı ayrılmış olarak durur ve `hk_manifest` 
 
 GitHub iki ayrı hiyerarşi sunar. `api.github.com` Sectigo'ya, sürüm varlık sunucusu `release-assets.githubusercontent.com` ise Let's Encrypt'e zincirlenir. ESP-IDF v5.5.1 paketindeki 150 sertifika arasında `ISRG Root X1` ve `X2` var, **`ISRG Root YR` ve `YR1` yok**. Varlık sunucusu bugün yalnızca GitHub zincirin içinde Root YR'nin X1 tarafından çapraz imzalanmış kopyasını gönderdiği için doğrulanıyor.
 
-2026-08-31'de canlı zincirle ölçüldü: çapraz imza zincirden çıkarıldığında doğrulama `error 20, unable to get local issuer certificate` ile başarısız oluyor. GitHub o kopyayı kırptığı gün — ki bunu duyurmak zorunda değil — sahadaki her hoparlör OTA'yı sessizce kaybeder. Kök `firmware/certs/isrg-root-yr.pem` olarak eklendi (606 bayt) ve üretilen pakette doğrulandı.
+2026-08-31'de canlı zincirle ölçüldü: çapraz imza zincirden çıkarıldığında doğrulama `error 20, unable to get local issuer certificate` ile başarısız oluyor. GitHub o kopyayı kırptığı gün — ki bunu duyurmak zorunda değil — sahadaki hoparlör OTA'yı sessizce kaybeder. Kök `firmware/certs/isrg-root-yr.pem` olarak eklendi (606 bayt) ve üretilen pakette doğrulandı.
 
 ### 6. Hat iki işe bölündü
 
@@ -73,7 +73,7 @@ GitHub iki ayrı hiyerarşi sunar. `api.github.com` Sectigo'ya, sürüm varlık 
 
 Bunun etrafından `HK_SIGNING_KEY`'i **depo** secret'ı yaparak dolaşmak yasaktır. Hattı çalıştırırdı, ama anahtarı `build` dahil her işe okutarak — yani bölmenin tek sebebini ortadan kaldırarak. Doğrusu `release` ortamına bağlı **ortam** secret'ıdır.
 
-Ayrıca `publish` işi iki şeyi imzalamadan önce denetler: anahtarın açık yarısının parmak izi `docs/credentials/burned-keys.txt` içindeyse reddeder — liste konuma değil parmak izine bakar, çünkü bir anahtar dosyasını silmek onu ifşa edilmemiş yapmaz; ve `firmware/certs/hk-signing-key.pub.bin` ile sabitlenmiş açık anahtarla eşleşmiyorsa reddeder. İkincisi olmadan, geçerli ama **yanlış** bir RSA-3072 anahtarı her denetimden geçer ve dört hoparlörün de sessizce reddedeceği bir sürüm yayımlanırdı; kurtarma yolu dört cihazı USB'den yeniden yazmaktır.
+Ayrıca `publish` işi iki şeyi imzalamadan önce denetler: anahtarın açık yarısının parmak izi `docs/credentials/burned-keys.txt` içindeyse reddeder — liste konuma değil parmak izine bakar, çünkü bir anahtar dosyasını silmek onu ifşa edilmemiş yapmaz; ve `firmware/certs/hk-signing-key.pub.bin` ile sabitlenmiş açık anahtarla eşleşmiyorsa reddeder. İkincisi olmadan, geçerli ama **yanlış** bir RSA-3072 anahtarı her denetimden geçer ve hoparlörün sessizce reddedeceği bir sürüm yayımlanırdı; kurtarma yolu cihazı USB'den yeniden yazmaktır.
 
 ### 7. Dağıtım: depo public
 
@@ -95,17 +95,17 @@ Yanmış anahtarın commit'i geçmişte duruyor ve yine herkese açık. Bu kabul
 
 Her kanalın kendi **sabit etiketli işaretçi sürümü** var: `channel-stable` ve `channel-canary`. Cihazın adresi hiç değişmiyor; yayımlama, o etiketin **ne taşıdığını** değiştiriyor. Adres kanal ayarından `hk_ota_manifest_url()` ile kuruluyor ve kırpılma sessizce geçmiyor, hata olarak dönüyor — kısalmış bir adres, cihazın var olmayan bir yeri nazikçe kontrol etmesi demek.
 
-**Yeni sürüm aday olarak doğar.** `release.yml` sürümü prerelease yayımlıyor, manifest'i `canary` kanalıyla üretiyor ve `channel-canary` işaretçisini taşıyor. Diğer üç hoparlöre hiçbir şey ulaşmıyor. Varsayılanın tersi olması, canary adımını pratikte isteğe bağlı yapardı.
+**Yeni sürüm aday olarak doğar.** `release.yml` sürümü prerelease yayımlıyor, manifest'i `canary` kanalıyla üretiyor ve `channel-canary` işaretçisini taşıyor. Stable kanalını izleyen cihaza hiçbir şey ulaşmıyor: aday, bring-up geliştirme kartında veya canary kanalına alınmış kabinde gerçekten çalışana ve biri terfi ettirene kadar adaydır. Varsayılanın tersi olması, canary adımını pratikte isteğe bağlı yapardı.
 
-**Terfi yeniden derlemez.** `promote.yml` yayımlanmış ikiliyi indiriyor, manifest'i ondan `stable` kanalıyla yeniden üretiyor ve yalnız manifest'i yayımlıyor. Yeniden derleme farklı bir imaj üretirdi — tek başına derleme zamanı bile baytları değiştirir — ve canary hoparlörün gerçekten çalıştırdığı şey kimseye ulaşmazdı. Ölçüldü: canary ve stable manifest'leri arasında **yalnız `channel` alanı** farklı; `sha256`, `size` ve `asset` aynı.
+**Terfi yeniden derlemez.** `promote.yml` yayımlanmış ikiliyi indiriyor, manifest'i ondan `stable` kanalıyla yeniden üretiyor ve yalnız manifest'i yayımlıyor. Yeniden derleme farklı bir imaj üretirdi — tek başına derleme zamanı bile baytları değiştirir — ve canary'de gerçekten çalışan şey stable'a ulaşmazdı. Ölçüldü: canary ve stable manifest'leri arasında **yalnız `channel` alanı** farklı; `sha256`, `size` ve `asset` aynı.
 
 ## Gerekçe
 
 - Kullanıcı müdahalesi olmadan güvenilir sürüm dağıtımı.
 - Release binary, manifest, checksum ve release notes için tek izlenebilir kaynak.
-- Enerji kesintisi veya bozuk sürümde dört hoparlörü aynı anda kullanılmaz hale getirmeme.
+- Enerji kesintisi veya bozuk sürümde hoparlörü kullanılmaz hale getirmeme.
 - Firmware signing anahtarını cihaz, kaynak kod veya derleme işi içinde dağıtmama.
-- Geri alınamaz donanım kararlarından (eFuse) dört prototip uğruna kaçınma.
+- Geri alınamaz donanım kararlarından (eFuse) bir prototip uğruna kaçınma.
 
 ## Sonuçlar
 

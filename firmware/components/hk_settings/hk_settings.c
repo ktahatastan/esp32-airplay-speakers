@@ -13,29 +13,13 @@ const hk_setting_def_t hk_settings_table[] = {
     {"auto_update", "check for updates automatically", 1u, 0u, 1u},
     {"standby_min", "idle minutes before standby; 0 disables", 30u, 0u, 240u},
     /* Which release channel this speaker follows. Stored rather than compiled
-     * in, because the canary step in the OTA plan puts ONE device on the
-     * candidate channel — and rebuilding a different image for it would mean
-     * the canary is not testing the image the others will get. */
+     * in, so the device can be put on the canary channel to try a release
+     * before it is promoted (ADR-0008) without building it a different image —
+     * a device running a different image would not be testing the release. */
     {"channel", "0 = stable, 1 = canary", 0u, 0u, 1u},
     /* How many times an update has been rolled back. Survives the reboot a
      * rollback causes, which is the only reason it is in storage at all. */
     {"rollbacks", "consecutive rolled-back updates", 0u, 0u, 255u},
-    /* Which part of the stereo image this speaker plays.
-     *
-     * Mono by default, and that is the design rather than a convenience.
-     * ADR-0002 and the signal-chain plan are explicit that this is NOT a stereo
-     * box: the two amplifier channels are a BI-AMP pair -- left drives the
-     * woofer, right drives the tweeter -- so the same mono programme has to
-     * reach both, and a crossover splits it by frequency rather than by
-     * channel. Passing stereo straight through sends half the mix to the
-     * woofer and the other half to the tweeter, which is what this speaker was
-     * doing until now.
-     *
-     * Left and right exist because four of these will sit in one room, and
-     * which part of the image a given box should play is a placement decision
-     * the owner makes after it is on a shelf -- not something a build can know.
-     */
-    {"chan_mode", "0 = mono, 1 = left, 2 = right", 0u, 0u, 2u},
     {NULL, NULL, 0u, 0u, 0u},
 };
 

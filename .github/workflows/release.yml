@@ -224,7 +224,7 @@ jobs:
             --keyfile signing_key.pem signing_key.pub.bin
 
           # A key that has ever been exposed can be used by whoever saw it to
-          # sign firmware these speakers would accept. Exposure is not undone
+          # sign firmware the speaker would accept. Exposure is not undone
           # by making a repository private afterwards, so the list is permanent
           # and is checked before anything is signed.
           FINGERPRINT=$(sha256sum signing_key.pub.bin | cut -d' ' -f1)
@@ -243,8 +243,8 @@ jobs:
           # nothing — any valid RSA-3072 key passes. What matters is whether
           # this is the key the DEVICES already trust, because the trust anchor
           # is the running app's own signature block. Signing with the wrong
-          # valid key produces a release all four speakers silently refuse,
-          # recoverable only by USB reflashing every unit.
+          # valid key produces a release the speaker silently refuses,
+          # recoverable only by USB reflashing it.
           PINNED=firmware/certs/hk-signing-key.pub.bin
           if [ ! -f "$PINNED" ]; then
             echo "No pinned public key at $PINNED, so there is no way to tell"
@@ -292,7 +292,7 @@ jobs:
           # A last read-back: the manifest has to agree with the binary beside
           # it. make_manifest generates both from the same file, so this can
           # only fail if the artefacts were swapped between steps — which is
-          # precisely the case worth catching before four speakers try it.
+          # precisely the case worth catching before the speaker tries it.
           python3 - <<'PY'
           import hashlib, json, pathlib, sys
           manifest = json.loads(pathlib.Path("manifest.json").read_text())
@@ -314,10 +314,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           cp merzarkabul-signed.bin "${{ steps.tag.outputs.asset }}"
-          # A new release is a CANDIDATE. Nothing reaches the other three
-          # speakers until one of them has run it and someone promoted it —
-          # that is the canary step, and defaulting the other way would make it
-          # optional in practice.
+          # A new release is born a CANDIDATE. Nothing reaches the stable
+          # channel until it has run on the bring-up devkit (ADR-0012) or on
+          # the cabinet opted into the canary channel, and someone promoted
+          # it — that is the canary step, and defaulting the other way would
+          # make it optional in practice.
           gh release create "${{ steps.tag.outputs.value }}" \
             --repo "${{ github.repository }}" \
             --title "${{ steps.tag.outputs.value }}" \

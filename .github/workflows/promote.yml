@@ -2,9 +2,9 @@
 #
 # The rule this exists to enforce: the SAME SIGNED BINARY is promoted, never
 # rebuilt. A rebuild would produce a different image — a different build time
-# alone changes the bytes — and the thing the canary speaker actually ran would
-# never reach anyone else. So this downloads the published asset, regenerates
-# the manifest from it, and republishes only the manifest.
+# alone changes the bytes — and the thing that actually ran on the canary
+# channel would never be what stable ships. So this downloads the published
+# asset, regenerates the manifest from it, and republishes only the manifest.
 #
 # Because make_manifest.py reads the product, version and secure_version out of
 # the binary and computes the digest over it, a promoted manifest cannot
@@ -27,8 +27,9 @@ jobs:
   promote:
     name: promote a candidate to stable
     runs-on: ubuntu-latest
-    # Same gate as publishing. Promotion is the step that reaches the other
-    # three speakers, so it deserves at least as much ceremony as the release.
+    # Same gate as publishing. Promotion is the step that reaches the stable
+    # channel the speaker follows, so it deserves at least as much ceremony as
+    # the release.
     environment: release
     permissions:
       contents: write

@@ -26,18 +26,18 @@
  *
  * It does not touch samples either. There is no gain, no attenuation and no
  * ceiling in this file, because there is nothing here that could honestly set
- * one: the crossover, the protective high-pass and the limiter are firmware
- * stage F3, and F3 waits on the G0 driver-impedance measurement that is still
- * an open blocker. A number invented here would be indistinguishable from a
- * measured one, which is the failure mode this whole repository is arranged
- * against.
+ * one: the crossover, the protective high-pass and the limiter live in hk_dsp
+ * (firmware stage F3), and the numbers they run on wait on the G0
+ * driver-impedance measurement that is still an open blocker. A number
+ * invented here would be indistinguishable from a measured one, which is the
+ * failure mode this whole repository is arranged against.
  *
  * MUTED IS THE RESTING STATE, and the mechanism is the one hk_pins.h describes:
  * both lines are active low against external pull-downs, so the safe level is
  * the level the pad already has at reset. This module only ever RELEASES mute.
  * If it crashes, if the task is deleted, if the chip resets, if this firmware
  * never runs at all — the pads go high-impedance, the pull-downs win and the
- * speakers are quiet.
+ * speaker is quiet.
  *
  * NOT YET VERIFIED ON HARDWARE. This compiles against ESP-IDF v5.5.1. No board
  * has been watched on a scope while it ran, and the settle times it supplies

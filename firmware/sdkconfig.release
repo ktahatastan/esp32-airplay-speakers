@@ -16,7 +16,7 @@
 #     ANINDA DEGIL. Acilista dogrulama SECURE_SIGNED_ON_BOOT_NO_SECURE_BOOT'a,
 #     o da SECURE_BOOT_V1_SUPPORTED'a bagli ve S3'te SOC_SECURE_BOOT_V1 yok.
 #     Yani bu ayar uzaktan sahte guncellemeye karsi korur, fiziksel erisime
-#     karsi korumaz. Kabul edilen takas: dort cihaz kullanicinin evinde.
+#     karsi korumaz. Kabul edilen takas: tek cihaz kullanicinin evinde.
 CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT=y
 
 # --- Ozel anahtar derleme sirasinda ISTENMEZ. Boylece CI is akisinin derleme
@@ -29,7 +29,7 @@ CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES=n
 #     S3'te alan 16 bitlik unary, yani toplam 16 artis hakki var ve geri
 #     alinamaz. Bir kez secure_version=12 yayimlamak o cihazin 12 hakkini
 #     kalici harcar ve daha eski her imaji o yongada kalici olarak
-#     acilamaz yapar. Dort prototip icin bu takas kotu.
+#     acilamaz yapar. Tek bir prototip icin bu takas kotu.
 #     Manifest'teki "secure_version" alani ayrilmis olarak durur ve hk_manifest
 #     icinde yalnizca YAZILIMSAL olarak karsilastirilir; eFuse yakilmaz.
 CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK=n

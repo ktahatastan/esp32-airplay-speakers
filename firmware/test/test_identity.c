@@ -3,7 +3,7 @@
 
 /*
  * Covers the identity table in docs/controls-and-provisioning-plan.md and
- * ADR-0001. Four speakers have to be distinguishable at first boot, so the
+ * ADR-0001. The suffix is what makes the device unique on any network, so the
  * suffix and its propagation into every surface is the load-bearing part.
  */
 void test_identity(void)
@@ -34,8 +34,8 @@ void test_identity(void)
     HK_CHECK(strcmp(id_a.suffix, id_b.suffix) != 0);
     HK_CHECK(strcmp(id_a.softap, id_b.softap) != 0);
 
-    /* An all-zero MAC means the interface was read too early. Naming four
-     * speakers from it would give them all the same name, so it is an error. */
+    /* An all-zero MAC means the interface was read too early. A name derived
+     * from it would be the same on every board, so it is an error. */
     const uint8_t mac_unset[6] = {0, 0, 0, 0, 0, 0};
     HK_CHECK_EQ_INT(hk_identity_from_mac(mac_unset, &id), HK_IDENTITY_ERR_MAC);
     HK_CHECK_EQ_INT(hk_identity_from_mac(NULL, &id), HK_IDENTITY_ERR_ARG);

@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="2720" height="2290" viewBox="0 0 2720 2290" role="img" aria-labelledby="t d">
-<title id="t">Merzarkabul Airplay Speakers — tek hoparlör modül seviyesi devre şeması</title>
-<desc id="d">19 V DC adaptör girişi, ters polarite adayı ve bulk kondansatör, 5 V lojik beslemesi, ESP32-S3 N16R8, PCM5102A I2S DAC, XH-A232 BTL bi-amp, GPIO13/GPIO21 susturma hatları ve harici pull-down'ları, woofer ve C_SAFE korumalı tweeter, kullanıcı arayüzü ve TP0-TP21 test noktaları.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="2720" height="2860" viewBox="0 0 2720 2860" role="img" aria-labelledby="t d">
+<title id="t">Merzarkabul Airplay Speakers — tek kabin modül seviyesi devre şeması</title>
+<desc id="d">24 V / 2,9 A DC adaptör girişi, ters polarite adayı ve bulk kondansatör, iki 5 V buck (A: ESP32-S3, B: PCM5102A), ESP32-S3 N16R8, PCM5102A I2S DAC, LOUT/ROUT'un dört XH-A232 girişine dağıtımı, GPIO13/GPIO21 susturma hatları ve harici pull-down'ları, dört woofer ve dört C_SAFE korumalı tweeter, kullanıcı arayüzü ve TP0-TP34 test noktaları.</desc>
 <style>
 .page{fill:#ffffff}
 .frame{fill:none;stroke:#0f172a;stroke-width:2}
@@ -68,60 +68,60 @@
 .tb-line{stroke:#cbd5e1;stroke-width:1}
 .legend{font:12px 'Helvetica Neue',Arial,sans-serif;fill:#334155}
 </style>
-<rect class="page" x="0" y="0" width="2720" height="2290"/>
-<rect class="frame" x="16" y="16" width="2688" height="2258"/>
-<rect class="frame-inner" x="42" y="42" width="2636" height="2206"/>
+<rect class="page" x="0" y="0" width="2720" height="2860"/>
+<rect class="frame" x="16" y="16" width="2688" height="2828"/>
+<rect class="frame-inner" x="42" y="42" width="2636" height="2776"/>
 <text class="ruler" x="207" y="34">1</text>
-<text class="ruler" x="207" y="2268">1</text>
+<text class="ruler" x="207" y="2838">1</text>
 <text class="ruler" x="536" y="34">2</text>
-<text class="ruler" x="536" y="2268">2</text>
+<text class="ruler" x="536" y="2838">2</text>
 <line class="tb-line" x1="372" y1="16" x2="372" y2="42"/>
-<line class="tb-line" x1="372" y1="2248" x2="372" y2="2274"/>
+<line class="tb-line" x1="372" y1="2818" x2="372" y2="2844"/>
 <text class="ruler" x="866" y="34">3</text>
-<text class="ruler" x="866" y="2268">3</text>
+<text class="ruler" x="866" y="2838">3</text>
 <line class="tb-line" x1="701" y1="16" x2="701" y2="42"/>
-<line class="tb-line" x1="701" y1="2248" x2="701" y2="2274"/>
+<line class="tb-line" x1="701" y1="2818" x2="701" y2="2844"/>
 <text class="ruler" x="1195" y="34">4</text>
-<text class="ruler" x="1195" y="2268">4</text>
+<text class="ruler" x="1195" y="2838">4</text>
 <line class="tb-line" x1="1030" y1="16" x2="1030" y2="42"/>
-<line class="tb-line" x1="1030" y1="2248" x2="1030" y2="2274"/>
+<line class="tb-line" x1="1030" y1="2818" x2="1030" y2="2844"/>
 <text class="ruler" x="1525" y="34">5</text>
-<text class="ruler" x="1525" y="2268">5</text>
+<text class="ruler" x="1525" y="2838">5</text>
 <line class="tb-line" x1="1360" y1="16" x2="1360" y2="42"/>
-<line class="tb-line" x1="1360" y1="2248" x2="1360" y2="2274"/>
+<line class="tb-line" x1="1360" y1="2818" x2="1360" y2="2844"/>
 <text class="ruler" x="1854" y="34">6</text>
-<text class="ruler" x="1854" y="2268">6</text>
+<text class="ruler" x="1854" y="2838">6</text>
 <line class="tb-line" x1="1690" y1="16" x2="1690" y2="42"/>
-<line class="tb-line" x1="1690" y1="2248" x2="1690" y2="2274"/>
+<line class="tb-line" x1="1690" y1="2818" x2="1690" y2="2844"/>
 <text class="ruler" x="2184" y="34">7</text>
-<text class="ruler" x="2184" y="2268">7</text>
+<text class="ruler" x="2184" y="2838">7</text>
 <line class="tb-line" x1="2019" y1="16" x2="2019" y2="42"/>
-<line class="tb-line" x1="2019" y1="2248" x2="2019" y2="2274"/>
+<line class="tb-line" x1="2019" y1="2818" x2="2019" y2="2844"/>
 <text class="ruler" x="2513" y="34">8</text>
-<text class="ruler" x="2513" y="2268">8</text>
+<text class="ruler" x="2513" y="2838">8</text>
 <line class="tb-line" x1="2348" y1="16" x2="2348" y2="42"/>
-<line class="tb-line" x1="2348" y1="2248" x2="2348" y2="2274"/>
-<text class="ruler" x="29" y="323">A</text>
-<text class="ruler" x="2691" y="323">A</text>
-<text class="ruler" x="29" y="874">B</text>
-<text class="ruler" x="2691" y="874">B</text>
-<line class="tb-line" x1="16" y1="594" x2="42" y2="594"/>
-<line class="tb-line" x1="2678" y1="594" x2="2704" y2="594"/>
-<text class="ruler" x="29" y="1426">C</text>
-<text class="ruler" x="2691" y="1426">C</text>
-<line class="tb-line" x1="16" y1="1145" x2="42" y2="1145"/>
-<line class="tb-line" x1="2678" y1="1145" x2="2704" y2="1145"/>
-<text class="ruler" x="29" y="1977">D</text>
-<text class="ruler" x="2691" y="1977">D</text>
-<line class="tb-line" x1="16" y1="1696" x2="42" y2="1696"/>
-<line class="tb-line" x1="2678" y1="1696" x2="2704" y2="1696"/>
-<text class="sheet-title" x="70" y="86">MERZARKABUL · TEK HOPARLÖR DEVRE ŞEMASI</text><text class="sheet-sub" x="70" y="108">Modül seviyesi prototip · dört kutuda aynı devre tekrarlanır · &#171;ADAY / TBD&#187; değerler ölçümle kilitlenir · üretim PCB şeması değildir</text>
-<rect class="zone" x="70" y="130" width="2580" height="400" rx="8"/><rect class="zone-tab" x="70" y="130" width="632.0" height="28" rx="6"/><text class="zone-letter" x="83" y="150">A</text><text class="zone-title" x="102" y="150">19 V DC GİRİŞ, TERS POLARİTE ADAYI VE BULK KONDANSATÖR — ADR-0020</text>
-<rect class="zone" x="70" y="630" width="590" height="800" rx="8"/><rect class="zone-tab" x="70" y="630" width="208.79999999999998" height="28" rx="6"/><text class="zone-letter" x="83" y="650">B</text><text class="zone-title" x="102" y="650">5 V LOJİK BESLEMESİ</text>
+<line class="tb-line" x1="2348" y1="2818" x2="2348" y2="2844"/>
+<text class="ruler" x="29" y="394">A</text>
+<text class="ruler" x="2691" y="394">A</text>
+<text class="ruler" x="29" y="1088">B</text>
+<text class="ruler" x="2691" y="1088">B</text>
+<line class="tb-line" x1="16" y1="736" x2="42" y2="736"/>
+<line class="tb-line" x1="2678" y1="736" x2="2704" y2="736"/>
+<text class="ruler" x="29" y="1782">C</text>
+<text class="ruler" x="2691" y="1782">C</text>
+<line class="tb-line" x1="16" y1="1430" x2="42" y2="1430"/>
+<line class="tb-line" x1="2678" y1="1430" x2="2704" y2="1430"/>
+<text class="ruler" x="29" y="2476">D</text>
+<text class="ruler" x="2691" y="2476">D</text>
+<line class="tb-line" x1="16" y1="2124" x2="42" y2="2124"/>
+<line class="tb-line" x1="2678" y1="2124" x2="2704" y2="2124"/>
+<text class="sheet-title" x="70" y="86">MERZARKABUL · TEK KABİN DEVRE ŞEMASI</text><text class="sheet-sub" x="70" y="108">Modül seviyesi prototip · bir ESP32-S3, bir PCM5102A, dört XH-A232, sekiz sürücü, tek program · &#171;ADAY / TBD&#187; değerler ölçümle kilitlenir · üretim PCB şeması değildir</text>
+<rect class="zone" x="70" y="130" width="2580" height="400" rx="8"/><rect class="zone-tab" x="70" y="130" width="632.0" height="28" rx="6"/><text class="zone-letter" x="83" y="150">A</text><text class="zone-title" x="102" y="150">24 V DC GİRİŞ, TERS POLARİTE ADAYI VE BULK KONDANSATÖR — ADR-0020</text>
+<rect class="zone" x="70" y="630" width="590" height="800" rx="8"/><rect class="zone-tab" x="70" y="630" width="374.4" height="28" rx="6"/><text class="zone-letter" x="83" y="650">B</text><text class="zone-title" x="102" y="650">5 V BESLEMELERİ — İKİ BUCK (ADR-0020)</text>
 <rect class="zone" x="680" y="630" width="510" height="800" rx="8"/><rect class="zone-tab" x="680" y="630" width="264.0" height="28" rx="6"/><text class="zone-letter" x="693" y="650">C</text><text class="zone-title" x="712" y="650">ESP32-S3 N16R8 — ADR-0010</text>
-<rect class="zone" x="1210" y="630" width="580" height="800" rx="8"/><rect class="zone-tab" x="1210" y="630" width="181.2" height="28" rx="6"/><text class="zone-letter" x="1223" y="650">D</text><text class="zone-title" x="1242" y="650">PCM5102A I²S DAC</text>
-<rect class="zone" x="1810" y="630" width="850" height="800" rx="8"/><rect class="zone-tab" x="1810" y="630" width="411.2" height="28" rx="6"/><text class="zone-letter" x="1823" y="650">E</text><text class="zone-title" x="1842" y="650">XH-A232 / TPA3110 BTL Bİ-AMP VE SÜRÜCÜLER</text>
-<rect class="zone" x="70" y="1470" width="830" height="380" rx="8"/><rect class="zone-tab" x="70" y="1470" width="190.39999999999998" height="28" rx="6"/><text class="zone-letter" x="83" y="1490">F</text><text class="zone-title" x="102" y="1490">KULLANICI ARAYÜZÜ</text>
+<rect class="zone" x="1210" y="630" width="620" height="800" rx="8"/><rect class="zone-tab" x="1210" y="630" width="181.2" height="28" rx="6"/><text class="zone-letter" x="1223" y="650">D</text><text class="zone-title" x="1242" y="650">PCM5102A I²S DAC</text>
+<rect class="zone" x="1850" y="630" width="800" height="380" rx="8"/><rect class="zone-tab" x="1850" y="630" width="190.39999999999998" height="28" rx="6"/><text class="zone-letter" x="1863" y="650">F</text><text class="zone-title" x="1882" y="650">KULLANICI ARAYÜZÜ</text>
+<rect class="zone" x="70" y="1470" width="2580" height="780" rx="8"/><rect class="zone-tab" x="70" y="1470" width="861.9999999999999" height="28" rx="6"/><text class="zone-letter" x="83" y="1490">E</text><text class="zone-title" x="102" y="1490">DAC → DÖRT XH-A232 / TPA3110 BTL AMFİ, SUSTURMA BUS'I VE SEKİZ SÜRÜCÜ — ADR-0002, ADR-0011</text>
 <polyline class="w pwr" points="422,278.0 540,278.0"/>
 <polyline class="w pwr" points="604,278.0 800,278.0"/>
 <polyline class="w gnd" points="422,310.0 460,310.0 460,380"/>
@@ -130,6 +130,10 @@
 <polyline class="w v5" points="462,778.0 490,778.0"/>
 <polyline class="w v5" points="556,778.0 600,778.0"/>
 <polyline class="w gnd" points="462,810.0 502,810.0"/>
+<polyline class="w pwr" points="158,978.0 188,978.0"/>
+<polyline class="w gnd" points="148,1010.0 188,1010.0"/>
+<polyline class="w v5" points="462,978.0 600,978.0"/>
+<polyline class="w gnd" points="462,1010.0 502,1010.0"/>
 <polyline class="w v5" points="778,778.0 808,778.0"/>
 <polyline class="w gnd" points="660,810.0 808,810.0"/>
 <polyline class="w v33" points="808,842.0 740,842.0"/>
@@ -137,6 +141,7 @@
 <polyline class="w dig" points="808,906.0 778,906.0"/>
 <polyline class="w dig" points="808,938.0 778,938.0"/>
 <polyline class="w dig" points="808,970.0 778,970.0"/>
+<polyline class="w dig" points="808,1002.0 778,1002.0"/>
 <polyline class="w dig" points="1182,778.0 1378,778.0"/>
 <polyline class="w dig" points="1182,810.0 1378,810.0"/>
 <polyline class="w dig" points="1182,842.0 1378,842.0"/>
@@ -145,30 +150,80 @@
 <polyline class="w gnd" points="1378,970.0 1360,970.0"/>
 <polyline class="w gnd" points="1752,842.0 1752,990"/>
 <polyline class="w dig" points="1182,874.0 1378,874.0"/>
-<polyline class="w aud" points="1752,778.0 1938,778.0"/>
-<polyline class="w aud" points="1752,810.0 1938,810.0"/>
-<polyline class="w pwr" points="1908,842.0 1938,842.0"/>
-<polyline class="w gnd" points="1938,874.0 1894,874.0"/>
-<polyline class="w dig dnp" points="1182,906.0 1196,906.0 1196,1150 1938,1150 1938,906.0"/>
-<polyline class="w btl" points="2312,778.0 2450,778.0"/>
-<polyline class="w btl" points="2312,810.0 2450,810.0"/>
-<polyline class="w btl" points="2312,842.0 2350,842.0 2350,1290 2360,1290"/>
-<polyline class="w btl" points="2424,1290 2450,1290"/>
-<polyline class="w btl" points="2312,874.0 2330,874.0 2330,1322 2450,1322"/>
-<polyline class="w sig" points="160,1622 160,1650"/>
-<polyline class="w dig" points="160,1622 400,1622"/>
-<polyline class="w dig" points="590,1512 590,1556"/>
-<polyline class="w sig" points="590,1622 590,1622"/>
-<polyline class="w dig" points="700,1512 700,1556"/>
-<polyline class="w sig" points="700,1622 700,1622"/>
-<polyline class="w dig" points="810,1512 810,1556"/>
-<polyline class="w sig" points="810,1622 810,1622"/>
-<polyline class="w sig" points="590,1674 810,1674"/>
-<polyline class="w gnd" points="700,1674 700,1700"/>
+<polyline class="w aud" points="1752,778.0 1810,778.0"/>
+<polyline class="w aud" points="1810,778.0 1810,1521"/>
+<path class="w aud" d="M 1810,1521 A 9 9 0 0 1 1810,1539"/>
+<polyline class="w aud" points="1810,1539 1810,1560"/>
+<polyline class="w aud" points="1752,810.0 1786,810.0 1786,1530"/>
+<polyline class="w sig" points="1940,812 1940,840"/>
+<polyline class="w dig" points="1940,812 2180,812"/>
+<polyline class="w dig" points="2370,702 2370,746"/>
+<polyline class="w sig" points="2370,812 2370,812"/>
+<polyline class="w dig" points="2480,702 2480,746"/>
+<polyline class="w sig" points="2480,812 2480,812"/>
+<polyline class="w dig" points="2590,702 2590,746"/>
+<polyline class="w sig" points="2590,812 2590,812"/>
+<polyline class="w sig" points="2370,864 2590,864"/>
+<polyline class="w gnd" points="2480,864 2480,890"/>
+<polyline class="w aud" points="200,1560 200,1698.0 218,1698.0"/>
+<polyline class="w aud" points="176,1530 176,1551"/>
+<path class="w aud" d="M 176,1551 A 9 9 0 0 1 176,1569"/>
+<polyline class="w aud" points="176,1569 176,1730.0"/>
+<polyline class="w aud" points="176,1730.0 218,1730.0"/>
+<polyline class="w dig dnp" points="218,1762.0 218,2060"/>
+<polyline class="w pwr" points="188,1794.0 218,1794.0"/>
+<polyline class="w gnd" points="218,1826.0 174,1826.0"/>
+<polyline class="w btl" points="512,1698.0 580,1698.0"/>
+<polyline class="w btl" points="512,1730.0 580,1730.0"/>
+<polyline class="w btl" points="512,1762.0 542,1762.0 542,1910 550,1910"/>
+<polyline class="w btl" points="614,1910 640,1910"/>
+<polyline class="w btl" points="512,1794.0 528,1794.0 528,1942 640,1942"/>
+<polyline class="w aud" points="830,1560 830,1698.0 848,1698.0"/>
+<polyline class="w aud" points="806,1530 806,1551"/>
+<path class="w aud" d="M 806,1551 A 9 9 0 0 1 806,1569"/>
+<polyline class="w aud" points="806,1569 806,1730.0"/>
+<polyline class="w aud" points="806,1730.0 848,1730.0"/>
+<polyline class="w dig dnp" points="848,1762.0 848,2060"/>
+<polyline class="w pwr" points="818,1794.0 848,1794.0"/>
+<polyline class="w gnd" points="848,1826.0 804,1826.0"/>
+<polyline class="w btl" points="1142,1698.0 1210,1698.0"/>
+<polyline class="w btl" points="1142,1730.0 1210,1730.0"/>
+<polyline class="w btl" points="1142,1762.0 1172,1762.0 1172,1910 1180,1910"/>
+<polyline class="w btl" points="1244,1910 1270,1910"/>
+<polyline class="w btl" points="1142,1794.0 1158,1794.0 1158,1942 1270,1942"/>
+<polyline class="w aud" points="1460,1560 1460,1698.0 1478,1698.0"/>
+<polyline class="w aud" points="1436,1530 1436,1551"/>
+<path class="w aud" d="M 1436,1551 A 9 9 0 0 1 1436,1569"/>
+<polyline class="w aud" points="1436,1569 1436,1730.0"/>
+<polyline class="w aud" points="1436,1730.0 1478,1730.0"/>
+<polyline class="w dig dnp" points="1478,1762.0 1478,2060"/>
+<polyline class="w pwr" points="1448,1794.0 1478,1794.0"/>
+<polyline class="w gnd" points="1478,1826.0 1434,1826.0"/>
+<polyline class="w btl" points="1772,1698.0 1840,1698.0"/>
+<polyline class="w btl" points="1772,1730.0 1840,1730.0"/>
+<polyline class="w btl" points="1772,1762.0 1802,1762.0 1802,1910 1810,1910"/>
+<polyline class="w btl" points="1874,1910 1900,1910"/>
+<polyline class="w btl" points="1772,1794.0 1788,1794.0 1788,1942 1900,1942"/>
+<polyline class="w aud" points="2090,1560 2090,1698.0 2108,1698.0"/>
+<polyline class="w aud" points="2066,1530 2066,1551"/>
+<path class="w aud" d="M 2066,1551 A 9 9 0 0 1 2066,1569"/>
+<polyline class="w aud" points="2066,1569 2066,1730.0"/>
+<polyline class="w aud" points="2066,1730.0 2108,1730.0"/>
+<polyline class="w dig dnp" points="2108,1762.0 2108,2060"/>
+<polyline class="w pwr" points="2078,1794.0 2108,1794.0"/>
+<polyline class="w gnd" points="2108,1826.0 2064,1826.0"/>
+<polyline class="w btl" points="2402,1698.0 2470,1698.0"/>
+<polyline class="w btl" points="2402,1730.0 2470,1730.0"/>
+<polyline class="w btl" points="2402,1762.0 2432,1762.0 2432,1910 2440,1910"/>
+<polyline class="w btl" points="2504,1910 2530,1910"/>
+<polyline class="w btl" points="2402,1794.0 2418,1794.0 2418,1942 2530,1942"/>
+<polyline class="w aud" points="200,1560 2090,1560"/>
+<polyline class="w aud" points="176,1530 2066,1530"/>
+<polyline class="w dig dnp" points="170,2060 2170,2060"/>
 <rect class="blk" x="100" y="200" width="300" height="144" rx="6"/><line class="blk-div" x1="100" y1="252" x2="400" y2="252"/>
-<text class="blk-ref" x="100" y="191">J1</text><text class="blk-title" x="250.0" y="226">DC GİRİŞ JAKI</text><text class="blk-sub" x="250.0" y="243">5,5 × 2,1 mm · merkez pozitif · 19 V adaptör</text>
+<text class="blk-ref" x="100" y="191">J1</text><text class="blk-title" x="250.0" y="226">DC GİRİŞ JAKI</text><text class="blk-sub" x="250.0" y="243">5,5 × 2,1 mm · merkez pozitif · 24 V / 2,9 A adaptör</text>
 <line class="pin" x1="400" y1="278.0" x2="422" y2="278.0"/>
-<text class="pin-name" text-anchor="end" x="390" y="282.0">+19 V</text>
+<text class="pin-name" text-anchor="end" x="390" y="282.0">+24 V</text>
 <line class="pin" x1="400" y1="310.0" x2="422" y2="310.0"/>
 <text class="pin-name" text-anchor="end" x="390" y="314.0">GND</text>
 <line class="sym-line" x1="540" y1="278.0" x2="560" y2="278.0"/><path class="sym" d="M 560 264.0 L 584 278.0 L 560 292.0 Z"/><line class="sym-plate" x1="584" y1="264.0" x2="584" y2="292.0"/><line class="sym-line" x1="584" y1="278.0" x2="604" y2="278.0"/><text class="sym-ref" text-anchor="middle" x="572" y="254.0">D2</text><text class="sym-val" text-anchor="middle" x="572" y="312.0">Schottky / ideal-diyot ADAY</text>
@@ -177,12 +232,12 @@
 <line class="sym-plate" x1="782" y1="304.0" x2="818" y2="304.0"/>
 <path class="sym-plate" d="M 782 320.0 q 18 -12 36 0" fill="none"/><text class="sym-pol" x="766" y="300.0">+</text>
 <line class="sym-line" x1="800" y1="320.0" x2="800" y2="342.0"/>
-<text class="sym-ref" text-anchor="start" x="826" y="306.0">C_A</text><text class="sym-val" text-anchor="start" x="826" y="322.0">1000 µF / 25 V</text>
+<text class="sym-ref" text-anchor="start" x="826" y="306.0">C_A</text><text class="sym-val" text-anchor="start" x="826" y="322.0">1000 µF / 35 V</text>
 <line class="w gnd" x1="800" y1="342.0" x2="800" y2="356.0"/><line class="gnd-bar" x1="785" y1="356.0" x2="815" y2="356.0"/><line class="gnd-bar" x1="791" y1="362.0" x2="809" y2="362.0"/><line class="gnd-bar" x1="796" y1="368.0" x2="804" y2="368.0"/>
 <line class="w gnd" x1="460" y1="380" x2="460" y2="394"/><line class="gnd-bar" x1="445" y1="394" x2="475" y2="394"/><line class="gnd-bar" x1="451" y1="400" x2="469" y2="400"/><line class="gnd-bar" x1="456" y1="406" x2="464" y2="406"/>
 <text class="gnd-name" text-anchor="middle" x="460" y="422">POWER_GND</text>
 <rect class="blk" x="210" y="700" width="230" height="144" rx="6"/><line class="blk-div" x1="210" y1="752" x2="440" y2="752"/>
-<text class="blk-ref" x="210" y="691">U4</text><text class="blk-title" x="325.0" y="726">MP1584 BUCK</text><text class="blk-sub" x="325.0" y="743">yüksüz 5,10 V'a ayarla</text>
+<text class="blk-ref" x="210" y="691">U3</text><text class="blk-title" x="325.0" y="726">MP1584 BUCK A</text><text class="blk-sub" x="325.0" y="743">ESP32-S3 · yüksüz 5,10 V'a ayarla</text>
 <line class="pin" x1="210" y1="778.0" x2="188" y2="778.0"/>
 <text class="pin-name" text-anchor="start" x="220" y="782.0">IN+</text>
 <line class="pin" x1="210" y1="810.0" x2="188" y2="810.0"/>
@@ -191,6 +246,7 @@
 <text class="pin-name" text-anchor="end" x="430" y="782.0">OUT+</text>
 <line class="pin" x1="440" y1="810.0" x2="462" y2="810.0"/>
 <text class="pin-name" text-anchor="end" x="430" y="814.0">OUT−</text>
+<text class="blk-note" x="325.0" y="862">JP1 servis ayırma: USB ile programlarken açık</text>
 <path class="flag" d="M 158 778.0 l -12 -13 h -41.2 v 26 h 41.2 Z"/>
 <text class="flag-name" text-anchor="end" x="138" y="783.0">VIN</text>
 <line class="w gnd" x1="148" y1="810.0" x2="148" y2="824.0"/><line class="gnd-bar" x1="133" y1="824.0" x2="163" y2="824.0"/><line class="gnd-bar" x1="139" y1="830.0" x2="157" y2="830.0"/><line class="gnd-bar" x1="144" y1="836.0" x2="152" y2="836.0"/>
@@ -199,7 +255,25 @@
 <line class="w rail" x1="600" y1="778.0" x2="600" y2="762.0"/><line class="rail-bar" x1="584" y1="762.0" x2="616" y2="762.0"/><text class="rail-name" text-anchor="middle" x="600" y="754.0">+5V_LOGIC</text>
 <line class="w gnd" x1="502" y1="810.0" x2="502" y2="824.0"/><line class="gnd-bar" x1="487" y1="824.0" x2="517" y2="824.0"/><line class="gnd-bar" x1="493" y1="830.0" x2="511" y2="830.0"/><line class="gnd-bar" x1="498" y1="836.0" x2="506" y2="836.0"/>
 <text class="gnd-name" text-anchor="middle" x="502" y="852.0">STAR_GND</text>
-<rect class="blk" x="830" y="700" width="330" height="304" rx="6"/><line class="blk-div" x1="830" y1="752" x2="1160" y2="752"/>
+<rect class="blk" x="210" y="900" width="230" height="144" rx="6"/><line class="blk-div" x1="210" y1="952" x2="440" y2="952"/>
+<text class="blk-ref" x="210" y="891">U4</text><text class="blk-title" x="325.0" y="926">MP1584 BUCK B</text><text class="blk-sub" x="325.0" y="943">PCM5102A · yüksüz 5,10 V'a ayarla</text>
+<line class="pin" x1="210" y1="978.0" x2="188" y2="978.0"/>
+<text class="pin-name" text-anchor="start" x="220" y="982.0">IN+</text>
+<line class="pin" x1="210" y1="1010.0" x2="188" y2="1010.0"/>
+<text class="pin-name" text-anchor="start" x="220" y="1014.0">IN−</text>
+<line class="pin" x1="440" y1="978.0" x2="462" y2="978.0"/>
+<text class="pin-name" text-anchor="end" x="430" y="982.0">OUT+</text>
+<line class="pin" x1="440" y1="1010.0" x2="462" y2="1010.0"/>
+<text class="pin-name" text-anchor="end" x="430" y="1014.0">OUT−</text>
+<text class="blk-note" x="325.0" y="1062">JP yok: USB geri beslemesi yalnız ESP geliştirme kartında</text>
+<path class="flag" d="M 158 978.0 l -12 -13 h -41.2 v 26 h 41.2 Z"/>
+<text class="flag-name" text-anchor="end" x="138" y="983.0">VIN</text>
+<line class="w gnd" x1="148" y1="1010.0" x2="148" y2="1024.0"/><line class="gnd-bar" x1="133" y1="1024.0" x2="163" y2="1024.0"/><line class="gnd-bar" x1="139" y1="1030.0" x2="157" y2="1030.0"/><line class="gnd-bar" x1="144" y1="1036.0" x2="152" y2="1036.0"/>
+<text class="gnd-name" text-anchor="middle" x="148" y="1052.0">POWER_GND</text>
+<line class="w rail" x1="600" y1="978.0" x2="600" y2="962.0"/><line class="rail-bar" x1="584" y1="962.0" x2="616" y2="962.0"/><text class="rail-name" text-anchor="middle" x="600" y="954.0">+5V_DAC</text>
+<line class="w gnd" x1="502" y1="1010.0" x2="502" y2="1024.0"/><line class="gnd-bar" x1="487" y1="1024.0" x2="517" y2="1024.0"/><line class="gnd-bar" x1="493" y1="1030.0" x2="511" y2="1030.0"/><line class="gnd-bar" x1="498" y1="1036.0" x2="506" y2="1036.0"/>
+<text class="gnd-name" text-anchor="middle" x="502" y="1052.0">STAR_GND</text>
+<rect class="blk" x="830" y="700" width="330" height="336" rx="6"/><line class="blk-div" x1="830" y1="752" x2="1160" y2="752"/>
 <text class="blk-ref" x="830" y="691">U5</text><text class="blk-title" x="995.0" y="726">ESP32-S3 DEVKIT</text><text class="blk-sub" x="995.0" y="743">16 MB flash + 8 MB PSRAM</text>
 <line class="pin" x1="830" y1="778.0" x2="808" y2="778.0"/>
 <text class="pin-name" text-anchor="start" x="840" y="782.0">5V / VBUS</text>
@@ -215,6 +289,8 @@
 <text class="pin-name" text-anchor="start" x="840" y="942.0">GPIO9  LED_G</text>
 <line class="pin" x1="830" y1="970.0" x2="808" y2="970.0"/>
 <text class="pin-name" text-anchor="start" x="840" y="974.0">GPIO10 LED_B</text>
+<line class="pin" x1="830" y1="1002.0" x2="808" y2="1002.0"/>
+<text class="pin-name" text-anchor="start" x="840" y="1006.0">GPIO21 AMP_MUTE</text>
 <line class="pin" x1="1160" y1="778.0" x2="1182" y2="778.0"/>
 <text class="pin-name" text-anchor="end" x="1150" y="782.0">GPIO4  BCLK</text>
 <line class="pin" x1="1160" y1="810.0" x2="1182" y2="810.0"/>
@@ -223,9 +299,7 @@
 <text class="pin-name" text-anchor="end" x="1150" y="846.0">GPIO6  DATA</text>
 <line class="pin" x1="1160" y1="874.0" x2="1182" y2="874.0"/>
 <text class="pin-name" text-anchor="end" x="1150" y="878.0">GPIO13 DAC_XSMT</text>
-<line class="pin" x1="1160" y1="906.0" x2="1182" y2="906.0"/>
-<text class="pin-name" text-anchor="end" x="1150" y="910.0">GPIO21 AMP_MUTE</text>
-<text class="blk-note" x="995.0" y="1022">GPIO ataması ADAY · kart şeması ve boot testi olmadan accepted değil</text>
+<text class="blk-note" x="995.0" y="1054">GPIO ataması ADAY · kart şeması ve boot testi olmadan accepted değil</text>
 <path class="flag" d="M 778 778.0 l -12 -13 h -91.60000000000001 v 26 h 91.60000000000001 Z"/>
 <text class="flag-name" text-anchor="end" x="758" y="783.0">+5V_LOGIC</text>
 <line class="w gnd" x1="660" y1="810.0" x2="660" y2="824.0"/><line class="gnd-bar" x1="645" y1="824.0" x2="675" y2="824.0"/><line class="gnd-bar" x1="651" y1="830.0" x2="669" y2="830.0"/><line class="gnd-bar" x1="656" y1="836.0" x2="664" y2="836.0"/>
@@ -239,6 +313,8 @@
 <text class="flag-name" text-anchor="end" x="758" y="943.0">LED_G</text>
 <path class="flag" d="M 778 970.0 l -12 -13 h -58.0 v 26 h 58.0 Z"/>
 <text class="flag-name" text-anchor="end" x="758" y="975.0">LED_B</text>
+<path class="flag" d="M 778 1002.0 l -12 -13 h -83.2 v 26 h 83.2 Z"/>
+<text class="flag-name" text-anchor="end" x="758" y="1007.0">AMP_MUTE</text>
 <rect class="blk" x="1400" y="700" width="330" height="304" rx="6"/><line class="blk-div" x1="1400" y1="752" x2="1730" y2="752"/>
 <text class="blk-ref" x="1400" y="691">U6</text><text class="blk-title" x="1565.0" y="726">PCM5102A MODÜLÜ</text><text class="blk-sub" x="1565.0" y="743">3-wire I²S · modül köprüleri doğrulanacak</text>
 <line class="pin" x1="1400" y1="778.0" x2="1378" y2="778.0"/>
@@ -262,7 +338,7 @@
 <line class="pin" x1="1730" y1="842.0" x2="1752" y2="842.0"/>
 <text class="pin-name" text-anchor="end" x="1720" y="846.0">AGND</text>
 <line class="w gnd" x1="1352" y1="906.0" x2="1352" y2="920.0"/><line class="gnd-bar" x1="1337" y1="920.0" x2="1367" y2="920.0"/><line class="gnd-bar" x1="1343" y1="926.0" x2="1361" y2="926.0"/><line class="gnd-bar" x1="1348" y1="932.0" x2="1356" y2="932.0"/>
-<line class="w rail" x1="1300" y1="1040" x2="1300" y2="1056"/><line class="rail-bar" x1="1284" y1="1056" x2="1316" y2="1056"/><text class="rail-name" text-anchor="middle" x="1300" y="1072">+5V_LOGIC</text>
+<line class="w rail" x1="1300" y1="1040" x2="1300" y2="1056"/><line class="rail-bar" x1="1284" y1="1056" x2="1316" y2="1056"/><text class="rail-name" text-anchor="middle" x="1300" y="1072">+5V_DAC</text>
 <line class="w gnd" x1="1360" y1="970.0" x2="1360" y2="984.0"/><line class="gnd-bar" x1="1345" y1="984.0" x2="1375" y2="984.0"/><line class="gnd-bar" x1="1351" y1="990.0" x2="1369" y2="990.0"/><line class="gnd-bar" x1="1356" y1="996.0" x2="1364" y2="996.0"/>
 <text class="gnd-name" text-anchor="middle" x="1360" y="1012.0">STAR_GND</text>
 <line class="w gnd" x1="1752" y1="990" x2="1752" y2="1004"/><line class="gnd-bar" x1="1737" y1="1004" x2="1767" y2="1004"/><line class="gnd-bar" x1="1743" y1="1010" x2="1761" y2="1010"/><line class="gnd-bar" x1="1748" y1="1016" x2="1756" y2="1016"/>
@@ -270,198 +346,340 @@
 <line class="sym-line" x1="1234" y1="874.0" x2="1234" y2="886.0"/><rect class="sym" x="1223" y="886.0" width="22" height="42" rx="2"/><line class="sym-line" x1="1234" y1="928.0" x2="1234" y2="940.0"/><text class="sym-ref" text-anchor="start" x="1252" y="902.0">R6</text><text class="sym-val" text-anchor="start" x="1252" y="918.0">10 kΩ</text>
 <line class="w gnd" x1="1234" y1="940.0" x2="1234" y2="954.0"/><line class="gnd-bar" x1="1219" y1="954.0" x2="1249" y2="954.0"/><line class="gnd-bar" x1="1225" y1="960.0" x2="1243" y2="960.0"/><line class="gnd-bar" x1="1230" y1="966.0" x2="1238" y2="966.0"/>
 <text class="gnd-name" text-anchor="middle" x="1234" y="982.0">STAR_GND</text>
-<rect class="blk" x="1960" y="700" width="330" height="240" rx="6"/><line class="blk-div" x1="1960" y1="752" x2="2290" y2="752"/>
-<text class="blk-ref" x="1960" y="691">U7</text><text class="blk-title" x="2125.0" y="726">XH-A232 / TPA3110</text><text class="blk-sub" x="2125.0" y="743">2 × BTL Class-D · 8–26 V</text>
-<line class="pin" x1="1960" y1="778.0" x2="1938" y2="778.0"/>
-<text class="pin-name" text-anchor="start" x="1970" y="782.0">L IN</text>
-<line class="pin" x1="1960" y1="810.0" x2="1938" y2="810.0"/>
-<text class="pin-name" text-anchor="start" x="1970" y="814.0">R IN</text>
-<line class="pin" x1="1960" y1="842.0" x2="1938" y2="842.0"/>
-<text class="pin-name" text-anchor="start" x="1970" y="846.0">VCC</text>
-<line class="pin" x1="1960" y1="874.0" x2="1938" y2="874.0"/>
-<text class="pin-name" text-anchor="start" x="1970" y="878.0">GND</text>
-<line class="pin" x1="1960" y1="906.0" x2="1938" y2="906.0"/>
-<text class="pin-name" text-anchor="start" x="1970" y="910.0">SD  PAD ADAY</text>
-<line class="pin" x1="2290" y1="778.0" x2="2312" y2="778.0"/>
-<text class="pin-name" text-anchor="end" x="2280" y="782.0">L+</text>
-<line class="pin" x1="2290" y1="810.0" x2="2312" y2="810.0"/>
-<text class="pin-name" text-anchor="end" x="2280" y="814.0">L−</text>
-<line class="pin" x1="2290" y1="842.0" x2="2312" y2="842.0"/>
-<text class="pin-name" text-anchor="end" x="2280" y="846.0">R+</text>
-<line class="pin" x1="2290" y1="874.0" x2="2312" y2="874.0"/>
-<text class="pin-name" text-anchor="end" x="2280" y="878.0">R−</text>
-<path class="flag" d="M 1908 842.0 l -12 -13 h -41.2 v 26 h 41.2 Z"/>
-<text class="flag-name" text-anchor="end" x="1888" y="847.0">VIN</text>
-<line class="w gnd" x1="1894" y1="874.0" x2="1894" y2="888.0"/><line class="gnd-bar" x1="1879" y1="888.0" x2="1909" y2="888.0"/><line class="gnd-bar" x1="1885" y1="894.0" x2="1903" y2="894.0"/><line class="gnd-bar" x1="1890" y1="900.0" x2="1898" y2="900.0"/>
-<text class="gnd-name" text-anchor="middle" x="1894" y="916.0">POWER_GND</text>
-<line class="sym-line" x1="1880" y1="1150" x2="1880" y2="1162"/><rect class="sym dnp" x="1869" y="1162" width="22" height="42" rx="2"/><line class="sym-line" x1="1880" y1="1204" x2="1880" y2="1216"/><text class="sym-ref" text-anchor="start" x="1898" y="1178">R7</text><text class="sym-val" text-anchor="start" x="1898" y="1194">10 kΩ</text>
-<line class="w gnd" x1="1880" y1="1216" x2="1880" y2="1230"/><line class="gnd-bar" x1="1865" y1="1230" x2="1895" y2="1230"/><line class="gnd-bar" x1="1871" y1="1236" x2="1889" y2="1236"/><line class="gnd-bar" x1="1876" y1="1242" x2="1884" y2="1242"/>
-<text class="gnd-name" text-anchor="middle" x="1880" y="1258">POWER_GND</text>
-<line class="sym-line" x1="2450" y1="778.0" x2="2474" y2="778.0"/><line class="sym-line" x1="2450" y1="810.0" x2="2474" y2="810.0"/><rect class="sym" x="2474" y="762.0" width="24" height="64" rx="2"/><path class="sym" d="M 2498 762.0 L 2534 738.0 L 2534 850.0 L 2498 826.0 Z"/><text class="sym-pol" x="2454" y="772.0">+</text><text class="sym-pol" x="2454" y="826.0">−</text><text class="drv-ref" text-anchor="middle" x="2492" y="872.0">SPK1</text><text class="drv-name" text-anchor="middle" x="2492" y="892.0">WOOFER</text><text class="drv-detail" text-anchor="middle" x="2492" y="912.0">Ω TBD · G0 bekliyor</text>
-<line class="sym-line" x1="2360" y1="1290" x2="2386" y2="1290"/><line class="sym-plate" x1="2386" y1="1272" x2="2386" y2="1308"/><line class="sym-plate" x1="2398" y1="1272" x2="2398" y2="1308"/><line class="sym-line" x1="2398" y1="1290" x2="2424" y2="1290"/><text class="sym-ref" text-anchor="middle" x="2392" y="1264">C_SAFE</text><text class="sym-val" text-anchor="middle" x="2392" y="1326"></text>
-<line class="sym-line" x1="2450" y1="1290" x2="2474" y2="1290"/><line class="sym-line" x1="2450" y1="1322" x2="2474" y2="1322"/><rect class="sym" x="2474" y="1274" width="24" height="64" rx="2"/><path class="sym" d="M 2498 1274 L 2534 1250 L 2534 1362 L 2498 1338 Z"/><text class="sym-pol" x="2454" y="1284">+</text><text class="sym-pol" x="2454" y="1338">−</text><text class="drv-ref" text-anchor="middle" x="2492" y="1384">SPK2</text><text class="drv-name" text-anchor="middle" x="2492" y="1404">TWEETER</text><text class="drv-detail" text-anchor="middle" x="2492" y="1424">Ω TBD · G2 bekliyor</text>
-<line class="w rail" x1="160" y1="1556" x2="160" y2="1540"/><line class="rail-bar" x1="144" y1="1540" x2="176" y2="1540"/><text class="rail-name" text-anchor="middle" x="160" y="1532">+3V3</text>
-<line class="sym-line" x1="160" y1="1556" x2="160" y2="1568"/><rect class="sym" x="149" y="1568" width="22" height="42" rx="2"/><line class="sym-line" x1="160" y1="1610" x2="160" y2="1622"/><text class="sym-ref" text-anchor="start" x="178" y="1584">R_PU</text><text class="sym-val" text-anchor="start" x="178" y="1600">10 kΩ ADAY</text>
-<line class="sym-line" x1="160" y1="1650" x2="160" y2="1664"/><circle class="sym-dot" cx="160" cy="1667" r="3.5"/><circle class="sym-dot" cx="160" cy="1695" r="3.5"/><line class="sym-line" x1="158" y1="1670" x2="180" y2="1670"/><line class="sym-line" x1="158" y1="1692" x2="180" y2="1692"/><line class="sym-line" x1="180" y1="1670" x2="180" y2="1692"/><line class="sym-line" x1="144" y1="1681" x2="176" y2="1681"/><line class="sym-line" x1="160" y1="1695" x2="160" y2="1712"/><text class="sym-ref" text-anchor="start" x="190" y="1676">SW1</text><text class="sym-val" text-anchor="start" x="190" y="1692">FONKSİYON / RESET</text>
-<line class="w gnd" x1="160" y1="1712" x2="160" y2="1726"/><line class="gnd-bar" x1="145" y1="1726" x2="175" y2="1726"/><line class="gnd-bar" x1="151" y1="1732" x2="169" y2="1732"/><line class="gnd-bar" x1="156" y1="1738" x2="164" y2="1738"/>
-<text class="gnd-name" text-anchor="middle" x="160" y="1754">STAR_GND</text>
-<line class="sym-line" x1="340" y1="1622" x2="340" y2="1648"/>
-<line class="sym-plate" x1="322" y1="1648" x2="358" y2="1648"/>
-<line class="sym-plate" x1="322" y1="1660" x2="358" y2="1660"/>
-<line class="sym-line" x1="340" y1="1660" x2="340" y2="1686"/>
-<text class="sym-ref" text-anchor="start" x="366" y="1650">C_DB</text><text class="sym-val" text-anchor="start" x="366" y="1666">100 nF OPSİYONEL</text>
-<line class="w gnd" x1="340" y1="1686" x2="340" y2="1700"/><line class="gnd-bar" x1="325" y1="1700" x2="355" y2="1700"/><line class="gnd-bar" x1="331" y1="1706" x2="349" y2="1706"/><line class="gnd-bar" x1="336" y1="1712" x2="344" y2="1712"/>
-<path class="flag" d="M 400 1622 l 12 -13 h 83.2 v 26 h -83.2 Z"/>
-<text class="flag-name" text-anchor="start" x="420" y="1627">BUTTON_N</text>
-<path class="flag" d="M 590 1512 l -13 -12 v -58.0 h 26 v 58.0 Z"/>
-<text class="flag-name" text-anchor="middle" x="590" y="1471.0" transform="rotate(-90 590 1471.0)">LED_R</text>
-<line class="sym-line" x1="590" y1="1556" x2="590" y2="1568"/><rect class="sym" x="579" y="1568" width="22" height="42" rx="2"/><line class="sym-line" x1="590" y1="1610" x2="590" y2="1622"/><text class="sym-ref" text-anchor="start" x="608" y="1584">R_R</text><text class="sym-val" text-anchor="start" x="608" y="1600">680 Ω</text>
-<line class="sym-line" x1="590" y1="1622" x2="590" y2="1636"/><path class="sym" style="fill:#fecaca" d="M 576 1636 L 604 1636 L 590 1660 Z"/><line class="sym-plate" x1="576" y1="1660" x2="604" y2="1660"/><line class="sym-line" x1="590" y1="1660" x2="590" y2="1674"/><path class="led-ray" d="M 606 1638 l 12 -10 M 606 1648 l 12 -10"/><text class="sym-ref" text-anchor="start" x="622" y="1644">D3</text><text class="sym-val" text-anchor="start" x="622" y="1660"></text>
-<path class="flag" d="M 700 1512 l -13 -12 v -58.0 h 26 v 58.0 Z"/>
-<text class="flag-name" text-anchor="middle" x="700" y="1471.0" transform="rotate(-90 700 1471.0)">LED_G</text>
-<line class="sym-line" x1="700" y1="1556" x2="700" y2="1568"/><rect class="sym" x="689" y="1568" width="22" height="42" rx="2"/><line class="sym-line" x1="700" y1="1610" x2="700" y2="1622"/><text class="sym-ref" text-anchor="start" x="718" y="1584">R_G</text><text class="sym-val" text-anchor="start" x="718" y="1600">330 Ω</text>
-<line class="sym-line" x1="700" y1="1622" x2="700" y2="1636"/><path class="sym" style="fill:#bbf7d0" d="M 686 1636 L 714 1636 L 700 1660 Z"/><line class="sym-plate" x1="686" y1="1660" x2="714" y2="1660"/><line class="sym-line" x1="700" y1="1660" x2="700" y2="1674"/><path class="led-ray" d="M 716 1638 l 12 -10 M 716 1648 l 12 -10"/><text class="sym-ref" text-anchor="start" x="732" y="1644">D4</text><text class="sym-val" text-anchor="start" x="732" y="1660"></text>
-<path class="flag" d="M 810 1512 l -13 -12 v -58.0 h 26 v 58.0 Z"/>
-<text class="flag-name" text-anchor="middle" x="810" y="1471.0" transform="rotate(-90 810 1471.0)">LED_B</text>
-<line class="sym-line" x1="810" y1="1556" x2="810" y2="1568"/><rect class="sym" x="799" y="1568" width="22" height="42" rx="2"/><line class="sym-line" x1="810" y1="1610" x2="810" y2="1622"/><text class="sym-ref" text-anchor="start" x="828" y="1584">R_B</text><text class="sym-val" text-anchor="start" x="828" y="1600">330 Ω</text>
-<line class="sym-line" x1="810" y1="1622" x2="810" y2="1636"/><path class="sym" style="fill:#bfdbfe" d="M 796 1636 L 824 1636 L 810 1660 Z"/><line class="sym-plate" x1="796" y1="1660" x2="824" y2="1660"/><line class="sym-line" x1="810" y1="1660" x2="810" y2="1674"/><path class="led-ray" d="M 826 1638 l 12 -10 M 826 1648 l 12 -10"/><text class="sym-ref" text-anchor="start" x="842" y="1644">D5</text><text class="sym-val" text-anchor="start" x="842" y="1660"></text>
-<line class="w gnd" x1="700" y1="1700" x2="700" y2="1714"/><line class="gnd-bar" x1="685" y1="1714" x2="715" y2="1714"/><line class="gnd-bar" x1="691" y1="1720" x2="709" y2="1720"/><line class="gnd-bar" x1="696" y1="1726" x2="704" y2="1726"/>
-<text class="gnd-name" text-anchor="middle" x="700" y="1742">ORTAK KATOT → STAR_GND</text>
+<line class="w rail" x1="1940" y1="746" x2="1940" y2="730"/><line class="rail-bar" x1="1924" y1="730" x2="1956" y2="730"/><text class="rail-name" text-anchor="middle" x="1940" y="722">+3V3</text>
+<line class="sym-line" x1="1940" y1="746" x2="1940" y2="758"/><rect class="sym" x="1929" y="758" width="22" height="42" rx="2"/><line class="sym-line" x1="1940" y1="800" x2="1940" y2="812"/><text class="sym-ref" text-anchor="start" x="1958" y="774">R_PU</text><text class="sym-val" text-anchor="start" x="1958" y="790">10 kΩ ADAY</text>
+<line class="sym-line" x1="1940" y1="840" x2="1940" y2="854"/><circle class="sym-dot" cx="1940" cy="857" r="3.5"/><circle class="sym-dot" cx="1940" cy="885" r="3.5"/><line class="sym-line" x1="1938" y1="860" x2="1960" y2="860"/><line class="sym-line" x1="1938" y1="882" x2="1960" y2="882"/><line class="sym-line" x1="1960" y1="860" x2="1960" y2="882"/><line class="sym-line" x1="1924" y1="871" x2="1956" y2="871"/><line class="sym-line" x1="1940" y1="885" x2="1940" y2="902"/><text class="sym-ref" text-anchor="start" x="1970" y="866">SW1</text><text class="sym-val" text-anchor="start" x="1970" y="882">FONKSİYON / RESET</text>
+<line class="w gnd" x1="1940" y1="902" x2="1940" y2="916"/><line class="gnd-bar" x1="1925" y1="916" x2="1955" y2="916"/><line class="gnd-bar" x1="1931" y1="922" x2="1949" y2="922"/><line class="gnd-bar" x1="1936" y1="928" x2="1944" y2="928"/>
+<text class="gnd-name" text-anchor="middle" x="1940" y="944">STAR_GND</text>
+<line class="sym-line" x1="2120" y1="812" x2="2120" y2="838"/>
+<line class="sym-plate" x1="2102" y1="838" x2="2138" y2="838"/>
+<line class="sym-plate" x1="2102" y1="850" x2="2138" y2="850"/>
+<line class="sym-line" x1="2120" y1="850" x2="2120" y2="876"/>
+<text class="sym-ref" text-anchor="start" x="2146" y="840">C_DB</text><text class="sym-val" text-anchor="start" x="2146" y="856">100 nF OPSİYONEL</text>
+<line class="w gnd" x1="2120" y1="876" x2="2120" y2="890"/><line class="gnd-bar" x1="2105" y1="890" x2="2135" y2="890"/><line class="gnd-bar" x1="2111" y1="896" x2="2129" y2="896"/><line class="gnd-bar" x1="2116" y1="902" x2="2124" y2="902"/>
+<path class="flag" d="M 2180 812 l 12 -13 h 83.2 v 26 h -83.2 Z"/>
+<text class="flag-name" text-anchor="start" x="2200" y="817">BUTTON_N</text>
+<path class="flag" d="M 2370 702 l -13 -12 v -58.0 h 26 v 58.0 Z"/>
+<text class="flag-name" text-anchor="middle" x="2370" y="661.0" transform="rotate(-90 2370 661.0)">LED_R</text>
+<line class="sym-line" x1="2370" y1="746" x2="2370" y2="758"/><rect class="sym" x="2359" y="758" width="22" height="42" rx="2"/><line class="sym-line" x1="2370" y1="800" x2="2370" y2="812"/><text class="sym-ref" text-anchor="start" x="2388" y="774">R_R</text><text class="sym-val" text-anchor="start" x="2388" y="790">680 Ω</text>
+<line class="sym-line" x1="2370" y1="812" x2="2370" y2="826"/><path class="sym" style="fill:#fecaca" d="M 2356 826 L 2384 826 L 2370 850 Z"/><line class="sym-plate" x1="2356" y1="850" x2="2384" y2="850"/><line class="sym-line" x1="2370" y1="850" x2="2370" y2="864"/><path class="led-ray" d="M 2386 828 l 12 -10 M 2386 838 l 12 -10"/><text class="sym-ref" text-anchor="start" x="2402" y="834">D3</text><text class="sym-val" text-anchor="start" x="2402" y="850"></text>
+<path class="flag" d="M 2480 702 l -13 -12 v -58.0 h 26 v 58.0 Z"/>
+<text class="flag-name" text-anchor="middle" x="2480" y="661.0" transform="rotate(-90 2480 661.0)">LED_G</text>
+<line class="sym-line" x1="2480" y1="746" x2="2480" y2="758"/><rect class="sym" x="2469" y="758" width="22" height="42" rx="2"/><line class="sym-line" x1="2480" y1="800" x2="2480" y2="812"/><text class="sym-ref" text-anchor="start" x="2498" y="774">R_G</text><text class="sym-val" text-anchor="start" x="2498" y="790">330 Ω</text>
+<line class="sym-line" x1="2480" y1="812" x2="2480" y2="826"/><path class="sym" style="fill:#bbf7d0" d="M 2466 826 L 2494 826 L 2480 850 Z"/><line class="sym-plate" x1="2466" y1="850" x2="2494" y2="850"/><line class="sym-line" x1="2480" y1="850" x2="2480" y2="864"/><path class="led-ray" d="M 2496 828 l 12 -10 M 2496 838 l 12 -10"/><text class="sym-ref" text-anchor="start" x="2512" y="834">D4</text><text class="sym-val" text-anchor="start" x="2512" y="850"></text>
+<path class="flag" d="M 2590 702 l -13 -12 v -58.0 h 26 v 58.0 Z"/>
+<text class="flag-name" text-anchor="middle" x="2590" y="661.0" transform="rotate(-90 2590 661.0)">LED_B</text>
+<line class="sym-line" x1="2590" y1="746" x2="2590" y2="758"/><rect class="sym" x="2579" y="758" width="22" height="42" rx="2"/><line class="sym-line" x1="2590" y1="800" x2="2590" y2="812"/><text class="sym-ref" text-anchor="start" x="2608" y="774">R_B</text><text class="sym-val" text-anchor="start" x="2608" y="790">330 Ω</text>
+<line class="sym-line" x1="2590" y1="812" x2="2590" y2="826"/><path class="sym" style="fill:#bfdbfe" d="M 2576 826 L 2604 826 L 2590 850 Z"/><line class="sym-plate" x1="2576" y1="850" x2="2604" y2="850"/><line class="sym-line" x1="2590" y1="850" x2="2590" y2="864"/><path class="led-ray" d="M 2606 828 l 12 -10 M 2606 838 l 12 -10"/><text class="sym-ref" text-anchor="start" x="2622" y="834">D5</text><text class="sym-val" text-anchor="start" x="2622" y="850"></text>
+<line class="w gnd" x1="2480" y1="890" x2="2480" y2="904"/><line class="gnd-bar" x1="2465" y1="904" x2="2495" y2="904"/><line class="gnd-bar" x1="2471" y1="910" x2="2489" y2="910"/><line class="gnd-bar" x1="2476" y1="916" x2="2484" y2="916"/>
+<text class="gnd-name" text-anchor="middle" x="2480" y="932">ORTAK KATOT → STAR_GND</text>
+<rect class="blk" x="240" y="1620" width="250" height="240" rx="6"/><line class="blk-div" x1="240" y1="1672" x2="490" y2="1672"/>
+<text class="blk-ref" x="240" y="1611">U7</text><text class="blk-title" x="365.0" y="1646">XH-A232 #1</text><text class="blk-sub" x="365.0" y="1663">TPA3110D2 · 2 × BTL Class-D · 8–26 V</text>
+<line class="pin" x1="240" y1="1698.0" x2="218" y2="1698.0"/>
+<text class="pin-name" text-anchor="start" x="250" y="1702.0">L IN</text>
+<line class="pin" x1="240" y1="1730.0" x2="218" y2="1730.0"/>
+<text class="pin-name" text-anchor="start" x="250" y="1734.0">R IN</text>
+<line class="pin" x1="240" y1="1762.0" x2="218" y2="1762.0"/>
+<text class="pin-name" text-anchor="start" x="250" y="1766.0">SD  PAD ADAY</text>
+<line class="pin" x1="240" y1="1794.0" x2="218" y2="1794.0"/>
+<text class="pin-name" text-anchor="start" x="250" y="1798.0">VCC</text>
+<line class="pin" x1="240" y1="1826.0" x2="218" y2="1826.0"/>
+<text class="pin-name" text-anchor="start" x="250" y="1830.0">GND</text>
+<line class="pin" x1="490" y1="1698.0" x2="512" y2="1698.0"/>
+<text class="pin-name" text-anchor="end" x="480" y="1702.0">L+</text>
+<line class="pin" x1="490" y1="1730.0" x2="512" y2="1730.0"/>
+<text class="pin-name" text-anchor="end" x="480" y="1734.0">L−</text>
+<line class="pin" x1="490" y1="1762.0" x2="512" y2="1762.0"/>
+<text class="pin-name" text-anchor="end" x="480" y="1766.0">R+</text>
+<line class="pin" x1="490" y1="1794.0" x2="512" y2="1794.0"/>
+<text class="pin-name" text-anchor="end" x="480" y="1798.0">R−</text>
+<line class="sym-line" x1="280" y1="2060" x2="280" y2="2072"/><rect class="sym dnp" x="269" y="2072" width="22" height="42" rx="2"/><line class="sym-line" x1="280" y1="2114" x2="280" y2="2126"/><text class="sym-ref" text-anchor="start" x="298" y="2088">R7</text><text class="sym-val" text-anchor="start" x="298" y="2104">10 kΩ</text>
+<line class="w gnd" x1="280" y1="2126" x2="280" y2="2140"/><line class="gnd-bar" x1="265" y1="2140" x2="295" y2="2140"/><line class="gnd-bar" x1="271" y1="2146" x2="289" y2="2146"/><line class="gnd-bar" x1="276" y1="2152" x2="284" y2="2152"/>
+<text class="gnd-name" text-anchor="middle" x="280" y="2168">POWER_GND</text>
+<path class="flag" d="M 188 1794.0 l -12 -13 h -41.2 v 26 h 41.2 Z"/>
+<text class="flag-name" text-anchor="end" x="168" y="1799.0">VIN</text>
+<line class="w gnd" x1="174" y1="1826.0" x2="174" y2="1840.0"/><line class="gnd-bar" x1="159" y1="1840.0" x2="189" y2="1840.0"/><line class="gnd-bar" x1="165" y1="1846.0" x2="183" y2="1846.0"/><line class="gnd-bar" x1="170" y1="1852.0" x2="178" y2="1852.0"/>
+<text class="gnd-name" text-anchor="middle" x="174" y="1868.0">POWER_GND</text>
+<line class="sym-line" x1="580" y1="1698.0" x2="604" y2="1698.0"/><line class="sym-line" x1="580" y1="1730.0" x2="604" y2="1730.0"/><rect class="sym" x="604" y="1682.0" width="24" height="64" rx="2"/><path class="sym" d="M 628 1682.0 L 664 1658.0 L 664 1770.0 L 628 1746.0 Z"/><text class="sym-pol" x="584" y="1692.0">+</text><text class="sym-pol" x="584" y="1746.0">−</text><text class="drv-ref" text-anchor="middle" x="622" y="1792.0">W1</text><text class="drv-name" text-anchor="middle" x="622" y="1812.0">WOOFER 1</text><text class="drv-detail" text-anchor="middle" x="622" y="1832.0">4 Ω sınıfı · Fs G0 bekliyor</text>
+<line class="sym-line" x1="550" y1="1910" x2="576" y2="1910"/><line class="sym-plate" x1="576" y1="1892" x2="576" y2="1928"/><line class="sym-plate" x1="588" y1="1892" x2="588" y2="1928"/><line class="sym-line" x1="588" y1="1910" x2="614" y2="1910"/><text class="sym-ref" text-anchor="middle" x="582" y="1884">C_SAFE1</text><text class="sym-val" text-anchor="middle" x="582" y="1946"></text>
+<line class="sym-line" x1="640" y1="1910" x2="664" y2="1910"/><line class="sym-line" x1="640" y1="1942" x2="664" y2="1942"/><rect class="sym" x="664" y="1894" width="24" height="64" rx="2"/><path class="sym" d="M 688 1894 L 724 1870 L 724 1982 L 688 1958 Z"/><text class="sym-pol" x="644" y="1904">+</text><text class="sym-pol" x="644" y="1958">−</text><text class="drv-ref" text-anchor="middle" x="682" y="2004">T1</text><text class="drv-name" text-anchor="middle" x="682" y="2024">TWEETER 1</text><text class="drv-detail" text-anchor="middle" x="682" y="2044">4 Ω sınıfı · G2 bekliyor</text>
+<rect class="blk" x="870" y="1620" width="250" height="240" rx="6"/><line class="blk-div" x1="870" y1="1672" x2="1120" y2="1672"/>
+<text class="blk-ref" x="870" y="1611">U8</text><text class="blk-title" x="995.0" y="1646">XH-A232 #2</text><text class="blk-sub" x="995.0" y="1663">TPA3110D2 · 2 × BTL Class-D · 8–26 V</text>
+<line class="pin" x1="870" y1="1698.0" x2="848" y2="1698.0"/>
+<text class="pin-name" text-anchor="start" x="880" y="1702.0">L IN</text>
+<line class="pin" x1="870" y1="1730.0" x2="848" y2="1730.0"/>
+<text class="pin-name" text-anchor="start" x="880" y="1734.0">R IN</text>
+<line class="pin" x1="870" y1="1762.0" x2="848" y2="1762.0"/>
+<text class="pin-name" text-anchor="start" x="880" y="1766.0">SD  PAD ADAY</text>
+<line class="pin" x1="870" y1="1794.0" x2="848" y2="1794.0"/>
+<text class="pin-name" text-anchor="start" x="880" y="1798.0">VCC</text>
+<line class="pin" x1="870" y1="1826.0" x2="848" y2="1826.0"/>
+<text class="pin-name" text-anchor="start" x="880" y="1830.0">GND</text>
+<line class="pin" x1="1120" y1="1698.0" x2="1142" y2="1698.0"/>
+<text class="pin-name" text-anchor="end" x="1110" y="1702.0">L+</text>
+<line class="pin" x1="1120" y1="1730.0" x2="1142" y2="1730.0"/>
+<text class="pin-name" text-anchor="end" x="1110" y="1734.0">L−</text>
+<line class="pin" x1="1120" y1="1762.0" x2="1142" y2="1762.0"/>
+<text class="pin-name" text-anchor="end" x="1110" y="1766.0">R+</text>
+<line class="pin" x1="1120" y1="1794.0" x2="1142" y2="1794.0"/>
+<text class="pin-name" text-anchor="end" x="1110" y="1798.0">R−</text>
+<line class="sym-line" x1="910" y1="2060" x2="910" y2="2072"/><rect class="sym dnp" x="899" y="2072" width="22" height="42" rx="2"/><line class="sym-line" x1="910" y1="2114" x2="910" y2="2126"/><text class="sym-ref" text-anchor="start" x="928" y="2088">R8</text><text class="sym-val" text-anchor="start" x="928" y="2104">10 kΩ</text>
+<line class="w gnd" x1="910" y1="2126" x2="910" y2="2140"/><line class="gnd-bar" x1="895" y1="2140" x2="925" y2="2140"/><line class="gnd-bar" x1="901" y1="2146" x2="919" y2="2146"/><line class="gnd-bar" x1="906" y1="2152" x2="914" y2="2152"/>
+<text class="gnd-name" text-anchor="middle" x="910" y="2168">POWER_GND</text>
+<path class="flag" d="M 818 1794.0 l -12 -13 h -41.2 v 26 h 41.2 Z"/>
+<text class="flag-name" text-anchor="end" x="798" y="1799.0">VIN</text>
+<line class="w gnd" x1="804" y1="1826.0" x2="804" y2="1840.0"/><line class="gnd-bar" x1="789" y1="1840.0" x2="819" y2="1840.0"/><line class="gnd-bar" x1="795" y1="1846.0" x2="813" y2="1846.0"/><line class="gnd-bar" x1="800" y1="1852.0" x2="808" y2="1852.0"/>
+<text class="gnd-name" text-anchor="middle" x="804" y="1868.0">POWER_GND</text>
+<line class="sym-line" x1="1210" y1="1698.0" x2="1234" y2="1698.0"/><line class="sym-line" x1="1210" y1="1730.0" x2="1234" y2="1730.0"/><rect class="sym" x="1234" y="1682.0" width="24" height="64" rx="2"/><path class="sym" d="M 1258 1682.0 L 1294 1658.0 L 1294 1770.0 L 1258 1746.0 Z"/><text class="sym-pol" x="1214" y="1692.0">+</text><text class="sym-pol" x="1214" y="1746.0">−</text><text class="drv-ref" text-anchor="middle" x="1252" y="1792.0">W2</text><text class="drv-name" text-anchor="middle" x="1252" y="1812.0">WOOFER 2</text><text class="drv-detail" text-anchor="middle" x="1252" y="1832.0">4 Ω sınıfı · Fs G0 bekliyor</text>
+<line class="sym-line" x1="1180" y1="1910" x2="1206" y2="1910"/><line class="sym-plate" x1="1206" y1="1892" x2="1206" y2="1928"/><line class="sym-plate" x1="1218" y1="1892" x2="1218" y2="1928"/><line class="sym-line" x1="1218" y1="1910" x2="1244" y2="1910"/><text class="sym-ref" text-anchor="middle" x="1212" y="1884">C_SAFE2</text><text class="sym-val" text-anchor="middle" x="1212" y="1946"></text>
+<line class="sym-line" x1="1270" y1="1910" x2="1294" y2="1910"/><line class="sym-line" x1="1270" y1="1942" x2="1294" y2="1942"/><rect class="sym" x="1294" y="1894" width="24" height="64" rx="2"/><path class="sym" d="M 1318 1894 L 1354 1870 L 1354 1982 L 1318 1958 Z"/><text class="sym-pol" x="1274" y="1904">+</text><text class="sym-pol" x="1274" y="1958">−</text><text class="drv-ref" text-anchor="middle" x="1312" y="2004">T2</text><text class="drv-name" text-anchor="middle" x="1312" y="2024">TWEETER 2</text><text class="drv-detail" text-anchor="middle" x="1312" y="2044">4 Ω sınıfı · G2 bekliyor</text>
+<rect class="blk" x="1500" y="1620" width="250" height="240" rx="6"/><line class="blk-div" x1="1500" y1="1672" x2="1750" y2="1672"/>
+<text class="blk-ref" x="1500" y="1611">U9</text><text class="blk-title" x="1625.0" y="1646">XH-A232 #3</text><text class="blk-sub" x="1625.0" y="1663">TPA3110D2 · 2 × BTL Class-D · 8–26 V</text>
+<line class="pin" x1="1500" y1="1698.0" x2="1478" y2="1698.0"/>
+<text class="pin-name" text-anchor="start" x="1510" y="1702.0">L IN</text>
+<line class="pin" x1="1500" y1="1730.0" x2="1478" y2="1730.0"/>
+<text class="pin-name" text-anchor="start" x="1510" y="1734.0">R IN</text>
+<line class="pin" x1="1500" y1="1762.0" x2="1478" y2="1762.0"/>
+<text class="pin-name" text-anchor="start" x="1510" y="1766.0">SD  PAD ADAY</text>
+<line class="pin" x1="1500" y1="1794.0" x2="1478" y2="1794.0"/>
+<text class="pin-name" text-anchor="start" x="1510" y="1798.0">VCC</text>
+<line class="pin" x1="1500" y1="1826.0" x2="1478" y2="1826.0"/>
+<text class="pin-name" text-anchor="start" x="1510" y="1830.0">GND</text>
+<line class="pin" x1="1750" y1="1698.0" x2="1772" y2="1698.0"/>
+<text class="pin-name" text-anchor="end" x="1740" y="1702.0">L+</text>
+<line class="pin" x1="1750" y1="1730.0" x2="1772" y2="1730.0"/>
+<text class="pin-name" text-anchor="end" x="1740" y="1734.0">L−</text>
+<line class="pin" x1="1750" y1="1762.0" x2="1772" y2="1762.0"/>
+<text class="pin-name" text-anchor="end" x="1740" y="1766.0">R+</text>
+<line class="pin" x1="1750" y1="1794.0" x2="1772" y2="1794.0"/>
+<text class="pin-name" text-anchor="end" x="1740" y="1798.0">R−</text>
+<line class="sym-line" x1="1540" y1="2060" x2="1540" y2="2072"/><rect class="sym dnp" x="1529" y="2072" width="22" height="42" rx="2"/><line class="sym-line" x1="1540" y1="2114" x2="1540" y2="2126"/><text class="sym-ref" text-anchor="start" x="1558" y="2088">R9</text><text class="sym-val" text-anchor="start" x="1558" y="2104">10 kΩ</text>
+<line class="w gnd" x1="1540" y1="2126" x2="1540" y2="2140"/><line class="gnd-bar" x1="1525" y1="2140" x2="1555" y2="2140"/><line class="gnd-bar" x1="1531" y1="2146" x2="1549" y2="2146"/><line class="gnd-bar" x1="1536" y1="2152" x2="1544" y2="2152"/>
+<text class="gnd-name" text-anchor="middle" x="1540" y="2168">POWER_GND</text>
+<path class="flag" d="M 1448 1794.0 l -12 -13 h -41.2 v 26 h 41.2 Z"/>
+<text class="flag-name" text-anchor="end" x="1428" y="1799.0">VIN</text>
+<line class="w gnd" x1="1434" y1="1826.0" x2="1434" y2="1840.0"/><line class="gnd-bar" x1="1419" y1="1840.0" x2="1449" y2="1840.0"/><line class="gnd-bar" x1="1425" y1="1846.0" x2="1443" y2="1846.0"/><line class="gnd-bar" x1="1430" y1="1852.0" x2="1438" y2="1852.0"/>
+<text class="gnd-name" text-anchor="middle" x="1434" y="1868.0">POWER_GND</text>
+<line class="sym-line" x1="1840" y1="1698.0" x2="1864" y2="1698.0"/><line class="sym-line" x1="1840" y1="1730.0" x2="1864" y2="1730.0"/><rect class="sym" x="1864" y="1682.0" width="24" height="64" rx="2"/><path class="sym" d="M 1888 1682.0 L 1924 1658.0 L 1924 1770.0 L 1888 1746.0 Z"/><text class="sym-pol" x="1844" y="1692.0">+</text><text class="sym-pol" x="1844" y="1746.0">−</text><text class="drv-ref" text-anchor="middle" x="1882" y="1792.0">W3</text><text class="drv-name" text-anchor="middle" x="1882" y="1812.0">WOOFER 3</text><text class="drv-detail" text-anchor="middle" x="1882" y="1832.0">4 Ω sınıfı · Fs G0 bekliyor</text>
+<line class="sym-line" x1="1810" y1="1910" x2="1836" y2="1910"/><line class="sym-plate" x1="1836" y1="1892" x2="1836" y2="1928"/><line class="sym-plate" x1="1848" y1="1892" x2="1848" y2="1928"/><line class="sym-line" x1="1848" y1="1910" x2="1874" y2="1910"/><text class="sym-ref" text-anchor="middle" x="1842" y="1884">C_SAFE3</text><text class="sym-val" text-anchor="middle" x="1842" y="1946"></text>
+<line class="sym-line" x1="1900" y1="1910" x2="1924" y2="1910"/><line class="sym-line" x1="1900" y1="1942" x2="1924" y2="1942"/><rect class="sym" x="1924" y="1894" width="24" height="64" rx="2"/><path class="sym" d="M 1948 1894 L 1984 1870 L 1984 1982 L 1948 1958 Z"/><text class="sym-pol" x="1904" y="1904">+</text><text class="sym-pol" x="1904" y="1958">−</text><text class="drv-ref" text-anchor="middle" x="1942" y="2004">T3</text><text class="drv-name" text-anchor="middle" x="1942" y="2024">TWEETER 3</text><text class="drv-detail" text-anchor="middle" x="1942" y="2044">4 Ω sınıfı · G2 bekliyor</text>
+<rect class="blk" x="2130" y="1620" width="250" height="240" rx="6"/><line class="blk-div" x1="2130" y1="1672" x2="2380" y2="1672"/>
+<text class="blk-ref" x="2130" y="1611">U10</text><text class="blk-title" x="2255.0" y="1646">XH-A232 #4</text><text class="blk-sub" x="2255.0" y="1663">TPA3110D2 · 2 × BTL Class-D · 8–26 V</text>
+<line class="pin" x1="2130" y1="1698.0" x2="2108" y2="1698.0"/>
+<text class="pin-name" text-anchor="start" x="2140" y="1702.0">L IN</text>
+<line class="pin" x1="2130" y1="1730.0" x2="2108" y2="1730.0"/>
+<text class="pin-name" text-anchor="start" x="2140" y="1734.0">R IN</text>
+<line class="pin" x1="2130" y1="1762.0" x2="2108" y2="1762.0"/>
+<text class="pin-name" text-anchor="start" x="2140" y="1766.0">SD  PAD ADAY</text>
+<line class="pin" x1="2130" y1="1794.0" x2="2108" y2="1794.0"/>
+<text class="pin-name" text-anchor="start" x="2140" y="1798.0">VCC</text>
+<line class="pin" x1="2130" y1="1826.0" x2="2108" y2="1826.0"/>
+<text class="pin-name" text-anchor="start" x="2140" y="1830.0">GND</text>
+<line class="pin" x1="2380" y1="1698.0" x2="2402" y2="1698.0"/>
+<text class="pin-name" text-anchor="end" x="2370" y="1702.0">L+</text>
+<line class="pin" x1="2380" y1="1730.0" x2="2402" y2="1730.0"/>
+<text class="pin-name" text-anchor="end" x="2370" y="1734.0">L−</text>
+<line class="pin" x1="2380" y1="1762.0" x2="2402" y2="1762.0"/>
+<text class="pin-name" text-anchor="end" x="2370" y="1766.0">R+</text>
+<line class="pin" x1="2380" y1="1794.0" x2="2402" y2="1794.0"/>
+<text class="pin-name" text-anchor="end" x="2370" y="1798.0">R−</text>
+<line class="sym-line" x1="2170" y1="2060" x2="2170" y2="2072"/><rect class="sym dnp" x="2159" y="2072" width="22" height="42" rx="2"/><line class="sym-line" x1="2170" y1="2114" x2="2170" y2="2126"/><text class="sym-ref" text-anchor="start" x="2188" y="2088">R10</text><text class="sym-val" text-anchor="start" x="2188" y="2104">10 kΩ</text>
+<line class="w gnd" x1="2170" y1="2126" x2="2170" y2="2140"/><line class="gnd-bar" x1="2155" y1="2140" x2="2185" y2="2140"/><line class="gnd-bar" x1="2161" y1="2146" x2="2179" y2="2146"/><line class="gnd-bar" x1="2166" y1="2152" x2="2174" y2="2152"/>
+<text class="gnd-name" text-anchor="middle" x="2170" y="2168">POWER_GND</text>
+<path class="flag" d="M 2078 1794.0 l -12 -13 h -41.2 v 26 h 41.2 Z"/>
+<text class="flag-name" text-anchor="end" x="2058" y="1799.0">VIN</text>
+<line class="w gnd" x1="2064" y1="1826.0" x2="2064" y2="1840.0"/><line class="gnd-bar" x1="2049" y1="1840.0" x2="2079" y2="1840.0"/><line class="gnd-bar" x1="2055" y1="1846.0" x2="2073" y2="1846.0"/><line class="gnd-bar" x1="2060" y1="1852.0" x2="2068" y2="1852.0"/>
+<text class="gnd-name" text-anchor="middle" x="2064" y="1868.0">POWER_GND</text>
+<line class="sym-line" x1="2470" y1="1698.0" x2="2494" y2="1698.0"/><line class="sym-line" x1="2470" y1="1730.0" x2="2494" y2="1730.0"/><rect class="sym" x="2494" y="1682.0" width="24" height="64" rx="2"/><path class="sym" d="M 2518 1682.0 L 2554 1658.0 L 2554 1770.0 L 2518 1746.0 Z"/><text class="sym-pol" x="2474" y="1692.0">+</text><text class="sym-pol" x="2474" y="1746.0">−</text><text class="drv-ref" text-anchor="middle" x="2512" y="1792.0">W4</text><text class="drv-name" text-anchor="middle" x="2512" y="1812.0">WOOFER 4</text><text class="drv-detail" text-anchor="middle" x="2512" y="1832.0">4 Ω sınıfı · Fs G0 bekliyor</text>
+<line class="sym-line" x1="2440" y1="1910" x2="2466" y2="1910"/><line class="sym-plate" x1="2466" y1="1892" x2="2466" y2="1928"/><line class="sym-plate" x1="2478" y1="1892" x2="2478" y2="1928"/><line class="sym-line" x1="2478" y1="1910" x2="2504" y2="1910"/><text class="sym-ref" text-anchor="middle" x="2472" y="1884">C_SAFE4</text><text class="sym-val" text-anchor="middle" x="2472" y="1946"></text>
+<line class="sym-line" x1="2530" y1="1910" x2="2554" y2="1910"/><line class="sym-line" x1="2530" y1="1942" x2="2554" y2="1942"/><rect class="sym" x="2554" y="1894" width="24" height="64" rx="2"/><path class="sym" d="M 2578 1894 L 2614 1870 L 2614 1982 L 2578 1958 Z"/><text class="sym-pol" x="2534" y="1904">+</text><text class="sym-pol" x="2534" y="1958">−</text><text class="drv-ref" text-anchor="middle" x="2572" y="2004">T4</text><text class="drv-name" text-anchor="middle" x="2572" y="2024">TWEETER 4</text><text class="drv-detail" text-anchor="middle" x="2572" y="2044">4 Ω sınıfı · G2 bekliyor</text>
+<path class="flag" d="M 170 2060 l -12 -13 h -83.2 v 26 h 83.2 Z"/>
+<text class="flag-name" text-anchor="end" x="150" y="2065">AMP_MUTE</text>
 <circle class="tp" cx="470" cy="278.0" r="13"/><text class="tp-text" x="470" y="282.0">0</text>
 <circle class="tp" cx="660" cy="278.0" r="13"/><text class="tp-text" x="660" y="282.0">1</text>
 <circle class="junction" cx="720" cy="278.0" r="4.5"/>
 <circle class="junction" cx="800" cy="278.0" r="4.5"/>
 <circle class="tp" cx="441" cy="310.0" r="13"/><text class="tp-text" x="441" y="314.0">2</text>
-<text class="net" text-anchor="start" x="100" y="470">D2 takılmazsa yerine 0 Ω köprü gelir; DC_IN ile VIN o zaman tek nettir.</text>
+<text class="net" text-anchor="start" x="100" y="470">D2 takılmazsa yerine 0 Ω köprü gelir; DC_IN ile VIN o zaman tek nettir. C_A tektir ve jak girişindedir.</text>
 <text class="net" text-anchor="start" x="100" y="494">V1'de güç anahtarı yok: cihaz adaptör çekilerek kapanır, boşta bekleme firmware'in idle standby'ıdır.</text>
-<rect class="panel note" x="1000" y="180" width="1620" height="220" rx="6"/>
+<rect class="panel note" x="1000" y="180" width="1620" height="268" rx="6"/>
 <text class="panel-title note-t" x="1016" y="208">GÜÇ GİRİŞİ KURALLARI — ADR-0020</text><line class="tb-line" x1="1016" y1="222" x2="2604" y2="222"/>
-<text class="panel-warn" x="1020" y="242">JAK POLARİTESİ İLK ENERJİLENDİRMEDEN ÖNCE ÖLÇÜ ALETİYLE DOĞRULANIR: merkez pozitif. Etiket okumak ölçüm değildir (G1 satırı).</text>
-<text class="panel-text" x="1020" y="266">19 V iki giriş penceresinin de içindedir: TPA3110 8–26 V, MP1584 4,5–28 V. VIN amfiyi doğrudan besler; arada regülatör yoktur.</text>
-<text class="panel-text" x="1020" y="290">İlk enerjilendirme adaptörle değil, akım sınırlı laboratuvar kaynağıyla yapılır. Adaptörün akım sınıfı G1'de ölçülen tepe akımdan gelir; varsayılmaz.</text>
-<text class="panel-text" x="1020" y="314">D2 adaydır: Schottky, ideal-diyot modülü ya da 0 Ω köprü. Kararı G1'de TP0−TP1 düşümü ve ısı verir.</text>
-<text class="panel-text" x="1020" y="338">Adaptör çıkışı koruma toprağına bağlı olabilir. Adaptörle osiloskop bağlamadan önce PE/izolasyon ilişkisi ölçülür; belirsizse scope bağlanmaz.</text>
-<text class="panel-text" x="1020" y="362">Kapanış adaptör çekilerek olur; kapanış pop kaydı da öyle alınır. VIN çökerken amfi 8 V altında kendi kilidiyle susar, buck 4,5 V girişe kadar 5 V verir.</text>
-<text class="panel-warn" x="1020" y="386">TPA3110D2'nin 19 V'ta 4 Ω sınıfı sürücülere vereceği güç veri sayfasından değil G1 dummy-load ölçümünden yazılır.</text>
+<text class="panel-warn" x="1020" y="242">ADAPTÖRÜN YÜKSÜZ ÇIKIŞI BAĞLANMADAN ÖNCE DMM İLE ÖLÇÜLÜR: &lt; 25,5 V değilse bağlanmaz. 24 V, TPA3110'un 26 V tavanının 2 V altındadır (G1 satırı).</text>
+<text class="panel-warn" x="1020" y="266">JAK POLARİTESİ İLK ENERJİLENDİRMEDEN ÖNCE ÖLÇÜ ALETİYLE DOĞRULANIR: merkez pozitif. Etiket okumak ölçüm değildir (G1 satırı).</text>
+<text class="panel-text" x="1020" y="290">24 V iki giriş penceresinin de içindedir: TPA3110 8–26 V, MP1584 4,5–28 V. VIN dört amfiyi doğrudan besler; arada regülatör yoktur.</text>
+<text class="panel-text" x="1020" y="314">Adaptör 24 V / 2,9 A (≈70 W) ile verilidir; limiter tavanı bu bütçeden türetilir. Sekiz BTL kanal 70 W'ın çok üstünü çekebilir ve çöken VIN ESP32'yi şarkı ortasında sıfırlar.</text>
+<text class="panel-text" x="1020" y="338">G1, dört amfi limiter tavanında sürülürken toplam akımı ve VIN çöküşünü ölçer. İlk enerjilendirme adaptörle değil, akım sınırlı laboratuvar kaynağıyla yapılır.</text>
+<text class="panel-text" x="1020" y="362">D2 adaydır: Schottky, ideal-diyot modülü ya da 0 Ω köprü. 2,9 A'da bir Schottky ≈1 W veya üstü ısınır; kararı G1'de TP0−TP1 düşümü ve ısı verir.</text>
+<text class="panel-text" x="1020" y="386">Adaptör çıkışı koruma toprağına bağlı olabilir. Adaptörle osiloskop bağlamadan önce PE/izolasyon ilişkisi ölçülür; belirsizse scope bağlanmaz.</text>
+<text class="panel-text" x="1020" y="410">Kapanış adaptör çekilerek olur; kapanış pop kaydı da öyle alınır. VIN çökerken amfiler 8 V altında kendi kilidiyle susar, buck'lar 4,5 V girişe kadar 5 V verir.</text>
+<text class="panel-warn" x="1020" y="434">TPA3110D2'nin 24 V'ta 4 Ω sınıfı sürücülere vereceği güç veri sayfasından değil G1 dummy-load ölçümünden yazılır. Jak kontağının 2,9 A sürekli değeri tedarikçiye sorulur.</text>
 <line class="tp-leader" x1="474" y1="778.0" x2="474" y2="830.0"/><circle class="junction" cx="474" cy="778.0" r="3.5"/>
 <circle class="tp" cx="474" cy="830.0" r="13"/><text class="tp-text" x="474" y="834.0">3</text>
-<rect class="panel note" x="100" y="960" width="470" height="430" rx="6"/>
-<text class="panel-title note-t" x="116" y="988">GÜÇ SIRALAMASI</text><line class="tb-line" x1="116" y1="1002" x2="554" y2="1002"/>
-<text class="panel-text" x="120" y="1022">1. MP1584 çıkışını ESP32 ve DAC</text>
-<text class="panel-text" x="120" y="1046">    BAĞLI DEĞİLKEN 5,10 V'a ayarla.</text>
-<text class="panel-text" x="120" y="1070">2. Elektronik yükle droop ve ripple</text>
-<text class="panel-text" x="120" y="1094">    ölçümünü tekrarla.</text>
-<text class="panel-text" x="120" y="1118">3. USB ile programlarken JP1 açılır;</text>
-<text class="panel-text" x="120" y="1142">    USB ve harici 5 V birlikte</text>
-<text class="panel-text" x="120" y="1166">    kullanılmaz.</text>
-<text class="panel-mono" x="120" y="1214">TP3 hedefi: normal yükte ≤50 mVpp;</text>
-<text class="panel-mono" x="120" y="1238">Wi-Fi sıçramasında 5 V hattı 4,75 V</text>
-<text class="panel-mono" x="120" y="1262">altına düşmemeli.</text>
-<text class="panel-mono" x="120" y="1310">TP4 hedefi: brownout/reset üreten</text>
-<text class="panel-mono" x="120" y="1334">çökme yok. Alt sınır G1'de kilitlenir.</text>
-<circle class="tp" cx="786" cy="842.0" r="13"/><text class="tp-text" x="786" y="846.0">4</text>
-<circle class="tp" cx="1230" cy="778.0" r="13"/><text class="tp-text" x="1230" y="782.0">5</text>
-<circle class="tp" cx="1270" cy="810.0" r="13"/><text class="tp-text" x="1270" y="814.0">6</text>
-<circle class="tp" cx="1310" cy="842.0" r="13"/><text class="tp-text" x="1310" y="846.0">7</text>
-<circle class="tp" cx="1300" cy="874.0" r="13"/><text class="tp-text" x="1300" y="878.0">20</text>
+<circle class="tp" cx="510" cy="978.0" r="13"/><text class="tp-text" x="510" y="982.0">4</text>
+<rect class="panel note" x="100" y="1080" width="470" height="340" rx="6"/>
+<text class="panel-title note-t" x="116" y="1108">GÜÇ SIRALAMASI</text><line class="tb-line" x1="116" y1="1122" x2="554" y2="1122"/>
+<text class="panel-text" x="120" y="1142">1. Her iki buck'ın çıkışını yük</text>
+<text class="panel-text" x="120" y="1166">    BAĞLI DEĞİLKEN 5,10 V'a ayarla.</text>
+<text class="panel-text" x="120" y="1190">2. Elektronik yükle droop ve ripple</text>
+<text class="panel-text" x="120" y="1214">    ölçümünü iki buck'ta da tekrarla.</text>
+<text class="panel-text" x="120" y="1238">3. USB ile programlarken JP1 açılır;</text>
+<text class="panel-text" x="120" y="1262">    USB ve harici 5 V birlikte kullanılmaz.</text>
+<text class="panel-text" x="120" y="1286">4. Ayrı buck'lar: paylaşılan tek buck</text>
+<text class="panel-text" x="120" y="1310">    DAC'a duyulur hışırtı verdi (ADR-0020).</text>
+<text class="panel-mono" x="120" y="1358">TP3/TP4 hedefi: normal yükte ≤50 mVpp;</text>
+<text class="panel-mono" x="120" y="1382">Wi-Fi sıçramasında 4,75 V altına inmez.</text>
+<text class="panel-mono" x="120" y="1406">TP5 hedefi: brownout/reset üreten çökme yok.</text>
+<circle class="tp" cx="786" cy="842.0" r="13"/><text class="tp-text" x="786" y="846.0">5</text>
+<circle class="tp" cx="1230" cy="778.0" r="13"/><text class="tp-text" x="1230" y="782.0">6</text>
+<circle class="tp" cx="1270" cy="810.0" r="13"/><text class="tp-text" x="1270" y="814.0">7</text>
+<circle class="tp" cx="1310" cy="842.0" r="13"/><text class="tp-text" x="1310" y="846.0">8</text>
+<circle class="tp" cx="1300" cy="874.0" r="13"/><text class="tp-text" x="1300" y="878.0">33</text>
 <circle class="junction" cx="1234" cy="874.0" r="4.5"/>
 <text class="net" text-anchor="start" x="1230" y="1200">FMT=LOW · FLT=LOW · DEMP=LOW · SCK→GND (yalnız 3-wire BCK-PLL modu)</text>
 <text class="net" text-anchor="start" x="1230" y="1224">XSMT modül varsayılanına BIRAKILMAZ: GPIO13 sürer, R6 kapalı tutar.</text>
 <text class="net" text-anchor="start" x="1230" y="1248">LEHİMDEN ÖNCE ÖLÇ: XSMT pad'i ↔ 3V3 direnci. Sert köprü / 0 Ω varsa</text>
 <text class="net" text-anchor="start" x="1230" y="1272">kesilmeden GPIO13 bağlanmaz; pin LOW sürerken 3V3 rayına kısa devredir.</text>
 <text class="net" text-anchor="start" x="1230" y="1296">Modül köprüleri satıcıya göre değişir; pad ismine bakıp lehim yapılmaz.</text>
-<circle class="tp" cx="1800" cy="778.0" r="13"/><text class="tp-text" x="1800" y="782.0">8</text>
-<circle class="tp" cx="1890" cy="778.0" r="13"/><text class="tp-text" x="1890" y="782.0">10</text>
-<circle class="tp" cx="1800" cy="810.0" r="13"/><text class="tp-text" x="1800" y="814.0">9</text>
-<circle class="tp" cx="1890" cy="810.0" r="13"/><text class="tp-text" x="1890" y="814.0">11</text>
-<text class="net" text-anchor="start" x="2000" y="990">DAC ↔ amfi kablosu kısa ve ekranlı</text>
-<text class="net" text-anchor="start" x="2000" y="1014">hoparlör çıkış kablosuyla paralel gitmez</text>
-<circle class="tp" cx="1938" cy="1010" r="13"/><text class="tp-text" x="1938" y="1014">21</text>
-<circle class="junction" cx="1880" cy="1150" r="4.5"/>
-<text class="net" text-anchor="start" x="1830" y="1300">KESİKLİ DAL ADAYDIR: XH-A232'de erişilebilir 'SD' pad'i</text>
-<text class="net" text-anchor="start" x="1830" y="1324">doğrulanmadı (§9 açık karar). Pad yoksa R7 ve bu dal takılmaz;</text>
-<text class="net" text-anchor="start" x="1830" y="1348">firmware kontrollü amfi susturması olmaz, geriye DAC XSMT kalır.</text>
-<text class="net" text-anchor="start" x="1830" y="1372">R7 amfi ucuna monte edilir: kablo koparsa pad LOW kalsın.</text>
-<circle class="tp" cx="2370" cy="778.0" r="13"/><text class="tp-text" x="2370" y="782.0">12</text>
-<circle class="tp" cx="2410" cy="810.0" r="13"/><text class="tp-text" x="2410" y="814.0">13</text>
-<text class="net" text-anchor="middle" x="2392" y="1244">kutupsuz film · DEĞER TBD</text>
-<circle class="tp" cx="2350" cy="990" r="13"/><text class="tp-text" x="2350" y="994">14</text>
-<circle class="tp" cx="2330" cy="1080" r="13"/><text class="tp-text" x="2330" y="1084">15</text>
-<circle class="junction" cx="160" cy="1622" r="4.5"/>
-<circle class="tp" cx="280" cy="1622" r="13"/><text class="tp-text" x="280" y="1626">16</text>
-<circle class="junction" cx="340" cy="1622" r="4.5"/>
-<circle class="tp" cx="590" cy="1534" r="13"/><text class="tp-text" x="590" y="1538">17</text>
-<circle class="tp" cx="700" cy="1534" r="13"/><text class="tp-text" x="700" y="1538">18</text>
-<circle class="tp" cx="810" cy="1534" r="13"/><text class="tp-text" x="810" y="1538">19</text>
-<circle class="junction" cx="590" cy="1674" r="4.5"/>
-<circle class="junction" cx="700" cy="1674" r="4.5"/>
-<circle class="junction" cx="810" cy="1674" r="4.5"/>
-<text class="net" text-anchor="start" x="100" y="1766">Direnç değerleri ADAY: gerçek LED ileri gerilimi ve 2–5 mA hedefine göre hesaplanır.</text>
-<text class="net" text-anchor="start" x="100" y="1788">Hazır RGB modülünde seri direnç varsa bu parçalar DNP kalır. LED ve buton kabloları</text>
-<text class="net" text-anchor="start" x="100" y="1810">Class-D hoparlör kablolarından ayrı çekilir.</text>
-<rect class="panel danger" x="930" y="1470" width="830" height="380" rx="6"/>
-<text class="panel-title danger-t" x="946" y="1498">GÜVENLİK VE ÖLÇÜM KURALLARI</text><line class="tb-line" x1="946" y1="1512" x2="1744" y2="1512"/>
-<text class="panel-warn" x="950" y="1532">BTL ÇIKIŞA ŞASE KLİPSİ TAKMA</text>
-<text class="panel-text" x="950" y="1556">L− ve R− hoparlör ekseni değil, Class-D yarım köprü çıkışıdır. TP12–TP15</text>
-<text class="panel-text" x="950" y="1580">uçlarının hiçbirine osiloskop GND klipsi bağlanmaz. Diferansiyel prob kullan;</text>
-<text class="panel-text" x="950" y="1604">yoksa iki 10× prob, her iki GND klipsi yalnız TP2'ye, MATH = CH1 − CH2.</text>
-<text class="panel-warn" x="950" y="1652">ENERJİ VERME SIRASI</text>
-<text class="panel-mono" x="950" y="1676">S1 XH-A232 + dummy-load (akım sınırlı lab kaynağı)  →  S2 ESP32 + buck  →</text>
-<text class="panel-mono" x="950" y="1700">S3 I²S zinciri + dummy-load  →  S4 woofer düşük seviye  →  S5 tweeter +</text>
-<text class="panel-mono" x="950" y="1724">C_SAFE çok düşük seviye  →  S6 tam prototip, 19 V adaptörle  →  S7 dört tekrar.</text>
-<text class="panel-text" x="950" y="1772">C_SAFE tek başına crossover değildir; DSP HPF ve limiter'a karşı son savunmadır.</text>
-<text class="panel-text" x="950" y="1796">Değeri C = 1 / (2π · R_tweeter · f_safe) ile G2 raporundan gelir.</text>
-<text class="panel-text" x="950" y="1820">Jak polaritesi ölçülmeden ve D2 kararı verilmeden adaptör takılmaz (ADR-0020).</text>
-<rect class="panel note" x="1790" y="1470" width="860" height="380" rx="6"/>
-<text class="panel-title note-t" x="1806" y="1498">TEST NOKTASI İNDEKSİ — TP0…TP21</text><line class="tb-line" x1="1806" y1="1512" x2="2634" y2="1512"/>
-<text class="panel-mono" x="1810" y="1532">TP0 jak + / DC_IN</text>
-<text class="panel-mono" x="2015" y="1532">TP6 I²S LRCLK</text>
-<text class="panel-mono" x="2220" y="1532">TP12 XH L+</text>
-<text class="panel-mono" x="2425" y="1532">TP18 LED_G sürüş</text>
-<text class="panel-mono" x="1810" y="1556">TP1 VIN (D2 sonrası)</text>
-<text class="panel-mono" x="2015" y="1556">TP7 I²S DATA</text>
-<text class="panel-mono" x="2220" y="1556">TP13 XH L−</text>
-<text class="panel-mono" x="2425" y="1556">TP19 LED_B sürüş</text>
-<text class="panel-mono" x="1810" y="1580">TP2 jak − / GND</text>
-<text class="panel-mono" x="2015" y="1580">TP8 DAC LOUT</text>
-<text class="panel-mono" x="2220" y="1580">TP14 XH R+</text>
-<text class="panel-mono" x="2425" y="1580">TP20 DAC XSMT</text>
-<text class="panel-mono" x="1810" y="1604">TP3 MP1584 5,10 V</text>
-<text class="panel-mono" x="2015" y="1604">TP9 DAC ROUT</text>
-<text class="panel-mono" x="2220" y="1604">TP15 XH R−</text>
-<text class="panel-mono" x="2425" y="1604">TP21 amfi SD ADAY</text>
-<text class="panel-mono" x="1810" y="1628">TP4 ESP32 3V3</text>
-<text class="panel-mono" x="2015" y="1628">TP10 amfi L IN</text>
-<text class="panel-mono" x="2220" y="1628">TP16 buton GPIO7</text>
-<text class="panel-mono" x="1810" y="1652">TP5 I²S BCLK</text>
-<text class="panel-mono" x="2015" y="1652">TP11 amfi R IN</text>
-<text class="panel-mono" x="2220" y="1652">TP17 LED_R sürüş</text>
-<text class="panel-text" x="1810" y="1700">Güç açma/kapatma kaydı — CH1 TP1 · CH2 TP3 · CH3 TP4 · CH4 TP8/TP9.</text>
-<text class="panel-text" x="1810" y="1724">Ripple ölçümünde 10× prob, ground-spring ve 20 MHz bant sınırı kullanılır.</text>
-<text class="panel-text" x="1810" y="1748">Beklenen değer ve geçiş şartları: docs/02-hardware/circuit-and-wiring-plan.md §7</text>
-<rect class="panel danger" x="70" y="1900" width="2580" height="148" rx="6"/>
-<text class="panel-title danger-t" x="86" y="1928">SUSTURMA HATLARI — ADR-0011</text><line class="tb-line" x1="86" y1="1942" x2="2634" y2="1942"/>
-<text class="panel-warn" x="90" y="1962">SUSTURMAYI TUTAN ŞEY GPIO DEĞİL, DİRENÇTİR</text>
-<text class="panel-text" x="90" y="1986">R6 ve R7 (10 kΩ pull-down) opsiyonel değildir. Bu parçadaki her aday GPIO reset'ten yüksek empedanslı çıkar ve ROM, bootloader ve uygulama başlangıcı boyunca öyle kalır — yüzlerce ms. Firmware'in işi susturmayı BIRAKMAKTIR; firmware hiç çalışmazsa hoparlörler sessiz kalır.</text>
-<text class="panel-text" x="90" y="2010">OPERATÖR, LEHİMDEN ÖNCE: (1) PCM5102A XSMT pad'i ↔ 3V3 direncini ölç, sert köprü varsa kes. (2) XH-A232'de erişilebilir SD pad'i var mı, süreklilikle ara. (3) Açılışta TP20 ve TP21 LOW mu, osiloskopla kaydet.</text>
-<text class="panel-warn" x="90" y="2034">Bu üç ölçüm kaydedilmeden susturma katmanı DOĞRULANMAMIŞTIR; empedansı ölçülmemiş sürücülere sinyal verilmez.</text>
-<rect class="panel gate" x="70" y="2100" width="1690" height="92" rx="6"/>
-<text class="panel-title gate-t" x="86" y="2128">ENERJİ VERME ÖNCESİ ZORUNLU KAPILAR</text><line class="tb-line" x1="86" y1="2142" x2="1744" y2="2142"/>
-<text class="panel-mono" x="90" y="2146">G0 sürücü DC direnci / empedans / polarite   ·   G1 amfi + 8 Ω ≥50 W non-inductive dummy-load, jak polaritesi, besleme çöküşü, brownout, pop   ·   G2 tweeter HPF + limiter + C_SAFE</text>
-<text class="panel-warn" x="90" y="2172">Fiziksel ölçüm kaydı olmadan hiçbir kapı PASS yapılamaz. G0–G2 geçmeden dört üniteye çoğaltma yoktur.</text>
-<rect class="panel title" x="1790" y="2100" width="860" height="92" rx="6"/>
-<text class="panel-title" x="70" y="2230">GÖSTERİM</text>
-<line class="w pwr" x1="210" y1="2225" x2="256" y2="2225"/><text class="legend" x="266" y="2230">19 V DC / VIN</text>
-<line class="w v5" x1="550" y1="2225" x2="596" y2="2225"/><text class="legend" x="606" y="2230">5 V</text>
-<line class="w v33" x1="890" y1="2225" x2="936" y2="2225"/><text class="legend" x="946" y="2230">3V3</text>
-<line class="w dig" x1="1230" y1="2225" x2="1276" y2="2225"/><text class="legend" x="1286" y="2230">dijital / I²S</text>
-<line class="w aud" x1="1570" y1="2225" x2="1616" y2="2225"/><text class="legend" x="1626" y="2230">analog ses</text>
-<line class="w btl" x1="1910" y1="2225" x2="1956" y2="2225"/><text class="legend" x="1966" y="2230">BTL çıkış</text>
-<line class="w gnd" x1="2250" y1="2225" x2="2296" y2="2225"/><text class="legend" x="2306" y="2230">toprak</text>
-<text class="tb-key" x="1810" y="2132">BELGE</text><text class="tb-val" x="1810" y="2158">HK-HW-SCH</text>
-<text class="tb-key" x="2010" y="2132">REV</text><text class="tb-val" x="2010" y="2158">P3</text>
-<text class="tb-key" x="2130" y="2132">DURUM</text><text class="tb-val" x="2130" y="2158">CANDIDATE</text>
-<text class="tb-key" x="2330" y="2132">TARİH</text><text class="tb-val" x="2330" y="2158">2026-09-12</text>
-<text class="tb-key" x="2500" y="2132">SAYFA</text><text class="tb-val" x="2500" y="2158">1 / 1</text>
-<text class="tb-key" x="1810" y="2182">ÜRETEN  hardware/diagrams/generate_schematic_svg.py  ·  ELEKTRİKSEL KAYNAK  hardware/kicad/</text>
+<circle class="tp" cx="1810" cy="1000" r="13"/><text class="tp-text" x="1810" y="1004">9</text>
+<circle class="tp" cx="1786" cy="1060" r="13"/><text class="tp-text" x="1786" y="1064">10</text>
+<circle class="junction" cx="1940" cy="812" r="4.5"/>
+<circle class="tp" cx="2060" cy="812" r="13"/><text class="tp-text" x="2060" y="816">29</text>
+<circle class="junction" cx="2120" cy="812" r="4.5"/>
+<circle class="tp" cx="2370" cy="724" r="13"/><text class="tp-text" x="2370" y="728">30</text>
+<circle class="tp" cx="2480" cy="724" r="13"/><text class="tp-text" x="2480" y="728">31</text>
+<circle class="tp" cx="2590" cy="724" r="13"/><text class="tp-text" x="2590" y="728">32</text>
+<circle class="junction" cx="2370" cy="864" r="4.5"/>
+<circle class="junction" cx="2480" cy="864" r="4.5"/>
+<circle class="junction" cx="2590" cy="864" r="4.5"/>
+<text class="net" text-anchor="start" x="1880" y="956">Direnç değerleri ADAY: gerçek LED ileri gerilimi ve 2–5 mA hedefine göre hesaplanır.</text>
+<text class="net" text-anchor="start" x="1880" y="978">Hazır RGB modülünde seri direnç varsa bu parçalar DNP kalır. LED ve buton kabloları</text>
+<text class="net" text-anchor="start" x="1880" y="1000">Class-D hoparlör kablolarından ayrı çekilir.</text>
+<rect class="panel danger" x="1850" y="1050" width="800" height="388" rx="6"/>
+<text class="panel-title danger-t" x="1866" y="1078">GÜVENLİK VE ÖLÇÜM KURALLARI</text><line class="tb-line" x1="1866" y1="1092" x2="2634" y2="1092"/>
+<text class="panel-warn" x="1870" y="1112">BTL ÇIKIŞA ŞASE KLİPSİ TAKMA</text>
+<text class="panel-text" x="1870" y="1136">L− ve R− hoparlör eksisi değil, Class-D yarım köprü çıkışıdır. TP13–TP28</text>
+<text class="panel-text" x="1870" y="1160">uçlarının hiçbirine osiloskop GND klipsi bağlanmaz. Diferansiyel prob kullan;</text>
+<text class="panel-text" x="1870" y="1184">yoksa iki 10× prob, her iki GND klipsi yalnız TP2'ye, MATH = CH1 − CH2.</text>
+<text class="panel-warn" x="1870" y="1232">ENERJİ VERME SIRASI</text>
+<text class="panel-mono" x="1870" y="1256">S1 bir XH-A232 + dummy-load (lab kaynağı 8–24 V) → S2 ESP32 + buck A, DAC + buck B</text>
+<text class="panel-mono" x="1870" y="1280">→ S3 I²S zinciri + tek amfi + dummy-load → S4 bir woofer, düşük seviye</text>
+<text class="panel-mono" x="1870" y="1304">→ S5 bir tweeter + C_SAFE, çok düşük seviye → S6 tek amfi + sürücü çifti, 24 V</text>
+<text class="panel-mono" x="1870" y="1328">adaptör → S7 dört amfi VIN'de: limiter tavanında toplam akım, VIN çöküşü, termal</text>
+<text class="panel-mono" x="1870" y="1352">→ S8 tam kabin soak (G8). Diğer üç amfi sürücülere ancak S6'dan sonra bağlanır.</text>
+<text class="panel-text" x="1870" y="1400">C_SAFE tek başına crossover değildir; DSP HPF ve limiter'a karşı son savunmadır.</text>
+<text class="panel-text" x="1870" y="1424">Yüksüz çıkış ve jak polaritesi ölçülmeden, D2 kararı verilmeden adaptör takılmaz.</text>
+<circle class="junction" cx="280" cy="2060" r="4.5"/>
+<circle class="tp" cx="540" cy="1698.0" r="13"/><text class="tp-text" x="540" y="1702.0">13</text>
+<circle class="tp" cx="560" cy="1730.0" r="13"/><text class="tp-text" x="560" y="1734.0">14</text>
+<text class="net" text-anchor="start" x="550" y="1864">film ≥50 V · 10 µF ADAY</text>
+<circle class="tp" cx="527" cy="1762.0" r="13"/><text class="tp-text" x="527" y="1766.0">15</text>
+<circle class="tp" cx="620" cy="1942" r="13"/><text class="tp-text" x="620" y="1946">16</text>
+<circle class="junction" cx="830" cy="1560" r="4.5"/>
+<circle class="junction" cx="806" cy="1530" r="4.5"/>
+<circle class="junction" cx="848" cy="2060" r="4.5"/>
+<circle class="junction" cx="910" cy="2060" r="4.5"/>
+<circle class="tp" cx="1170" cy="1698.0" r="13"/><text class="tp-text" x="1170" y="1702.0">17</text>
+<circle class="tp" cx="1190" cy="1730.0" r="13"/><text class="tp-text" x="1190" y="1734.0">18</text>
+<text class="net" text-anchor="start" x="1180" y="1864">film ≥50 V · 10 µF ADAY</text>
+<circle class="tp" cx="1157" cy="1762.0" r="13"/><text class="tp-text" x="1157" y="1766.0">19</text>
+<circle class="tp" cx="1250" cy="1942" r="13"/><text class="tp-text" x="1250" y="1946">20</text>
+<circle class="junction" cx="1460" cy="1560" r="4.5"/>
+<circle class="junction" cx="1436" cy="1530" r="4.5"/>
+<circle class="junction" cx="1478" cy="2060" r="4.5"/>
+<circle class="junction" cx="1540" cy="2060" r="4.5"/>
+<circle class="tp" cx="1800" cy="1698.0" r="13"/><text class="tp-text" x="1800" y="1702.0">21</text>
+<circle class="tp" cx="1820" cy="1730.0" r="13"/><text class="tp-text" x="1820" y="1734.0">22</text>
+<text class="net" text-anchor="start" x="1810" y="1864">film ≥50 V · 10 µF ADAY</text>
+<circle class="tp" cx="1787" cy="1762.0" r="13"/><text class="tp-text" x="1787" y="1766.0">23</text>
+<circle class="tp" cx="1880" cy="1942" r="13"/><text class="tp-text" x="1880" y="1946">24</text>
+<circle class="junction" cx="2108" cy="2060" r="4.5"/>
+<circle class="tp" cx="2430" cy="1698.0" r="13"/><text class="tp-text" x="2430" y="1702.0">25</text>
+<circle class="tp" cx="2450" cy="1730.0" r="13"/><text class="tp-text" x="2450" y="1734.0">26</text>
+<text class="net" text-anchor="start" x="2440" y="1864">film ≥50 V · 10 µF ADAY</text>
+<circle class="tp" cx="2417" cy="1762.0" r="13"/><text class="tp-text" x="2417" y="1766.0">27</text>
+<circle class="tp" cx="2510" cy="1942" r="13"/><text class="tp-text" x="2510" y="1946">28</text>
+<circle class="junction" cx="1810" cy="1560" r="4.5"/>
+<circle class="junction" cx="1786" cy="1530" r="4.5"/>
+<circle class="tp" cx="1870" cy="1560" r="13"/><text class="tp-text" x="1870" y="1564">11</text>
+<circle class="tp" cx="1840" cy="1530" r="13"/><text class="tp-text" x="1840" y="1534">12</text>
+<text class="net" text-anchor="start" x="220" y="1516">DAC_ROUT · tweeter bandı · dört R IN paralel</text>
+<text class="net" text-anchor="start" x="220" y="1582">DAC_LOUT · woofer bandı · dört L IN paralel</text>
+<circle class="junction" cx="218" cy="2060" r="4.5"/>
+<circle class="tp" cx="250" cy="2060" r="13"/><text class="tp-text" x="250" y="2064">34</text>
+<text class="net" text-anchor="start" x="130" y="2200">Hat seviyesi fan-out: XH-A232 girişi 10 kΩ sınıfı, dördü paralel ≈2,5 kΩ — PCM5102A için rahat bir yük (aritmetik; G1 dört giriş bağlıyken DAC çıkış seviyesini kaydeder). DAC ↔ amfi bankı kablosu kısa ve ekranlı; fan-out noktası amfi bankında.</text>
+<text class="net" text-anchor="start" x="130" y="2224">KESİKLİ DAL ADAYDIR: XH-A232'de erişilebilir SD pad'i doğrulanmadı (§9). Dört kart aynı revizyon olmalı; dal ya dördünde ya hiçbirinde takılır. Pad yoksa R7–R10 ve bu dal takılmaz, firmware kontrollü amfi susturması olmaz, geriye DAC XSMT kalır. Her R7 kendi amfisinin ucuna monte edilir: kablo koparsa pad LOW kalsın.</text>
+<rect class="panel note" x="70" y="2290" width="1690" height="340" rx="6"/>
+<text class="panel-title note-t" x="86" y="2318">TEST NOKTASI İNDEKSİ — TP0…TP34</text><line class="tb-line" x1="86" y1="2332" x2="1744" y2="2332"/>
+<text class="panel-mono" x="90" y="2352">TP0 jak + / DC_IN</text>
+<text class="panel-mono" x="420" y="2352">TP7 I²S LRCLK</text>
+<text class="panel-mono" x="750" y="2352">TP14 amfi 1 L−</text>
+<text class="panel-mono" x="1080" y="2352">TP21 amfi 3 L+</text>
+<text class="panel-mono" x="1410" y="2352">TP28 amfi 4 R−</text>
+<text class="panel-mono" x="90" y="2376">TP1 VIN (D2 sonrası)</text>
+<text class="panel-mono" x="420" y="2376">TP8 I²S DATA</text>
+<text class="panel-mono" x="750" y="2376">TP15 amfi 1 R+</text>
+<text class="panel-mono" x="1080" y="2376">TP22 amfi 3 L−</text>
+<text class="panel-mono" x="1410" y="2376">TP29 buton GPIO7</text>
+<text class="panel-mono" x="90" y="2400">TP2 jak − / POWER_GND</text>
+<text class="panel-mono" x="420" y="2400">TP9 DAC LOUT</text>
+<text class="panel-mono" x="750" y="2400">TP16 amfi 1 R−</text>
+<text class="panel-mono" x="1080" y="2400">TP23 amfi 3 R+</text>
+<text class="panel-mono" x="1410" y="2400">TP30 LED_R sürüş</text>
+<text class="panel-mono" x="90" y="2424">TP3 buck A 5,10 V (ESP)</text>
+<text class="panel-mono" x="420" y="2424">TP10 DAC ROUT</text>
+<text class="panel-mono" x="750" y="2424">TP17 amfi 2 L+</text>
+<text class="panel-mono" x="1080" y="2424">TP24 amfi 3 R−</text>
+<text class="panel-mono" x="1410" y="2424">TP31 LED_G sürüş</text>
+<text class="panel-mono" x="90" y="2448">TP4 buck B 5,10 V (DAC)</text>
+<text class="panel-mono" x="420" y="2448">TP11 amfi L IN bus</text>
+<text class="panel-mono" x="750" y="2448">TP18 amfi 2 L−</text>
+<text class="panel-mono" x="1080" y="2448">TP25 amfi 4 L+</text>
+<text class="panel-mono" x="1410" y="2448">TP32 LED_B sürüş</text>
+<text class="panel-mono" x="90" y="2472">TP5 ESP32 3V3</text>
+<text class="panel-mono" x="420" y="2472">TP12 amfi R IN bus</text>
+<text class="panel-mono" x="750" y="2472">TP19 amfi 2 R+</text>
+<text class="panel-mono" x="1080" y="2472">TP26 amfi 4 L−</text>
+<text class="panel-mono" x="1410" y="2472">TP33 DAC XSMT</text>
+<text class="panel-mono" x="90" y="2496">TP6 I²S BCLK</text>
+<text class="panel-mono" x="420" y="2496">TP13 amfi 1 L+</text>
+<text class="panel-mono" x="750" y="2496">TP20 amfi 2 R−</text>
+<text class="panel-mono" x="1080" y="2496">TP27 amfi 4 R+</text>
+<text class="panel-mono" x="1410" y="2496">TP34 amfi SD bus ADAY</text>
+<text class="panel-text" x="90" y="2544">Güç açma/kapatma kaydı — CH1 TP1 · CH2 TP3 · CH3 TP5 · CH4 TP9/TP10.   Susturma kaydı — CH1 TP1 · CH2 TP33 · CH3 TP34 · CH4 TP9/TP10.</text>
+<text class="panel-text" x="90" y="2568">Ripple ölçümünde 10× prob, ground-spring ve 20 MHz bant sınırı kullanılır. TP1 çöküşü dört amfi limiter tavanında sürülürken, 2,9 A bütçesine karşı kaydedilir.</text>
+<text class="panel-text" x="90" y="2592">Beklenen değer ve geçiş şartları: docs/02-hardware/circuit-and-wiring-plan.md §7</text>
+<rect class="panel danger" x="1790" y="2290" width="860" height="340" rx="6"/>
+<text class="panel-title danger-t" x="1806" y="2318">SUSTURMA HATLARI — ADR-0011</text><line class="tb-line" x1="1806" y1="2332" x2="2634" y2="2332"/>
+<text class="panel-warn" x="1810" y="2352">SUSTURMAYI TUTAN ŞEY GPIO DEĞİL, DİRENÇTİR</text>
+<text class="panel-text" x="1810" y="2376">R6 ve dört R7 (R7–R10, 10 kΩ pull-down) opsiyonel değildir. Bu parçadaki her aday</text>
+<text class="panel-text" x="1810" y="2400">GPIO reset'ten yüksek empedanslı çıkar ve ROM, bootloader ve uygulama başlangıcı</text>
+<text class="panel-text" x="1810" y="2424">boyunca öyle kalır — yüzlerce ms. Firmware'in işi susturmayı BIRAKMAKTIR;</text>
+<text class="panel-text" x="1810" y="2448">firmware hiç çalışmazsa sekiz sürücü sessiz kalır.</text>
+<text class="panel-text" x="1810" y="2472">Dört SD pad'i tek GPIO21 hattına paraleldir; her amfide kendi R7'si: dört 10 kΩ</text>
+<text class="panel-text" x="1810" y="2496">paralelde 2,5 kΩ, HIGH'da ≈1,3 mA — GPIO için rahat. Dal ya dördünde ya hiçbirinde.</text>
+<text class="panel-text" x="1810" y="2520">OPERATÖR, LEHİMDEN ÖNCE: (1) PCM5102A XSMT pad'i ↔ 3V3 direncini ölç, sert köprü</text>
+<text class="panel-text" x="1810" y="2544">varsa kes. (2) Dört XH-A232'de de erişilebilir SD pad'i var mı, süreklilikle ara.</text>
+<text class="panel-text" x="1810" y="2568">(3) Açılışta TP33 ve TP34 LOW mu, osiloskopla kaydet.</text>
+<text class="panel-warn" x="1810" y="2592">Bu ölçümler kaydedilmeden susturma katmanı DOĞRULANMAMIŞTIR; empedans eğrisi</text>
+<text class="panel-warn" x="1810" y="2616">ölçülmemiş sürücülere sinyal verilmez.</text>
+<rect class="panel gate" x="70" y="2670" width="1690" height="92" rx="6"/>
+<text class="panel-title gate-t" x="86" y="2698">ENERJİ VERME ÖNCESİ ZORUNLU KAPILAR</text><line class="tb-line" x1="86" y1="2712" x2="1744" y2="2712"/>
+<text class="panel-mono" x="90" y="2716">G0 sürücü DC direnci / empedans / polarite   ·   G1 tek amfi + 8 Ω ≥50 W non-inductive dummy-load, adaptör yüksüz &lt; 25,5 V, jak polaritesi, dört amfi tam yükte VIN çöküşü, brownout, pop   ·   G2 tweeter HPF + limiter + C_SAFE</text>
+<text class="panel-warn" x="90" y="2742">Fiziksel ölçüm kaydı olmadan hiçbir kapı PASS yapılamaz. İlk enerjilenen yol bir amfi, bir woofer, bir tweeter'dır; diğer üç amfi G0–G2 o çift üzerinde geçmeden sürücülere bağlanmaz.</text>
+<rect class="panel title" x="1790" y="2670" width="860" height="92" rx="6"/>
+<text class="panel-title" x="70" y="2800">GÖSTERİM</text>
+<line class="w pwr" x1="210" y1="2795" x2="256" y2="2795"/><text class="legend" x="266" y="2800">24 V DC / VIN</text>
+<line class="w v5" x1="480" y1="2795" x2="526" y2="2795"/><text class="legend" x="536" y="2800">5 V (A → ESP, B → DAC)</text>
+<line class="w v33" x1="750" y1="2795" x2="796" y2="2795"/><text class="legend" x="806" y="2800">3V3</text>
+<line class="w dig" x1="1020" y1="2795" x2="1066" y2="2795"/><text class="legend" x="1076" y="2800">dijital / I²S / susturma</text>
+<line class="w aud" x1="1290" y1="2795" x2="1336" y2="2795"/><text class="legend" x="1346" y="2800">analog ses bus</text>
+<line class="w btl" x1="1560" y1="2795" x2="1606" y2="2795"/><text class="legend" x="1616" y="2800">BTL çıkış</text>
+<line class="w gnd" x1="1830" y1="2795" x2="1876" y2="2795"/><text class="legend" x="1886" y="2800">toprak</text>
+<line class="w sig" x1="2100" y1="2795" x2="2146" y2="2795"/><path class="w sig" d="M 2123,2809 A 9 9 0 0 1 2123,2791"/><text class="legend" x="2156" y="2800">yarım daire: kesişme, bağlantı yok · içi dolu nokta: bağlantı</text>
+<text class="tb-key" x="1810" y="2702">BELGE</text><text class="tb-val" x="1810" y="2728">HK-HW-SCH</text>
+<text class="tb-key" x="2010" y="2702">REV</text><text class="tb-val" x="2010" y="2728">P4</text>
+<text class="tb-key" x="2130" y="2702">DURUM</text><text class="tb-val" x="2130" y="2728">CANDIDATE</text>
+<text class="tb-key" x="2330" y="2702">TARİH</text><text class="tb-val" x="2330" y="2728">2026-09-12</text>
+<text class="tb-key" x="2500" y="2702">SAYFA</text><text class="tb-val" x="2500" y="2728">1 / 1</text>
+<text class="tb-key" x="1810" y="2752">ÜRETEN  hardware/diagrams/generate_schematic_svg.py  ·  ELEKTRİKSEL KAYNAK  hardware/kicad/</text>
 </svg>

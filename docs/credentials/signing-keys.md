@@ -43,7 +43,7 @@ Yanmış bir anahtar listeden **çıkmaz**. "Artık muhtemelen sorun değil", bi
 2. Açık yarısının parmak izi `burned-keys.txt`'te varsa durur.
 3. `firmware/certs/hk-signing-key.pub.bin` ile eşleşmiyorsa durur.
 
-Üçüncüsü kritik: imzayı imzalayan anahtarla doğrulamak hiçbir şey kanıtlamaz, her geçerli RSA-3072 anahtarı geçer. Önemli olan cihazların **zaten güvendiği** anahtar olup olmadığı, çünkü güven çıpası çalışan uygulamanın kendi imza bloğudur. Yanlış ama geçerli bir anahtarla yayımlanan sürümü dört hoparlör de sessizce reddeder; kurtarma yolu dördünü USB'den yeniden yazmaktır.
+Üçüncüsü kritik: imzayı imzalayan anahtarla doğrulamak hiçbir şey kanıtlamaz, her geçerli RSA-3072 anahtarı geçer. Önemli olan cihazların **zaten güvendiği** anahtar olup olmadığı, çünkü güven çıpası çalışan uygulamanın kendi imza bloğudur. Yanlış ama geçerli bir anahtarla yayımlanan sürümü hoparlör sessizce reddeder; kurtarma yolu onu USB'den yeniden yazmaktır.
 
 ## İmzalanmış sürümler
 
@@ -55,10 +55,10 @@ Yanmış bir anahtar listeden **çıkmaz**. "Artık muhtemelen sorun değil", bi
 
 Güven çıpası çalışan uygulamanın imza bloğu olduğu için, cihaz yalnız kendisini imzalayan anahtarla imzalanmış güncellemeleri kabul eder. Anahtar giderse:
 
-- Sahadaki cihazlar **OTA ile güncellenemez**.
-- Kurtarma yolu fizikseldir: dört hoparlörü USB'ye takıp yeni anahtarla imzalanmış imajı yazmak.
+- Sahadaki cihaz **OTA ile güncellenemez**.
+- Kurtarma yolu fizikseldir: hoparlörü USB'ye takıp yeni anahtarla imzalanmış imajı yazmak.
 
-Dört cihaz için birkaç dakikalık iş; bir ürün için kabul edilemez olurdu. Kabul edilen takas budur.
+Tek cihaz için birkaç dakikalık iş; bir ürün için kabul edilemez olurdu. Kabul edilen takas budur.
 
 Yedek isterseniz **depo dışında**: şifreli disk veya parola yöneticisinde güvenli not. Ortam secret'ı okunamaz, yani GitHub bir yedek değildir.
 

@@ -8,7 +8,7 @@ tags: [hardware, kicad, schematic, generator]
 
 # KiCad şeması ve üretim scripti
 
-Tek hoparlörün A3 modül bağlantı paftası Python ile tekrar üretilebilir. Script, yerel KiCad `.kicad_sch` dosyasını doğrudan oluşturur.
+Tek kabinin (bir ESP32-S3, bir PCM5102A, iki buck, dört XH-A232, sekiz sürücü) A3 modül bağlantı paftası Python ile tekrar üretilebilir. Script, yerel KiCad `.kicad_sch` dosyasını doğrudan oluşturur.
 
 Bu pafta **elektriksel kaynaktır**: netlist, ERC ve ileride PCB buradan türer. Belgelerde kullanılan okunabilir tek sayfalık görsel ayrı bir çıktıdır ve [[circuit-and-wiring-plan#Devre şeması|devre planında]] gösterilir.
 
@@ -33,7 +33,7 @@ python3 hardware/kicad/generate_merzarkabul.py --validate
 Script her çalıştırmada bir yapısal self-check uygular ve sorun bulursa dosya yazmadan durur:
 
 - Her tel ucu gerçek bir pinin veya köşe noktasının üstünde mi?
-- `TP0-TP21` boşluksuz ve tekrarsız mı?
+- `TP0-TP34` boşluksuz ve tekrarsız mı?
 - Tek bağlantılı net var mı? (`EXPECTED_OPEN_NETS` boştur; tek pinli her net hatadır.)
 - Referans designator tekrarı var mı?
 
@@ -41,22 +41,24 @@ Script her çalıştırmada bir yapısal self-check uygular ve sorun bulursa dos
 
 ## Pafta kapsamı
 
-- 5,5 × 2,1 mm DC giriş jakı, 19 V adaptör, seri ters polarite adayı `D2` ve `C_A` bulk kondansatör ([[../07-decisions/ADR-0020-dc-adapter-power|ADR-0020]])
-- MP1584 5,10 V lojik beslemesi ve USB geri-besleme ayırma jumperı
+- 5,5 × 2,1 mm DC giriş jakı, 24 V / 2,9 A adaptör (yüksüz çıkış < 25,5 V ölçülür), seri ters polarite adayı `D2` ve 35 V sınıfı `C_A` bulk kondansatör ([[../07-decisions/ADR-0020-dc-adapter-power|ADR-0020]])
+- İki MP1584: `U3` buck A (ESP32-S3, `JP1` USB geri-besleme ayırma jumperıyla) ve `U4` buck B (PCM5102A, jumper yok)
 - ESP32-S3 **N16R8** ([[../07-decisions/ADR-0010-esp32-s3-n16r8-board|ADR-0010]]), fonksiyon butonu ve RGB durum LED'i
-- PCM5102A, XH-A232, woofer ve seri `C_SAFE` korumalı tweeter; `R6`/`R7` susturma pull-down'ları ([[../07-decisions/ADR-0011-audio-side-gpio-reservation|ADR-0011]])
-- `TP0-TP21` güç, I2S, analog, BTL, susturma ve kullanıcı arayüzü ölçüm noktaları
+- PCM5102A, dört XH-A232 (`U7`-`U10`; `DAC_LOUT` dört `L` girişine, `DAC_ROUT` dört `R` girişine paralel), dört woofer (`J2`/`J4`/`J6`/`J8`) ve dört seri `C_SAFE` (`C2`-`C5`) korumalı tweeter (`J3`/`J5`/`J7`/`J9`); `R6` ve dört `R7` sınıfı pull-down `R7`-`R10` (`AMP_MUTE` hattı dört `SD` pad'ine paralel) ([[../07-decisions/ADR-0011-audio-side-gpio-reservation|ADR-0011]], [[../07-decisions/ADR-0002-biamp-signal-chain|ADR-0002]])
+- `TP0-TP34` güç, I2S, analog bus, dört amfinin BTL çıkışları, susturma ve kullanıcı arayüzü ölçüm noktaları
+
+Dört amfi ayrı konnektör olarak çizilir ki ERC her neti ayrı görsün; `DAC_LOUT`, `DAC_ROUT` ve `AMP_MUTE` net etiketleri dağıtımı taşır, her amfinin çıkış netleri `AMPn_*` adını alır.
 
 Test noktası numaralandırması scriptteki tek bir tablodan üretilir; bu tablo [[circuit-and-wiring-plan#7.1 Test noktası yerleşimi|devre planındaki tabloyla]] aynı numaraları kullanır.
 
 ## Çizim kuralları
 
-Her yerleşim `2,54 mm` ızgaradadır. Tel uçları elle yazılmaz, pin konumundan çözülür. Bitişik parçalar gerçek telle bağlanır; sayfayı boydan boya geçmesi gereken raylar için net etiketi ve power sembolü kullanılır.
+Her yerleşim `2,54 mm` ızgaradadır. Tel uçları elle yazılmaz, pin konumundan çözülür. Bitişik parçalar gerçek telle bağlanır (dört `C_SAFE` → tweeter, buton düğümü); sayfayı boydan boya geçmesi gereken raylar için net etiketi ve power sembolü kullanılır.
 
 > [!warning]
 > Konektör pin sıraları mantıksaldır; satın alınan parçaların fiziksel pin sırası olarak kullanılamaz. Jak polaritesi, `D2` düşümü ve modül revizyonları ayrıca doğrulanır.
 
 > [!danger]
-> `AMP_L_MINUS` ve `AMP_R_MINUS` BTL anahtarlama çıkışıdır; GND değildir. Osiloskop toprak klipsi hiçbir BTL ucuna bağlanmaz. G0-G2 ölçüm kapıları kapanmadan gerçek sürücülere enerji verilmez.
+> `AMPn_L_MINUS` ve `AMPn_R_MINUS` (dört amfi) BTL anahtarlama çıkışıdır; GND değildir. Osiloskop toprak klipsi hiçbir BTL ucuna bağlanmaz. G0-G2 ölçüm kapıları kapanmadan gerçek sürücülere enerji verilmez.
 
 Ana elektriksel gerekçeler, değerler ve bağlantı tabloları için [[circuit-and-wiring-plan|devre ve bağlantı planı]] esas kaynaktır.

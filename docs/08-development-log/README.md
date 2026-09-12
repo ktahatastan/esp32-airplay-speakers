@@ -1,7 +1,7 @@
 ---
 status: active
 owner: orchestrator
-updated: 2026-09-08
+updated: 2026-09-12
 tags: [development-log, moc]
 ---
 
@@ -9,6 +9,7 @@ tags: [development-log, moc]
 
 Günlükler yapılan işi, nedenini, doğrulamayı ve açık riskleri kalıcı tutar. Yeni kayıt için [[../templates/development-log|şablonu]] kullanın. Liste yeniden eskiye sıralıdır.
 
+- [[2026-09-12-single-cabinet|2026-09-12 — Dört kutu tek kabine indi]]
 - [[2026-09-08-product-board-first-flash|2026-09-08 — Ürün kartı geldi ve firmware ilk kez üstünde çalıştı]]
 - [[2026-09-08-portal-username-and-profile|2026-09-08 — Kayıt tutarlılığı, uygulamasız kurulum yolu ve kalibrasyon profili]]
 - [[2026-09-05-devkit-bring-up|2026-09-05 — N8R2 geliştirme kartı hedefi ve ilk silikon]]

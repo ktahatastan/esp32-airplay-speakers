@@ -55,7 +55,7 @@ Please ensure the billing plan supports the required reviewers protection rule.
 
 Yani bir etiket push'u insan onayı olmadan yayımlar. Ortam kapsamı geçerli, onay kapısı değil. Bunu "korumalı ortam" diye yazmıyorum — birkaç saat önce tam da bu hatayı yapmıştım ve düzeltmiştim.
 
-Not: bu, private yapmanın **bedeli**. Public depoda koruma kuralları ücretsizdi. Dört cihazlık bir hobi projesi için doğru takas, ama takas olduğu kayda geçsin.
+Not: bu, private yapmanın **bedeli**. Public depoda koruma kuralları ücretsizdi. Tek cihazlık bir hobi projesi için doğru takas, ama takas olduğu kayda geçsin.
 
 ## Doğrulama
 

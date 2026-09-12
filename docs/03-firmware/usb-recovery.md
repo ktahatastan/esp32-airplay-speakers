@@ -11,7 +11,7 @@ tags: [firmware, recovery, usb, ota, safety]
 ## Ne zaman gerekir
 
 - OTA sonrası cihaz açılmıyor ve geri alma da kurtarmadı.
-- İmzalama anahtarı değişti; sahadaki cihazlar yeni anahtarla imzalanmış imajı reddediyor (bkz. [[../credentials/signing-keys|imzalama anahtarları]]).
+- İmzalama anahtarı değişti; sahadaki cihaz yeni anahtarla imzalanmış imajı reddediyor (bkz. [[../credentials/signing-keys|imzalama anahtarları]]).
 - Kalibrasyon yazılacak: yeni bir cihaz ilk kez hazırlanıyor.
 - Geliştirme sırasında bilinen iyi bir sürüme dönmek gerekiyor.
 
@@ -23,7 +23,7 @@ tags: [firmware, recovery, usb, ota, safety]
 esptool erase_flash      # BUNU YAPMAYIN
 ```
 
-Bu, `factory_cal`'ı da siler. O bölüm sürücü koruma ölçümlerini tutuyor: sürücülerle, bir amfiyle ve bir öğleden sonrayla elde edilmiş sayılar. Hiçbir yazılım onları yeniden üretemez ve kalibrasyonu gitmiş bir hoparlör **hiç çalmayı reddeder** — tasarım gereği, çünkü koruma profili uydurmak bu projenin yasakladığı şey.
+Bu, `factory_cal`'ı da siler. O bölüm sürücü koruma ölçümlerini tutuyor: sürücülerle, amfilerle ve bir öğleden sonrayla elde edilmiş sayılar. Hiçbir yazılım onları yeniden üretemez ve kalibrasyonu gitmiş bir hoparlör **hiç çalmayı reddeder** — tasarım gereği, çünkü koruma profili uydurmak bu projenin yasakladığı şey.
 
 Doğru kurtarma cerrahi olmalı: yalnız açılışı sağlayan dört bölge yazılır, veri bölümlerine dokunulmaz.
 

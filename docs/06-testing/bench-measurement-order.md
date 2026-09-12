@@ -3,7 +3,7 @@ title: Tezgâh ölçüm sırası — ses zinciri ve susturma hatları
 status: in-progress
 owner: orchestrator
 reviewers: [hardware-reviewer, verifier]
-updated: 2026-09-08
+updated: 2026-09-12
 tags: [testing, bench, audio, grounding, mute, procedure]
 ---
 
@@ -18,8 +18,11 @@ değer çıkmazsa ne anlama geldiği yazıyor. Sonucu buraya yaz; bir agent fizi
 bir testi geçmiş sayamaz, operatör kaydeder.
 
 > **Her ölçümden önce:** hoparlör terminallerinde ne olduğuna bak. Nova
-> sürücülerinin empedansı hâlâ ölçülmedi (`G0`, açık `Kritik`), ve yüksek geçiren
-> filtre ile limiter yok (`F3`). Tweeter bağlıyken uzun süre ses verme.
+> sürücülerinin DC direnci ölçüldü ama empedans eğrisi ve `Fs` ölçülmedi (`G0`,
+> açık `Kritik`); yüksek geçiren filtre ile limiter yer tutucu tezgâh
+> profiliyle çalışıyor, ölçülmüş değerle değil (`F3`). Tweeter bağlıyken uzun
+> süre ses verme. Tezgâhta tek amfi ve tek woofer/tweeter çifti vardır; öteki üç
+> amfi sürücülere `G0`-`G2` o çiftte geçmeden bağlanmaz.
 
 ---
 
@@ -80,16 +83,20 @@ PCM5102A çipinin ilgili pinine süreklilik bak.
 
 **Sonuç:** _(yazılacak)_
 
-### B4. XH-A232'de `SD` padi var mı?
+### B4. XH-A232'de `SD` padi var mı? — dört amfide de
 
 `hk_pins.h` bunu bir **rezervasyon** olarak işaretlemiş; şemada da kesikli
 çizili. TPA3110 çipinin `SD` pininden kartta erişilebilir bir noktaya süreklilik
 ara. Bulursan o noktayı GND'ye göre de ölç: kart `SD`'yi kendi yukarı çekiyorsa
 10 kΩ baskın gelmeyebilir ve `R7` yeniden hesaplanmalı.
 
+Ölçüm dört XH-A232'nin her birinde ayrı ayrı yapılır ve dördü aynı kart
+revizyonu olmak zorundadır: `SD` dalı ya dördünde birden takılır ya hiçbirinde.
+Biri farklı çıkarsa o kart değiştirilir, dal yarım bağlanmaz.
+
 | sonuç | anlamı |
 |---|---|
-| erişilebilir nokta **var** | `GPIO21` bağlanır, `R7` takılır, şemadaki kesikli dal düz çizgiye döner. |
+| erişilebilir nokta **dördünde var** | `GPIO21` dört `SD` padine paralel bağlanır, her amfide kendi `R7`'si takılır (dört 10 kΩ paralelde 2,5 kΩ; GPIO için rahat), şemadaki kesikli dal düz çizgiye döner. |
 | **yok** | Firmware tarafından kontrol edilebilir amfi mute'u olmaz; sadece DAC'ın `XSMT`'si kalır. Kapanış "pop"u bastırılamaz. Bu bir karar olarak yazılır. |
 
 **Sonuç:** _(yazılacak)_
@@ -119,6 +126,9 @@ verirken belirgin düşüyorsa besleme yetersiz ve gürültünün bir kısmı or
 TPA3110'un iki kazanç seçim girişi var ve dört bileşim **20 / 26 / 32 / 36 dB**
 veriyor (kesin eşleme için çipin veri sayfasındaki kazanç tablosuna bak; pin
 numarasını ezberden yazmıyorum). Her iki pini GND'ye ve besleme rayına göre ölç.
+Dört amfide de oku ve dördünün aynı olduğunu yaz: girişleri paralel ve
+programları aynı olan dört amfinin kazancı farklıysa dört woofer aynı seviyede
+çalmaz ve bu bir crossover ya da EQ sorunu gibi ölçülür.
 
 PCM5102A tam ölçekte ~2,1 Vrms veriyor. 36 dB'lik bir amfi tam çıkışa ~0,1 Vrms
 ile ulaşır — yani zincir yaklaşık **26 dB fazla sıcak**. Bu tek başına hem
@@ -165,7 +175,8 @@ ortak referans yok, sinyal tanımsız. Alıcı bu sırada kusursuz çalışıyor
 alamıyordu.
 
 **Doğru düzenleme, ve neden:** DAC beslemesini kendi regülatöründen alır, ESP ile
-arasında **yalnızca sinyal referansı** taşıyan bir toprak teli olur. Gürültünün
+arasında **yalnızca sinyal referansı** taşıyan bir toprak teli olur. Bu, DAC'ın
+kendi 5 V buck'ını (buck B) almasının sebebidir ([[../07-decisions/ADR-0020-dc-adapter-power|ADR-0020]]). Gürültünün
 sebebi telin varlığı değil, üzerinden geçen besleme akımıydı. Aynı tel, farklı
 görev: besleme dönüşü regülatöre, sinyal referansı ESP'ye — ve I²S üçlüsüyle yan
 yana çekilir ki ilmek alanı küçük kalsın.
@@ -185,7 +196,7 @@ gitti. Sökmek ilmeği kapattı ama toprağı kaldırmadı — dönüş akımı 
 BCK için bu hem ışıma yapar hem veri hatası riski taşır.
 
 Topraklama planı zaten doğrusunu yazmış: *"Analog/dijital/güç dönüş akımları
-planlı yıldız noktada birleşir."* Şemada ESP, DAC, amfi, buck — hepsi ayrı ayrı
+planlı yıldız noktada birleşir."* Şemada ESP, DAC, dört amfi, iki buck — hepsi ayrı ayrı
 `STAR_GND`'ye gidiyor, birbirine değil.
 
 **Yapılacak:** ESP GND ve DAC GND, birbirine değil, **ikisi de ayrı tellerle tek
@@ -195,10 +206,25 @@ bir yıldız noktasına** (pratikte güç girişinin toprağı). Sonra A1 dinlem
 
 ---
 
+## Sahip gözlemi — paylaşılan buck DAC'a hışırtı bindirdi (2026-09-12)
+
+Sahibin bildirdiği gözlem: ESP32-S3 ile PCM5102A aynı 5 V buck'tan beslenirken
+DAC çıkışında duyulur bir hışırtı vardı; DAC'a kendi buck'ı verilince gitti.
+**Kurulum ayrıntılı kaydedilmedi** — hangi buck modülü, hangi yük, hangi kablo
+uzunluğu, ne ölçüldü, hiçbiri yazılmadı. Bu yüzden bu bir ölçüm değil, bir
+gözlemdir ve hiçbir kapıyı açmaz; yukarıdaki §3 ile birlikte iki ayrı 5 V
+buck kararının (buck A ESP32-S3, buck B DAC; ADR-0020) tezgâh gerekçesidir.
+Gürültü tabanı G1'de dummy-load üzerinde osiloskopla, iki buck'la ve
+kaydedilmiş kurulumla ölçülür; ancak o zaman "geçti" yazılır.
+
+**Sonuç:** _(G1'de ölçülecek)_
+
+---
+
 ## Sıradaki
 
 Bu ölçümler kapandıkça:
 
-- `B4` bir `SD` noktası bulursa: şemadaki kesikli dal kesinleşir, `R7` takılır.
+- `B4` dört kartta da bir `SD` noktası bulursa: şemadaki kesikli dal kesinleşir, dört `R7` takılır.
 - `C3` 36 dB gösterirse: kazanç düşürülür ve EQ bunun üstüne kurulur.
-- Hepsi kapandıktan sonra `G1` (amfi kukla yükte) ve amfi çıkışı test noktalarının osiloskop kaydı.
+- Hepsi kapandıktan sonra `G1` (tek amfi kukla yükte; sonra dört amfi birden sürülürken `VIN` akım bütçesi) ve amfi çıkışı test noktalarının osiloskop kaydı.

@@ -12,10 +12,12 @@
  * the gain reduction over an attack time, which sounds gentler and lets peaks
  * through while the gain is still falling; a limiter that lets peaks through
  * is not protection. The other alternative, a lookahead delay line, removes
- * the distortion but adds latency — and this device has a latency budget it
- * cannot spend, because ADR-0007 gives group synchronisation ≤1 ms between
- * rooms. A few milliseconds of lookahead would eat that budget to make a
- * protection stage that rarely engages sound nicer while it engages.
+ * the distortion but adds latency — and this DSP is reported to the receiver's
+ * timing engine as ZERO added samples (audio_output_get_hardware_latency_us in
+ * hk_airplay_output_i2s.c), which is what lets every frame's early/late
+ * decision against the sender's presentation timestamp stay true. A delay line
+ * would make that report wrong and move every one of those decisions, to make
+ * a protection stage that rarely engages sound nicer while it engages.
  *
  * The cost is honest: instantaneous gain changes are distortion. On a stage
  * that should be inaudible in normal use and only acts when something is
@@ -27,9 +29,11 @@
  * So release is exponential and a hold keeps the gain down for a stated time
  * after the last peak.
  *
- * NOTHING HERE HAS A DEFAULT CEILING. The ceiling comes from G2, from measured
- * driver behaviour, and this project does not invent that kind of number. A
- * configuration that has not been given one is refused rather than run.
+ * NOTHING HERE HAS A DEFAULT CEILING. The ceiling comes off the bench: G1 sets
+ * it against the adapter's 2.9 A budget with all four amplifiers driven, and
+ * G2 lowers it where measured driver behaviour demands. This project does not
+ * invent that kind of number. A configuration that has not been given one is
+ * refused rather than run.
  */
 #ifndef HK_LIMITER_H
 #define HK_LIMITER_H

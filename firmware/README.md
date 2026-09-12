@@ -1,18 +1,24 @@
 # Merzarkabul Airplay Speakers firmware
 
-ESP32-S3 firmware for one speaker. Four speakers run the same image and are told
-apart by a device identity derived from their MAC.
+ESP32-S3 firmware for the speaker: one cabinet, one board, one device on the
+network (ADR-0021). Every user-visible name carries a suffix derived from the MAC
+so it is unique on any network.
 
 **F0 is closed, and F4/F5 have run on real silicon.** On the N8R2 bring-up
 devkit (ADR-0012) this firmware joins Wi-Fi, answers mDNS, provisions over both
 SoftAP and BLE, drives the button and the LED, and runs the vendored AirPlay
 receiver: on 2026-09-05 an iPhone streamed to it and the audio was heard.
 
-What it still does not do is drive the product's own audio path. That audio left
-the board as bench S/PDIF into the operator's own DAC; the product's I2S, DAC and
-amplifier mute lines stay asserted, because no driver has been measured and no
-calibration profile exists (`G0`). What comes next, in order and with acceptance
-criteria, is in
+The product's own audio path has played too. On 2026-09-08 the bench build (the
+product profile plus `sdkconfig.bench`) carried AirPlay → I2S → PCM5102A →
+XH-A232 → sound, mono and clean, with a DSP chain in front of the amplifier: mono
+sum, per-band EQ, subsonic high-pass, LR4 crossover, a limiter per branch. That
+chain is not finished and its numbers are placeholders: two are measured (the
+drivers' DC resistances), the rest are reasoned from an impedance sweep that located
+neither driver's `Fs`, so the product profile still refuses audio until a
+measured calibration profile exists in `factory_cal` (`G0`). The bench record is
+[docs/06-testing/bench-measurement-order.md](../docs/06-testing/bench-measurement-order.md);
+what comes next, in order and with acceptance criteria, is in
 [docs/03-firmware/firmware-plan.md](../docs/03-firmware/firmware-plan.md).
 
 ## Locked inputs
@@ -21,7 +27,8 @@ criteria, is in
 |---|---|---|
 | Board | ESP32-S3, 16 MB flash + 8 MB octal PSRAM (`N16R8`) | ADR-0010 |
 | ESP-IDF | `v5.5.1`, pinned | this file and `.github/workflows/firmware-ci.yml` |
-| Audio topology | mono program, bi-amp: left path woofer, right path tweeter | ADR-0002 |
+| Audio topology | mono programme, bi-amp: DAC left to four woofers and DAC right to four tweeters through four identical XH-A232 amplifiers | ADR-0002 |
+| Supply | 24 V / 2.9 A DC adapter on VIN; `CONFIG_HK_SUPPLY_MV` defaults to 24000 | ADR-0020 |
 | Distribution | SemVer tag, GitHub Releases, signed A/B OTA | ADR-0008 |
 | AirPlay stack | `rbouteiller/airplay-esp32`, vendored at `38027441ff43` | ADR-0007, ADR-0013 |
 
@@ -107,12 +114,13 @@ hk: psram       2 MB
 
 ### The bench profile
 
-The product profile now compiles the AirPlay receiver in, and it still refuses
-to drive the audio path until a driver-protection profile exists in
-`factory_cal`. On a board with no DAC, no amplifier and no driver that gate can
-never open, so the receiver can never be exercised.
+The product profile compiles the AirPlay receiver in, and it refuses to drive
+the audio path until a driver-protection profile exists in `factory_cal`. Until
+`G0` has been measured no such profile can be written, so on the product path
+the receiver could never be exercised.
 
-`sdkconfig.bench` lifts exactly that one gate, and nothing else:
+`sdkconfig.bench` lifts that gate and runs the DSP backend on a provisional
+profile that says on every boot that it was not measured:
 
 ```bash
 idf.py -C firmware -B firmware/build-bench \
@@ -126,7 +134,9 @@ see is indistinguishable from a defect — which is how this one started life:
 until 2026-09-08 writing provisioning credentials put a schema version into the
 calibration namespace, and that alone was read as "calibrated".
 
-**Only run this build with nothing connected to the output.**
+**Look at what is wired to the amplifier output before flashing this build.** It
+is defensible into a dummy load, a scope or nothing; the staging rule in
+`AGENTS.md` says when one amplifier, one woofer and one tweeter may follow.
 
 ## ESP-IDF traps
 
@@ -221,7 +231,7 @@ directory the CSV's paths are written against, and checks the result. Doing it
 by hand is the trap described under ESP-IDF traps. `--out` belongs outside the
 repository — three of the files it writes hold the password.
 
-Each device gets its own random password. The speaker stores only an SRP6a salt
+The password is random and generated per board. The speaker stores only an SRP6a salt
 and verifier, from which the password cannot be recovered, so reading the flash
 off a speaker does not yield the credential. The generated `label.txt` is the
 only copy of the password; it is written owner-only and must not be committed. The transport is chosen by the situation, not by the caller: SoftAP with
@@ -236,15 +246,13 @@ provisioning rather than weaken it. Two boots were identical down to the free-he
 byte. Record: [docs/06-testing/product-board-bring-up.md](../docs/06-testing/product-board-bring-up.md).
 
 **The GPIO assignment is still a *candidate*.** A board that boots has not proved
-its pin table: the firmware has not driven those pins, and what sits on them is a
-property of the board, not of the image. ADR-0011 wants the purchased board's own
-schematic before the table is `accepted`, and it has not been checked against one.
+its pin table: what sits on the pins is a property of the board, not of the
+image. ADR-0011 wants the purchased board's own schematic before the table is
+`accepted`, and it has not been checked against one.
 
-**No physical gate is open.** No driver, amplifier or DAC has been attached to
-anything, so `G0`-`G2` and `G6`-`G8` are all untouched, and neither the
-twelve-second button press nor four-device synchronisation has ever been
-exercised. The product profile also leaves the AirPlay receiver out entirely
-(`CONFIG_HK_AIRPLAY` defaults to `n`); it is the devkit profile that enables it.
+**No physical gate has passed.** `G0` is partly measured — both drivers' DC
+resistances, neither driver's `Fs` — and `G1`, `G2`, `G6` and `G8` are all
+untouched; the twelve-second button press has never been exercised.
 
 ## Layout
 
@@ -256,7 +264,7 @@ firmware/
   partitions.csv        16 MB layout: dual OTA slots + isolated calibration
   partitions-devkit.csv the same rows at 8 MB, identical below 0x20000
   version.txt           strict SemVer, compared by the OTA client
-  main/                 app_main: boot report only at F0
+  main/                 app_main: boot report, gates, network, AirPlay, OTA
   components/
     hk_pins/            GPIO assignment; the compiler enforces the constraints
     hk_identity/        every user-visible name, derived from the MAC
@@ -264,10 +272,20 @@ firmware/
     hk_button/          function button: debounce, hold levels, what commits
     hk_led/             which status wins the single LED, and how it looks
     hk_provision/       when the setup radios are open, and when they shut
+    hk_portal/          the app-less captive-portal setup path (ADR-0015)
     hk_ui/              button GPIO and RGB PWM, on its own low-priority task
     hk_network/         Wi-Fi, mDNS and the provisioning transport
+    hk_airplay/         the vendored AirPlay 2 receiver and its output backends
+                        (I2S passthrough, the DSP chain, S/PDIF for the bench)
+    hk_audio/           the mute sequence: clocks, DAC and amplifier in order
+    hk_settings/        what the user may change, and its stored bounds
     hk_schema/          what to do when stored data does not match this build
     hk_storage/         the two stores, and the wall between them
+    hk_sched/           when to look for an update, and how to back off
+    hk_manifest/        whether a published release belongs on this device
+    hk_ota/             checking the image that arrived against its manifest
+    hk_gate/            when an update may start (the gate table)
+    hk_health/          whether a freshly installed image has earned its place
   test/                 host unit tests, built with plain CMake
   tools/                partition and size validation
 ```

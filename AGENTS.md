@@ -2,7 +2,7 @@
 
 ## Mission
 
-Build four safe, measurable, mains-powered active speakers from Harman Kardon Nova drivers, each fed by a 19 V DC desktop adapter. The product name is **Merzarkabul Airplay Speakers**. Never present unverified driver impedance or AirPlay multiroom support as confirmed.
+Build one safe, measurable, mains-powered active speaker from Harman Kardon Nova drivers: a single cabinet holding eight of them (four woofers, four tweeters), playing one mono programme, fed by a 24 V / 2.9 A DC desktop adapter. The product name is **Merzarkabul Airplay Speakers**. Never present unverified driver impedance as confirmed.
 
 ## Source of truth
 
@@ -29,8 +29,11 @@ Before work, read `docs/Home.md`, the relevant accepted ADRs under `docs/07-deci
 
 - Never energize an unknown driver at full level. G0 and the relevant G1-G2 checks come first.
 - Tweeter output requires a verified HPF, limiter and safe boot/mute sequence.
-- First power-up of the amplifier goes through a current-limited bench supply, on the dummy load, with the barrel jack polarity (centre-positive) verified with a meter before the adapter is connected (ADR-0020).
-- Do not replicate to four units until G0-G2 pass. Agents cannot claim a physical test passed without recorded operator measurements.
+- The adapter's no-load output is measured before it is ever connected and must read below 25.5 V: 24 V sits 2 V under the amplifier's 26 V maximum, so an adapter that rises off-load is refused, not derated (ADR-0020).
+- First power-up goes through a current-limited bench supply, on the dummy load, with the barrel jack polarity (centre-positive) verified with a meter before the adapter is connected (ADR-0020).
+- Staging: the first energised path is one amplifier, one woofer and one tweeter -- on the dummy load first, then on real drivers after G0-G2 pass on that pair. The other three amplifiers are wired to drivers only after that.
+- The limiter ceiling is derived from the 2.9 A adapter budget with all four amplifiers driven and verified by VIN sag in G1: eight BTL channels can draw far more than 70 W, and a sagging VIN resets the ESP32-S3 mid-song (ADR-0020).
+- Agents cannot claim a physical test passed without recorded operator measurements.
 - BTL amplifier speaker negatives are not chassis ground.
 
 ## Verification
@@ -45,12 +48,13 @@ Before work, read `docs/Home.md`, the relevant accepted ADRs under `docs/07-deci
 These are the open `Kritik` risks from `docs/01-planning/risk-register.md` that still block a gate: each one is an unverified fact, not a hazard with a mitigation already in place. The register is the complete list and the detailed source. It carries `Kritik` rows that are deliberately not repeated here, because they are not of this kind: hazards whose standing mitigations are already in `Hardware safety` above, and accepted risks recorded with the reason they are accepted. Do not restate the count of those rows in this file — a number here goes stale the moment a row is added there, and a contract that misdescribes its own source is worse than one that points at it. Adding a blocker here means adding its row to the register too.
 
 - Individual Nova driver impedance is **partly** confirmed. DC resistance is measured -- woofer 4.0 ohm, tweeter 3.5 ohm, both 4 ohm class -- which settles nominal impedance and `C_SAFE`. Still open, and still blocking: the impedance curve and both drivers' `Fs`. The tweeter's `Fs` is what sets the minimum safe high-pass corner, so the crossover corner remains a conservative guess rather than a measurement. Follow `docs/02-hardware/driver-measurements.md`. Blocks G0, the crossover corner and safe amplifier level.
-- AirPlay 2 group synchronization is not measured. The stack is chosen and its AirPlay 2 and PTP capability is verified in source (ADR-0007), but no four-device measurement exists. Follow `docs/01-architecture/audio-network-feasibility.md`. Blocks G7 and PRD-002.
 
 ## Locked decisions agents must not re-open silently
 
 - Board: ESP32-S3 `N16R8`, 16 MB flash + 8 MB PSRAM (ADR-0010). The GPIO assignment is still a candidate.
-- Power: a 19 V DC desktop adapter through a 5.5 x 2.1 mm centre-positive barrel jack feeds the XH-A232 (8-26 V input) directly as `VIN`; the 5 V buck feeds the ESP32-S3 and the PCM5102A. No power switch in V1 (ADR-0020).
+- Signal chain: one PCM5102A; `LOUT` carries the woofer band and `ROUT` the tweeter band; `LOUT` is paralleled into the L input of four identical XH-A232 and `ROUT` into their R inputs; each amp's L output drives one woofer and its R output one tweeter through that tweeter's own `C_SAFE` (ADR-0002).
+- Power: a 24 V / 2.9 A DC desktop adapter through a 5.5 x 2.1 mm centre-positive barrel jack feeds all four XH-A232 (8-26 V input) directly as `VIN`; two MP1584-class bucks from `VIN`, one 5 V for the ESP32-S3 and one 5 V for the PCM5102A, kept separate because a shared buck put audible hiss into the DAC. No power switch (ADR-0020).
+- One cabinet, eight drivers, one mono programme, one device on the network; stereo and multi-device playback are out of scope. The cabinet is a reflex alignment by the Nova's own passive radiators (ADR-0021).
 - AirPlay receiver: `rbouteiller/airplay-esp32`, vendored at a pinned commit (ADR-0007). Its licence permits non-commercial use only, which binds the whole project.
 
 ## Documentation integrity

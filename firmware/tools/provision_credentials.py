@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Generate the per-device provisioning credentials and the label that carries them.
 
-Every Merzarkabul Airplay Speakers unit gets its own provisioning password. There is no
-shared factory password, because four speakers on one network with one password
-means compromising one compromises all of them, and a password printed in a
-public repository is not a password at all.
+Credentials are per board: the bench devkit, the product board and any
+replacement each carry their own provisioning password. There is no factory
+password, because a password printed in a public repository is not a password
+at all.
 
 The device never stores the password. Security 2 is SRP6a: the device holds a
 salt and a verifier, from which the password cannot be recovered, and proves

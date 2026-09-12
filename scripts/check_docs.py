@@ -5,7 +5,7 @@ Validates what the project claims about itself: that wiki links resolve, that
 notes carry the frontmatter the contract requires, that ADR statuses use the
 agreed vocabulary, that decisions locked by an ADR are not silently
 contradicted somewhere else in the vault, and that no file in the tree names a
-part the product does not have.
+part, a supply voltage or a product shape the product does not have.
 
 This is a documentation check. It never asserts that a physical gate passed.
 
@@ -35,6 +35,11 @@ SKIP_DIRS = {".git", ".obsidian", "node_modules", "generated",
 # Build trees (build, build-devkit, build-release, ...) hold generated
 # sdkconfigs and compile databases: output, not record.
 SKIP_DIR_PREFIXES = ("build",)
+# idf.py writes these next to the project from the tracked sdkconfig.* inputs
+# and Git ignores them. A stale one carries whatever value was current when it
+# was generated, which is a reason to regenerate it, not a finding about the
+# record; the inputs it was made from are scanned.
+SKIP_FILES = {"sdkconfig", "sdkconfig.old"}
 
 # The vault frontmatter contract applies to notes under docs/ only. Agent and
 # skill definitions follow their own tool-defined schema, checked separately.
@@ -130,19 +135,44 @@ DRIFT_RULES = (
         pattern=(r"(?i:\bBMS\b|XL4015|INA219|GC9A01|LVGL|\bNTC\b|batarya|"
                  r"Li-ion|4S1P|hk_power|hk_display|KM103|DC-132A)|OVERHEAT"),
         allowed=("scripts/check_docs.py",),
-        hint=("The speaker runs from a 19 V DC adapter (ADR-0020): it has no battery, "
+        hint=("The speaker runs from a 24 V DC adapter (ADR-0020): it has no battery, "
               "charger, display, cell thermistor or current sensor, so nothing in the "
               "tree may describe one."),
+        scope="repo",
+    ),
+    Drift(
+        label="multi-device",
+        # `\bG7\b` sees the bare gate number only. A range written "G6-G8"
+        # would step over it unseen, hence the hint's spelling.
+        pattern=r"(?i)multiroom|çoklu oda|\bG7\b|dört hoparlör|four speakers|dört cihaz|four devices",
+        allowed=("scripts/check_docs.py",),
+        hint=("The product is one cabinet and one device on the network (ADR-0021): "
+              "there is no multiroom group and no multi-device sync gate, so nothing "
+              "in the tree may describe one. G7 is a vacant gate number; write the "
+              "range as 'G6, G8', never 'G6-G8'."),
+        scope="repo",
+    ),
+    Drift(
+        label="supply-voltage",
+        # Case-sensitive on purpose: `19 V` and `19V` are how a supply figure
+        # is written, and `\b` keeps a year like 2019 or a larger number out.
+        pattern=r"\b19\s?V\b|\b19000\b",
+        allowed=(
+            "docs/07-decisions/ADR-0020-dc-adapter-power.md",
+            "scripts/check_docs.py",
+        ),
+        hint=("ADR-0020 locks the supply to a 24 V / 2.9 A DC adapter and "
+              "CONFIG_HK_SUPPLY_MV to 24000. A 19 V figure belongs only in "
+              "ADR-0020's rejected options."),
         scope="repo",
     ),
 )
 
 # Claims the contract forbids stating as fact.
 FORBIDDEN_CLAIMS = (
-    (r"AirPlay\s*2[^.\n]{0,40}(destekleniyor|doğrulandı|kanıtlandı)",
-     "AirPlay 2 multiroom support is not confirmed (ADR-0007)."),
     (r"(woofer|tweeter)[^.\n]{0,40}\b8\s*(ohm|Ω)\b[^.\n]{0,20}(olduğu|doğrulandı|kesin)",
-     "Individual driver impedance is not measured (G0)."),
+     "The driver impedance curve and Fs are not measured (G0); the measured DC "
+     "resistance puts both Nova drivers in the 4 ohm class, not 8."),
 )
 
 
@@ -159,6 +189,8 @@ class Report:
 
 
 def skipped(path: Path) -> bool:
+    if path.name in SKIP_FILES:
+        return True
     parts = path.relative_to(ROOT).parts[:-1]
     return any(part in SKIP_DIRS or part.startswith(SKIP_DIR_PREFIXES)
                for part in parts)

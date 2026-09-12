@@ -89,7 +89,7 @@ hk_schema_action_t hk_schema_resolve(hk_store_t store, hk_schema_found_t found);
  * therefore no conversions, so this returns false for everything — and that is
  * the point. The moment someone bumps HK_SCHEMA_USER_VERSION to 2, every
  * existing device resolves to MIGRATE, and without this check the old store
- * would be read as though it were the new layout. Silently, on all four.
+ * would be read as though it were the new layout. Silently.
  */
 bool hk_schema_can_migrate(hk_store_t store, uint32_t from_version);
 
