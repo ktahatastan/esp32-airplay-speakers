@@ -100,13 +100,15 @@ tepesi **50 Hz'de** çıktı — 8 Eylül tahmininin yarısı. Tahmin yanlışt�
 ### Bunlardan türeyen provisional ayarlar
 
 Bu tablo tezgâh yapısının **derlediği** yer tutucuları yazar (`hk_airplay_output_i2s.c`,
-`bench_provisional_chain()`); 2026-09-12'ye kadar burada 3500 Hz / 50 Hz yazıyordu,
-kodda 2800 / 55 vardı ve test fikstürü 4000 kullanıyordu. Kayıt bir yer tutucuyu
-taşır, üçünü değil: sahibin dinlediği sayı kodda olandır ve tablo ona çekildi.
+`bench_provisional_chain()`). 2026-09-12 sabahına kadar burada 3500 Hz / 50 Hz
+yazıyordu, kodda 2800 / 55 vardı ve test fikstürü 4000 kullanıyordu; tablo koda
+çekildi. Aynı gece kaba tarama geldi ve crossover, sahibinin yetkisiyle, 2800'den
+**3500 Hz'e** alındı (gerekçe satırda). Test fikstürü 4000'de kalır, o `C_SAFE`
+köşesini sınar.
 
 | parametre | değer | neden |
 |---|---:|---|
-| `crossover_hz` | 2800 | Tezgâh dinlemesinin yer tutucusu. Yukarıdaki ~2200 Hz tweeter `Fs` tahmininin **1,27 katı**, yani bu belgenin kendi "en az 2 × `Fs`" kuralının **altında**; kural 2200 için 4400 ister. Tezgâhta kısa, düşük seviyeli dinleme için kabul edilmiş bir yer tutucudur, `Fs` ölçülene kadar; sahibi yükseltebilir. Kalıcı bir kararı ancak ince tarama verir. |
+| `crossover_hz` | **3500** | 2026-09-12 kaba taraması tweeter'da tepe çözemedi (1–4,9 kHz düz ~2 × `Re`); en iyi nokta tahmini hâlâ 8 Eylül'ün ~2200 Hz tümseği. 3500, onun ~1,6 katı: LR4 ile 2,2 kHz'de tweeter dalı −16 dB; 60 mm woofer'ın huzmelenmeden taşıyabileceği sınırın içinde. Bu belgenin "≥ 2 × `Fs`" kuralı 4400 isterdi; ağır sönümlü kubbe (empedans tepesi yok, rezonansta eksürsiyon kazancı az) ve tweeter'ın en iyi oktavını harcamamak için bilerek altında kalındı — sahibinin 2026-09-12 kararı. Ölçülmüş bir `Fs` noktası gelene kadar yer tutucu; `G2` `C_SAFE` etkileşimiyle birlikte karar verir. |
 | `woofer_hpf_hz` | 55 | Pasif radyatör akordunun hemen altı (aşağıdaki kabin bölümü: 50 → 55). **2026-09-12 kaba taraması woofer `Fs`'sini ≈ 50 Hz'e koydu, yani bu köşe serbest hava rezonansının tam üstünde**; kabin içinde `Fs` yukarı çıkacağı ve köşeyi `Fb` belirleyeceği için kalıcı karar ince tarama ve kabin akordu sonrasıdır. Operatörün itirazı yerindeydi: subsonic filtre bası kısmaz, sese dönüşmeyen eksürsiyonu atar — ama nereye konacağını `Fb` belirler, ve o henüz ölçülmedi. Filtre dördüncü derecedir (aşağıya bakın). |
 | kanal kazançları | woofer 0,25, tweeter 0,18 | Tweeter woofer'ın ~3 dB altında; hassasiyet ölçümü yok, hata payı tweeter'ı korumak yönünde. İkisi de mutlak olarak düşük, çünkü amfinin kazanç strap'i okunmadı (`C3`) ve tezgâhta zincir amfinin istediğinden ~26 dB sıcaktı (36 dB varsayımıyla). |
 | `supply_budget_sq` / pencere | 1,0 / 100 ms | Bir tam ölçekli dalın ortalama-karesi, doğrulayıcı sınırının (2,0) yarısı; `G1` S7'nin dolduracağı yer tutucu. Bu kazançlarla (0,25² + 0,18² ≈ 0,095) ancak kullanıcı EQ'su yükseltirse devreye girebilir. |
@@ -175,12 +177,13 @@ yaklaşır, ve orada seri kondansatör koruma sağlamaz — empedans tepesiyle b
 rezonans devresi kurar ve yanıtı tepelendirir, yani korumak istediği yerde
 eksürsiyonu artırır.
 
-**Bedeli:** bu satır −3,6 dB'yi 3,5 kHz için yazmıştı; tezgâhın derlediği köşe
-2800 Hz ve orada 10 µF'lik kondansatör 4 Ω'a **yaklaşık −4,8 dB ve +55°**
-(el hesabı: birinci derece köşe 3980 Hz, `f/fc` = 0,70). Yani DSP'nin LR4'ü ile
-kondansatör üst üste biniyor, LR4'ün düz-toplam özelliği geçiş bandında
-tutmuyor (tweeter dalı köşede ~−11 dB, iki dalın toplamı ~−3 dB) ve akustik
-geçiş noktası yukarı kayıyor. Bu bir hesaptır, ölçüm değil; ne kadar olduğu
+**Bedeli:** tezgâhın derlediği köşe 3500 Hz (2026-09-12 gecesinden itibaren;
+öncesinde 2800) ve orada 10 µF'lik kondansatör 4 Ω'a **yaklaşık −3,6 dB ve
++49°** (el hesabı: birinci derece köşe 3980 Hz, `f/fc` = 0,88). Yani DSP'nin
+LR4'ü ile kondansatör üst üste biniyor, LR4'ün düz-toplam özelliği geçiş
+bandında tam tutmuyor (tweeter dalı köşede ~−10 dB, iki dalın toplamı ~−2 dB)
+ve akustik geçiş noktası biraz yukarı kayıyor; 2800'de bu −4,8 dB / +55° idi,
+3500 kondansatöre yaklaştığı için fark küçüldü. Bu bir hesaptır, ölçüm değil; ne kadar olduğu
 `G2`'de ölçülür ve karar orada verilir: köşeyi kondansatörünkine yaklaştırmak,
 `Fs` ölçülünce kondansatörü değiştirmek ya da DSP'de telafi etmek. `Fs`
 ölçülene kadar bu kabul ediliyor: DSP crossover'ının köşesi tahmini bir `Fs`'den

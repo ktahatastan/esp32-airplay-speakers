@@ -229,14 +229,15 @@ FORBIDDEN_CLAIMS = (
     (r"(woofer|tweeter)[^.\n]{0,40}\b8\s*(ohm|Ω)\b[^.\n]{0,20}(olduğu|doğrulandı|kesin)",
      "The driver impedance curve and Fs are not measured (G0); the measured DC "
      "resistance puts both Nova drivers in the 4 ohm class, not 8."),
-    # The provisional profile's numbers -- crossover 2800 Hz, subsonic 55 Hz,
+    # The provisional profile's numbers -- crossover 3500 Hz (2800 before
+    # 2026-09-12), subsonic 55 Hz,
     # ceilings 0.70 and 0.35 -- are placeholders until G0/G2, and the likeliest
     # new false claim is one of them written as measured. The middle group
     # keeps the number whole (`\b` on both sides), the last group takes the
     # past-tense and perfect forms of 'measured', 'verified' and 'certain',
     # and the lookahead on `kesin` lets the honest negations through: 'kesin
     # değil(dir)', 'kesin olmayan', 'kesin olmaktan uzak', 'kesin sayılmaz'.
-    (r"(crossover|subsonic|tavan|köşe)[^.\n]{0,40}\b(2800|55|0[.,]70|0[.,]35)\b[^.\n]{0,40}"
+    (r"(crossover|subsonic|tavan|köşe)[^.\n]{0,40}\b(3500|2800|55|0[.,]70|0[.,]35)\b[^.\n]{0,40}"
      r"\b(ölçüldü|ölçülmüş(?:tür)?|doğrulandı|doğrulanmış(?:tır)?|"
      r"kesin(?!\s+(?:değil|olmayan|olmaktan|sayılm))(?:dir|leşti|leşmiş(?:tir)?)?)\b",
      "The provisional crossover and subsonic corners and the limiter ceilings "

@@ -215,18 +215,24 @@ static float supply_mv_now(void);
  * was the tweeter's, so the line waits on a re-read. The profile carries the
  * value and never computes with it, which is why a wrong one is a wrong
  * source record rather than a wrong protection. Everything else below is a
- * choice derived from two facts -- that the woofer's impedance peaks at or
- * below 100 Hz, and that the tweeter shows no peak above about 5 ohm anywhere
- * between 500 Hz and 3150 Hz.
+ * choice derived from what the 2026-09-12 coarse sweep found (owner, DAC
+ * sweep mode, docs/02-hardware/driver-measurements.md section 11): the
+ * woofer's impedance peaks at about 50 Hz (+/-13 %), and the tweeter shows a
+ * flat ~2 x Re from 1 kHz to 4.9 kHz with no peak the 10 mV/div scope could
+ * resolve -- a heavily damped dome whose Fs is a range, 1-3 kHz, with the
+ * 2026-09-08 bump at 2000-2450 Hz the best point estimate.
  *
  * WHY EACH NUMBER IS WHAT IT IS:
  *
- * crossover 2800 Hz. The original Nova crossed at about 2.5 kHz and its
- * documentation warns against taking this tweeter below 2 kHz, which implies an
- * Fs near 1.2 kHz. 2800 sits above that guidance because we have not measured
- * Fs ourselves, and below the 3500 first chosen when the only evidence was our
- * own flat impedance sweep. A 60 mm cone beams above about 1.8 kHz, so lower is
- * better for sound and this is expected to fall again once Fs is known.
+ * crossover 3500 Hz. Chosen by the owner's delegation on 2026-09-12 from the
+ * sweep above: about 1.6 x the ~2.2 kHz estimate, 16 dB down on the tweeter
+ * branch at 2.2 kHz with the LR4's 24 dB/oct, and still inside what a 60 mm
+ * cone can carry before it beams too hard. The record's own rule wants
+ * >= 2 x Fs, i.e. 4400 Hz for that estimate; 3500 is below it on purpose,
+ * because the tweeter's resonance is damped (no impedance peak, so little
+ * excursion gain at Fs) and 4400 would waste the tweeter's best octave. It was
+ * 2800 before this measurement. It stays a placeholder until a finer sweep
+ * puts Fs at a point; G2 decides it with the C_SAFE interaction measured.
  *
  * subsonic 55 Hz. The product is one cabinet, a reflex alignment by the Nova's
  * own passive radiators, and its tuning waits on G0 (ADR-0021,
@@ -234,7 +240,10 @@ static float supply_mv_now(void);
  * tuning the woofer unloads: the cone moves freely, excursion climbs, and no
  * sound comes out. A sealed box at least has an air spring; this does not.
  * 55 Hz is a placeholder just under the 60-65 Hz the original Nova was tuned
- * to, until G0 sets it.
+ * to, until the cabinet's Fb is measured. The woofer's free-air Fs measured
+ * about 50 Hz on 2026-09-12 (coarse); in the box that resonance moves up, so
+ * 55 Hz sits below the in-box resonance and cuts nothing the cabinet can
+ * reproduce.
  *
  * gains 0.25 and 0.18, tweeter about 3 dB below the woofer. Both have come
  * down 6 dB in two steps, because the first 3 dB was not enough and the
@@ -310,7 +319,7 @@ static bool bench_provisional_chain(hk_profile_chain_t *out)
         .woofer_dcr_ohm     = 4.0f,    /* measured, operator record */
         .tweeter_dcr_ohm    = 3.5f,    /* operator record 2026-09-08; re-read pending, see above */
         .woofer_hpf_hz      = 55.0f,
-        .crossover_hz       = 2800.0f,
+        .crossover_hz       = 3500.0f,
         .woofer_gain        = 0.25f,
         .tweeter_gain       = 0.18f,
         .reference_supply_mv = (float)HK_BENCH_REFERENCE_SUPPLY_MV,

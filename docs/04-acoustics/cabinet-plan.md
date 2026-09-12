@@ -16,7 +16,7 @@ Kabin, pasif radyatörle akortlanmış bir refleks hizalamadır; kanal yoktur. S
 
 Akort frekansı `Fb` kabin hacmine bağlıdır ve **ölçülür**: woofer'lar kutunun içindeyken alınan empedans eğrisi iki tepe verir, aradaki çukur `Fb`'dir. Perakende/inceleme kaynakları orijinal Nova için 60-65 Hz veriyor; yeni kabinin hacmi farklıysa akort da farklıdır ve o sayı yalnız bir başlangıç beklentisidir.
 
-`Fb`'nin altında pasif radyatör akustik yükü bırakır ve woofer havasız kalır: koni serbest salınır, eksürsiyon hızla artar, ses üretilmez. DSP'deki subsonic yüksek geçiren bunun için vardır ve köşesi `Fb`'den türetilir; 55 Hz, Nova'nın 60-65 Hz akordunun hemen altında bir yer tutucudur ve `G0` sonrasında ölçülen `Fb` ile değişir ([[measurement-and-dsp-plan|ölçüm ve DSP planı]]).
+`Fb`'nin altında pasif radyatör akustik yükü bırakır ve woofer havasız kalır: koni serbest salınır, eksürsiyon hızla artar, ses üretilmez. DSP'deki subsonic yüksek geçiren bunun için vardır ve köşesi `Fb`'den türetilir; 55 Hz, Nova'nın 60-65 Hz akordunun hemen altında bir yer tutucudur ve kabin bittiğinde ölçülen `Fb` ile değişir. Woofer'ın serbest hava `Fs`'si 2026-09-12 kaba taramasında **≈ 50 Hz** çıktı (±%13, [[../02-hardware/driver-measurements#11. Sonuç|ölçüm kaydı]]); kutu içinde rezonans yukarı çıkar, akort bu sayıya göre yapılır ([[measurement-and-dsp-plan|ölçüm ve DSP planı]]).
 
 ## Hava hacmi: başlangıçta ortak, karar G0 sonrası
 
@@ -41,7 +41,7 @@ Karar yakın alan ve dinleme ekseni ölçümüyle verilir (ölçüm ve DSP plan�
 
 | Karar | Bekleyen ölçüm | Nerede |
 |---|---|---|
-| Hacim ve ortak/ayrı hacim | Woofer `Fs`, `Vas`, `Qts`; dört woofer arası eşleşme | `G0`, sürücü ölçüm planı |
+| Hacim ve ortak/ayrı hacim | Woofer `Fs` (kaba: ≈ 50 Hz, 2026-09-12), `Vas`, `Qts`; dört woofer arası eşleşme | `G0`, sürücü ölçüm planı |
 | Pasif radyatör akordu `Fb` ve gerekirse ek kütle | Kutu içi empedans eğrisi (iki tepe) | Kabin bittiğinde, sürücü ölçüm planı |
 | Subsonic köşe | `Fb` | DSP planı, profil |
 | Dizilim | Yakın alan + dinleme ekseni ölçümü | Ölçüm ve DSP planı, 7. madde |

@@ -51,7 +51,7 @@
  *                      cone. There is no sensitivity measurement, so the error
  *                      is deliberately left on the side of less tweeter.
  *
- * The bench build compiles a different placeholder (2800 Hz, 55 Hz, in the
+ * The bench build compiles a different placeholder (3500 Hz, 55 Hz, in the
  * output backend); this fixture is deliberately at the C_SAFE corner and is
  * not the record's placeholder. Neither number is a measurement.
  * ------------------------------------------------------------------ */
