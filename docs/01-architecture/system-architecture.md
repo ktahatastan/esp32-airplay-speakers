@@ -23,7 +23,7 @@ DAC'ın sol kanalı woofer bandını, sağ kanalı tweeter bandını taşır; d�
 
 ## Mimari ilkeler
 
-- Dört amfi tek susturma hattını (`GPIO21`) paylaşır; her `SD` padinde amfinin kendi pull-down'ı vardır ([[../07-decisions/ADR-0011-audio-side-gpio-reservation|ADR-0011]]).
+- Zincirde tek susturma vardır ve DAC'tadır: `XSMT`, `GPIO13` ve harici pull-down `R6`. XH-A232'de susturma girişi yoktur; dört amfi `VIN` geldiği andan itibaren canlıdır ([[../07-decisions/ADR-0011-audio-side-gpio-reservation|ADR-0011]]).
 - Ses koruması fabrika kalibrasyonunda tutulur ve kullanıcı resetinden etkilenmez.
 - Analog yol, buck'lar/adaptör/Wi-Fi kaynaklı gürültüden fiziksel olarak ayrılır. DAC'ın kendi buck'ı vardır, çünkü ESP32-S3 ile paylaşılan bir buck DAC'a tezgâhta duyulur bir hışırtı bindirdi ([[../07-decisions/ADR-0020-dc-adapter-power|ADR-0020]]).
 - AirPlay yığını ancak [[audio-network-feasibility]] kabulünden sonra kilitlenir.

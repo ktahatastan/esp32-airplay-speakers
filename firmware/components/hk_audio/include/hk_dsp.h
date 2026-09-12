@@ -100,9 +100,10 @@
  * reach the refusal is to have no usable calibration, which is a state of the
  * device rather than of the music. Second, the device is already silent in
  * that state by design: hk_storage_audio_permitted() is false, hk_audio_step()
- * therefore drives the sequence to muted, and the amplifier is shut down. This
- * module refusing is not a new failure mode; it is the DSP agreeing with the
- * gate that already exists rather than holding a second, softer opinion.
+ * therefore drives the sequence to muted, and the DAC's mute is what keeps
+ * the amplifiers quiet. This module refusing is not a new failure mode; it is
+ * the DSP agreeing with the gate that already exists rather than holding a
+ * second, softer opinion.
  *
  * And the return value is what stops silence being the whole answer. It
  * follows hk_profile_ceiling_at()'s precedent exactly: "do not play" is not

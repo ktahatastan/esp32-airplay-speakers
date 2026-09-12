@@ -36,7 +36,7 @@ G6 senaryoları ve release kabul sözleşmesi [[../03-firmware/ota-and-release-p
 | Aşamalı enerjilendirme | Tek amfi + tek woofer/tweeter çifti, önce dummy-load | Bu çift `G0`-`G2`'yi geçmeden ikinci amfi sürücüye bağlanmıyor |
 | Besleme dip / brownout | Tam yükte bas darbesi, osiloskopla `VIN` ve iki 5 V ray (buck A ESP32-S3, buck B DAC) | Amfiler ve ESP32-S3 reset yemiyor; iki 5 V ray da düşmüyor |
 | Açılış pop | Adaptör takılırken çıkışta osiloskop | Mute sıralayıcısı çıkışı susturuyor; dummy-load üzerinde darbe yok |
-| Kapanış pop | Çalarken adaptör çekilirken çıkışta osiloskop | Amfi susturulmadan önce çıkışa DC darbesi gitmiyor |
+| Kapanış pop | Çalarken adaptör çekilirken çıkışta osiloskop | Amfinin kendi kapanış geçişi kaydedildi; DAC susturuluyken çıkışa giden darbe amfinindir ve kabul edilebilir seviyede (kayıt olmadan karar yok) |
 | Amfi ısınması | Tam yükte dummy-load üzerinde sıcaklık kaydı | Dört modülün sıcaklığı üretici sınırının altında; termal kaçış yok |
 | Giriş yükü | Dört amfi girişi paralelken DAC çıkışında osiloskop | Dört ~10 kΩ giriş paralelde ~2,5 kΩ; PCM5102A tam ölçekte bozulmasız sürüyor (aritmetik burada ölçüme dönüşür) |
 

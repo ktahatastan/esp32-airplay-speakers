@@ -56,7 +56,6 @@ updated: 2026-09-08
 |---|---|---:|---:|---|
 | `R_PU` | 10 kΩ, 1/4 W | 1 | 10'lu paket | Buton pull-up; aday. |
 | `R6` | 10 kΩ, 1/4 W | 1 | 10'lu paket | DAC `XSMT` → `STAR_GND` pull-down, modül ucuna monte edilir. **Opsiyonel değil**: susturmayı tutan şey bu, GPIO değil (ADR-0011). Lehimden önce modülün `XSMT` pad'i ile 3,3 V arası direnç ölçülür; sert köprü varsa kesilir, yoksa pull-down bir bölücüye dönüşür ([[../02-hardware/circuit-and-wiring-plan#3.3 PCM5102A modül ayarları\|kablolama planı §3.3]]). |
-| `R7`-`R10` | 10 kΩ, 1/4 W | 4 koşullu | 10'lu paket | Amfi `SD` → `POWER_GND` pull-down, her amfinin ucuna biri; dördü paralel 2,5 kΩ, GPIO21 için rahat. **Koşullu**: dört XH-A232'de de erişilebilir `SD` pad'i bulunduğu ölçümle doğrulanana kadar takılmaz; dal ya dördünde ya hiçbirinde takılır; şemalarda kesikli çizilidir. Kart `SD`'yi kendi üzerinde yukarı çekiyorsa değer o pull-up ölçülerek yeniden hesaplanır (ADR-0011, kablolama planı §3.4). |
 | `R_LED_R` | 680 Ω, 1/4 W | 1 | 10'lu paket | Yalnız çıplak RGB LED'de; modül üzerinde direnç varsa `DNP`. |
 | `R_LED_G`, `R_LED_B` | 330 Ω, 1/4 W | 2 | 10'lu paket | Yalnız çıplak RGB LED'de; modül üzerinde direnç varsa `DNP`. |
 | `D2` | Seri Schottky veya ideal-diyot modülü; 2,9 A sürekli taşır, ≈1 W ısı | 1 koşullu | 1 | Ters polarite adayı, `DC_IN` ile `VIN` arasında. G1'de ölçülen düşüm ve ısıyla kabul edilir; ret ise yerine 0 Ω köprü gelir (ADR-0020). |
@@ -65,7 +64,7 @@ updated: 2026-09-08
 | `C_SAFE` deney bankası | 4×2,2 µF / 400 V kutupsuz film | Değer TBD | 4 ortak deney parçası | Nihai: 4 eş değer, aynı seri/lot (ilk seçim 10 µF, G2 ile kesinleşir). Tweeter empedansı ve G2 süpürmesi olmadan değer dondurulmaz veya sürücüye bağlanmaz. |
 | `JP1` + jumper cap | 2 pin 2,54 mm + kısa devre şapkası | 1 | 1×40 header + 1 cap | USB/system 5 V izolasyonu, yalnız buck A (ESP) tarafında; buck B'de jumper yok. Nihai PCB'de bulunur. |
 | Vidalı klemens | KF128V, 5,08 mm, 2 pin | 16 | 6 (tek amfi prototipi) | 4 amfi × 3 (VIN, woofer, tweeter) + 2 buck girişi + 2 VIN yıldız dağıtımı = 16 prototip adayı; nihai titreşim dayanımlı kilitli konnektör daha sonra seçilir. |
-| Test noktaları `TP0–TP34` | Header kesiti veya prob pedi | Gerektikçe | 1×40 header'dan | Üretimde ayrı BOM parçası değildir. |
+| Test noktaları `TP0–TP33` | Header kesiti veya prob pedi | Gerektikçe | 1×40 header'dan | Üretimde ayrı BOM parçası değildir. |
 | Delikli pertinaks | 5×10 cm, tek yüzlü | 0 nihai | 1 | Yalnız masaüstü prototip. |
 | Jumper kablo | 20 cm dişi-erkek, 40'lı | 0 nihai | 1 set | Yalnız düşük akımlı I2S/GPIO prototipleme; güç/ses çıkışında kullanılmaz. |
 
@@ -73,7 +72,7 @@ Fiyat, bağlantı ve paket adetleri için [[turkey-shopping-list-2026-08-30#Yard
 
 ## Elde olanların kabul kontrolü
 
-- [ ] Dört XH-A232 kartın parça kodu, kanal yapısı ve görsel revizyonu aynı mı? Aynı kabinde girişleri paralel çalışacaklar; kazanç seçimi ve `SD` pad erişimi dördünde aynı olmalı.
+- [ ] Dört XH-A232 kartın parça kodu, kanal yapısı ve görsel revizyonu aynı mı? Aynı kabinde girişleri paralel çalışacaklar; kazanç seçimi dördünde aynı olmalı. Kartta susturma girişi yoktur; olan bir revizyon gelirse bu farklı bir karttır.
 - [ ] Dört woofer ve dört tweeter var mı; her birinin DC direnci kaydedildi mi, aynı tipteki dördü birbirine eşleşiyor mu?
 - [ ] PCM5102A kartından henüz alınmadıysa ilk sipariş yalnız bir adet mi?
 - [ ] Adaptörün etiketi 24 V / 2,9 A mı; yüksüz çıkışı bağlanmadan önce ölçüldü mü ve 25,5 V'un altında mı?

@@ -242,21 +242,22 @@ esp_err_t hk_airplay_start(hk_airplay_state_cb_t on_state, void *context)
     s_running = true;
 
     /* Said plainly, because the boot report a few seconds earlier printed
-     * "output SILENT (i2s=0 dac=0 amp=0)" and that stops being true here. It
-     * was accurate when it was printed; leaving it as the last word on the
-     * subject would make the log claim something the device is no longer doing.
+     * "output SILENT (i2s=0 dac=0)" and that stops being true here. It was
+     * accurate when it was printed; leaving it as the last word on the subject
+     * would make the log claim something the device is no longer doing.
      *
-     * What actually changed is only the first of the three: the receiver clocks
-     * the I2S pins. hk_audio still owns the DAC and amplifier mute lines and
-     * still holds them asserted, because audio is still not permitted -- and on
-     * this board there is nothing on the other end of those pins anyway. */
+     * What actually changed is only the first of the two: the receiver clocks
+     * the I2S pins. hk_audio still owns the DAC's mute line and still holds it
+     * asserted, because audio is still not permitted -- and the amplifiers
+     * behind the DAC have no mute of their own, so that one line is what keeps
+     * them quiet. */
 #if CONFIG_HK_AIRPLAY_OUTPUT_SPDIF
     ESP_LOGI(TAG, "receiver ready; audio leaves as S/PDIF on gpio%d. "
-                  "The DAC and amplifier lines stay muted -- this output does "
-                  "not go through them.", CONFIG_SPDIF_DO_IO);
+                  "The DAC stays muted -- this output does not go through it.",
+             CONFIG_SPDIF_DO_IO);
 #else
     ESP_LOGI(TAG, "receiver ready; I2S is clocked from here on, "
-                  "the DAC and amplifier stay muted");
+                  "the DAC stays muted");
 #endif
     return ESP_OK;
 }

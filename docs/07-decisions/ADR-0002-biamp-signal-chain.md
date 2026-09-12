@@ -22,7 +22,7 @@ DAC'ın iki kanalı stereo değil, **iki frekans bandıdır**. DSP zinciri (mono
 - PCM5102A **`LOUT` = woofer bandı**, **`ROUT` = tweeter bandı**. Bu eşleme firmware'in `Left = WOOFER, right = TWEETER` kuralıdır (`hk_dsp`, `hk_airplay_output_i2s`) ve stereo bir eşleme değildir.
 - `LOUT`, **dört özdeş XH-A232**'nin (TPA3110D2, 2 × BTL) L girişine paralel dağıtılır; `ROUT` dördünün R girişine.
 - Her amfinin L çıkışı **bir woofer**, R çıkışı **bir tweeter** sürer; tweeter, kendi seri `C_SAFE`'i üzerinden bağlanır. Dört amfi × iki kanal = sekiz BTL kanal, hepsi aynı programın kendi bandı.
-- Bir `AMP_MUTE` (GPIO21) dört amfinin `SD` pad'ine paralel gider; her amfinin `SD`'sinde kendi 10 kΩ pull-down'ı durur. Bir `DAC_XSMT` (GPIO13) DAC'ı susturur ([[ADR-0011-audio-side-gpio-reservation|ADR-0011]]).
+- Zincirdeki tek susturma DAC'tadır: `DAC_XSMT` (GPIO13) ve harici pull-down'ı. XH-A232'de susturma girişi yoktur; dört amfi `VIN` geldiği andan itibaren canlıdır ve DAC'ın verdiği her şeyi sürücüye taşır ([[ADR-0011-audio-side-gpio-reservation|ADR-0011]]).
 - BTL çıkışların hoparlör eksileri şasi toprağı değildir.
 
 ```text
@@ -52,8 +52,8 @@ Zincir çalışıyor ve host testleriyle doğrulanmış; sayıları henüz ölç
 
 ## Sonuçlar ve açık koşullar
 
-- Kablolama planı, SVG paftası ve KiCad üreteci tek DAC'tan beslenen **dört amfi** çizer; BOM dört `C_SAFE`, dört `SD` pull-down'ı ve dört amfi taşır.
-- Dört amfi kartı aynı revizyon olmalıdır; `SD` dalı ya dördünde ya hiçbirinde takılıdır. Farklı revizyonlar farklı giriş yükü ve farklı susturma davranışı demektir.
+- Kablolama planı, SVG paftası ve KiCad üreteci tek DAC'tan beslenen **dört amfi** çizer; BOM dört `C_SAFE` ve dört amfi taşır.
+- Dört amfi kartı aynı revizyon olmalıdır. Farklı revizyonlar farklı giriş yükü ve farklı kazanç demektir; aynı kabinde ikisi de duyulur.
 - `G1` satırları: dört amfinin her biri dummy-load üzerinde ayrı ayrı; dört girişin paralel yükü DAC çıkışında; limiter tavanı 2,9 A adaptör bütçesinden dört amfi birlikte sürülürken türetilir ve `VIN` çökmesiyle doğrulanır ([[ADR-0020-dc-adapter-power|ADR-0020]]).
 - `G2` satırları: HPF, crossover ve limiter önce **tek woofer ve tek tweeter** ile, tek amfide; diğer üç amfi sürücülere ancak bundan sonra bağlanır.
 - Bu ADR topolojiyi kilitler; kabul `G1`-`G2` ölçümlerine **koşulludur**. Crossover köşesi, limiter eşikleri ve `C_SAFE` değeri bu ADR'nin değil, `G0`/`G2` ölçümlerinin çıktısıdır.

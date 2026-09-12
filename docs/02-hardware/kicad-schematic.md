@@ -33,7 +33,7 @@ python3 hardware/kicad/generate_merzarkabul.py --validate
 Script her çalıştırmada bir yapısal self-check uygular ve sorun bulursa dosya yazmadan durur:
 
 - Her tel ucu gerçek bir pinin veya köşe noktasının üstünde mi?
-- `TP0-TP34` boşluksuz ve tekrarsız mı?
+- `TP0-TP33` boşluksuz ve tekrarsız mı?
 - Tek bağlantılı net var mı? (`EXPECTED_OPEN_NETS` boştur; tek pinli her net hatadır.)
 - Referans designator tekrarı var mı?
 
@@ -44,10 +44,10 @@ Script her çalıştırmada bir yapısal self-check uygular ve sorun bulursa dos
 - 5,5 × 2,1 mm DC giriş jakı, 24 V / 2,9 A adaptör (yüksüz çıkış < 25,5 V ölçülür), seri ters polarite adayı `D2` ve 35 V sınıfı `C_A` bulk kondansatör ([[../07-decisions/ADR-0020-dc-adapter-power|ADR-0020]])
 - İki MP1584: `U3` buck A (ESP32-S3, `JP1` USB geri-besleme ayırma jumperıyla) ve `U4` buck B (PCM5102A, jumper yok)
 - ESP32-S3 **N16R8** ([[../07-decisions/ADR-0010-esp32-s3-n16r8-board|ADR-0010]]), fonksiyon butonu ve RGB durum LED'i
-- PCM5102A, dört XH-A232 (`U7`-`U10`; `DAC_LOUT` dört `L` girişine, `DAC_ROUT` dört `R` girişine paralel), dört woofer (`J2`/`J4`/`J6`/`J8`) ve dört seri `C_SAFE` (`C2`-`C5`) korumalı tweeter (`J3`/`J5`/`J7`/`J9`); `R6` ve dört `R7` sınıfı pull-down `R7`-`R10` (`AMP_MUTE` hattı dört `SD` pad'ine paralel) ([[../07-decisions/ADR-0011-audio-side-gpio-reservation|ADR-0011]], [[../07-decisions/ADR-0002-biamp-signal-chain|ADR-0002]])
-- `TP0-TP34` güç, I2S, analog bus, dört amfinin BTL çıkışları, susturma ve kullanıcı arayüzü ölçüm noktaları
+- PCM5102A, dört XH-A232 (`U7`-`U10`; `DAC_LOUT` dört `L` girişine, `DAC_ROUT` dört `R` girişine paralel), dört woofer (`J2`/`J4`/`J6`/`J8`) ve dört seri `C_SAFE` (`C2`-`C5`) korumalı tweeter (`J3`/`J5`/`J7`/`J9`); `R6` `XSMT` pull-down'ı, sayfadaki tek susturma — XH-A232'de susturma girişi yoktur ([[../07-decisions/ADR-0011-audio-side-gpio-reservation|ADR-0011]], [[../07-decisions/ADR-0002-biamp-signal-chain|ADR-0002]])
+- `TP0-TP33` güç, I2S, analog bus, dört amfinin BTL çıkışları, DAC susturma ve kullanıcı arayüzü ölçüm noktaları
 
-Dört amfi ayrı konnektör olarak çizilir ki ERC her neti ayrı görsün; `DAC_LOUT`, `DAC_ROUT` ve `AMP_MUTE` net etiketleri dağıtımı taşır, her amfinin çıkış netleri `AMPn_*` adını alır.
+Dört amfi ayrı konnektör olarak çizilir ki ERC her neti ayrı görsün; `DAC_LOUT` ve `DAC_ROUT` net etiketleri dağıtımı taşır, her amfinin çıkış netleri `AMPn_*` adını alır.
 
 Test noktası numaralandırması scriptteki tek bir tablodan üretilir; bu tablo [[circuit-and-wiring-plan#7.1 Test noktası yerleşimi|devre planındaki tabloyla]] aynı numaraları kullanır.
 

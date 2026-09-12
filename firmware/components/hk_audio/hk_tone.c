@@ -315,7 +315,7 @@ static const uint16_t HK_SWEEP_FINE_RATIO_1024[HK_SWEEP_FINE_STEPS] = {
  * Re -- which makes it the right frequency to check the wiring against: the
  * reading should be a few millivolts, and the two failure modes are unmistakable
  * (about a volt means the driver is not connected and the meter is seeing the
- * whole source; about zero means it is shorted, or the mute lines never
+ * whole source; about zero means it is shorted, or the DAC mute never
  * released). Twenty seconds is enough to set a meter range, find the leads have
  * fallen off, and fix it before the data starts.
  *
@@ -508,9 +508,9 @@ static void log_sweep_banner(unsigned steps, unsigned first_k, unsigned last_k)
     ESP_LOGW(TAG, "THE AMPLIFIER MUST NOT BE IN THE PATH. Wire it: DAC line output -> "
                   "%d ohm 1/4 W series resistor -> ONE driver -> DAC ground, meter on "
                   "AC volts ACROSS THE DRIVER. Unplug the amplifier's input or cut its "
-                  "supply first -- the two bench exception symbols that unmute the DAC "
-                  "also unmute the amplifier, so there is no setting that keeps it out "
-                  "and the wiring is the only thing that can.",
+                  "supply first -- the amplifier has no mute input, so a DAC unmuted by "
+                  "the two bench exception symbols is an amplifier amplifying; there is "
+                  "no setting that keeps it out and the wiring is the only thing that can.",
              HK_SWEEP_SERIES_OHM);
 
     ESP_LOGW(TAG, "ONE BARE DRIVER, nothing else in series with it. If the tweeter's "
@@ -597,7 +597,7 @@ static void sweep_task(void *arg)
                       "AC volts -- the 200 mV range if it has a manual one -- and check "
                       "that you have a few millivolts. About 1 V means the driver is open "
                       "circuit and the meter is reading the whole source; about 0 mV "
-                      "means it is shorted, or the mute lines never released and the "
+                      "means it is shorted, or the DAC mute never released and the "
                       "hk_audio lines above will say so.",
                  k_to_dhz(HK_SWEEP_SETUP_K) / 10u, k_to_dhz(HK_SWEEP_SETUP_K) % 10u,
                  (unsigned)(HK_SWEEP_SETUP_MS / 1000u));
@@ -628,7 +628,7 @@ static void sweep_task(void *arg)
     }
 
     /* The signal is over whether it finished or failed, so the caller is told
-     * either way: the mute lines should come back down in both cases, and a
+     * either way: the DAC mute should come back down in both cases, and a
      * failed sweep that left the output chain released would be the worse of
      * the two outcomes. */
     signal_ended();
@@ -890,7 +890,7 @@ esp_err_t hk_tone_start(hk_tone_done_fn on_done, void *context)
                   "Noise/hiss but no tone -> the bus clocks and the analogue chain is "
                   "wrong: DAC power, the SCK-to-GND strap, the data line, the amplifier "
                   "input or its ground. Nothing at all -> check the hk_audio lines "
-                  "above: if the sequence never left SILENT the mute lines are still "
+                  "above: if the sequence never left SILENT the DAC mute is still "
                   "asserted and nothing was ever going to be heard.");
 #endif
     return ESP_OK;

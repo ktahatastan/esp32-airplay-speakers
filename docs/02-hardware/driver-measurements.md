@@ -201,8 +201,9 @@ ve DAC hiç çıkış vermez. Bu, bir sonraki bölümün konusu.
 ### 2. GÜVENLİK — amfi devrede OLMAYACAK
 
 > **`CONFIG_HK_BENCH_AUDIO_WITHOUT_PROFILE` olmadan DAC susturulmuş kalır,
-> yani tarama için bu sembol zorunlu. Ama aynı sembol amfinin mute hattını da
-> bırakıyor. DAC'ı açıp amfiyi kapalı tutan bir ayar yok.**
+> yani tarama için bu sembol zorunlu. Ama amfinin kendi susturma girişi yok:
+> DAC açıldığı anda amfi de yayındadır. DAC'ı açıp amfiyi kapalı tutan bir
+> ayar yok, çünkü tutacak bir hat yok.**
 >
 > Amfiyi devre dışı bırakmak **yapılandırmayla değil, kabloyla** olur: TPA3110'un
 > girişini sök ya da beslemesini kes. Firmware kartın nasıl kablolandığını
@@ -228,7 +229,7 @@ saniye** tutuluyor. Bir tweeter'a yapılabilecek en zorlayıcı şeylerden biri 
    yani frekans değişirken dalga formu iki taraftan da sıfırdan geçiyor: eğimi
    değişiyor, değeri sıçramıyor. Sıçrasaydı her adım tweeter'a geniş bantlı bir
    darbe olurdu ve 22 adımda 22 darbe ederdi.
-5. **Susturma kapısı yerinde duruyor.** `hk_tone` mute hatlarına dokunmuyor;
+5. **Susturma kapısı yerinde duruyor.** `hk_tone` DAC susturmasına dokunmuyor;
    `hk_audio_hw` sekansı bu iş için değiştirilmedi.
 
 Koruyamadığı tek şey yanlış kablolamadır, ve o yüzden bu bölüm bu kadar uzun.
@@ -414,7 +415,7 @@ I hk_tone: step  2/22     50.0 Hz   read the meter now (8 s)
 ...
 I hk_tone: step 22/22   4900.0 Hz   read the meter now (8 s)
 I hk_tone: SWEEP COMPLETE: 22 readings. ...
-W hk: the bench signal has ended; the mute lines are going back down.
+W hk: the bench signal has ended; the DAC mute is going back down.
 ```
 
 Her adımın frekansı **sesleneceği andan önce** basılıyor, çünkü metreye bakan

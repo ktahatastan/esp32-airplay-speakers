@@ -17,7 +17,6 @@ void test_pins(void)
     HK_CHECK_EQ_INT(HK_PIN_LED_R, 8);
     HK_CHECK_EQ_INT(HK_PIN_LED_G, 9);
     HK_CHECK_EQ_INT(HK_PIN_LED_B, 10);
-    HK_CHECK_EQ_INT(HK_PIN_AMP_MUTE, 21);
     HK_CHECK_EQ_INT(HK_PIN_DAC_XSMT, 13);
 
     HK_CHECK_EQ_INT(hk_pin_table_size(), HK_PIN_COUNT);
@@ -45,17 +44,17 @@ void test_pins(void)
         }
     }
 
-    /* --- pins that must never carry a mute line ---
+    /* --- pins that must never carry the mute line ---
      * The silicon drives GPIO18/19/20 HIGH during power-up, and GPIO0/39/43/44
      * come up with weak internal pull-ups. An active-low mute on any of them
-     * would release the amplifier before any software exists, into drivers
-     * whose impedance is the open G0 blocker. Pinned as a test because the
-     * static asserts cover collisions, not reset levels — 18, 39 and 47 are
-     * all perfectly legal assignments that would simply be wrong here. */
+     * would unmute the DAC before any software exists, into amplifiers that
+     * have no mute of their own and drivers whose impedance is the open G0
+     * blocker. Pinned as a test because the static asserts cover collisions,
+     * not reset levels — 18, 39 and 47 are all perfectly legal assignments
+     * that would simply be wrong here. */
     {
         const int unsafe_for_mute[] = {0, 18, 19, 20, 39, 43, 44};
         for (unsigned u = 0; u < sizeof(unsafe_for_mute) / sizeof(unsafe_for_mute[0]); u++) {
-            HK_CHECK(HK_PIN_AMP_MUTE != unsafe_for_mute[u]);
             HK_CHECK(HK_PIN_DAC_XSMT != unsafe_for_mute[u]);
         }
     }

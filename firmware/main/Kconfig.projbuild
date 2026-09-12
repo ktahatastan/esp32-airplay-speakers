@@ -150,8 +150,8 @@ config HK_BENCH_TONE_INSTEAD_OF_AIRPLAY
         I2S channel is a worse bug than the one being diagnosed and would be
         misread as more evidence about the DAC.
 
-        It does not open any gate. The mute lines still follow hk_audio's
-        sequence and are still released only when the profile gate says yes,
+        It does not open any gate. The DAC mute still follows hk_audio's
+        sequence and is still released only when the profile gate says yes,
         which on this board means HK_BENCH_AUDIO_WITHOUT_PROFILE must ALSO be
         set or the tone will be generated into an asserted mute and heard by
         nobody. hk_main says so in the log when that is the case.
@@ -205,12 +205,12 @@ config HK_BENCH_SWEEP
         THE DANGER IS THE WIRING, AND FIRMWARE CANNOT SEE IT. Left connected to
         the TPA3110, -6 dBFS through a possibly 36 dB amplifier is well past
         clipping into an unmeasured tweeter, held near its resonance for eight
-        seconds at a time. Worse, the bench exception symbol above that unmutes
-        the DAC also unmutes the AMPLIFIER: there is no configuration that
-        releases one and holds the other. Unplug the
-        amplifier's input or cut its supply. The sweep prints this and then
-        stays silent for ten seconds before the first step, so there is time to
-        act on it.
+        seconds at a time. Worse, the amplifier has no mute input: the bench
+        exception symbol above that unmutes the DAC puts the amplifier in the
+        path with it, and there is no configuration that releases one and
+        holds the other. Unplug the amplifier's input or cut its supply. The
+        sweep prints this and then stays silent for ten seconds before the
+        first step, so there is time to act on it.
 
         The full procedure -- the circuit, the meter range, the arithmetic that
         turns two readings into ohms, the expected values and the table to fill
@@ -218,7 +218,7 @@ config HK_BENCH_SWEEP
         flashing this, not after.
 
         Runs to the end on its own: about three and a half minutes, then
-        silence and the mute lines back down. It needs no button and no input,
+        silence and the DAC mute back down. It needs no button and no input,
         because a run that wants a press per step is a run nobody finishes.
 
 config HK_BENCH_SWEEP_FINE_HZ

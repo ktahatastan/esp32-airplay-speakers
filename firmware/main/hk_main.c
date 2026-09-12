@@ -4,7 +4,7 @@
  *
  * What this build actually does: come up, report what it is, drive the button
  * and the LED, run the provisioning policy with real radios, hold the output
- * chain's two mute lines and move them when the gate allows it, and print what
+ * chain's mute line and move it when the gate allows it, and print what
  * every other policy concludes about the state the device is in.
  *
  * What it does not do, and why — each of these waits on a measurement, not on
@@ -26,9 +26,9 @@
  * Most of the policy modules below are still pure logic with no driver behind
  * them, so report_policies() runs each one and prints its verdict. A policy
  * nobody calls is indistinguishable from one that does not work. hk_audio is
- * the exception as of 2026-09-08: hk_audio_hw drives HK_PIN_AMP_MUTE and
- * HK_PIN_DAC_XSMT for real, which means the verdict this file computes is no
- * longer only printed. It is obeyed.
+ * the exception as of 2026-09-08: hk_audio_hw drives HK_PIN_DAC_XSMT for
+ * real, which means the verdict this file computes is no longer only printed.
+ * It is obeyed.
  *
  * Nothing here may grow into driving a real driver without the matching gate.
  */
@@ -209,40 +209,43 @@ static void report_policies(void)
     }
 #endif
     if (audio_permitted_now()) {
-        /* Loud, and only when the verdict has actually become a released
-         * amplifier. This is the state the bench exception exists to make
-         * visible rather than to make convenient. What sits in front of the
-         * amplifiers depends on which output backend this build selected, and
-         * the line says which, because "protected" printed over the vendored
-         * stage would be the wrong thing to leave next to a released SD line. */
+        /* Loud, and only when the verdict has actually become an unmuted DAC
+         * feeding amplifiers that have no mute of their own. This is the state
+         * the bench exception exists to make visible rather than to make
+         * convenient. What sits in front of the amplifiers depends on which
+         * output backend this build selected, and the line says which, because
+         * "protected" printed over the vendored stage would be the wrong thing
+         * to leave next to a released XSMT. */
 #if CONFIG_HK_BENCH_TONE_INSTEAD_OF_AIRPLAY
-        ESP_LOGW(TAG, "audio       THE AMPLIFIERS WILL BE RELEASED when the tone starts. "
-                      "The bench tone is written straight to I2S, past hk_dsp: no "
-                      "crossover, no protective high-pass and no limiter in front of "
-                      "them. Check what is on the speaker terminals.");
+        ESP_LOGW(TAG, "audio       THE DAC WILL BE UNMUTED INTO LIVE AMPLIFIERS when the "
+                      "tone starts. The bench tone is written straight to I2S, past "
+                      "hk_dsp: no crossover, no protective high-pass and no limiter in "
+                      "front of them. Check what is on the speaker terminals.");
 #elif CONFIG_HK_AIRPLAY_OUTPUT_DSP
-        ESP_LOGW(TAG, "audio       THE AMPLIFIERS WILL BE RELEASED when a stream arrives. "
-                      "The DSP chain (EQ, subsonic high-pass, LR4 crossover, limiter "
-                      "per branch) is in the path, on numbers that are placeholders "
-                      "until G0/G2. Check what is on the speaker terminals.");
+        ESP_LOGW(TAG, "audio       THE DAC WILL BE UNMUTED INTO LIVE AMPLIFIERS when a "
+                      "stream arrives. The DSP chain (EQ, subsonic high-pass, LR4 "
+                      "crossover, limiter per branch) is in the path, on numbers that "
+                      "are placeholders until G0/G2. Check what is on the speaker "
+                      "terminals.");
 #else
-        ESP_LOGW(TAG, "audio       THE AMPLIFIERS WILL BE RELEASED when a stream arrives. "
-                      "This build selects the vendored output stage: no crossover, no "
-                      "protective high-pass and no limiter in front of them "
-                      "(CONFIG_HK_AIRPLAY_OUTPUT_DSP is not set). Check what is on the "
-                      "speaker terminals.");
+        ESP_LOGW(TAG, "audio       THE DAC WILL BE UNMUTED INTO LIVE AMPLIFIERS when a "
+                      "stream arrives. This build selects the vendored output stage: no "
+                      "crossover, no protective high-pass and no limiter in front of "
+                      "them (CONFIG_HK_AIRPLAY_OUTPUT_DSP is not set). Check what is on "
+                      "the speaker terminals.");
 #endif
     }
 
-    /* The output chain starts muted: the amplifier is held down by an external
-     * pull-down, not by this firmware (ADR-0011).
+    /* The output chain starts muted: the DAC's XSMT is held down by an
+     * external pull-down, not by this firmware (ADR-0011), and the amplifiers
+     * behind it have no mute of their own.
      *
      * "Starts", not "stays", and that used to be true of the I2S clocks alone.
-     * It is now true of all three lines. The receiver clocks I2S as soon as it
+     * It is now true of both lines. The receiver clocks I2S as soon as it
      * comes up, seconds after this line is printed; and since hk_audio_hw
-     * exists, the DAC and amplifier mute lines are no longer permanently
-     * asserted either -- they follow the sequence, and the sequence follows the
-     * verdict printed above. The suffix says which of those applies to this
+     * exists, the DAC's mute line is no longer permanently asserted either --
+     * it follows the sequence, and the sequence follows the verdict printed
+     * above. The suffix says which of those applies to this
      * build, because a line that read as a promise about the rest of the boot
      * would be the wrong thing to leave in a log next to an amplifier.
      *
@@ -251,15 +254,15 @@ static void report_policies(void)
     hk_audio_t chain;
     hk_audio_init(&chain, 0);
     const hk_audio_outputs_t lines = hk_audio_outputs(chain.state);
-    ESP_LOGI(TAG, "output      %s (i2s=%d dac=%d amp=%d)%s",
+    ESP_LOGI(TAG, "output      %s (i2s=%d dac=%d)%s",
              hk_audio_state_name(chain.state),
-             lines.i2s_running, lines.dac_unmuted, lines.amp_enabled,
+             lines.i2s_running, lines.dac_unmuted,
              audio_permitted_now()
-                 ? ", until a stream arrives and the sequence releases both mute lines"
+                 ? ", until a stream arrives and the sequence releases the DAC mute"
 #if CONFIG_HK_BENCH_TONE_INSTEAD_OF_AIRPLAY
-                 : ", and the mute lines stay asserted; only I2S is clocked, by the bench tone"
+                 : ", and the DAC stays muted; only I2S is clocked, by the bench tone"
 #elif CONFIG_HK_AIRPLAY
-                 : ", and the mute lines stay asserted; only I2S is clocked, by the receiver"
+                 : ", and the DAC stays muted; only I2S is clocked, by the receiver"
 #else
                  : ""
 #endif
@@ -745,7 +748,7 @@ static void on_tone_done(void *context)
 {
     (void)context;
     hk_audio_hw_set_stream_live(false);
-    ESP_LOGW(TAG, "the bench signal has ended; the mute lines are going back down. "
+    ESP_LOGW(TAG, "the bench signal has ended; the DAC mute is going back down. "
                   "Nothing here is a measurement until you write it into "
                   "docs/02-hardware/driver-measurements.md.");
 }
@@ -865,26 +868,26 @@ void app_main(void)
                       "not a calibration: nothing may be connected to the output.");
     }
 
-    /* The output chain's hardware layer: two mute GPIOs and the task that moves
-     * them. Nothing before this point has ever driven HK_PIN_AMP_MUTE or
-     * HK_PIN_DAC_XSMT, which is not a race — hk_pins.h is explicit that the
-     * external pull-downs are the mechanism that holds them safe through the
-     * ROM, the bootloader and all of app init, and this firmware's job is only
-     * ever to RELEASE mute. So it is started here, after the boot report has
-     * said what it thinks, rather than being hurried in front of it.
+    /* The output chain's hardware layer: the mute GPIO and the task that moves
+     * it. Nothing before this point has ever driven HK_PIN_DAC_XSMT, which is
+     * not a race — hk_pins.h is explicit that the external pull-down is the
+     * mechanism that holds it safe through the ROM, the bootloader and all of
+     * app init, and this firmware's job is only ever to RELEASE mute. So it is
+     * started here, after the boot report has said what it thinks, rather than
+     * being hurried in front of it.
      *
      * The verdict is pushed before the task exists, so the first tick already
      * has the real answer instead of the module's own safe default.
      *
-     * Not fatal: a speaker whose mute lines could not be configured is a
+     * Not fatal: a speaker whose mute line could not be configured is a
      * speaker that stays quiet, which is the correct outcome, and taking the
      * device down would remove the only way to tell anyone about it. */
     hk_audio_hw_set_permitted(audio_permitted_now());
     {
         const esp_err_t chain_err = hk_audio_hw_start();
         if (chain_err != ESP_OK) {
-            ESP_LOGE(TAG, "the output chain did not start: %s. The mute lines are left "
-                          "to their pull-downs and nothing will release them.",
+            ESP_LOGE(TAG, "the output chain did not start: %s. The mute line is left "
+                          "to its pull-down and nothing will release it.",
                      esp_err_to_name(chain_err));
         }
     }
@@ -898,7 +901,7 @@ void app_main(void)
      * The stream_live input is pushed by hand once the tone is confirmed
      * running, which is the same fact the receiver's playback callback pushes
      * and it is pushed for the same reason: the sequence in hk_audio.c releases
-     * the mute lines on `permitted && stream_live`, and a tone generated behind
+     * the DAC mute on `permitted && stream_live`, and a tone generated behind
      * an asserted mute is a tone nobody can hear. It is set AFTER the start
      * call succeeds, so a failed instrument never claims a live stream. */
     {
@@ -914,7 +917,7 @@ void app_main(void)
                  * ten minutes listening to a board that was never going to make
                  * a sound. */
                 ESP_LOGW(TAG, "the tone is being generated but audio is NOT permitted, "
-                              "so both mute lines stay asserted and you will hear "
+                              "so the DAC mute stays asserted and you will hear "
                               "nothing. This build also needs "
                               "CONFIG_HK_BENCH_AUDIO_WITHOUT_PROFILE.");
             }

@@ -13,11 +13,12 @@
 #                                    corner and limiter ceilings G0/G2 will
 #                                    produce.
 #
-# THIS RELEASES THE AMPLIFIERS. hk_audio_hw drives HK_PIN_AMP_MUTE and
-# HK_PIN_DAC_XSMT, and with the first symbol set it releases both: a DAC on the
-# I2S pins and the amplifiers on the mute line means AirPlay audio reaches
-# whatever is wired to their outputs, with nothing in front of it but numbers
-# nobody measured.
+# THIS RELEASES THE AMPLIFIERS. hk_audio_hw drives HK_PIN_DAC_XSMT, the only
+# mute in the chain: the XH-A232 boards have no mute or shutdown input and are
+# live from the moment the 24 V rail is. With the first symbol set the DAC is
+# unmuted, and a DAC on the I2S pins feeding four always-on amplifiers means
+# AirPlay audio reaches whatever is wired to their outputs, with nothing in
+# front of it but numbers nobody measured.
 #
 # So the standard for "defensible" is narrow. This is defensible into a dummy
 # load, into a scope, or into nothing at all. It is NOT defensible into the Nova

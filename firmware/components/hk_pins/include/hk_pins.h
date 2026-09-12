@@ -42,56 +42,51 @@
 #define HK_PIN_LED_G      9  /**< PWM */
 #define HK_PIN_LED_B     10  /**< PWM */
 
-/* --- Mute lines ----------------------------------------------------------
- * Both are active low, and both are held in their SAFE state by an external
- * pull-down, not by the ESP32. That is not belt-and-braces, it is the whole
- * mechanism: every candidate GPIO on this part leaves reset high-impedance
- * with its output driver disabled, and stays that way through the ROM, the
- * second-stage bootloader and app init — hundreds of milliseconds during which
- * the amplifier would be free to reproduce whatever is on its input. A 10 k
- * pull-down against the part's 45 k typical internal pull dominates it better
- * than four to one.
+/* --- The mute line ---------------------------------------------------------
+ * There is exactly one, and it is on the DAC. The XH-A232 amplifier boards
+ * have no control input of any kind: power in, audio in, speakers out, and
+ * nothing else. So the only point in the chain where the firmware can stop
+ * sound is the PCM5102A's soft-mute, XSMT, and everything the amplifiers
+ * reproduce is whatever the DAC lets through.
+ *
+ * XSMT is active low and is held in its SAFE state by an external pull-down,
+ * not by the ESP32. That is not belt-and-braces, it is the whole mechanism:
+ * every candidate GPIO on this part leaves reset high-impedance with its
+ * output driver disabled, and stays that way through the ROM, the second-stage
+ * bootloader and app init — hundreds of milliseconds during which the
+ * amplifiers, which are always live, would be free to reproduce whatever the
+ * DAC put out. A 10 k pull-down against the part's 45 k typical internal pull
+ * dominates it better than four to one.
  *
  * So the firmware's job is to RELEASE mute, never to create it. If this
- * firmware never runs at all, the speaker stays quiet.
+ * firmware never runs at all, the DAC stays muted and the speaker stays quiet.
  *
  * GPIO18, GPIO19 and GPIO20 are excluded from mute duty by name: the silicon
  * drives them HIGH during power-up. So are GPIO0, GPIO39, GPIO43 and GPIO44,
  * which come up with weak internal pull-ups. Any of them on an active-low mute
- * would release the amplifier before software exists, into drivers whose
- * impedance is still the open G0 blocker.
+ * would unmute the DAC before software exists, into amplifiers that are
+ * already on and drivers whose impedance is still the open G0 blocker.
  *
  * GPIO14-17 are deliberately left free. They are the only unclaimed pins that
  * are both RTC-capable and free of any strapping, USB, UART0 or JTAG role,
- * which makes them the mute lines' fallback pool if either assignment below
- * has to move after the board is in hand. Spending them on a convenience would
+ * which makes them the mute line's fallback pool if the assignment below has
+ * to move after the board is in hand. Spending them on a convenience would
  * trade a safety reserve for it.
- *
- * HK_PIN_AMP_MUTE is a RESERVATION. Whether the XH-A232 boards expose an
- * accessible SD pad is still an open item in the wiring plan, so this may end
- * up connected to nothing. Reserving it costs a pin that nothing else wanted;
- * discovering the need after the harness is soldered costs the harness. One
- * line serves all four amplifiers: it goes to the four SD pads in parallel,
- * each board with its own 10 k pull-down, so the GPIO sees 2.5 k -- fine for
- * an ESP32-S3 pad (ADR-0011). The branch is fitted on all four boards or on
- * none, as the wiring plan requires.
  */
-#define HK_PIN_AMP_MUTE  21  /**< To all four TPA3110 SD pads in parallel, active low; one 10 k pull-down per amplifier board */
 #define HK_PIN_DAC_XSMT  13  /**< PCM5102A XSMT, active low. External pull-down. */
 
 /**
  * Number of GPIOs this design claims:
- * 3 I2S + 1 button + 3 RGB + 2 mute.
+ * 3 I2S + 1 button + 3 RGB + 1 mute.
  */
-#define HK_PIN_COUNT 9
+#define HK_PIN_COUNT 8
 
 /** Every assigned pin, as a bit mask. */
 #define HK_PIN_MASK ( \
       (1ULL << HK_PIN_I2S_BCLK)  | (1ULL << HK_PIN_I2S_LRCLK) | \
       (1ULL << HK_PIN_I2S_DATA)  | (1ULL << HK_PIN_BUTTON)    | \
       (1ULL << HK_PIN_LED_R)     | (1ULL << HK_PIN_LED_G)     | \
-      (1ULL << HK_PIN_LED_B)     | (1ULL << HK_PIN_AMP_MUTE)  | \
-      (1ULL << HK_PIN_DAC_XSMT))
+      (1ULL << HK_PIN_LED_B)     | (1ULL << HK_PIN_DAC_XSMT))
 
 /**
  * GPIO numbers that do not exist on the ESP32-S3 die.

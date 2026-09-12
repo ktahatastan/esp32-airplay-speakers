@@ -124,7 +124,7 @@ MODULES: tuple[Module, ...] = (
     Module("U5", "ESP32-S3 DEVKIT N16R8 / 16 MB FLASH + 8 MB PSRAM", (140, 100), (
         "V5_LOGIC", "STAR_GND", "ESP_3V3", "BUTTON_N", "LED_R", "LED_G", "LED_B",
         "I2S_BCLK", "I2S_LRCLK", "I2S_DATA",
-        "AMP_MUTE", "DAC_XSMT",
+        "DAC_XSMT",
     )),
     # XSMT is a pin on the module, not a note about it. ADR-0011 makes GPIO13
     # drive it and an external pull-down hold it, so it has to be in the netlist
@@ -134,15 +134,13 @@ MODULES: tuple[Module, ...] = (
         "DAC_XSMT", "DAC_LOUT", "DAC_ROUT", "DAC_AGND",
     )),
     # Four identical amplifiers on one DAC (ADR-0002): DAC_LOUT (woofer band)
-    # into every L input, DAC_ROUT (tweeter band) into every R input. `SD` is a
-    # TPA3110 pin; what is unconfirmed is whether the XH-A232 board exposes it,
-    # so the value string carries that and the wiring plan section 9 keeps the
-    # open decision. The net is AMP_MUTE on all four because a pull-down has to
-    # sit on the same net as the pad it holds down; the branch is fitted on all
-    # four boards or on none.
-    *(Module(f"U{7 + k}", f"XH-A232 #{k + 1} TPA3110 BTL AMP / 8-26 V / SD PAD ACCESS NOT CONFIRMED", (330, 92 + 26 * k), (
+    # into every L input, DAC_ROUT (tweeter band) into every R input. The board
+    # has no mute or shutdown pin -- power in, audio in, speakers out -- so the
+    # module lists exactly those and the only mute on the sheet is the DAC's
+    # XSMT (ADR-0011).
+    *(Module(f"U{7 + k}", f"XH-A232 #{k + 1} TPA3110 BTL AMP / 8-26 V / NO MUTE INPUT", (330, 92 + 26 * k), (
         "DAC_LOUT", "DAC_ROUT", "VIN", "POWER_GND",
-        f"AMP{k + 1}_L_PLUS", f"AMP{k + 1}_L_MINUS", f"AMP{k + 1}_R_PLUS", f"AMP{k + 1}_R_MINUS", "AMP_MUTE",
+        f"AMP{k + 1}_L_PLUS", f"AMP{k + 1}_L_MINUS", f"AMP{k + 1}_R_PLUS", f"AMP{k + 1}_R_MINUS",
     )) for k in range(4)),
     # One woofer and one tweeter per amplifier: J2/J3 on amp 1 ... J8/J9 on
     # amp 4. Each tweeter reaches its amplifier through its own C_SAFE.
@@ -157,7 +155,7 @@ MODULES: tuple[Module, ...] = (
     Module("D1", "COMMON-CATHODE RGB STATUS LED", (140, 168), ("LED_R_A", "LED_G_A", "LED_B_A", "STAR_GND")),
 )
 
-#: Probe points TP0-TP34. The numbering is the single source shared with
+#: Probe points TP0-TP33. The numbering is the single source shared with
 #: docs/02-hardware/circuit-and-wiring-plan.md section 7.1 and the SVG sheet; a
 #: mismatch here means the bring-up procedure and the schematic disagree, so
 #: they are generated from one table.
@@ -177,11 +175,10 @@ TEST_POINTS: tuple[tuple[int, str], ...] = (
     *((13 + 4 * k + i, f"AMP{k + 1}_{net}")
       for k in range(4) for i, net in enumerate(("L_PLUS", "L_MINUS", "R_PLUS", "R_MINUS"))),
     (29, "BUTTON_N"), (30, "LED_R"), (31, "LED_G"), (32, "LED_B"),
-    # TP33/TP34 are the mute lines: the only way to tell whether the pull-downs
-    # are actually holding the pads low through reset is to put a probe on them
-    # at power-up. TP34 is the shared SD bus; every amplifier has its own
-    # pull-down on it.
-    (33, "DAC_XSMT"), (34, "AMP_MUTE"),
+    # TP33 is the mute line -- the only one, since the amplifiers have no mute
+    # input. The only way to tell whether the pull-down is actually holding the
+    # pad low through reset is to put a probe on it at power-up.
+    (33, "DAC_XSMT"),
 )
 
 #: Nets that are deliberately left with a single connection. The set is empty:
@@ -194,8 +191,8 @@ SECTIONS: tuple[tuple[str, tuple[float, float], tuple[float, float]], ...] = (
     ("A. 24 V DC INPUT, REVERSE-POLARITY CANDIDATE AND BULK CAPACITOR  (ADR-0020)", (25, 15), (400, 70)),
     ("B. 5 V LOGIC SUPPLIES (TWO BUCKS)", (25, 78), (120, 150)),
     ("C. ESP32-S3 N16R8 AND USER INTERFACE  (ADR-0010)", (126, 78), (200, 190)),
-    ("D. I2S DAC, FOUR BTL AMPS, MUTE BUS AND EIGHT DRIVERS  (ADR-0002, ADR-0011)", (208, 78), (400, 190)),
-    ("E. TEST POINT ACCESS  TP0-TP34", (25, 196), (400, 250)),
+    ("D. I2S DAC, FOUR BTL AMPS, DAC MUTE AND EIGHT DRIVERS  (ADR-0002, ADR-0011)", (208, 78), (400, 190)),
+    ("E. TEST POINT ACCESS  TP0-TP33", (25, 196), (400, 250)),
 )
 
 
@@ -362,11 +359,11 @@ def draw_audio_chain(builder: Builder) -> None:
         ("limiter, one per tweeter (C2-C5), value from the G2 report.", True),
         ("All four boards must be the same revision. First energised path: one amp, one", False),
         ("woofer, one tweeter; the other three reach drivers after G0-G2 pass on that pair.", False),
-        ("MUTE: R6 and R7-R10 are not optional. Every candidate GPIO leaves reset", True),
-        ("high-impedance through ROM, bootloader and app init; the resistor holds mute,", True),
-        ("firmware only RELEASES it (ADR-0011). Measure the XSMT pad to 3V3 before", False),
-        ("soldering; a hard bridge makes GPIO13 fight the rail. AMP_MUTE reaches U7-U10", False),
-        ("only if an accessible SD pad exists on all four boards (wiring plan section 9).", False),
+        ("MUTE: R6 is not optional. Every candidate GPIO leaves reset high-impedance", True),
+        ("through ROM, bootloader and app init; the resistor holds mute, firmware only", True),
+        ("RELEASES it (ADR-0011). Measure the XSMT pad to 3V3 before soldering; a hard", False),
+        ("bridge makes GPIO13 fight the rail. XSMT is the ONLY mute in the chain: the", False),
+        ("XH-A232 has no mute or shutdown input and is live from the moment VIN is.", False),
     )
     for index, (message, bold) in enumerate(notes):
         builder.text(message, (212, 132 + 4 * index), bold=bold)
@@ -377,22 +374,12 @@ def draw_audio_chain(builder: Builder) -> None:
                      (240, 122), rotation=90)
     builder.label("R6", "1", "DAC_XSMT")
     builder.label("R6", "2", "STAR_GND")
-    # One pull-down per amplifier, mounted at that amplifier's SD pad: R7-R10
-    # for amps 1-4. Four 10 k in parallel on the shared AMP_MUTE bus is 2.5 k,
-    # about 1.3 mA when GPIO21 drives high, comfortable for the pin.
-    for k in range(4):
-        reference = f"R{7 + k}"
-        builder.add_part("Device:R", reference,
-                         f"10 k PULL-DOWN / AMP {k + 1} SD / FIT ON ALL FOUR OR ON NONE / ONLY IF AN ACCESSIBLE SD PAD IS FOUND",
-                         (262 + 14 * k, 122), rotation=90)
-        builder.label(reference, "1", "AMP_MUTE")
-        builder.label(reference, "2", "POWER_GND")
 
 
 def draw_test_points(builder: Builder) -> None:
     """One test point symbol per TP number, generated from the shared table."""
     for number, net in TEST_POINTS:
-        # Twelve to a row: three rows for TP0-TP34, clear of the section's own
+        # Twelve to a row: three rows for TP0-TP33, clear of the section's own
         # footer text. Fewer per row would push the last points onto it.
         column, row = number % 12, number // 12
         builder.add_part("Connector:TestPoint", f"TP{number}", net,

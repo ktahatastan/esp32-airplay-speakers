@@ -2,22 +2,24 @@
  * @file hk_audio.h
  * @brief Turning sound on and off in an order that does not damage anything.
  *
- * Three things have to move — the I2S clocks, the DAC's soft-mute, and the
- * four amplifiers' shutdown pins, which share one line — and the order matters
- * in both directions.
+ * Two things have to move — the I2S clocks and the DAC's soft-mute — and the
+ * order matters in both directions. There is no third thing: the XH-A232
+ * amplifier boards have no shutdown or mute input of any kind (power in, audio
+ * in, speakers out), so they are live from the moment the 24 V rail is, and
+ * the PCM5102A's XSMT is the only point in the chain where this firmware can
+ * stop sound. Everything the amplifiers reproduce is whatever the DAC lets
+ * through, multiplied by their gain, into a tweeter whose impedance this
+ * project has not yet measured.
  *
  * Coming up, the clock has to be running and stable before the DAC unmutes,
  * because a DAC unmuted into an absent or settling bit clock puts a step on its
- * output; and the DAC has to be settled before the amplifier is released,
- * because whatever the DAC is doing on its first samples gets multiplied by the
- * amplifier's gain and arrives at a tweeter whose impedance this project has
- * not yet measured.
+ * output — and with the amplifiers always live, that step arrives at the
+ * drivers.
  *
- * Going down, the order reverses and the amplifier goes first. TPA3110's
- * datasheet is explicit that the best power-off behaviour comes from asserting
- * shutdown before the supply is removed. Muting the DAC first and the
- * amplifier second would send the DAC's own transition through a live
- * amplifier — exactly the thump this sequence exists to prevent.
+ * Going down, the DAC is muted first and the clocks are held for it. XSMT is a
+ * soft mute: the PCM5102A ramps its output down rather than cutting it, and it
+ * needs its bit clock to do that. Stopping the clocks first would cut the ramp
+ * short and hand the amplifiers exactly the transient the ramp exists to avoid.
  *
  * The state machine is pure and takes its timings as arguments, so an entire
  * start-up and shutdown can be driven in a test in microseconds instead of
@@ -26,8 +28,8 @@
  *
  * The invariant worth stating once, because everything else follows from it:
  * MUTED IS THE RESTING STATE. Every path that loses permission, loses the
- * stream, or does not understand its inputs ends with the amplifier shut down,
- * and it gets there by muting the amplifier before anything else moves.
+ * stream, or does not understand its inputs ends with the DAC muted, and it
+ * gets there by muting the DAC before anything else moves.
  */
 #ifndef HK_AUDIO_H
 #define HK_AUDIO_H
@@ -37,11 +39,10 @@
 
 /** Where the output chain is in its sequence. */
 typedef enum {
-    HK_AUDIO_SILENT = 0,  /**< Clocks off, DAC muted, amplifier shut down */
-    HK_AUDIO_CLOCKING,    /**< Clocks running, both still muted; waiting to settle */
-    HK_AUDIO_DAC_LIVE,    /**< DAC unmuted, amplifier still shut down; waiting to settle */
-    HK_AUDIO_PLAYING,     /**< Everything released */
-    HK_AUDIO_MUTING,      /**< Amplifier shut down first; unwinding to silence */
+    HK_AUDIO_SILENT = 0,  /**< Clocks off, DAC muted */
+    HK_AUDIO_CLOCKING,    /**< Clocks running, DAC still muted; waiting to settle */
+    HK_AUDIO_PLAYING,     /**< DAC unmuted */
+    HK_AUDIO_MUTING,      /**< DAC muted first, clocks held for the ramp; unwinding to silence */
 } hk_audio_state_t;
 
 /** What the rest of the device says about whether sound is allowed and wanted. */
@@ -60,15 +61,13 @@ typedef struct {
  */
 typedef struct {
     uint32_t clock_settle_ms; /**< Clocks running before the DAC may unmute */
-    uint32_t dac_settle_ms;   /**< DAC unmuted before the amplifier may be released */
-    uint32_t mute_settle_ms;  /**< Amplifier shut down before the DAC follows */
+    uint32_t mute_settle_ms;  /**< DAC muted before the clocks may stop */
 } hk_audio_timing_t;
 
-/** The three lines this module drives. All three are active low in hardware. */
+/** The two lines this module drives. XSMT is active low in hardware. */
 typedef struct {
     bool i2s_running;   /**< Clocks and data are being produced */
     bool dac_unmuted;   /**< PCM5102A XSMT released */
-    bool amp_enabled;   /**< All four TPA3110 SD pads released (one line, HK_PIN_AMP_MUTE) */
 } hk_audio_outputs_t;
 
 /**
@@ -89,24 +88,24 @@ void hk_audio_init(hk_audio_t *seq, uint32_t now_ms);
 /**
  * Advance the sequence by one tick.
  *
- * Losing permission or losing the stream from any state moves to
+ * Losing permission or losing the stream while the DAC is unmuted moves to
  * ::HK_AUDIO_MUTING rather than jumping straight to ::HK_AUDIO_SILENT, so the
- * amplifier is shut down first and the rest unwinds behind it.
+ * DAC is muted first and the clocks stay up until its ramp is done.
  *
  * A NULL @p seq, @p inputs or @p timing takes the safe path rather than doing
- * nothing: not knowing whether sound is allowed is not a reason to keep an
- * amplifier live.
+ * nothing: not knowing whether sound is allowed is not a reason to keep the
+ * DAC unmuted into live amplifiers.
  *
  * Once unwinding has started it runs to completion even if permission returns.
- * Turning back mid-unwind would release the amplifier while the DAC is part
- * way through its own transition, which is the thump the sequence exists to
- * avoid; a fresh start costs one settle time and is always clean.
+ * Turning back mid-unwind would unmute a DAC that is part way through its own
+ * ramp, which is the thump the sequence exists to avoid; a fresh start costs
+ * one settle time and is always clean.
  */
 void hk_audio_step(hk_audio_t *seq,
                    const hk_audio_inputs_t *inputs,
                    const hk_audio_timing_t *timing);
 
-/** What the three lines should be doing in @p state. */
+/** What the two lines should be doing in @p state. */
 hk_audio_outputs_t hk_audio_outputs(hk_audio_state_t state);
 
 /** Short name, for logs and tests. */

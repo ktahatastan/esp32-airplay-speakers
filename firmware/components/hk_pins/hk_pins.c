@@ -10,7 +10,6 @@ const hk_pin_entry_t hk_pin_table[] = {
     {"led_r",     HK_PIN_LED_R},
     {"led_g",     HK_PIN_LED_G},
     {"led_b",     HK_PIN_LED_B},
-    {"amp_mute",  HK_PIN_AMP_MUTE},
     {"dac_xsmt",  HK_PIN_DAC_XSMT},
     {NULL, -1},
 };

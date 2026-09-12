@@ -41,7 +41,7 @@ Bu liste bir onaylı tedarikçi listesi değil, sipariş öncesi kısa listedir.
 
 ## Tedarik ilkeleri
 
-- Dört amfi kartı aynı revizyondur; aynı kabinde kazanç farkı duyulur ve `SD` dalı ya dördünde ya hiçbirinde takılır. Revizyon değişirse BOM revizyonu ve test tekrarı gerekir.
+- Dört amfi kartı aynı revizyondur; aynı kabinde kazanç farkı duyulur. Revizyon değişirse BOM revizyonu ve test tekrarı gerekir.
 - `30 W`, `40 A`, `3 A` gibi pazarlama başlıkları tek başına kabul kriteri değildir; çalışma koşulu ve ısıl performans aranır.
 - Stokta görünen ürün satın alma anında yeniden kontrol edilir; toplu siparişten önce bir örnek doğrulanır.
 

@@ -12,7 +12,7 @@
  *   1. the receiver is not delivering samples to I2S at all, or is delivering
  *      silence, in which case everything after the ESP32 is innocent; or
  *   2. samples are leaving GPIO6 exactly as they should and the DAC, the
- *      amplifier, the wiring or the mute lines are eating them.
+ *      amplifier, the wiring or the DAC mute are eating them.
  *
  * Nothing in the log separates those, because the firmware's only source of
  * audio is a vendored receiver whose internals are not this project's to
@@ -28,7 +28,7 @@
  *                        amplifier input or its ground.
  *   Silence           -> nothing is reaching the amplifier. Read the hk_audio
  *                        transition lines first: if the sequence never left
- *                        SILENT, the mute lines are still asserted and this
+ *                        SILENT, the DAC mute is still asserted and this
  *                        module was never the problem.
  *
  * TWO SIGNALS, AND THEY ARE NOT THE SAME INSTRUMENT
@@ -83,19 +83,20 @@
  * the one being chased, so hk_main starts one or the other and never both --
  * see CONFIG_HK_BENCH_TONE_INSTEAD_OF_AIRPLAY.
  *
- * It does not touch the mute lines. Those belong to hk_audio_hw and to the
- * sequence in hk_audio.c, and releasing them is still gated on the same two
+ * It does not touch the DAC mute. That belongs to hk_audio_hw and to the
+ * sequence in hk_audio.c, and releasing it is still gated on the same two
  * bench exceptions as before. A tone generated into an asserted mute is
  * inaudible and that is correct: this module is an instrument, not an override.
  *
  * There is an unpleasant consequence of that for the sweep specifically, and it
  * is written here rather than only in the doc because it is the one thing an
  * operator would not guess. Releasing the DAC's XSMT so the sweep reaches the
- * line output requires the two bench exception symbols -- and those same two
- * symbols are what releases the AMPLIFIER's mute. There is no setting that
- * unmutes the DAC and holds the amplifier down. That is why "the amplifier is
- * not in the path" has to be true of the wiring and cannot be made true of the
- * configuration.
+ * line output requires the two bench exception symbols -- and the amplifiers
+ * have no mute of their own, so a DAC that is unmuted is an amplifier that is
+ * amplifying. There is no setting that unmutes the DAC and holds the
+ * amplifier down, because there is no line to hold it down with. That is why
+ * "the amplifier is not in the path" has to be true of the wiring and cannot
+ * be made true of the configuration.
  *
  * NOT A PRODUCT FEATURE. The source is only compiled when the bench symbol is
  * set, so a release image does not carry it.

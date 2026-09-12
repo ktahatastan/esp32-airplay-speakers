@@ -64,7 +64,7 @@ Adaptör beslemesinin `G1`'e (amfi + dummy-load) eklediği ölçümler:
 | Besleme bütçesi ve çöküşü | TP1, dört amfi limiter tavanında birlikte sürülürken; TP3/TP4 Wi-Fi sıçramasında | Toplam akım 2,9 A'yı aşmıyor; `VIN` çökmüyor, ESP reset yok; iki 5 V hattı da 4,75 V altına düşmüyor |
 | Brownout | TP5 | Reset üreten çökme yok |
 | Buck gürültüsü | TP4 ve DAC çıkışı (TP9/TP10), amfi girişleri (TP11/TP12) | DAC hattında hışırtı yok; lab kaynağıyla alınan tabana göre fark kayıtlı |
-| Açma/kapama pop | TP1 + TP33/TP34 + TP9/TP10 single-shot | Kapanış adaptör çekilerek kaydedilir; pop yok, susturma hatları açılış penceresi boyunca LOW |
+| Açma/kapama pop | TP1 + TP33 + TP6 + TP9/TP10 single-shot | Kapanış adaptör çekilerek kaydedilir; `XSMT` açılış penceresi boyunca LOW ve kapanışta `BCLK` durmadan önce düşüyor; amfinin kendi pop'u (susturma girişi yok) olduğu gibi kaydedilir |
 | Adaptör gürültüsü | Dip gürültü, cızırtı, ground-loop; adaptör bağlıyken | Lab kaynağıyla alınan tabana göre fark kayıtlı |
 
 Adaptörün akım değeri sabittir: 2,9 A. Ondan türeyen şey limiter tavanıdır, tersi değil; `G1` bütçe satırı tavanın o akıma sığdığını gösterir.

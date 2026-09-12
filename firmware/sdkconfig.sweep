@@ -6,10 +6,11 @@
 # 100 Hz and the woofer's resonance is at or below that -- the one part of the
 # curve that decides Fs was the part the app could not reach.
 #
-# THE AMPLIFIER MUST BE OUT OF THE PATH. The bench exception in sdkconfig.bench
-# release the DAC's mute and the amplifier's together; there is no setting that
-# separates them. Keeping the amp out is a wiring act, which is why the sweep
-# begins with ten seconds of silence.
+# THE AMPLIFIER MUST BE OUT OF THE PATH. The XH-A232 has no mute or shutdown
+# input, so the bench exception in sdkconfig.bench, which releases the DAC's
+# mute, releases the amplifiers with it: whatever the DAC puts out, they
+# amplify. Keeping the amp out is a wiring act and cannot be a configuration
+# act, which is why the sweep begins with ten seconds of silence.
 #
 #   idf.py -C firmware -B firmware/build-sweep \
 #     -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.bench;sdkconfig.sweep" \

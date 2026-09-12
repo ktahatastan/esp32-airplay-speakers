@@ -187,7 +187,7 @@ LED animasyonları audio task üzerinde çalışmayacak; düşük öncelikli ayr
 
 - V1'de güç anahtarı yoktur ([[07-decisions/ADR-0020-dc-adapter-power|ADR-0020]]). Cihaz 24 V adaptörü takılınca açılır, çekilince kapanır; adaptör dört amfiyi doğrudan, ESP32-S3'ü buck A ve DAC'ı buck B üzerinden (iki ayrı 5 V) besler.
 - Boşta bekleme kullanıcı ayarı `standby_min` ile zamanlanır (varsayılan 30 dk, `0` kapatır). Davranışın kendisi henüz yazılmadı; yazıldığında amfi mute sıralayıcısı üzerinden geçecek ve AirPlay hedefi görünür kalacak.
-- Adaptör takılırken ve çalarken çekilirken amfi mute sıralaması ve pop sesi G1'de dummy-load üzerinde ölçülür; kapanış pop'u `PRD-007`'nin konusudur.
+- Adaptör takılırken ve çalarken çekilirken DAC susturma sıralaması ve pop sesi G1'de dummy-load üzerinde ölçülür; amfinin susturma girişi olmadığından kendi açılış/kapanış geçişi olduğu gibi kaydedilir. Kapanış pop'u `PRD-007`'nin konusudur.
 
 ## Güvenlik ve gizlilik
 

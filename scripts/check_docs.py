@@ -153,6 +153,27 @@ DRIFT_RULES = (
         scope="repo",
     ),
     Drift(
+        label="amp-mute-line",
+        # The XH-A232 has no mute or shutdown input (ADR-0011, owner's
+        # inspection 2026-09-12), so the firmware drives one mute line, the
+        # DAC's XSMT. The old amplifier line is matched by its symbol names and
+        # by its GPIO, written with or without a space; the test records and
+        # the dated development-log entries keep the history and are allowed.
+        pattern=r"HK_PIN_AMP_MUTE|\bAMP_MUTE\b|\bamp_enabled\b|\bGPIO ?21\b|`R7`-`R10`",
+        allowed=(
+            "docs/06-testing/",
+            "docs/07-decisions/ADR-0011-audio-side-gpio-reservation.md",
+            "docs/08-development-log/",
+            "docs/01-planning/risk-register.md",
+            "scripts/check_docs.py",
+        ),
+        hint=("The amplifier boards have no mute input (ADR-0011): the DAC's XSMT on "
+              "GPIO13 is the only mute line, hk_audio drives two lines (I2S clock and "
+              "XSMT), and there is no AMP_MUTE, no GPIO21 and no R7-R10. Only the "
+              "dated records may mention them."),
+        scope="repo",
+    ),
+    Drift(
         label="supply-voltage",
         # Case-sensitive on purpose: `19 V` and `19V` are how a supply figure
         # is written, and `\b` keeps a year like 2019 or a larger number out.

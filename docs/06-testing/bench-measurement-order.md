@@ -35,7 +35,7 @@ sarmalı ve `XSMT` tekrar düşmeli. Seri kayıtta görülmesi gereken:
 
 ```text
 hk_audio: PLAYING -> MUTING: ...
-hk_audio: MUTING -> SILENT:  amp gpio21=0 dac xsmt gpio13=0 ...
+hk_audio: MUTING -> SILENT: dac xsmt gpio13=0 (0=muted, read back) ...
 ```
 
 Bu satırlar geliyor ama fısıltı sürüyorsa, kaynak DAC'ın çıkışı değil, amfinin
@@ -83,23 +83,20 @@ PCM5102A çipinin ilgili pinine süreklilik bak.
 
 **Sonuç:** _(yazılacak)_
 
-### B4. XH-A232'de `SD` padi var mı? — dört amfide de
+### B4. XH-A232'de `SD` padi var mı? — KAPANDI (2026-09-12)
 
-`hk_pins.h` bunu bir **rezervasyon** olarak işaretlemiş; şemada da kesikli
-çizili. TPA3110 çipinin `SD` pininden kartta erişilebilir bir noktaya süreklilik
-ara. Bulursan o noktayı GND'ye göre de ölç: kart `SD`'yi kendi yukarı çekiyorsa
-10 kΩ baskın gelmeyebilir ve `R7` yeniden hesaplanmalı.
+Soru, kartta TPA3110'un `SD` pininden erişilebilir bir noktaya süreklilik olup
+olmadığıydı; firmware bunun için `GPIO21`'i rezerve etmiş, şema dalı kesikli
+çizmişti.
 
-Ölçüm dört XH-A232'nin her birinde ayrı ayrı yapılır ve dördü aynı kart
-revizyonu olmak zorundadır: `SD` dalı ya dördünde birden takılır ya hiçbirinde.
-Biri farklı çıkarsa o kart değiştirilir, dal yarım bağlanmaz.
-
-| sonuç | anlamı |
-|---|---|
-| erişilebilir nokta **dördünde var** | `GPIO21` dört `SD` padine paralel bağlanır, her amfide kendi `R7`'si takılır (dört 10 kΩ paralelde 2,5 kΩ; GPIO için rahat), şemadaki kesikli dal düz çizgiye döner. |
-| **yok** | Firmware tarafından kontrol edilebilir amfi mute'u olmaz; sadece DAC'ın `XSMT`'si kalır. Kapanış "pop"u bastırılamaz. Bu bir karar olarak yazılır. |
-
-**Sonuç:** _(yazılacak)_
+**Sonuç:** **Yok.** Sahibin kart üzerindeki tespiti: XH-A232'de güç girişi, ses
+girişi ve hoparlör çıkışları dışında hiçbir bağlantı yok. Sonuç karar olarak
+yazıldı ([[../07-decisions/ADR-0011-audio-side-gpio-reservation|ADR-0011]]):
+firmware tarafından kontrol edilebilir amfi susturması yoktur, `GPIO21`
+rezervasyonu kaldırıldı, sıralayıcı iki hat sürer (I²S saati ve `XSMT`).
+Zincirdeki tek susturma DAC'ın `XSMT`'sidir; amfinin kendi açılış/kapanış
+pop'u `G1`'de, DAC susturuluyken, olduğu gibi kaydedilir. Dört kart yine aynı
+revizyon olmak zorundadır (`C3`, kazanç).
 
 ---
 
@@ -225,6 +222,5 @@ kaydedilmiş kurulumla ölçülür; ancak o zaman "geçti" yazılır.
 
 Bu ölçümler kapandıkça:
 
-- `B4` dört kartta da bir `SD` noktası bulursa: şemadaki kesikli dal kesinleşir, dört `R7` takılır.
 - `C3` 36 dB gösterirse: kazanç düşürülür ve EQ bunun üstüne kurulur.
 - Hepsi kapandıktan sonra `G1` (tek amfi kukla yükte; sonra dört amfi birden sürülürken `VIN` akım bütçesi) ve amfi çıkışı test noktalarının osiloskop kaydı.

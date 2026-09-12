@@ -3,7 +3,7 @@ status: accepted
 decision: accepted
 owner: hardware-engineer
 reviewers: [orchestrator, firmware-engineer]
-updated: 2026-08-31
+updated: 2026-09-12
 tags: [adr, hardware, gpio, audio, safety]
 ---
 
@@ -11,12 +11,13 @@ tags: [adr, hardware, gpio, audio, safety]
 
 ## Karar
 
-Pin tablosuna iki GPIO eklenir ve `HK_PIN_FORBIDDEN_MASK` tamamlanır.
+Pin tablosuna bir GPIO eklenir ve `HK_PIN_FORBIDDEN_MASK` tamamlanır.
 
 | Sinyal | GPIO | Ne | Durum |
 |---|---|---|---|
-| `AMP_MUTE` | 21 | dört TPA3110'un `SD` girişi paralel, aktif düşük | **rezervasyon** |
 | `DAC_XSMT` | 13 | PCM5102A `XSMT`, aktif düşük | **rezervasyon** |
+
+Amfi için bir susturma hattı **yoktur** ve ayrılmaz: XH-A232 kartında güç girişi, ses girişi ve hoparlör çıkışları dışında hiçbir bağlantı yoktur (sahibin kart üzerindeki tespiti, 2026-09-12). TPA3110'un `SD` bacağı kart üzerinde dışarı çıkarılmamıştır. Zincirdeki tek susturma DAC'ın `XSMT`'sidir; dört amfi `VIN` geldiği andan itibaren canlıdır.
 
 Mevcut yedi atama (GPIO4-10) **değişmez**. Hepsi geçerli ve yeniden kesmek üretilmiş şemaları ve prob noktası haritasını bedelsiz geçersiz kılardı.
 
@@ -32,28 +33,28 @@ Hiçbir şey lehimlenmedi ve donanım gelmedi. Bir pin eklemek bugün bedava; ha
 
 Bu ADR'nin en önemli maddesi ve tek güvenlik maddesi.
 
-Bu parçadaki her aday GPIO, reset'ten çıkarken **yüksek empedanslıdır** ve çıkış sürücüsü kapalıdır; ROM, ikinci aşama bootloader ve uygulama başlangıcı boyunca öyle kalır — yüzlerce milisaniye. O pencerede amfi, girişindeki her şeyi üretmekte serbesttir.
+Bu parçadaki her aday GPIO, reset'ten çıkarken **yüksek empedanslıdır** ve çıkış sürücüsü kapalıdır; ROM, ikinci aşama bootloader ve uygulama başlangıcı boyunca öyle kalır — yüzlerce milisaniye. O pencerede dört amfi zaten canlıdır ve DAC'ın verdiği her şeyi üretmekte serbesttir.
 
-Bu yüzden güvenli durum **harici bir direnç** ile tutulur, GPIO ile değil: dört amfinin her birinin `SD` pad'inde kendi 10 kΩ pull-down'ı (amfinin yanında, kablonun ucunda değil) ve `XSMT`'de bir 10 kΩ pull-down — beş direnç. Parçanın tipik 45 kΩ dahili pull'una karşı 10 kΩ, dörtten fazla kat baskındır.
+Bu yüzden güvenli durum **harici bir direnç** ile tutulur, GPIO ile değil: `XSMT`'de, DAC modülünün yanında (kablonun ucunda değil) bir 10 kΩ pull-down, `R6`. Parçanın tipik 45 kΩ dahili pull'una karşı 10 kΩ, dörtten fazla kat baskındır. Bu tek direnç, amfilerin kendi susturması olmadığı için, sekiz sürücüyü firmware var olmadan önce sessiz tutan tek şeydir.
 
-Tek GPIO dört `SD` girişini paralel sürer. Dört adet 10 kΩ pull-down paralelde 2,5 kΩ'dur; GPIO'nun HIGH sürerken gördüğü yük budur ve sürücü kapasitesinin içindedir. Bu bir aritmetiktir; `G1` HIGH seviyesini dört amfi bağlıyken ölçer.
-
-Yazılımın işi susturmayı **bırakmaktır**, yaratmak değil. Bu firmware hiç çalışmazsa hoparlörler sessiz kalır.
+Yazılımın işi susturmayı **bırakmaktır**, yaratmak değil. Bu firmware hiç çalışmazsa DAC susturulu, hoparlörler sessiz kalır.
 
 Şu pinler susturma görevinden **adıyla** dışlanır:
 
 - **GPIO18, 19, 20** — silikon bunları açılışta HIGH sürer.
 - **GPIO0, 39, 43, 44** — zayıf dahili pull-up ile açılırlar.
 
-Aktif-düşük bir susturma hattı bunların herhangi birinde olsaydı, yazılım var olmadan önce amfi serbest kalırdı — empedansı hâlâ açık `G0` engeli olan sürücülere.
+Aktif-düşük bir susturma hattı bunların herhangi birinde olsaydı, yazılım var olmadan önce DAC canlı amfilere açılırdı — empedansı hâlâ açık `G0` engeli olan sürücülere.
 
-GPIO21 seçildi çünkü bu modülde reset'te veya sonrasında dahili pull'u olmayan, açılış glitch tablosunda yer almayan, strapping/USB/UART0/JTAG rolü bulunmayan ve `gpio_hold_en()` derin uykuda çalışsın diye RTC yetenekli tek pin. İkinci ve üçüncü tercihler GPIO40 (MTDO) ve GPIO42 (MTMS).
+`GPIO14-17` bilerek boş bırakılır: serbest pinler arasında hem RTC yetenekli hem de strapping/USB/UART0/JTAG rolü olmayan tek dörtlü onlardır, yani `XSMT` ataması kart elde iken taşınmak zorunda kalırsa yedek havuzudur.
 
-### `AMP_MUTE` bir rezervasyon, bağlantı değil
+### Amfide susturma girişi yoktur
 
-XH-A232 kartlarının erişilebilir bir `SD` pad'i olup olmadığı [[../02-hardware/circuit-and-wiring-plan|kablolama planında]] hâlâ açık bir karar. Yani bu pin hiçbir şeye bağlanmayabilir. Dört kart aynı revizyon olmalıdır; `SD` dalı ya dördünde ya hiçbirinde takılıdır.
+XH-A232 kartında güç girişi, ses girişi ve hoparlör çıkışları dışında bağlantı yoktur; TPA3110'un `SD` bacağı kart üzerinde erişilebilir değildir. Bu yüzden firmware kontrollü bir amfi susturması yoktur ve bunun için GPIO ayrılmaz. Sonuçları açıkça yazılır:
 
-Yine de ayrılıyor. Ayrılmasının maliyeti başka kimsenin istemediği bir pin; ihtiyacın harness lehimlendikten sonra keşfedilmesinin maliyeti harness.
+- Susturma sıralaması iki hat sürer: I²S saati ve `XSMT`. Açarken önce saat, saat oturunca DAC; kapatırken önce DAC susturulur ve saat DAC'ın yumuşak susturma rampası bitene kadar tutulur. Amfi için bir adım yoktur.
+- TPA3110'un kendi açılış/kapanış geçişi firmware'in erişemediği bir şeydir. Adaptör takılırken ve çekilirken dört amfinin ürettiği pop `G1`'de, DAC susturuluyken, olduğu gibi kaydedilir. Duyulur bir pop `VIN` tarafında bir donanım önlemi isterse o ayrı bir ADR'dir.
+- Dört kart aynı revizyon olmak zorundadır; aynı kabinde kazanç farkı duyulur.
 
 ### Yasak maske eksikti — ve tek koruma oydu
 
@@ -73,9 +74,9 @@ Aynı isimli modülün farklı sonek taşıyan sürümünde (quad PSRAM, R2) bu 
 
 ## Sonuçlar
 
-- `hk_pins.h` 9 GPIO tanımlar; `HK_PIN_COUNT` 9'dur.
+- `hk_pins.h` 8 GPIO tanımlar; `HK_PIN_COUNT` 8'dir.
 - Derleme-zamanı denetimleri artık 18 rezerve pini ve var olmayan dört GPIO'yu reddeder. Dokuz negatif durumla sınandı.
 - Üretilmiş KiCad şeması **depodan kaldırıldı**: üreteç bu değişiklikle güncellendi ama bu makinede KiCad sembol kütüphaneleri kurulu olmadığı için çıktı yeniden üretilemedi ve eldeki dosya artık yanlış pin atamasını gösteriyordu. `scripts/check_generated_kicad.py` bundan sonra üreteç ile çıktının ayrışmasını CI'da yakalar.
-- SVG şeması yeniden üretildi ve dokuz pini gösteriyor.
-- Beş harici pull-down direnci (dört `SD`, bir `XSMT`) BOM'a ve kablolama planına girmelidir; bunlar opsiyonel değil, susturma mekanizmasının kendisidir.
+- SVG şeması yeniden üretildi ve sekiz pini gösteriyor.
+- Bir harici pull-down direnci (`R6`, `XSMT`) BOM'a ve kablolama planına girmelidir; opsiyonel değil, susturma mekanizmasının kendisidir. Amfi tarafında pull-down yoktur, çünkü tutulacak bir pad yoktur.
 - Atama hâlâ `candidate`. Satın alınan kartın şeması ve bir boot testi gerekir.

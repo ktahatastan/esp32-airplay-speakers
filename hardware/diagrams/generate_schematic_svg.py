@@ -5,7 +5,7 @@ One cabinet, module level: one ESP32-S3, one PCM5102A, four identical XH-A232
 amplifiers, eight drivers, one programme.
 
 This sheet is the readable overview: functional zones, real symbols, orthogonal
-wires, junction dots, net flags for cross-zone nets, and the TP0-TP34 probe
+wires, junction dots, net flags for cross-zone nets, and the TP0-TP33 probe
 index used during bring-up. The electrical source of truth for netlist and ERC
 is the KiCad project under hardware/kicad/.
 
@@ -157,7 +157,7 @@ def frame(sheet: Sheet) -> None:
             sheet.background.append(f'<line class="tb-line" x1="{W - 42}" y1="{gy:.0f}" x2="{W - 16}" y2="{gy:.0f}"/>')
 
 
-#: Probe index TP0-TP34. One label per probe point, in TP order. This is the
+#: Probe index TP0-TP33. One label per probe point, in TP order. This is the
 #: single numbering shared with docs/02-hardware/circuit-and-wiring-plan.md §7.1
 #: and hardware/kicad/generate_merzarkabul.py TEST_POINTS.
 TP_LABELS = [
@@ -168,7 +168,7 @@ TP_LABELS = [
     "amfi 2 L+", "amfi 2 L−", "amfi 2 R+", "amfi 2 R−",
     "amfi 3 L+", "amfi 3 L−", "amfi 3 R+", "amfi 3 R−",
     "amfi 4 L+", "amfi 4 L−", "amfi 4 R+", "amfi 4 R−",
-    "buton GPIO7", "LED_R sürüş", "LED_G sürüş", "LED_B sürüş", "DAC XSMT", "amfi SD bus ADAY",
+    "buton GPIO7", "LED_R sürüş", "LED_G sürüş", "LED_B sürüş", "DAC XSMT",
 ]
 
 
@@ -178,8 +178,8 @@ def build() -> Sheet:
         "Merzarkabul Airplay Speakers — tek kabin modül seviyesi devre şeması",
         "24 V / 2,9 A DC adaptör girişi, ters polarite adayı ve bulk kondansatör, iki 5 V buck "
         "(A: ESP32-S3, B: PCM5102A), ESP32-S3 N16R8, PCM5102A I2S DAC, LOUT/ROUT'un dört XH-A232 "
-        "girişine dağıtımı, GPIO13/GPIO21 susturma hatları ve harici pull-down'ları, dört woofer ve "
-        "dört C_SAFE korumalı tweeter, kullanıcı arayüzü ve TP0-TP34 test noktaları.",
+        "girişine dağıtımı, GPIO13 DAC susturma hattı ve harici pull-down'ı, dört woofer ve "
+        "dört C_SAFE korumalı tweeter, kullanıcı arayüzü ve TP0-TP33 test noktaları.",
     )
     frame(sheet)
     sheet.background.append(
@@ -283,11 +283,8 @@ def build() -> Sheet:
     # ================================================================ ZONE C
     sheet.zone(680, 630, 510, 800, "C", "ESP32-S3 N16R8 — ADR-0010")
     u5 = sheet.block("U5", "ESP32-S3 DEVKIT", "16 MB flash + 8 MB PSRAM", 830, 700, 330,
-                     # AMP_MUTE leaves on the left as a net flag: the mute bus
-                     # lives under the amplifier bank in zone E, and a flag is
-                     # how a net crosses zones on this sheet.
                      left=["5V / VBUS", "GND", "3V3", "GPIO7  BUTTON", "GPIO8  LED_R",
-                           "GPIO9  LED_G", "GPIO10 LED_B", "GPIO21 AMP_MUTE"],
+                           "GPIO9  LED_G", "GPIO10 LED_B"],
                      # DAC_XSMT lands on the same row as U6's XSMT pin, so the
                      # DAC mute is one straight wire.
                      right=["GPIO4  BCLK", "GPIO5  LRCLK", "GPIO6  DATA", "GPIO13 DAC_XSMT"],
@@ -303,8 +300,7 @@ def build() -> Sheet:
     sheet.testpoint(v33[0] - 22, v33[1], 5)
     sheet.power_port(v33[0] - 68, v33[1], "+3V3")
     for pin_name, flag in (("GPIO7  BUTTON", "BUTTON_N"), ("GPIO8  LED_R", "LED_R"),
-                           ("GPIO9  LED_G", "LED_G"), ("GPIO10 LED_B", "LED_B"),
-                           ("GPIO21 AMP_MUTE", "AMP_MUTE")):
+                           ("GPIO9  LED_G", "LED_G"), ("GPIO10 LED_B", "LED_B")):
         point = u5.pin(pin_name)
         sheet.wire([point, (point[0] - 30, point[1])], "dig")
         sheet.net_flag(point[0] - 30, point[1], flag, "L")
@@ -347,8 +343,9 @@ def build() -> Sheet:
 
     # DAC mute. ADR-0011: the pull-down is the mute, the GPIO only releases it.
     # Drawn as a real component with a designator because a note cannot be
-    # ordered, stuffed or checked, and this net is the last thing between an
-    # unmeasured driver and whatever the amplifier inputs happen to be holding.
+    # ordered, stuffed or checked, and this net is the ONLY mute in the chain:
+    # the XH-A232 has no shutdown input, so whatever the DAC lets through, four
+    # live amplifiers put on unmeasured drivers.
     xsmt_esp, xsmt_dac = u5.pin("GPIO13 DAC_XSMT"), u6.pin("XSMT")
     sheet.wire([xsmt_esp, xsmt_dac], "dig")
     sheet.testpoint(1300, xsmt_dac[1], 33)
@@ -441,24 +438,21 @@ def build() -> Sheet:
     # ================================================================ ZONE E
     # One DAC, four identical amplifiers. LOUT (woofer band) and ROUT (tweeter
     # band) are two horizontal buses with a junction into every amplifier
-    # input; the GPIO21 mute is a third bus under the bank, dashed for its whole
-    # length because the SD pad access is still an open decision (wiring plan
-    # §9). Every C_SAFE and every pull-down is a countable part with its own
+    # input. There is no mute bus: the XH-A232 has no shutdown or mute pad, so
+    # the amplifier block shows exactly what the board offers -- power in,
+    # audio in, speakers out. Every C_SAFE is a countable part with its own
     # designator: a repeat marker cannot be ordered, stuffed or checked.
     ez_top = 1470
     sheet.zone(70, ez_top, 2580, 780, "E",
-               "DAC → DÖRT XH-A232 / TPA3110 BTL AMFİ, SUSTURMA BUS'I VE SEKİZ SÜRÜCÜ — ADR-0002, ADR-0011")
+               "DAC → DÖRT XH-A232 / TPA3110 BTL AMFİ VE SEKİZ SÜRÜCÜ — ADR-0002")
     ey = 1620
-    mute_y = 2060
     pitch = 630
     groups = [130 + k * pitch for k in range(4)]
-    amps = []
     for k, gx in enumerate(groups):
         n = k + 1
         amp = sheet.block(f"U{7 + k}", f"XH-A232 #{n}", "TPA3110D2 · 2 × BTL Class-D · 8–26 V", gx + 110, ey, 250,
-                          left=["L IN", "R IN", "SD  PAD ADAY", "VCC", "GND"],
+                          left=["L IN", "R IN", "VCC", "GND"],
                           right=["L+", "L−", "R+", "R−"])
-        amps.append(amp)
         stub = amp.pin("L IN")[0]
         # Input taps. The near bus (LOUT) feeds the top row and the far bus
         # (ROUT) the row below it, each from its own vertical, so the two
@@ -471,18 +465,6 @@ def build() -> Sheet:
         if 0 < k < 3:
             sheet.junction(l_tap_x, bus_l_y)
             sheet.junction(r_tap_x, bus_r_y)
-        # Mute: straight down from the SD stub to the dashed bus, one pull-down
-        # per amplifier at the amplifier end. Four 10 k in parallel is 2.5 k,
-        # about 1.3 mA when GPIO21 drives high: comfortable for the pin.
-        sd = amp.pin("SD  PAD ADAY")
-        sheet.wire([sd, (sd[0], mute_y)], "dig dnp")
-        if k:
-            sheet.junction(sd[0], mute_y)
-        r_x = gx + 150
-        r_t, r_b = sheet.resistor_v(r_x, mute_y, f"R{7 + k}", "10 kΩ", dnp=True)
-        if k < 3:
-            sheet.junction(r_x, mute_y)
-        sheet.gnd(r_b[0], r_b[1], "POWER_GND")
         vcc = amp.pin("VCC")
         sheet.net_flag(vcc[0] - 30, vcc[1], "VIN", "L")
         sheet.wire([(vcc[0] - 30, vcc[1]), vcc], "pwr")
@@ -522,20 +504,14 @@ def build() -> Sheet:
     sheet.testpoint(1840, bus_r_y, 12)
     sheet.netlabel(groups[0] + 90, bus_r_y - 14, "DAC_ROUT · tweeter bandı · dört R IN paralel", "start", 0)
     sheet.netlabel(groups[0] + 90, bus_l_y + 22, "DAC_LOUT · woofer bandı · dört L IN paralel", "start", 0)
-    mute_start = 170
-    sheet.wire([(mute_start, mute_y), (groups[3] + 150, mute_y)], "dig dnp")
-    sheet.net_flag(mute_start, mute_y, "AMP_MUTE", "L")
-    sheet.junction(amps[0].pin("SD  PAD ADAY")[0], mute_y)
-    sheet.testpoint(groups[0] + 120, mute_y, 34)
-
     sheet.netlabel(130, 2200, "Hat seviyesi fan-out: XH-A232 girişi 10 kΩ sınıfı, dördü paralel ≈2,5 kΩ — PCM5102A için rahat bir yük (aritmetik; G1 dört giriş bağlıyken DAC çıkış seviyesini kaydeder). "
                               "DAC ↔ amfi bankı kablosu kısa ve ekranlı; fan-out noktası amfi bankında.", "start", 0)
-    sheet.netlabel(130, 2224, "KESİKLİ DAL ADAYDIR: XH-A232'de erişilebilir SD pad'i doğrulanmadı (§9). Dört kart aynı revizyon olmalı; dal ya dördünde ya hiçbirinde takılır. Pad yoksa R7–R10 ve bu dal takılmaz, "
-                              "firmware kontrollü amfi susturması olmaz, geriye DAC XSMT kalır. Her R7 kendi amfisinin ucuna monte edilir: kablo koparsa pad LOW kalsın.", "start", 0)
+    sheet.netlabel(130, 2224, "XH-A232'DE SUSTURMA GİRİŞİ YOKTUR: kartta güç girişi, ses girişi ve hoparlör çıkışları dışında bağlantı yok. Amfiler VIN geldiği andan itibaren canlıdır; "
+                              "zincirdeki tek susturma DAC'ın XSMT'sidir (R6, TP33). Dört kart aynı revizyon olmalı: aynı kabinde kazanç farkı duyulur.", "start", 0)
 
     # ============================================================== PANELS
     panels_y = 2290
-    sheet.panel(70, panels_y, 1690, panel_height(12), "TEST NOKTASI İNDEKSİ — TP0…TP34")
+    sheet.panel(70, panels_y, 1690, panel_height(12), "TEST NOKTASI İNDEKSİ — TP0…TP33")
     # Column-major, each column its own text element. Padding with spaces does
     # not work: SVG text collapses runs of whitespace, so a padded table never
     # lines up.
@@ -547,27 +523,28 @@ def build() -> Sheet:
                              f"TP{number} {TP_LABELS[number]}", "panel-mono")
         baseline += Sheet.PANEL_LINE
     for line in ("",
-                 "Güç açma/kapatma kaydı — CH1 TP1 · CH2 TP3 · CH3 TP5 · CH4 TP9/TP10.   Susturma kaydı — CH1 TP1 · CH2 TP33 · CH3 TP34 · CH4 TP9/TP10.",
+                 "Güç açma/kapatma kaydı — CH1 TP1 · CH2 TP3 · CH3 TP5 · CH4 TP9/TP10.   Susturma kaydı — CH1 TP6 (BCLK) · CH2 TP33 (XSMT) · CH3 TP9/TP10 · CH4 TP13/TP14.",
                  "Ripple ölçümünde 10× prob, ground-spring ve 20 MHz bant sınırı kullanılır. TP1 çöküşü dört amfi limiter tavanında sürülürken, 2,9 A bütçesine karşı kaydedilir.",
                  "Beklenen değer ve geçiş şartları: docs/02-hardware/circuit-and-wiring-plan.md §7"):
         if line:
             sheet.panel_line(70 + 20, baseline, line)
         baseline += Sheet.PANEL_LINE
 
-    # The mute chain gets its own panel rather than a line inside one of the
-    # zones. It is the only safety layer that exists before firmware runs.
-    sheet.panel(1790, panels_y, 860, panel_height(12), "SUSTURMA HATLARI — ADR-0011", "danger")
+    # The mute line gets its own panel rather than a line inside one of the
+    # zones. It is the only safety layer that exists before firmware runs, and
+    # since the amplifiers cannot be muted it is the only one there is at all.
+    sheet.panel(1790, panels_y, 860, panel_height(12), "SUSTURMA HATTI — ADR-0011", "danger")
     sheet.panel_body(1790, panels_y, [
         ("SUSTURMAYI TUTAN ŞEY GPIO DEĞİL, DİRENÇTİR", "panel-warn"),
-        ("R6 ve dört R7 (R7–R10, 10 kΩ pull-down) opsiyonel değildir. Bu parçadaki her aday", "panel-text"),
-        ("GPIO reset'ten yüksek empedanslı çıkar ve ROM, bootloader ve uygulama başlangıcı", "panel-text"),
-        ("boyunca öyle kalır — yüzlerce ms. Firmware'in işi susturmayı BIRAKMAKTIR;", "panel-text"),
-        ("firmware hiç çalışmazsa sekiz sürücü sessiz kalır.", "panel-text"),
-        ("Dört SD pad'i tek GPIO21 hattına paraleldir; her amfide kendi R7'si: dört 10 kΩ", "panel-text"),
-        ("paralelde 2,5 kΩ, HIGH'da ≈1,3 mA — GPIO için rahat. Dal ya dördünde ya hiçbirinde.", "panel-text"),
+        ("R6 (10 kΩ pull-down) opsiyonel değildir. Bu parçadaki her aday GPIO reset'ten", "panel-text"),
+        ("yüksek empedanslı çıkar ve ROM, bootloader ve uygulama başlangıcı boyunca", "panel-text"),
+        ("öyle kalır — yüzlerce ms. Firmware'in işi susturmayı BIRAKMAKTIR;", "panel-text"),
+        ("firmware hiç çalışmazsa DAC susturulu, sekiz sürücü sessiz kalır.", "panel-text"),
+        ("ZİNCİRDE BAŞKA SUSTURMA YOKTUR. XH-A232'nin SD/mute girişi yok; dört amfi VIN", "panel-text"),
+        ("geldiği andan itibaren canlıdır ve DAC'ın verdiği her şeyi kazançla sürücüye taşır.", "panel-text"),
         ("OPERATÖR, LEHİMDEN ÖNCE: (1) PCM5102A XSMT pad'i ↔ 3V3 direncini ölç, sert köprü", "panel-text"),
-        ("varsa kes. (2) Dört XH-A232'de de erişilebilir SD pad'i var mı, süreklilikle ara.", "panel-text"),
-        ("(3) Açılışta TP33 ve TP34 LOW mu, osiloskopla kaydet.", "panel-text"),
+        ("varsa kes. (2) Açılışta TP33 LOW mu, osiloskopla kaydet. (3) Kapanışta XSMT'nin", "panel-text"),
+        ("BCLK durmadan önce düştüğünü kaydet (TP6 ↔ TP33).", "panel-text"),
         ("Bu ölçümler kaydedilmeden susturma katmanı DOĞRULANMAMIŞTIR; empedans eğrisi", "panel-warn"),
         ("ölçülmemiş sürücülere sinyal verilmez.", "panel-warn"),
     ])

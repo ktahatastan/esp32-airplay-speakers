@@ -14,19 +14,19 @@
 static const char *TAG = "hk_audio";
 
 /*
- * Both lines are ACTIVE LOW. Low is muted, high is released.
+ * XSMT is ACTIVE LOW. Low is muted, high is released.
  *
  * Written as named constants rather than as bare 0 and 1 because this is the
  * one polarity in the firmware that must not be got wrong by a reader in a
  * hurry: inverting it does not produce a device that stays quiet when it should
- * play, it produces a device that plays when it should be quiet, into drivers
- * whose impedance is the open G0 blocker.
+ * play, it produces a device that plays when it should be quiet, into
+ * amplifiers that have no mute of their own and drivers whose impedance is the
+ * open G0 blocker.
  */
 #define HK_MUTE_ASSERTED  0u  /**< Muted. The level the pad already has at reset. */
 #define HK_MUTE_RELEASED  1u  /**< Sound allowed through. */
 
-#define HK_AUDIO_HW_MUTE_MASK \
-    ((1ULL << HK_PIN_AMP_MUTE) | (1ULL << HK_PIN_DAC_XSMT))
+#define HK_AUDIO_HW_MUTE_MASK (1ULL << HK_PIN_DAC_XSMT)
 
 /*
  * hk_pins.h states this rule in prose; here it is as a compile error.
@@ -35,8 +35,9 @@ static const char *TAG = "hk_audio";
  * ESP32-S3 drives GPIO18, 19 and 20 HIGH during power-up, and GPIO0, 39, 43 and
  * 44 come up with weak internal pull-ups. A mute line on any of those is
  * released before software exists — through the ROM, the second-stage
- * bootloader and app init, hundreds of milliseconds during which an amplifier
- * would be free to reproduce whatever is on its input.
+ * bootloader and app init, hundreds of milliseconds during which the
+ * amplifiers, which are always live, would be free to reproduce whatever the
+ * DAC put out.
  *
  * The prose lives next to the pin table and this assert lives next to the code
  * that drives the pins, because the two files are edited by different people
@@ -48,13 +49,10 @@ static const char *TAG = "hk_audio";
       (1ULL << 0)  | (1ULL << 39) | (1ULL << 43) | (1ULL << 44))
 
 _Static_assert((HK_AUDIO_HW_MUTE_MASK & HK_PIN_RESET_NOT_LOW_MASK) == 0,
-               "hk_audio_hw: a mute line sits on a pad the silicon drives high or "
+               "hk_audio_hw: the mute line sits on a pad the silicon drives high or "
                "pulls up at reset, so it would be RELEASED before this firmware runs");
-_Static_assert(HK_PIN_AMP_MUTE != HK_PIN_DAC_XSMT,
-               "hk_audio_hw: the amplifier and DAC mute lines share a GPIO, so the "
-               "sequence cannot move one without the other");
 _Static_assert((HK_AUDIO_HW_MUTE_MASK & HK_PIN_FORBIDDEN_MASK) == 0,
-               "hk_audio_hw: a mute line lands on a reserved pin");
+               "hk_audio_hw: the mute line lands on a reserved pin");
 
 /**
  * Settle times.
@@ -75,31 +73,28 @@ _Static_assert((HK_AUDIO_HW_MUTE_MASK & HK_PIN_FORBIDDEN_MASK) == 0,
  *                    (ADR-0002, and the absence of an MCLK pin in hk_pins.h).
  *                    How long that PLL takes to lock on this board is not
  *                    known here. 200 ms is generous on purpose: being early
- *                    puts a step on the DAC output, and that step is then
- *                    multiplied by the amplifier's gain; being late costs a
- *                    fifth of a second of silence at the start of a track,
- *                    which nobody will notice.
+ *                    puts a step on the DAC output, and with no amplifier mute
+ *                    behind the DAC that step is multiplied by the amplifiers'
+ *                    gain and arrives at the drivers; being late costs a fifth
+ *                    of a second of silence at the start of a track, which
+ *                    nobody will notice.
  *
- *   dac_settle_ms    Releasing XSMT ramps the DAC's output rather than
- *                    switching it, and the amplifier must not be live during
- *                    that ramp. Same trade, same direction, same value.
- *
- *   mute_settle_ms   The unwind. The amplifier is already shut down by the
- *                    time this is being waited out, so nothing is being
- *                    amplified and a generous value costs nothing audible.
- *                    50 ms is longer than any plausible SD-to-output-off time
- *                    for a TPA3110-class part — but note that this project has
- *                    not confirmed the amplifier boards even expose an
- *                    accessible SD pad: hk_pins.h calls HK_PIN_AMP_MUTE a
- *                    RESERVATION. The line goes to all four SD pads in
- *                    parallel, each with its own pull-down at the amplifier.
- *                    If none is connected, this line moves and nothing
- *                    happens, and the operator will only find that out by
- *                    measuring.
+ *   mute_settle_ms   The unwind. XSMT is a soft mute: the PCM5102A ramps its
+ *                    output down against its bit clock rather than cutting
+ *                    it, so the clocks are held for this long after the DAC
+ *                    is told to mute, and only then may the receiver stop
+ *                    them. How long the ramp takes on this board has not
+ *                    been measured, and this file does not quote a datasheet
+ *                    figure for it; 50 ms is chosen to be longer than any
+ *                    plausible soft-mute ramp by a wide margin, and a
+ *                    generous value costs nothing audible because the DAC is
+ *                    already ramping to silence while it is waited out. The
+ *                    G1 operator should see the ramp complete on the DAC
+ *                    output before BCK stops; if it does not, this is the
+ *                    number to raise.
  */
 static const hk_audio_timing_t HK_AUDIO_HW_TIMING = {
     .clock_settle_ms = 200,
-    .dac_settle_ms   = 200,
     .mute_settle_ms  = 50,
 };
 
@@ -114,7 +109,7 @@ static const hk_audio_timing_t HK_AUDIO_HW_TIMING = {
 #define HK_AUDIO_HW_TICK_MS 10
 
 /*
- * Small: this task reads two bools, runs a switch and writes two registers. It
+ * Small: this task reads two bools, runs a switch and writes one register. It
  * calls nothing that allocates and nothing that formats, except on a state
  * change, which is where the ESP_LOG headroom is spent.
  */
@@ -124,11 +119,11 @@ static const hk_audio_timing_t HK_AUDIO_HW_TIMING = {
  * Above the LED, below everything real-time.
  *
  * hk_ui runs at 2 with the note that audio and networking must both pre-empt
- * it. Both must pre-empt this one too — an amplifier's mute line does not need
- * to be serviced before an I2S buffer, and a task that could delay the audio
- * path would be a strange thing to add in the name of audio safety. It sits one
- * step above the LED renderer for the plain reason that this one drives an
- * amplifier and that one drives a light.
+ * it. Both must pre-empt this one too — the DAC's mute line does not need to
+ * be serviced before an I2S buffer, and a task that could delay the audio path
+ * would be a strange thing to add in the name of audio safety. It sits one
+ * step above the LED renderer for the plain reason that this one stands
+ * between the DAC and four live amplifiers and that one drives a light.
  */
 #define HK_AUDIO_HW_TASK_PRIO 3
 
@@ -178,11 +173,12 @@ static uint32_t now_ms(void)
  * WHAT THIS CAN AND CANNOT PROVE, because the difference decides whether the
  * line below is evidence or decoration.
  *
- * It CANNOT answer the question hk_pins.h raises about HK_PIN_AMP_MUTE being a
- * RESERVATION. These are push-pull outputs: a pad driven low while connected to
- * absolutely nothing reads back low, exactly like a pad driven low into a
- * working amplifier's shutdown pin. No amount of reading tells this firmware
- * whether a wire exists. Only a meter at the amplifier does.
+ * It CANNOT tell whether the wire exists. This is a push-pull output: a pad
+ * driven low while connected to absolutely nothing reads back low, exactly
+ * like a pad driven low into a working DAC's XSMT pin — and the 2026-09-08
+ * bench found precisely that, a GPIO13 driven correctly with no wire on it and
+ * a DAC held silent by its own pull-down. No amount of reading tells this
+ * firmware whether a wire exists. Only a meter at the DAC does.
  *
  * It CAN answer a narrower question that is live on this board today: whether
  * the write landed and whether this module still owns the pad. A GPIO can be
@@ -202,47 +198,35 @@ static int mute_level(int pin)
 }
 
 /**
- * Put the two pins where @p out says they should be.
- *
- * The amplifier is written FIRST when it is going down and LAST when it is
- * coming up, unconditionally, rather than only on the transitions where that
- * happens to matter. Today the sequencer never moves both lines in one step, so
- * the ordering is invisible; the day a state is added that does, this function
- * is already right. Getting it wrong the other way round sends the DAC's own
- * transition through a live amplifier, which is the exact thump the sequence in
- * hk_audio.c exists to prevent.
+ * Put the pin where @p out says it should be.
  *
  * i2s_running is deliberately not acted on: the AirPlay receiver owns the I2S
- * peripheral. See the header.
+ * peripheral. See the header. That is also why MUTING exists as a state at
+ * all: this module cannot hold the clocks for the DAC's ramp, it can only
+ * mute the DAC early enough that the ramp is over before the receiver stops
+ * them on its own schedule.
  */
 static void apply(hk_audio_outputs_t out)
 {
-    if (!out.amp_enabled) {
-        (void)gpio_set_level((gpio_num_t)HK_PIN_AMP_MUTE, HK_MUTE_ASSERTED);
-    }
     (void)gpio_set_level((gpio_num_t)HK_PIN_DAC_XSMT,
                          out.dac_unmuted ? HK_MUTE_RELEASED : HK_MUTE_ASSERTED);
-    if (out.amp_enabled) {
-        (void)gpio_set_level((gpio_num_t)HK_PIN_AMP_MUTE, HK_MUTE_RELEASED);
-    }
 }
 
 /**
- * Drive both lines to the safe level, then enable the output drivers.
+ * Drive the line to the safe level, then enable the output driver.
  *
  * The order is the point. gpio_set_level() writes the output data register
  * whether or not the pad is an output yet, so by the time gpio_config() enables
  * the driver the register already holds the asserted level and the pad never
  * drives the released one — not for a single instruction. Configuring first and
- * setting after would open a window of undefined output level on an
- * amplifier's shutdown pin, which is a small window and the wrong pin.
+ * setting after would open a window of undefined output level on the one pin
+ * that stands between the DAC and four live amplifiers, which is a small
+ * window and the wrong pin.
  *
- * The internal pull-downs are enabled as well. They are not the mechanism —
+ * The internal pull-down is enabled as well. It is not the mechanism —
  * hk_pins.h is explicit that a 10 k external pull-down is, and that it dominates
- * the part's own weak pull four to one (the amplifier mute line sees four of
- * them in parallel, one per board, 2.5 k effective) — but they cost nothing and
- * they keep the line defined on a board where that resistor has not been fitted
- * yet.
+ * the part's own weak pull four to one — but it costs nothing and it keeps the
+ * line defined on a board where that resistor has not been fitted yet.
  *
  * GPIO_MODE_INPUT_OUTPUT rather than GPIO_MODE_OUTPUT, and that is a deliberate
  * change made on 2026-09-08. Plain OUTPUT leaves the pad's input buffer
@@ -256,12 +240,7 @@ static void apply(hk_audio_outputs_t out)
  */
 static esp_err_t configure_mute_pins(void)
 {
-    esp_err_t err = gpio_set_level((gpio_num_t)HK_PIN_AMP_MUTE, HK_MUTE_ASSERTED);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "amplifier mute gpio%d: %s", HK_PIN_AMP_MUTE, esp_err_to_name(err));
-        return err;
-    }
-    err = gpio_set_level((gpio_num_t)HK_PIN_DAC_XSMT, HK_MUTE_ASSERTED);
+    esp_err_t err = gpio_set_level((gpio_num_t)HK_PIN_DAC_XSMT, HK_MUTE_ASSERTED);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "dac xsmt gpio%d: %s", HK_PIN_DAC_XSMT, esp_err_to_name(err));
         return err;
@@ -276,25 +255,23 @@ static esp_err_t configure_mute_pins(void)
     };
     err = gpio_config(&muted);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "mute lines gpio%d/%d: %s",
-                 HK_PIN_AMP_MUTE, HK_PIN_DAC_XSMT, esp_err_to_name(err));
+        ESP_LOGE(TAG, "mute line gpio%d: %s", HK_PIN_DAC_XSMT, esp_err_to_name(err));
         return err;
     }
 
     /* The one moment where a readback is worth an error rather than a note.
-     * Both lines have just been driven to the asserted level; if either reads
-     * back released, something outside this module is holding it there and an
-     * amplifier is live before this firmware has decided anything. Reported and
-     * survived rather than fatal, for the reason the whole module is arranged
-     * around: taking the device down removes the only way to say so. */
-    const int amp  = mute_level(HK_PIN_AMP_MUTE);
+     * The line has just been driven to the asserted level; if it reads back
+     * released, something outside this module is holding it there and the DAC
+     * is unmuted into live amplifiers before this firmware has decided
+     * anything. Reported and survived rather than fatal, for the reason the
+     * whole module is arranged around: taking the device down removes the only
+     * way to say so. */
     const int xsmt = mute_level(HK_PIN_DAC_XSMT);
-    if (amp != (int)HK_MUTE_ASSERTED || xsmt != (int)HK_MUTE_ASSERTED) {
-        ESP_LOGE(TAG, "a mute line did not go to the level it was driven to: "
-                      "amp gpio%d reads %d, dac xsmt gpio%d reads %d, both should "
-                      "read %u. Something else is holding the pad.",
-                 HK_PIN_AMP_MUTE, amp, HK_PIN_DAC_XSMT, xsmt,
-                 (unsigned)HK_MUTE_ASSERTED);
+    if (xsmt != (int)HK_MUTE_ASSERTED) {
+        ESP_LOGE(TAG, "the mute line did not go to the level it was driven to: "
+                      "dac xsmt gpio%d reads %d, should read %u. Something else "
+                      "is holding the pad.",
+                 HK_PIN_DAC_XSMT, xsmt, (unsigned)HK_MUTE_ASSERTED);
     }
     return ESP_OK;
 }
@@ -320,28 +297,26 @@ static void audio_hw_task(void *arg)
 
         /* Logged on change only. A line per tick is 100 lines a second and
          * would bury everything else in the console; the transitions are the
-         * whole story: which way the chain moved, and whether the amplifier
-         * really was the last thing up and the first thing down.
+         * whole story: which way the chain moved, and whether the DAC really
+         * was the last thing up and the first thing down.
          *
-         * SILENT -> CLOCKING -> DAC_LIVE -> PLAYING on the way up and
+         * SILENT -> CLOCKING -> PLAYING on the way up and
          * PLAYING -> MUTING -> SILENT on the way down, so a capture that shows
          * a partial climb says exactly where it stopped, and a capture that
          * shows nothing says the sequence was never asked to move at all.
          *
-         * Two things are printed for each pin and they are not the same thing.
-         * The per-pin levels are read back off the pads after apply() has
-         * written them, so they are what the silicon is doing; `wanted` is what
-         * hk_audio_outputs() asked for. They should agree, and on the day they
-         * do not, that disagreement is the finding. */
+         * Two things are printed for the pin and they are not the same thing.
+         * The level is read back off the pad after apply() has written it, so
+         * it is what the silicon is doing; `wanted` is what hk_audio_outputs()
+         * asked for. They should agree, and on the day they do not, that
+         * disagreement is the finding. */
         if (s_chain.state != reported) {
-            ESP_LOGI(TAG, "%s -> %s: amp gpio%d=%d dac xsmt gpio%d=%d "
-                          "(0=muted, read back) | wanted dac=%d amp=%d "
-                          "| permitted=%d stream=%d",
+            ESP_LOGI(TAG, "%s -> %s: dac xsmt gpio%d=%d (0=muted, read back) "
+                          "| wanted dac=%d | permitted=%d stream=%d",
                      hk_audio_state_name(reported),
                      hk_audio_state_name(s_chain.state),
-                     HK_PIN_AMP_MUTE, mute_level(HK_PIN_AMP_MUTE),
                      HK_PIN_DAC_XSMT, mute_level(HK_PIN_DAC_XSMT),
-                     out.dac_unmuted, out.amp_enabled,
+                     out.dac_unmuted,
                      inputs.permitted, inputs.stream_live);
             reported = s_chain.state;
         }
@@ -398,8 +373,8 @@ esp_err_t hk_audio_hw_start(void)
         return ESP_ERR_INVALID_STATE;
     }
 
-    /* Pins before state before task: at no point does a running task see a
-     * chain it has not been given, and at no point is a pad an output at a
+    /* Pin before state before task: at no point does a running task see a
+     * chain it has not been given, and at no point is the pad an output at a
      * level nobody chose. */
     const esp_err_t err = configure_mute_pins();
     if (err != ESP_OK) {
@@ -412,25 +387,22 @@ esp_err_t hk_audio_hw_start(void)
                                            HK_AUDIO_HW_TASK_STACK, NULL,
                                            HK_AUDIO_HW_TASK_PRIO, &s_task);
     if (created != pdPASS) {
-        /* The pins keep the level they were just given, and nothing will ever
-         * release them, which is the right way for this to fail. */
+        /* The pin keeps the level it was just given, and nothing will ever
+         * release it, which is the right way for this to fail. */
         s_task = NULL;
-        ESP_LOGE(TAG, "could not create the audio task; the mute lines stay asserted");
+        ESP_LOGE(TAG, "could not create the audio task; the mute line stays asserted");
         return ESP_ERR_NO_MEM;
     }
 
-    ESP_LOGI(TAG, "mute lines driven: amp gpio%d=%d, dac xsmt gpio%d=%d, both active "
-                  "low and both ASSERTED (%s). Every later move of either line is "
-                  "logged as a transition; no transition lines means the sequence "
-                  "never left this state.",
-             HK_PIN_AMP_MUTE, mute_level(HK_PIN_AMP_MUTE),
+    ESP_LOGI(TAG, "mute line driven: dac xsmt gpio%d=%d, active low and ASSERTED "
+                  "(%s). The amplifiers have no mute of their own; this is the only "
+                  "one. Every later move of the line is logged as a transition; no "
+                  "transition lines means the sequence never left this state.",
              HK_PIN_DAC_XSMT, mute_level(HK_PIN_DAC_XSMT),
              hk_audio_state_name(s_chain.state));
-    ESP_LOGW(TAG, "settle times %" PRIu32 "/%" PRIu32 "/%" PRIu32 " ms "
-                  "(clock/dac/mute) are PROVISIONAL: reasoned, not measured. "
-                  "They belong to G1.",
+    ESP_LOGW(TAG, "settle times %" PRIu32 "/%" PRIu32 " ms (clock/mute) are "
+                  "PROVISIONAL: reasoned, not measured. They belong to G1.",
              HK_AUDIO_HW_TIMING.clock_settle_ms,
-             HK_AUDIO_HW_TIMING.dac_settle_ms,
              HK_AUDIO_HW_TIMING.mute_settle_ms);
     return ESP_OK;
 }

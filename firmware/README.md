@@ -277,7 +277,7 @@ firmware/
     hk_network/         Wi-Fi, mDNS and the provisioning transport
     hk_airplay/         the vendored AirPlay 2 receiver and its output backends
                         (I2S passthrough, the DSP chain, S/PDIF for the bench)
-    hk_audio/           the mute sequence: clocks, DAC and amplifier in order
+    hk_audio/           the mute sequence: I2S clocks and the DAC's XSMT, in order
     hk_settings/        what the user may change, and its stored bounds
     hk_schema/          what to do when stored data does not match this build
     hk_storage/         the two stores, and the wall between them

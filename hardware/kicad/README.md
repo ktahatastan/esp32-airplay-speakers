@@ -29,7 +29,7 @@ python3 hardware/kicad/generate_merzarkabul.py
 Script her çalıştırmada bir **yapısal self-check** uygular ve sorun bulursa dosya yazmadan `1` ile çıkar:
 
 - Her tel ucu gerçekten bir pinin veya bir köşe noktasının üstünde mi? (Pinin *yanında* duran bir tel bağlıymış gibi görünür ama değildir; bu betiğin en çok maruz kaldığı hata budur.)
-- `TP0…TP34` boşluksuz ve tekrarsız mı?
+- `TP0…TP33` boşluksuz ve tekrarsız mı?
 - Tek bağlantılı net var mı? `EXPECTED_OPEN_NETS` boştur; tek pinli her net ya kablolanmamıştır ya da yazım hatasıdır.
 - Referans tekrarı var mı?
 
@@ -56,12 +56,12 @@ Beklenen ERC sonucu: sıfır hata ve tek bağlantılı net yok. `EXPECTED_OPEN_N
 
 - Her yerleşim `2.54 mm` ızgaradadır. `kicad-sch-api` konumları `1.27 mm` ızgaraya snap ettiği için ızgara dışı bir yerleşim pini sessizce kaydırır.
 - Tel uçları elle yazılmaz; `get_component_pin_position()` ile çözülür. Stok sembolün iç geometrisi varsayımdan farklı olsa bile tel pinin üstüne oturur.
-- Bitişik parçalar arası bağlantı **gerçek telle** çizilir: `J1 → D2 → C_A`, buton düğümü, dört `C_SAFE → tweeter`. Dört amfi ayrı konnektördür (`U7`-`U10`); `DAC_LOUT`, `DAC_ROUT` ve `AMP_MUTE` dağıtımı ile dört `R7` sınıfı pull-down (`R7`-`R10`) net etiketiyle bağlanır.
+- Bitişik parçalar arası bağlantı **gerçek telle** çizilir: `J1 → D2 → C_A`, buton düğümü, dört `C_SAFE → tweeter`. Dört amfi ayrı konnektördür (`U7`-`U10`); `DAC_LOUT` ve `DAC_ROUT` dağıtımı net etiketiyle bağlanır. Amfi kartında susturma girişi yoktur; sayfadaki tek susturma `DAC_XSMT` ve `R6`'dır.
 - Sayfayı boydan boya geçmesi gereken raylar için net etiketi ve power sembolü kullanılır. Bu KiCad'in olağan pratiğidir; her ray için sayfa boyu tel çekmek okunabilirliği düşürür.
 - Satın alınan kartlar konektör olarak çizilir. Pin **sırası mantıksal tasarım sözleşmesidir**, satıcı kartının fiziksel header sırası değildir.
 
 ## Güvenlik durumu
 
-Şema `candidate` seviyesindedir. Nova sürücü empedansları, `C_SAFE`, jak polaritesi, `D2` ters polarite adayının düşümü ve XH-A232 `SD/MUTE` erişimi ölçülmeden üretim tasarımı kabul edilmez.
+Şema `candidate` seviyesindedir. Nova sürücü empedansları, `C_SAFE`, jak polaritesi, `D2` ters polarite adayının düşümü ölçülmeden üretim tasarımı kabul edilmez.
 
 `AMPn_L_MINUS` ve `AMPn_R_MINUS` (dört amfi) BTL anahtarlama çıkışıdır, GND değildir. Sürücülere G0-G2 geçilmeden enerji verilmez; ilk enerjilenen yol bir amfi, bir woofer ve bir tweeter'dır.

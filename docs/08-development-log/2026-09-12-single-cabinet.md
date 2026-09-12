@@ -1,5 +1,5 @@
 ---
-title: Dört kutu tek kabine indi
+title: Dört kutu tek kabine indi, ve amfide susturma hattı yok
 status: done
 owner: orchestrator
 reviewers: [hardware-engineer, firmware-engineer, acoustics-engineer, verifier]
@@ -41,9 +41,26 @@ Drift kuralı olarak `scripts/check_docs.py`'ye iki desen girdi: çoklu cihaz s�
 - `git diff --check` temiz; `check_no_private_keys.py` 0 sorun.
 - KiCad üreteci yalnız ayrıştırıldı; `--validate` bu makinede koşamaz (KiCad yok). Şema durumu `candidate` kalır.
 
+## Aynı gün, ikinci düzeltme: amfide susturma hattı yoktur
+
+Sahibi kartı eline alıp baktı: XH-A232'de güç girişi, ses girişi ve hoparlör çıkışları dışında hiçbir bağlantı yok. TPA3110'un `SD` bacağı kart üzerinde dışarı çıkarılmamış. Yukarıdaki iş bunu bilmeden yazılmıştı — bir `GPIO21` hattının dört `SD` pad'ine paralel gittiğini, her amfide bir pull-down (`R7`-`R10`) olduğunu, beş direnç ve `TP34` diye bir prob noktası olduğunu varsayıyordu; bunların hiçbiri var olmayan bir pad'e bağlanamaz. `hk_pins.h` bunu baştan beri bir **rezervasyon** olarak işaretlemişti ve kablolama planı "pad bulunmazsa firmware kontrollü amfi susturması yoktur" cümlesini o gün için hazır tutmuştu. O gün geldi.
+
+Sökülen: `HK_PIN_AMP_MUTE`, `amp_enabled`, sıralayıcıdaki `DAC_LIVE` durumu ve `dac_settle_ms`; şemadaki kesikli bus, dört direnç ve `TP34`; BOM'daki koşullu satır. Pin tablosu sekiz GPIO'dur.
+
+Kalan sıralayıcı iki hat sürer ve dört durumu vardır: `SILENT → CLOCKING → PLAYING`, inişte `MUTING`. Açarken saat oturmadan DAC açılmaz — o adım aynı, sebebi daha ağır: DAC çıkışındaki adımı yakalayacak bir amfi susturması artık yok. Kapatırken **önce DAC susturulur ve saat tutulur**: `XSMT` yumuşak susturmadır, PCM5102A çıkışı bit saatine karşı rampalar; saati önce kesmek rampayı yarıda bırakır ve amfiye tam da rampanın önlemek için var olduğu geçişi verir. `MUTING` durumunun anlamı bu yüzden değişti — eskiden "amfi indi, DAC hâlâ açık" idi, şimdi "DAC indi, saat hâlâ açık". Host testi bu asimetriyi dört durumun tamamında sabitler.
+
+Bedeli açık yazıldı: TPA3110'un kendi açılış/kapanış geçişi firmware'in erişemediği bir şeydir. Adaptör takılırken ve çekilirken dört amfinin pop'u `G1`'de, DAC susturuluyken, olduğu gibi kaydedilir; bu bir `G1` satırıdır ve `test-strategy`'nin kapanış pop satırı da buna göre yeniden yazıldı. Duyulur bir pop `VIN` tarafında bir donanım önlemi isterse o yeni bir ADR'dir.
+
+Tezgâh yapısı için de bir cümle değişti: "DAC'ı açıp amfiyi kapalı tutan bir ayar yok" cümlesinin sebebi artık "aynı sembol ikisini birden bırakıyor" değil, "bırakılacak bir amfi hattı yok". Sonuç aynı — amfiyi devre dışı bırakmak kabloyla olur — ama gerekçe artık doğru.
+
+`check_docs.py`'ye bir drift kuralı daha girdi: `AMP_MUTE`, `amp_enabled`, `GPIO21` ve `R7`-`R10` yalnız tarihli kayıtlarda (test kayıtları, günlükler, risk kütüğü) ve ADR-0011'de geçebilir.
+
+Doğrulama: üç yapı derleniyor; host testleri 540 620 kontrol, 0 hata (sıralayıcı testi üç hatlıdan iki hatlıya yeniden yazıldı); `check_docs` 0 hata; SVG yeniden üretildi (`R6` tek pull-down, `TP0-TP33`); KiCad üreteci yalnız ayrıştırıldı.
+
 ## Açık olanlar
 
 - `G0` hâlâ açık: empedans eğrisi ve `Fs`. Crossover köşesi, limiter tavanı ve kabin hacmi bunu bekliyor.
+- `G1`'e giren yeni satır: amfinin kendi açılış/kapanış pop'u, DAC susturuluyken, adaptör takılıp çekilirken; ve kapanışta `XSMT`'nin `BCLK` durmadan önce düştüğünün kaydı (`TP6` ↔ `TP33`).
 - Ürün yapısı `CONFIG_HK_AIRPLAY_OUTPUT_I2S` ile derleniyor, DSP zinciri yalnız tezgâh yapısında. Ürün profili `G0` olmadan sesi zaten reddettiği için bugün bir güvenlik açığı değil; ama `G0` kapandığında ürün varsayılanının DSP arka ucuna çekilmesi gerekir. Karar sahibindir.
 - KiCad olan bir makinede `generate_merzarkabul.py --validate` ve `check_generated_kicad.py --record`.
 - Kabin mekaniği: sahibi ölçüleri ve fotoğrafları verdiğinde parametrik, 3D yazıcıya uygun bir kabin çizimi (`hardware/cabinet/`).

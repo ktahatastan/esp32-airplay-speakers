@@ -23,6 +23,6 @@ Yeni bir blok eklerken `schematic_lib.Sheet.block()` kullanın ve teli `block.pi
 
 ## İçerik
 
-Pafta; DC giriş jakını ve 24 V / 2,9 A adaptörü, seri ters polarite adayını ve bulk kondansatörü, iki 5 V buck'ı (A: ESP32-S3, B: PCM5102A), ESP32-S3 N16R8'i, PCM5102A'yı, `LOUT`/`ROUT`'un dört XH-A232 girişine dağıtımını, dört woofer'ı ve dört `C_SAFE` korumalı tweeter'ı, dört amfiye paralel susturma bus'ını, kullanıcı arayüzünü, `TP0…TP34` test noktalarını, güvenlik kurallarını ve zorunlu kapıları tek sayfada gösterir. Kesişen teller yarım daireyle atlar: bağlantı yalnız içi dolu noktadadır.
+Pafta; DC giriş jakını ve 24 V / 2,9 A adaptörü, seri ters polarite adayını ve bulk kondansatörü, iki 5 V buck'ı (A: ESP32-S3, B: PCM5102A), ESP32-S3 N16R8'i, PCM5102A'yı, `LOUT`/`ROUT`'un dört XH-A232 girişine dağıtımını, dört woofer'ı ve dört `C_SAFE` korumalı tweeter'ı, DAC susturma hattını ve pull-down'ını, kullanıcı arayüzünü, `TP0…TP33` test noktalarını, güvenlik kurallarını ve zorunlu kapıları tek sayfada gösterir. Kesişen teller yarım daireyle atlar: bağlantı yalnız içi dolu noktadadır.
 
 Kanonik değerler ve gerekçeler için [devre ve bağlantı planına](../../docs/02-hardware/circuit-and-wiring-plan.md) bakın.

@@ -1,22 +1,24 @@
 /**
  * @file hk_audio_hw.h
- * @brief The ESP-IDF half of hk_audio: two GPIOs and a clock to move them with.
+ * @brief The ESP-IDF half of hk_audio: one GPIO and a clock to move it with.
  *
  * hk_audio.c is a pure state machine with no globals and no pins, so it can be
  * driven through a hundred start-up and shutdown cycles in a host test in
  * microseconds. That is why it is worth having, and it is also why, on its own,
  * it does nothing at all: until 2026-09-08 nothing in this firmware called
- * hk_audio_step() and nothing ever configured HK_PIN_AMP_MUTE or
- * HK_PIN_DAC_XSMT, so the two mute lines sat at whatever their external
- * pull-downs decided, forever. This file is the missing half.
+ * hk_audio_step() and nothing ever configured HK_PIN_DAC_XSMT, so the mute
+ * line sat at whatever its external pull-down decided, forever. This file is
+ * the missing half.
  *
  * It owns one hk_audio_t, ticks it in its own low-priority task, and writes
- * hk_audio_outputs() onto the two pins. That is the whole job.
+ * hk_audio_outputs() onto the one pin. That is the whole job. There is only
+ * one pin because the XH-A232 amplifier boards have no mute or shutdown input:
+ * the DAC's XSMT is the only place in the chain where sound can be stopped.
  *
  * WHAT IT DELIBERATELY DOES NOT DO
  *
  * It does not touch I2S. hk_audio_outputs() reports an `i2s_running` line
- * because the sequence is written in terms of all three, but on this board the
+ * because the sequence is written in terms of both, but on this board the
  * clocks belong to the vendored AirPlay receiver: it configures the I2S
  * peripheral when it starts and clocks it for as long as it is running. So
  * `i2s_running` is read here as an observation, not as a command, and the
@@ -33,10 +35,10 @@
  * failure mode this whole repository is arranged against.
  *
  * MUTED IS THE RESTING STATE, and the mechanism is the one hk_pins.h describes:
- * both lines are active low against external pull-downs, so the safe level is
+ * the line is active low against an external pull-down, so the safe level is
  * the level the pad already has at reset. This module only ever RELEASES mute.
  * If it crashes, if the task is deleted, if the chip resets, if this firmware
- * never runs at all — the pads go high-impedance, the pull-downs win and the
+ * never runs at all — the pad goes high-impedance, the pull-down wins and the
  * speaker is quiet.
  *
  * NOT YET VERIFIED ON HARDWARE. This compiles against ESP-IDF v5.5.1. No board
@@ -51,9 +53,9 @@
 #include "esp_err.h"
 
 /**
- * Drive both mute lines to their safe level and start the sequencer task.
+ * Drive the mute line to its safe level and start the sequencer task.
  *
- * The pins are asserted (muted) before the task exists, and the sequencer
+ * The pin is asserted (muted) before the task exists, and the sequencer
  * starts in ::HK_AUDIO_SILENT with permission assumed absent, so the earliest
  * possible moment at which anything could be released is one tick after a
  * caller has said otherwise.
