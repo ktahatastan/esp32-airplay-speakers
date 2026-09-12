@@ -9,6 +9,7 @@ tags: [development-log, moc]
 
 Günlükler yapılan işi, nedenini, doğrulamayı ve açık riskleri kalıcı tutar. Yeni kayıt için [[../templates/development-log|şablonu]] kullanın. Liste yeniden eskiye sıralıdır.
 
+- [[2026-09-12-fs-bench-session|2026-09-12 — Tarama modu ilk kez tezgâhta: woofer 50 Hz dedi, tweeter bir aralık verdi]]
 - [[2026-09-12-dsp-product-output|2026-09-12 — DSP zinciri ürünün çıkış arka ucu oldu; sayıları hâlâ tezgâhın]]
 - [[2026-09-12-single-cabinet|2026-09-12 — Dört kutu tek kabine indi, ve amfide susturma hattı yok]]
 - [[2026-09-08-product-board-first-flash|2026-09-08 — Ürün kartı geldi ve firmware ilk kez üstünde çalıştı]]

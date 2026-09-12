@@ -29,8 +29,8 @@ G6 senaryoları ve release kabul sözleşmesi [[../03-firmware/ota-and-release-p
 
 | Ölçüm | Yöntem | Geçiş koşulu |
 |---|---|---|
-| Jak polaritesi | İlk enerjilendirmeden önce adaptör fişinde DMM | Merkez pozitif ölçüldü ve `VIN` girişiyle eşleşiyor; ters polarite koruması (seri Schottky veya ideal diyot) yerinde |
-| Adaptör yüksüz gerilimi | Bağlamadan önce, yüksüz DMM | < 25,5 V. 24 V, amfinin 26 V maksimumunun 2 V altındadır; pay bu ölçümle doğrulanır, ölçülmeden adaptör bağlanmaz |
+| Jak polaritesi | İlk enerjilendirmeden önce adaptör fişinde DMM | Merkez pozitif ölçüldü ve `VIN` girişiyle eşleşiyor; ters polarite koruması (seri Schottky veya ideal diyot) yerinde. **Adaptör fişi ölçüldü 2026-09-12: iç +, dış −**; kabin jakı tarafı jak takılınca ölçülür |
+| Adaptör yüksüz gerilimi | Bağlamadan önce, yüksüz DMM | < 25,5 V. 24 V, amfinin 26 V maksimumunun 2 V altındadır; pay bu ölçümle doğrulanır, ölçülmeden adaptör bağlanmaz. **Ölçüldü 2026-09-12: 24,49 V** ([[bench-measurement-order#Adaptör yüksüz gerilimi — ölçüldü (2026-09-12)|kayıt]]) |
 | Adaptör gerilimi | Tam yükte DMM | 24 V ± satıcı toleransı; `CONFIG_HK_SUPPLY_MV=24000` ile uyumlu, 8-26 V amfi aralığında |
 | Besleme bütçesi / akım bütçesi | Dört amfi birden **4 Ω sınıfı** (ya da `G0`'ın ölçtüğü `Z_min`) non-inductive dummy-load'a sürülürken `VIN`'de ampermetre + osiloskop; amfi kazanç ayarı (`C3`) kayıtta; DSP'nin besleme dedektörü log satırı okunur | Adaptörün 2,9 A noktası bulundu ve kaydedildi: dedektörün en yüksek ortalama-karesi `supply_budget_sq`, `VIN` çöküşünün zaman sabiti `supply_window_ms` olarak, **ölçeklenmeden** profile yazılır; o noktada `VIN` çökmüyor, ESP32-S3 reset yemiyor. 8 Ω'da alınmış bir sonuç geçmez: gerçek akımın yaklaşık yarısıdır |
 | Aşamalı enerjilendirme | Tek amfi + tek woofer/tweeter çifti, önce dummy-load | Bu çift `G0`-`G2`'yi geçmeden ikinci amfi sürücüye bağlanmıyor |

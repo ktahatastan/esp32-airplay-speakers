@@ -111,7 +111,7 @@ flowchart TB
 - `D2` ters polarite koruması **adaydır**: seri Schottky, ideal-diyot modülü ya da hiçbiri. Kararı `G1`'de ölçülen ileri düşüm ve ısınma verir; takılmazsa yerine 0 Ω köprü gelir ki `DC_IN` ile `VIN` tek net olsun. 2,9 A'da bir Schottky yaklaşık 1 W veya üstü ısınır; bu, köprü sonucunu güçlendirir ama kararı değiştirmez. Şemada parça olarak durur, çünkü bir not sipariş edilemez ve denetlenemez.
 - Lojik tarafını **iki ayrı buck** besler: `U3` (buck A) ESP32-S3'ü, `U4` (buck B) PCM5102A'yı. Ayrılmalarının sebebi tezgâhta duyulan bir şeydir: paylaşılan tek buck DAC'a duyulur hışırtı verdi (sahibin gözlemi, ADR-0020; düzenek ayrıntısı kaydedilmedi, bu bir kapı geçişi değildir). İki buck'ın çıkışı da yük bağlı değilken `5,10 V`'a ayarlanır, sonra elektronik yükle doğrulanır.
 - ESP32 USB ile programlanırken `JP1` açılır. Geliştirme kartının USB ile harici `5 V` hattını güvenle OR'ladığı kanıtlanmadıkça iki kaynak aynı anda bağlanmaz. Buck B'de `JP` yoktur: USB geri beslemesi yalnız ESP geliştirme kartında vardır.
-- Bulk kondansatör `C_A` tektir ve jak girişindedir: `470-1000 µF / 35 V` düşük-ESR aday. 24 V rayda 25 V sınıfı kabul edilmez; gerilim sınıfı adaptörün yüksüz çıkışının üstünde olmalıdır. Amfi başına ek bulk yalnız `G1` ripple ölçümü isterse eklenir.
+- Bulk kondansatör `C_A` tektir ve jak girişindedir: `470-1000 µF / 35 V` düşük-ESR aday; elde `1000 µF / 50 V` var (2026-09-12) ve bandın üst ucu, gerilim sınıfı yüksüz ölçümün (24,49 V) iki katı. 24 V rayda 25 V sınıfı kabul edilmez; gerilim sınıfı adaptörün yüksüz çıkışının üstünde olmalıdır. Amfi başına ek bulk yalnız `G1` ripple ölçümü isterse eklenir.
 - Adaptörün çıkışı koruma toprağına bağlı olabilir. Adaptörle çalışırken osiloskop bağlamadan önce §7.3'teki izolasyon ölçümü yapılır.
 
 ## 3. ESP32-S3 -> PCM5102A -> 4 × XH-A232 ses zinciri
@@ -369,7 +369,7 @@ PCB veya kablo dağıtım kartında test noktaları iğne probla erişilebilir, 
 
 | TP | Konum | Referans | Beklenen değer / dalga | Araç ve ilk kontrol |
 |---|---|---|---|---|
-| TP0 | DC jak `+` / `DC_IN` | TP2 | 24 V DC nominal; adaptör etiketi ± %5; yüksüz çıkış bağlanmadan önce < 25,5 V ölçülmüş | DMM; **ilk enerjilendirmeden önce** polarite: merkez pozitif |
+| TP0 | DC jak `+` / `DC_IN` | TP2 | 24 V DC nominal; adaptör etiketi ± %5; yüksüz çıkış bağlanmadan önce < 25,5 V ölçülmüş (2026-09-12: 24,49 V) | DMM; **ilk enerjilendirmeden önce** polarite: merkez pozitif |
 | TP1 | `VIN` (`D2` sonrası) | TP2 | TP0 eksi `D2` ileri düşümü; köprüyse TP0 ile aynı | DMM yükte; `TP0-TP1` mV düşüm ve `D2` ısısı G1 kaydına; dört amfi 4 Ω sınıfı yüke sürülürken adaptörün 2,9 A noktasında çöküş kaydı (besleme bütçesi katının iki sayısı buradan) |
 | TP2 | DC jak `−` / `POWER_GND` | TP2 | 0 V yük referansı | DMM/scope ground referansı |
 | TP3 | `U3` buck A 5 V çıkışı (ESP32-S3) | TPG | 5.10 V ayar; hedef 5.00-5.20 V | DMM + scope; yükte droop/ripple |
@@ -533,8 +533,8 @@ Her adım için [[../templates/test-report|test raporu]] oluşturulur. Fiziksel 
 - [ ] DAC `LOUT`/`ROUT`'un dört amfiye fan-out topolojisi: ekran, fan-out noktası ve dört giriş paralelken DAC çıkış seviyesi (G1).
 - [x] XH-A232 kartında erişilebilir `SD/MUTE` noktası **yok** (sahibin tespiti, 2026-09-12: güç girişi, ses girişi ve hoparlör çıkışları dışında bağlantı yok). Firmware kontrollü amfi susturması yoktur; tek susturma DAC `XSMT`'dir (§3.4). Amfinin kendi açılış/kapanış pop'u `G1` kaydına girer.
 - [ ] PCM5102A modülünde `XSMT` pad'inin 3,3 V'a sert bağlı olup olmadığı; köprü varsa kesilmesi (§3.3). `R6` takılıp `TP33` açılışta LOW ölçülene kadar susturma katmanı doğrulanmamıştır.
-- [ ] 24 V / 2,9 A adaptör: marka/model, yüksüz çıkış < 25,5 V ölçümü, jak polaritesi, çıkışın PE/izolasyon ilişkisi.
-- [ ] `D2` ters polarite koruması: Schottky, ideal-diyot modülü ya da 0 Ω köprü; 2,9 A sürekli akımda düşüm ve ısıyla G1'de karar.
+- [ ] 24 V / 2,9 A adaptör: marka/model, fiş iç pim çapı (2,1 / 2,5 mm), DC `−` ↔ PE ilişkisi (şebeke tarafı topraklı, Sınıf I). Yüksüz çıkış **ölçüldü, 24,49 V**; etiket **24 V / 2,91 A / 70 W max**; polarite **iç +, dış −** (2026-09-12, [[../06-testing/bench-measurement-order#Adaptör yüksüz gerilimi — ölçüldü (2026-09-12)|kayıt]]); kalanlar açık.
+- [ ] `D2` ters polarite koruması: Schottky, ideal-diyot modülü ya da 0 Ω köprü; 2,9 A sürekli akımda düşüm ve ısıyla G1'de karar. Elde (2026-09-12): `DR6A01` işaretli, 6A01 sınıfı **standart silikon** doğrultucu (6 A / 50 V, R-6 aksiyel). Parça test cihazı okuması: `Uf = 595 mV` (cihazın mA mertebesindeki test akımında; Schottky olsaydı 200-350 mV okunurdu), `C = 89 pF`. 2,9 A'da düşüm ~0,9 V, ≈2,6 W beklenir; ölçüm G1'in. Tezgâh ve G1 ölçümü bununla yapılır; düşüm/ısı reddedilirse yerine 5 A / 60 V Schottky (SB560 sınıfı) ya da 0 Ω köprü gelir. Bant = katot, `VIN` tarafına bakar.
 - [ ] Jak kontağının 2,9 A sürekli akım değeri (tedarikçi sorusu), kablo kesiti ve konnektör akım sınıfı.
 - [ ] USB ile harici 5 V arasında jumper, Schottky OR veya load-switch seçimi (yalnız buck A / ESP tarafı).
 

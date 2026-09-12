@@ -83,18 +83,19 @@ koruma (kısa devre kilidi) kaydı olmadan hiçbir sürücü 24 V'ta bağlanmaz.
 Yani `AGENTS.md`'deki "sürücü empedansı doğrulanmadı" tıkayıcısı **kısmen**
 kapandı: nominal empedans biliniyor, koruyucu filtrenin köşesi hâlâ bilinmiyor.
 
-## `Fs` TAHMİNLERİ — ölçüm değil (2026-09-08)
+## `Fs` TAHMİNLERİ — ölçüm değil (2026-09-08), woofer kaba taramayla düzeltildi (2026-09-12)
 
-Ölçüm yarım kaldı: telefondaki sinyal jeneratörü uygulaması **100 Hz'in altına
-inemiyor**, ve woofer'ın rezonansı tam orada başlıyor. Aşağıdakiler eldeki
-veriden çıkarılmış **tahminlerdir** ve dinleyerek denemek için kullanılıyor.
-Kartın kendi tarama modu 40 Hz'den başlıyor; gerçek ölçüm o çalıştırıldığında
-yapılacak ve bu bölüm silinecek.
+Ölçüm 2026-09-08'de yarım kaldı: telefondaki sinyal jeneratörü uygulaması
+**100 Hz'in altına inemiyor**, ve woofer'ın rezonansı tam orada başlıyor.
+2026-09-12'de kartın kendi tarama modu koşuldu (aşağıdaki §9 tablosu): woofer'ın
+tepesi **50 Hz'de** çıktı — 8 Eylül tahmininin yarısı. Tahmin yanlıştı çünkü
+100 Hz'deki 11,6 Ω okuması tepenin kendisi değil, tepenin **üst yamacıydı**.
+İnce tarama henüz yok; tweeter satırı hâlâ tahmindir.
 
-| sürücü | tahmini `Fs` | dayanağı |
+| sürücü | `Fs` | dayanağı |
 |---|---:|---|
-| woofer | **~100 Hz** ±%20 | 100 Hz'de `Z` = 11,6 Ω, yani `Re`'nin 2,9 katı. Bu büyüklükte bir yükselme ancak rezonansın yakınında olur. 300 Hz'de 4,8 Ω'a inmiş, yani tepe aşağıda. 60 mm sürücü için 90–110 Hz zaten beklenen aralık. |
-| tweeter | **~2200 Hz** | Veride tek özellik: 2000–2450 Hz'de 3,3 → 3,9 Ω kabarma. Küçük kubbelerde ferrofluid rezonansı 20 Ω'dan 5 Ω'a bastırır, ve gördüğümüz buna benziyor. 25 mm kubbe için 1200–2400 Hz tipik. |
+| woofer | **≈ 50 Hz** (kaba tarama, ±%13; ince tarama bekliyor) | 2026-09-12 kaba tarama: 40 Hz 40 mVpp, **50 Hz 98 mVpp**, 63 Hz 38 mVpp (§9). 8 Eylül'ün "~100 Hz" tahmini kaldırıldı. |
+| tweeter | **~2200 Hz** (tahmin; 2026-09-12 kaba tarama 1–3 kHz'de düz ~2 × `Re`, tepe çözülemedi) | Veride tek özellik: 2000–2450 Hz'de 3,3 → 3,9 Ω kabarma. Küçük kubbelerde ferrofluid rezonansı 20 Ω'dan 5 Ω'a bastırır, ve gördüğümüz buna benziyor; 12 Eylül taraması da 1–3 kHz boyunca alçak, geniş bir tümsek gördü, nokta vermedi. 25 mm kubbe için 1200–2400 Hz tipik. |
 
 ### Bunlardan türeyen provisional ayarlar
 
@@ -106,7 +107,7 @@ taşır, üçünü değil: sahibin dinlediği sayı kodda olandır ve tablo ona 
 | parametre | değer | neden |
 |---|---:|---|
 | `crossover_hz` | 2800 | Tezgâh dinlemesinin yer tutucusu. Yukarıdaki ~2200 Hz tweeter `Fs` tahmininin **1,27 katı**, yani bu belgenin kendi "en az 2 × `Fs`" kuralının **altında**; kural 2200 için 4400 ister. Tezgâhta kısa, düşük seviyeli dinleme için kabul edilmiş bir yer tutucudur, `Fs` ölçülene kadar; sahibi yükseltebilir. Kalıcı bir kararı ancak ince tarama verir. |
-| `woofer_hpf_hz` | 55 | Pasif radyatör akordunun hemen altı (aşağıdaki kabin bölümü: 50 → 55). Tahmini `Fs`'nin çok altında, yani gerçek hiçbir çıkışı kesmiyor. Operatörün itirazı yerindeydi: subsonic filtre bası kısmaz, sese dönüşmeyen eksürsiyonu atar — ama nereye konacağını `Fb` belirler, ve o henüz ölçülmedi. Filtre dördüncü derecedir (aşağıya bakın). |
+| `woofer_hpf_hz` | 55 | Pasif radyatör akordunun hemen altı (aşağıdaki kabin bölümü: 50 → 55). **2026-09-12 kaba taraması woofer `Fs`'sini ≈ 50 Hz'e koydu, yani bu köşe serbest hava rezonansının tam üstünde**; kabin içinde `Fs` yukarı çıkacağı ve köşeyi `Fb` belirleyeceği için kalıcı karar ince tarama ve kabin akordu sonrasıdır. Operatörün itirazı yerindeydi: subsonic filtre bası kısmaz, sese dönüşmeyen eksürsiyonu atar — ama nereye konacağını `Fb` belirler, ve o henüz ölçülmedi. Filtre dördüncü derecedir (aşağıya bakın). |
 | kanal kazançları | woofer 0,25, tweeter 0,18 | Tweeter woofer'ın ~3 dB altında; hassasiyet ölçümü yok, hata payı tweeter'ı korumak yönünde. İkisi de mutlak olarak düşük, çünkü amfinin kazanç strap'i okunmadı (`C3`) ve tezgâhta zincir amfinin istediğinden ~26 dB sıcaktı (36 dB varsayımıyla). |
 | `supply_budget_sq` / pencere | 1,0 / 100 ms | Bir tam ölçekli dalın ortalama-karesi, doğrulayıcı sınırının (2,0) yarısı; `G1` S7'nin dolduracağı yer tutucu. Bu kazançlarla (0,25² + 0,18² ≈ 0,095) ancak kullanıcı EQ'su yükseltirse devreye girebilir. |
 | EQ | düz | Akustik ölçüm olmadan voicing uydurmak tahmindir. Bantlar açık, kulakla ayarlanacak. |
@@ -470,28 +471,48 @@ yazan da bunlardır.
 
 | # | frekans | woofer `V` (mV) | woofer `Z` (Ω) | tweeter `V` (mV) | tweeter `Z` (Ω) |
 |---:|---:|---|---|---|---|
-| 1 | 40,0 | | | | |
-| 2 | 50,0 | | | | |
-| 3 | 63,0 | | | | |
-| 4 | 80,0 | | | | |
-| 5 | 100,0 | | | | |
-| 6 | 124,9 | | | | |
-| 7 | 159,8 | | | | |
-| 8 | 199,5 | | | | |
-| 9 | 250,6 | | | | |
-| 10 | 315,0 | | | | |
-| 11 | 400,9 | | | | |
-| 12 | 501,1 | | | | |
-| 13 | 630,0 | | | | |
-| 14 | 801,8 | | | | |
-| 15 | 1002,3 | | | | |
-| 16 | 1260,0 | | | | |
-| 17 | 1575,0 | | | | |
-| 18 | 2004,5 | | | | |
-| 19 | 2450,0 | | | | |
-| 20 | 3150,0 | | | | |
-| 21 | 4009,1 | | | | |
-| 22 | 4900,0 | | | | |
+| 1 | 40,0 | 40 (Vpp) | ~15 † | | |
+| 2 | 50,0 | **98 (Vpp)** | ~38 † | | |
+| 3 | 63,0 | 38 (Vpp) | ~15 † | | |
+| 4 | 80,0 | okunamadı ‡ | | | |
+| 5 | 100,0 | okunamadı ‡ | | | |
+| 6 | 124,9 | okunamadı ‡ | | | |
+| 7 | 159,8 | okunamadı ‡ | | | |
+| 8 | 199,5 | okunamadı ‡ | | | |
+| 9 | 250,6 | okunamadı ‡ | | | |
+| 10 | 315,0 | okunamadı ‡ | | | |
+| 11 | 400,9 | okunamadı ‡ | | | |
+| 12 | 501,1 | okunamadı ‡ | | | |
+| 13 | 630,0 | okunamadı ‡ | | | |
+| 14 | 801,8 | okunamadı ‡ | | | |
+| 15 | 1002,3 | okunamadı ‡ | | ~20 (2 kare @ 10 mV/div) | ~8 † |
+| 16 | 1260,0 | okunamadı ‡ | | | |
+| 17 | 1575,0 | okunamadı ‡ | | | |
+| 18 | 2004,5 | 32 (Vpp) | ~12 † | | |
+| 19 | 2450,0 | 36 (Vpp) | ~14 † | | |
+| 20 | 3150,0 | 40 (Vpp) | ~15 † | ~20 (2 kare, ~2,9 kHz okuması) | ~8 † |
+| 21 | 4009,1 | 48 (Vpp) | ~18 † | | |
+| 22 | 4900,0 | 53 (Vpp) | ~20 † | ~20 (2 kare) | ~8 † |
+
+**2026-09-12 koşusu (woofer, operatör: sahibi).** Değerler osiloskop `Vpp`
+olarak okundu (metre değil), sürücünün iki ucunda; `Rs` dış 680 Ω. † `Z`
+sütunu türetilmiştir, ölçülmemiştir: DAC modülünün çıkışında **dahili ~470 Ω**
+seri direnç olduğu yük ölçümlerinden çıkarıldı (`LOUT` yüksüz 3,0 Vpp, 680 Ω +
+sürücü ile 1,82 Vpp, 220 Ω + sürücü ile 0,999 Vpp — üçü de 3,0 × R_yük /
+(470 + R_yük) ile uyuşuyor), yani toplam seri direnç ≈ 1150 Ω, akım ≈ 2,6 mApp,
+`Z ≈ V / 2,6 mA`. Bu varsayım doğruysa `Z_maks` ≈ 40 Ω; değilse yalnız `Fs`
+geçerlidir — tepe hangi satırdaysa `Fs` odur ve bu aritmetiğe bağlı değildir.
+‡ Rezonans dışı ~10 mVpp, osiloskopun otomatik ölçümü bu seviyede `0` gösterdi;
+okuma alınamadı. **Tweeter (aynı gece, aynı düzenek):** 40–800 Hz'de kutu `0`
+(taban, ~1 kare altı); 1002 Hz'den 4,9 kHz'e kadar dalga **2 kare = ~20 mVpp,
+düz, tepe yok** (operatör: "hep 2 kareydi"); ara adımlar (1260–2450) ayrı ayrı okunmadı, "2 kare" aralığın
+tamamı için söylendi. 10 mV/div'de 1 karelik çözünürlükle bu, `Z` ≈ 2 × `Re`
+mertebesinde, geniş ve ağır sönümlü bir tümsek demektir (ferro-sıvılı küçük
+kubbe; §7 "tepe çok alçak ve geniş" satırı). 8 Eylül'ün 2000–2450 Hz'de 3,3 →
+3,9 Ω gözlemiyle uyumlu. Tweeter `Fs` bu çözünürlükte nokta değil **aralık**:
+1–3 kHz. Sonraki koşuda kanal 10 mV/div, tetik `LOUT` kanalından,
+imleçle okunacak. Yükselen kuyruk (2–4,9 kHz, 32 → 53 mVpp) bobin
+endüktansıdır; woofer eğrisinin beklenen şekli.
 
 ### 10. İnce tarama tablosu
 
@@ -524,13 +545,29 @@ okuma fırsatıdır.
 
 | büyüklük | woofer/mid | tweeter |
 |---|---|---|
-| `Fs` (kaba tarama) | _(yazılacak)_ | _(yazılacak)_ |
-| `Fs` (ince tarama) | _(yazılacak)_ | _(yazılacak)_ |
-| `Z_maks` @ `Fs` | _(yazılacak)_ | _(yazılacak)_ |
-| `Z_min` ve frekansı | _(yazılacak)_ | _(yazılacak)_ |
-| `Rs` (takılan) | _(yazılacak)_ | _(yazılacak)_ |
-| metre modeli ve AC bant genişliği | _(yazılacak)_ | _(yazılacak)_ |
-| tarih / firmware sürümü | _(yazılacak)_ | _(yazılacak)_ |
+| `Fs` (kaba tarama) | **≈ 50 Hz** (40/50/63 Hz satırları: 40 / 98 / 38 mVpp; ±%13) | **1–3 kHz aralığı**, tepe çözülemedi (1002–2900 Hz'de ~20 mVpp düz; ağır sönümlü) |
+| `Fs` (ince tarama) | _(denendi, okunamadı — aşağıya bakın)_ | _(yazılacak)_ |
+| `Z_maks` @ `Fs` | ≈ 40 Ω † (dahili 470 Ω varsayımıyla; doğrulanmadı) | ≈ 8 Ω † (aynı varsayım; `Re`'nin ~2 katı, geniş) |
+| `Z_min` ve frekansı | _(okunamadı; 80–1575 Hz satırları skop tabanının altında)_ | _(yazılacak)_ |
+| `Rs` (takılan) | 680 Ω dış (+ modülde ~470 Ω dahili, çıkarım) | 680 Ω dış (aynı düzenek) |
+| metre modeli ve AC bant genişliği | Osiloskop (model kaydedilmedi), otomatik `Vpp`; DMM 6 V AC kademesi bu seviyeyi göstermedi | Osiloskop, 10 mV/div, kare sayarak (otomatik ölçüm tutunamadı) |
+| tarih / firmware sürümü | 2026-09-12, `2954e67` üstü tarama yapısı (`sdkconfig.bench` + `sdkconfig.sweep`), ikinci N16R8 kartı (kimlik `056C`) | aynı |
+
+**İnce tarama denemesi (2026-09-12, 31,5–79,3 Hz, merkez 50 Hz):** sürücü
+düğümündeki ~10–100 mVpp skop otomatik ölçümüyle okunamadı; `LOUT` düğümünden
+okuma denendi (dış `Rs` 220 Ω), 31,5–79,3 Hz boyunca 0,989–1,00 Vpp düz —
+üç haneli okuma %1'lik değişimi çözemedi. `Fs` ince değeri **açık**. Sonraki
+koşu: sürücü kanalı 10 mV/div, tetik `LOUT` kanalından, 10 ms/div, imleçle.
+
+**Bu oturumda düzenekte bulunanlar** (hepsi ölçümden önce giderildi): DAC
+modülünün `SCK` pini ESP'ye bağlıymış — kesildi ve GND'ye alındı (3-telli mod
+şartı, §3.3); DAC ile ESP toprağı ayrıydı — ortak toprak olmadan I2S çalışmaz,
+ESP `GND` ↔ DAC `GND` doğrudan tel çekildi; seri direnç 680 **kΩ** çıktı
+(mavi-gri-sarı) — 680 Ω ile değiştirildi; GPIO13 → `XSMT` teli bir kez
+çıkmıştı (8 Eylül'ün arızası). DAC modülünün çıkışındaki dahili ~470 Ω, dış
+direnç ne olursa olsun sürücüdeki sinyali ~6 mV rms'te tutuyor; §3'ün
+"470 Ω yerine 680 Ω" hesabı bu dahili direnci **bilmiyordu** ve yeniden
+yazılacak.
 
 Son iki satır süs değil: tweeter'ın `Fs`'si metrenin bandının üst ucuna
 düşüyorsa okumanın ne kadar güvenilir olduğunu **yalnız** metre modeli söyler,

@@ -260,6 +260,36 @@ kaydedilmiş kurulumla ölçülür; ancak o zaman "geçti" yazılır.
 
 ---
 
+## Adaptör yüksüz gerilimi — ölçüldü (2026-09-12)
+
+ADR-0020'nin ilk kuralı: adaptörün boşta çıkışı kabine bağlanmadan önce
+ölçülür ve 25,5 V'un altında olmalıdır. Sahibi ölçtü: fiş boşta, DMM DC volt.
+
+| ölçüm | değer | koşul | sonuç |
+|---|---|---|---|
+| Yüksüz çıkış | **24,49 V** | < 25,5 V | **GEÇTİ** — etiketin %2 üstünde, 26 V amfi sınırına 1,5 V pay |
+| Etiket | **24 V / 2,91 A, 70 W max** | 24 V / 2,9 A sınıfı (ADR-0020) | uyuyor; marka/model kaydedilmedi |
+| Fiş | "standart" barrel | 5,5 × 2,1 mm merkez pozitif (ADR-0020) | dış çap standart görünüyor; **iç pim 2,1 mi 2,5 mm mi ölçülmedi** — kabin jakı buna göre seçilir |
+| Polarite | **iç kontak +, dış kontak −** | merkez pozitif | **GEÇTİ** — DMM ile fişte okundu |
+| Şebeke tarafı | PC güç kablosu, **topraklı** (IEC C14 girişli, Sınıf I) | — | DC `−` ucunun PE'ye bağlı olup olmadığı **ölçülmedi**: Sınıf I adaptörlerin bir kısmı DC `−`'yi PE'ye bağlar, bir kısmı bağlamaz |
+
+DMM modeli ve kademesi kaydedilmedi; tek okuma, ısınma izlenmedi. Bu satırlar
+tek başına `G1`'i açmaz: tam yük gerilimi ve `VIN` çökmesi `G1`'in dummy-load
+satırlarıdır. Bütçe aritmetiği etiketle aynı kalır: 2,91 A × 24 V ≈ 70 W,
+`supply_budget_sq` bu akıma karşı `S7`'de alınır.
+
+Kalan ölçüm, adaptör prize takılı ve DC fişi boştayken: DMM ohm kademesinde
+fişin **dış kontağı ↔ C14 girişinin toprak pimi** (ya da duvar fişinin PE
+pimi). Sonsuz → çıkış izole, `POWER_GND` yüzer; ~0 Ω → `POWER_GND` şebeke
+toprağına bağlı, osiloskop toprak klipsi onunla aynı potansiyelde ve kabinin
+tek toprak noktası PE olur (§D yıldız topraklama buna göre okunur). İkisi de
+kabul edilebilir; hangisi olduğu kaydedilmeden scope bağlanmaz.
+
+**Sonuç:** yüksüz gerilim, etiket ve polarite satırları kapandı; iç pim çapı
+ve DC `−` ↔ PE ilişkisi açık.
+
+---
+
 ## Sıradaki
 
 Bu ölçümler kapandıkça:
