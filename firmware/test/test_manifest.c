@@ -18,7 +18,7 @@ static const char VALID_SHA[] =
 static hk_device_t device(void)
 {
     hk_device_t d = {
-        .product = "Harman Kardom",
+        .product = "merzarkabul-airplay-speakers",
         .target = "esp32s3",
         .hw_revision = "prototype-n16r8",
         .channel = "stable",
@@ -34,12 +34,12 @@ static hk_manifest_t good(void)
     hk_manifest_t m;
     memset(&m, 0, sizeof(m));
     m.present = HK_MANIFEST_REQUIRED_FIELDS;
-    strcpy(m.product, "Harman Kardom");
+    strcpy(m.product, "merzarkabul-airplay-speakers");
     strcpy(m.version, "1.0.1");
     strcpy(m.channel, "stable");
     strcpy(m.target, "esp32s3");
     strcpy(m.hw_revision, "prototype-n16r8");
-    strcpy(m.asset, "harman-kardom-esp32s3-n16r8-v1.0.1.bin");
+    strcpy(m.asset, "merzarkabul-airplay-speakers-esp32s3-n16r8-v1.0.1.bin");
     strcpy(m.sha256, VALID_SHA);
     strcpy(m.min_updater_version, "0.1.0");
     m.size = 1200000;
@@ -50,14 +50,14 @@ static hk_manifest_t good(void)
 void test_manifest(void)
 {
     /* --- an actual release URL has to fit ---
-     * The buffer was 96 bytes once, and the real URL for this repository is
-     * 97. Nothing failed at build time; every device would simply have refused
-     * every update as "field missing". Pinned here with the longest shape the
-     * project can realistically produce. */
+     * A buffer one byte too short fails nothing at build time; every device
+     * would simply refuse every update as "field missing". Pinned here with
+     * the longest shape the project can realistically produce. */
     {
         static const char k_real_url[] =
             "https://github.com/ktahatastan/esp32-airplay-speakers"
-            "/releases/download/v10.20.30/harman-kardom.bin";
+            "/releases/download/v10.20.30/"
+            "merzarkabul-airplay-speakers-esp32s3-n16r8-v10.20.30.bin";
         HK_CHECK(sizeof(k_real_url) <= HK_MANIFEST_ASSET_MAX);
 
         /* And the redirect target GitHub actually serves it from, which is
@@ -104,7 +104,7 @@ void test_manifest(void)
     strcpy(m.target, "esp32");
     HK_CHECK_EQ_INT(hk_manifest_validate(&m, &dev), HK_MANIFEST_ERR_TARGET);
     m = good();
-    strcpy(m.product, "Harman Kardom Pro");
+    strcpy(m.product, "merzarkabul-airplay-speakers2");
     HK_CHECK_EQ_INT(hk_manifest_validate(&m, &dev), HK_MANIFEST_ERR_PRODUCT);
 
     /* --- a stable device does not take a canary build --- */

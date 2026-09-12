@@ -1,4 +1,4 @@
-# Harman Kardom partition table - ESP32-S3 N8R2 DEVELOPMENT KIT, 8 MB flash.
+# Merzarkabul Airplay Speakers partition table - ESP32-S3 N8R2 DEVELOPMENT KIT, 8 MB flash.
 #
 # THIS IS NOT THE PRODUCT TABLE. The product board is N16R8 with 16 MB flash and
 # its table is partitions.csv (ADR-0010). This one exists only so the firmware can

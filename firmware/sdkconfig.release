@@ -1,4 +1,4 @@
-# Harman Kardom surum profili. Yalnizca .github/workflows/release.yml kullanir:
+# Merzarkabul Airplay Speakers surum profili. Yalnizca .github/workflows/release.yml kullanir:
 #
 #   idf.py -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.release" build
 #

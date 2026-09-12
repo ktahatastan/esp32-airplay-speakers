@@ -26,9 +26,9 @@ Bunların hiçbiri kozmetik değil. Her biri bir sonraki kişiyi ya var olanı y
 
 Düzeltirken tek kural: **yalnız deponun başka bir yerde zaten kanıtladığı şey yazıldı.** PTP rakamının bağlantısı, rakamın gerçekten durduğu yere çevrildi; bring-up kaydına, fizibilite sayfasının "ham günlük oradadır" dediği dış doğrulama eklendi. Günlükteki yanlış satır silinmedi, **üstü çizildi**: günlük tarihli bir kayıttır ve neyin ne zaman yanlış durduğu da kayıttır.
 
-## 2. SRP6a kullanıcı adı: `harmankardom` -> `wifiprov` (ADR-0014)
+## 2. SRP6a kullanıcı adı: `merzarkabul` -> `wifiprov` (ADR-0014)
 
-Üretici `harmankardom` üretiyordu, ekosistemin her istemcisi `wifiprov` varsayıyor. İsim tercihi gibi görünüyor ve değil: ad verifier'ın içine giriyor, yani yanlış tahmin eden istemci kanıt adımında düşer.
+Üretici `merzarkabul` üretiyordu, ekosistemin her istemcisi `wifiprov` varsayıyor. İsim tercihi gibi görünüyor ve değil: ad verifier'ın içine giriyor, yani yanlış tahmin eden istemci kanıt adımında düşer.
 
 Varsaymak yerine ESP-IDF `v5.5.1` okundu ve riskin **nerede** olduğu daraldı:
 
@@ -72,9 +72,9 @@ Filtreler ve limiter aylar önce yazılmıştı ve ikisi de frekans/tavan uydurm
 
 **Profil kendi kaynağını taşıyor.** Ölçülen DC dirençler saklanıyor ama çalışma zamanı onlarla hesap yapmıyor — crossover'ı türetmek tezgâhta insanın işi, cihaz sonucu taşır. Sonucun neyden türetildiğini kaydetmek profili ölçüme bağlanabilir kılar; ölçümünü adlandıramayan profil reddediliyor.
 
-**Tavanın yanında bir gerilim var.** Tavan dijital, sürücüye ulaşan volt, ve class-D bir amfide volt beslemeyi izler — burada besleme 16,8 V'tan 12,0 V'a düşen bir batarya. Tek bir saklanmış tavan sürücüyü tek bir şarj durumunda korur. Profil bu yüzden tavanı ölçüldüğü gerilimle saklıyor, `hk_profile_ceiling_at()` o anki gerilime taşıyor. Yön testte ayrıca iddia ediliyor: paket **doluyken** dijital tavan **aşağı** inmeli. Ters yazılsa sonuç "biraz kısık hoparlör" gibi değil, yalnız batarya doluyken ölen bir tweeter gibi görünürdü.
+**Tavanın yanında bir gerilim var.** Tavan dijital, sürücüye ulaşan volt, ve class-D bir amfide volt beslemeyi izler — burada besleme 8-26 V aralığındaki herhangi bir DC adaptör olabilir; V1 için 19 V. Tek bir saklanmış tavan sürücüyü tek bir besleme geriliminde korur. Profil bu yüzden tavanı ölçüldüğü gerilimle saklıyor, `hk_profile_ceiling_at()` yapılandırılan beslemeye (`CONFIG_HK_SUPPLY_MV`) taşıyor. Yön testte ayrıca iddia ediliyor: besleme **yükseldikçe** dijital tavan **aşağı** inmeli. Ters yazılsa sonuç "biraz kısık hoparlör" gibi değil, birisi 24 V adaptör taktığında ölen bir tweeter gibi görünürdü.
 
-Bu, F3'ün "limiter tam dolu ve düşük bataryada ayrı ayrı doğrulandı" ölçütünün firmware yarısıdır.
+Bu, F3'ün "tavan ölçüldüğü besleme gerilimiyle saklanır ve yapılandırılan beslemeye ölçeklenir" ölçütünün firmware yarısıdır.
 
 ## Doğrulama
 
@@ -97,5 +97,5 @@ Kimlik bilgisi günlüğü denetleyicisi bir satırımı yakaladı ve haklıydı
 - **Portalın hiçbir telefonda denenmediği.** Bugün kanıtlanan: iki profil derleniyor, ayrıştırıcı testli. Captive portal algılamasının iOS ve Android'de gerçekten tetiklendiği ölçülene kadar PRD-004 kapanmaz.
 - **WPA2 kurulum ağının BLE yolunu bozmadığı** varsayılıyor (BLE'de `service_key` anlamsız), ama doğrulanmadı.
 - **Verifier değişti** (ADR-0014), yani 5 Eylül'de çalışan QR'lı BLE kurulumu tekrar doğrulanmalı.
-- **Profil boş.** `G0` iki DC direnç, subsonic köşe, crossover köşesi ve iki dal kazancı; `G2` iki tavan ve ölçüldükleri paket gerilimi verecek. Kod tarafında değişecek bir şey yok.
-- Hiçbir fiziksel kapı açılmadı. `G0`-`G8` duruyor.
+- **Profil boş.** `G0` iki DC direnç, subsonic köşe, crossover köşesi ve iki dal kazancı; `G2` iki tavan ve ölçüldükleri besleme gerilimini verecek. Kod tarafında değişecek bir şey yok.
+- Hiçbir fiziksel kapı açılmadı. Açık kapıların hepsi duruyor.

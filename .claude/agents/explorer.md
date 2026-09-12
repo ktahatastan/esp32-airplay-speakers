@@ -1,6 +1,6 @@
 ---
 name: explorer
-description: Read-only explorer that maps the current state of the Harman Kardom repository — documents, accepted decisions, schematics, BOM rows and test evidence — before any change is planned. Use for research, locating the canonical source of a fact, or checking whether a decision already exists.
+description: Read-only explorer that maps the current state of the Merzarkabul Airplay Speakers repository — documents, accepted decisions, schematics, BOM rows and test evidence — before any change is planned. Use for research, locating the canonical source of a fact, or checking whether a decision already exists.
 model: inherit
 ---
 

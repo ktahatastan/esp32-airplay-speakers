@@ -11,7 +11,7 @@
  * impedances have not been measured (`G0`), so any number written here today
  * would be indistinguishable from a measured one tomorrow. What is defined is
  * the FORM -- which fields exist, which combinations are refused, and how a
- * ceiling measured at one pack voltage becomes a ceiling at another. When the
+ * ceiling measured at one supply voltage becomes a ceiling at another. When the
  * measurements land, the work is filling a struct in, not designing one.
  *
  * Why the profile carries its own provenance
@@ -26,11 +26,13 @@
  * --------------------------------------------
  * A limiter ceiling is a digital number, and what reaches the driver is volts.
  * For a class-D amplifier at a fixed digital level, those volts follow the
- * supply -- and the supply here is a battery that falls from 16.8 V to 12.0 V
- * as it empties (ADR-0003). So a single stored ceiling protects the driver at
- * exactly one state of charge and is either unsafe or needlessly quiet at
- * every other. The profile stores the ceiling WITH the pack voltage it was
- * measured at, and hk_profile_ceiling_at() moves it to the present one.
+ * supply -- and the supply here is whatever DC adapter is plugged into the
+ * barrel jack: 19 V nominal (ADR-0020), while the XH-A232 accepts anything
+ * from 8 V to 26 V. So a single stored ceiling protects the driver at exactly
+ * one supply voltage and is either unsafe or needlessly quiet at every other,
+ * and a bench profile listened to at 12 V would be too loud by half on a 24 V
+ * adapter. The profile stores the ceiling WITH the supply voltage it was
+ * measured at, and hk_profile_ceiling_at() moves it to the configured one.
  */
 #ifndef HK_PROFILE_H
 #define HK_PROFILE_H
@@ -49,14 +51,14 @@
 #define HK_PROFILE_SOURCE_MAX 32
 
 /**
- * The 4S pack's working range, in millivolts (ADR-0003).
+ * The amplifier's rated input range, in millivolts (XH-A232: 8-26 V).
  *
  * A bound on what a stored REFERENCE voltage may claim, not a threshold the
- * device acts on -- those live in hk_power. A profile whose ceiling was
- * measured at a voltage this pack cannot reach describes some other speaker.
+ * device acts on. A profile whose ceiling was measured at a voltage this
+ * amplifier cannot be fed describes some other speaker.
  */
-#define HK_PROFILE_PACK_MV_MIN 10000.0f
-#define HK_PROFILE_PACK_MV_MAX 17500.0f
+#define HK_PROFILE_SUPPLY_MV_MIN 8000.0f
+#define HK_PROFILE_SUPPLY_MV_MAX 26000.0f
 
 /** What a validation refused, so a bad profile is diagnosable at the bench. */
 typedef enum {
@@ -67,7 +69,7 @@ typedef enum {
     HK_PROFILE_BAD_FREQUENCY,   /**< A corner is absent, impossible, or misordered */
     HK_PROFILE_BAD_GAIN,        /**< A branch gain is outside (0, 1] */
     HK_PROFILE_BAD_CEILING,     /**< A limiter ceiling is outside (0, 1] */
-    HK_PROFILE_BAD_REFERENCE,   /**< The reference pack voltage is not this pack */
+    HK_PROFILE_BAD_REFERENCE,   /**< The reference supply voltage is outside what the amplifier can be fed */
     HK_PROFILE_BAD_TIMING,      /**< A release time of zero is a switch, not a release */
     HK_PROFILE_UNBUILDABLE,     /**< Valid on its own, impossible at this sample rate */
 } hk_profile_verdict_t;
@@ -95,9 +97,9 @@ typedef struct {
     float tweeter_gain;    /**< Linear, (0, 1]. Level-matches the two branches */
 
     /* ---- Protection (G2), each ceiling tied to the voltage it was measured at ---- */
-    float    reference_pack_mv;
-    float    woofer_ceiling;   /**< At reference_pack_mv, linear full scale */
-    float    tweeter_ceiling;  /**< At reference_pack_mv, linear full scale */
+    float    reference_supply_mv;
+    float    woofer_ceiling;   /**< At reference_supply_mv, linear full scale */
+    float    tweeter_ceiling;  /**< At reference_supply_mv, linear full scale */
     uint32_t release_ms;
     uint32_t hold_ms;
 } hk_profile_t;
@@ -133,27 +135,29 @@ hk_profile_verdict_t hk_profile_from_blob(const void *blob, size_t length,
                                           hk_profile_t *out);
 
 /**
- * The ceiling that protects the driver at the pack voltage it has right now.
+ * The ceiling that protects the driver at the supply voltage the amplifier is
+ * running from.
  *
  * What reaches the driver is (digital level x supply), so holding the volts
- * constant means moving the level the other way. A pack that has fallen below
- * the reference allows a HIGHER digital ceiling for the same volts, capped at
- * full scale -- past that there is no more signal to give.
+ * constant means moving the level the other way. A supply below the reference
+ * allows a HIGHER digital ceiling for the same volts, capped at full scale --
+ * past that there is no more signal to give. A supply above it, which is the
+ * case when a bench profile meets a 19 V adapter, lowers the ceiling.
  *
  * Returns 0 when it cannot answer, which every caller must treat as "do not
  * play" rather than as silence.
  */
-float hk_profile_ceiling_at(float ceiling_at_reference, float reference_mv, float pack_mv);
+float hk_profile_ceiling_at(float ceiling_at_reference, float reference_mv, float supply_mv);
 
 /**
- * Turn a profile into a chain, at this sample rate and this pack voltage.
+ * Turn a profile into a chain, at this sample rate and this supply voltage.
  *
  * Fails rather than clamping. A corner that the filter design refuses at this
  * sample rate is a profile written for a different one, and quietly moving it
  * would produce a crossover nobody chose.
  */
 hk_profile_verdict_t hk_profile_build(const hk_profile_t *profile,
-                                      float fs_hz, float pack_mv,
+                                      float fs_hz, float supply_mv,
                                       hk_profile_chain_t *out);
 
 /** A one-word reason, for a log line or a bench report. */

@@ -14,7 +14,7 @@
 
 static const char *k_good =
     "{"
-    "\"product\":\"harman-kardom\","
+    "\"product\":\"merzarkabul-airplay-speakers\","
     "\"version\":\"0.2.0\","
     "\"channel\":\"stable\","
     "\"target\":\"esp32s3\","
@@ -33,7 +33,7 @@ void test_manifest_json(void)
     /* ===== a well-formed manifest arrives whole ===== */
     HK_CHECK(hk_manifest_parse(k_good, &m));
     HK_CHECK_EQ_INT(m.present, HK_MANIFEST_REQUIRED_FIELDS);
-    HK_CHECK(strcmp(m.product, "harman-kardom") == 0);
+    HK_CHECK(strcmp(m.product, "merzarkabul-airplay-speakers") == 0);
     HK_CHECK(strcmp(m.version, "0.2.0") == 0);
     HK_CHECK(strcmp(m.target, "esp32s3") == 0);
     HK_CHECK(strcmp(m.hw_revision, "prototype-n16r8") == 0);
@@ -50,7 +50,7 @@ void test_manifest_json(void)
 
     /* ===== a missing field is absent, and the rest still arrive ===== */
     HK_CHECK(hk_manifest_parse(
-        "{\"product\":\"harman-kardom\",\"version\":\"0.2.0\"}", &m));
+        "{\"product\":\"merzarkabul-airplay-speakers\",\"version\":\"0.2.0\"}", &m));
     HK_CHECK((m.present & HK_MF_PRODUCT) != 0);
     HK_CHECK((m.present & HK_MF_VERSION) != 0);
     HK_CHECK((m.present & HK_MF_SIZE) == 0);
@@ -63,7 +63,7 @@ void test_manifest_json(void)
     HK_CHECK((m.present & HK_MF_SIZE) == 0);
     HK_CHECK(hk_manifest_parse("{\"product\":null}", &m));
     HK_CHECK((m.present & HK_MF_PRODUCT) == 0);
-    HK_CHECK(hk_manifest_parse("{\"product\":[\"harman-kardom\"]}", &m));
+    HK_CHECK(hk_manifest_parse("{\"product\":[\"merzarkabul-airplay-speakers\"]}", &m));
     HK_CHECK((m.present & HK_MF_PRODUCT) == 0);
 
     /* ===== an empty string is not a value either ===== */
@@ -121,7 +121,7 @@ void test_manifest_json(void)
 
     /* ===== unknown fields are ignored rather than fatal ===== */
     HK_CHECK(hk_manifest_parse(
-        "{\"product\":\"harman-kardom\",\"future_field\":{\"a\":1}}", &m));
+        "{\"product\":\"merzarkabul-airplay-speakers\",\"future_field\":{\"a\":1}}", &m));
     HK_CHECK((m.present & HK_MF_PRODUCT) != 0);
 
     /* ===== a NULL destination must not be written through ===== */

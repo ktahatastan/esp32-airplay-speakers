@@ -1,6 +1,6 @@
 ---
 name: hardware-worker
-description: Bounded implementation worker for Harman Kardom hardware, power, battery and schematic tasks assigned by the orchestrator.
+description: Bounded implementation worker for Merzarkabul Airplay Speakers hardware, power and schematic tasks assigned by the orchestrator.
 model: inherit
 readonly: false
 is_background: false

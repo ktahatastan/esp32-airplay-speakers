@@ -1,6 +1,6 @@
 ---
 name: explorer
-description: Read-only explorer for locating relevant Harman Kardom documents, decisions, schematics and test evidence before a change is planned.
+description: Read-only explorer for locating relevant Merzarkabul Airplay Speakers documents, decisions, schematics and test evidence before a change is planned.
 model: inherit
 readonly: true
 is_background: true

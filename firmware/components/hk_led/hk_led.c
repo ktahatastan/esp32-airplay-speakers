@@ -29,9 +29,6 @@ hk_led_state_t hk_led_resolve(const hk_led_inputs_t *inputs)
         break;
     }
 
-    if (inputs->battery_low) {
-        return HK_LED_BATTERY_LOW;
-    }
     if (inputs->playing) {
         return HK_LED_PLAYING;
     }
@@ -63,7 +60,6 @@ static const hk_led_pattern_t PATTERNS[] = {
      * to be watched and this one is not. */
     [HK_LED_PLAYING]      = {160, 0,   255, HK_LED_ANIM_BREATHE, 3000, HK_LED_BRIGHTNESS_AMBIENT},
     [HK_LED_OTA]          = {0,   220, 255, HK_LED_ANIM_BLINK_SLOW, 800, HK_LED_BRIGHTNESS_ALERT},
-    [HK_LED_BATTERY_LOW]  = {255, 0,   0,   HK_LED_ANIM_BLINK_SLOW, 2000, HK_LED_BRIGHTNESS_NORMAL},
     [HK_LED_ERROR]        = {255, 0,   0,   HK_LED_ANIM_BLINK_FAST, 250, HK_LED_BRIGHTNESS_ALERT},
     [HK_LED_HOLD_NETWORK] = {255, 200, 0,   HK_LED_ANIM_BLINK_FAST, 400, HK_LED_BRIGHTNESS_ALERT},
     [HK_LED_HOLD_FACTORY] = {255, 0,   0,   HK_LED_ANIM_BLINK_FAST, 150, HK_LED_BRIGHTNESS_ALERT},
@@ -87,7 +83,6 @@ const char *hk_led_state_name(hk_led_state_t state)
     case HK_LED_READY:        return "ready";
     case HK_LED_PLAYING:      return "playing";
     case HK_LED_OTA:          return "ota";
-    case HK_LED_BATTERY_LOW:  return "battery_low";
     case HK_LED_ERROR:        return "error";
     case HK_LED_HOLD_NETWORK: return "hold_network";
     case HK_LED_HOLD_FACTORY: return "hold_factory";

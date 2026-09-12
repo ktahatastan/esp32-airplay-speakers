@@ -63,7 +63,7 @@ Aynı şekilde ağ da başlamadı: kimlik bilgisi olmadan provisioning açılmı
 
 `F0`'ın kalan işi ikiye ayrıldı ve **yarısı hâlâ açık**. Açılış raporu doğrulandı. GPIO tablosu `candidate` kaldı ve bilerek: açılan bir kart pin tablosunu kanıtlamaz — firmware o pinleri sürmedi, ve pinlerin ucunda ne olduğu kartın özelliğidir, imajın değil. ADR-0011 `accepted` için kartın kendi şemasını istiyor.
 
-Hiçbir fiziksel kapı açılmadı. Kartta sürücü, amfi, DAC, batarya yok.
+Hiçbir fiziksel kapı açılmadı. Kartta sürücü, amfi, DAC yok.
 
 ## Sonraki adım
 

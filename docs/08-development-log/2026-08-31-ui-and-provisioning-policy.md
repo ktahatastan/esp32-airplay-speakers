@@ -69,5 +69,5 @@ Düzeltmelerin gerçekten koruma sağladığını mutasyon testiyle gösterdim. 
 ## Kalan iş
 
 - `F4`: Wi-Fi, mDNS, SoftAP portal ve BLE Unified Provisioning sürücü katmanı; cihaz başına benzersiz PoP üretimi; parolanın loglarda görünmediğinin otomatik taranması.
-- `F5`: GPIO ve PWM sürücü katmanı; LED PWM'inin I2S zamanlamasına etkisinin ölçülmesi (G3).
-- Kullanıcı resetinin `factory_cal`'a dokunmadığı testi `F6` deposunu bekliyor.
+- `F5`: GPIO ve PWM sürücü katmanı; LED PWM'inin I2S zamanlamasına etkisinin ölçülmesi (G1).
+- Kullanıcı resetinin `factory_cal`'a dokunmadığı testi depolama katmanını bekliyor.

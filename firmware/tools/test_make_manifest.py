@@ -22,7 +22,7 @@ import make_manifest  # noqa: E402
 TOOL = Path(__file__).resolve().parent / "make_manifest.py"
 
 
-def make_image(version="0.2.0", project="harman-kardom", secure_version=0,
+def make_image(version="0.2.0", project="merzarkabul-airplay-speakers", secure_version=0,
                chip_id=0x0009, magic=0xABCD5432, first_byte=0xE9, payload=4096):
     """Assemble a minimal but structurally correct ESP32-S3 app image."""
     header = bytearray(24)
@@ -51,11 +51,11 @@ class TestReadAppDesc(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
 
     def test_reads_the_fields_it_publishes(self):
-        path = self._write(make_image(version="1.4.2", project="harman-kardom",
+        path = self._write(make_image(version="1.4.2", project="merzarkabul-airplay-speakers",
                                       secure_version=3))
         desc = make_manifest.read_app_desc(path)
         self.assertEqual(desc["version"], "1.4.2")
-        self.assertEqual(desc["project_name"], "harman-kardom")
+        self.assertEqual(desc["project_name"], "merzarkabul-airplay-speakers")
         self.assertEqual(desc["secure_version"], 3)
 
     def test_rejects_a_non_image(self):
@@ -105,7 +105,7 @@ class TestBuildManifest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         manifest = json.loads(out.read_text())
         self.assertEqual(manifest["version"], "0.2.0")
-        self.assertEqual(manifest["product"], "harman-kardom")
+        self.assertEqual(manifest["product"], "merzarkabul-airplay-speakers")
         self.assertEqual(manifest["target"], "esp32s3")
         self.assertEqual(manifest["size"], len(blob))
         self.assertEqual(manifest["sha256"], hashlib.sha256(blob).hexdigest())
@@ -297,7 +297,7 @@ class TestEndToEnd(unittest.TestCase):
     release.
     """
 
-    DEVICE = ("harman-kardom", "esp32s3", "prototype-n16r8", "stable")
+    DEVICE = ("merzarkabul-airplay-speakers", "esp32s3", "prototype-n16r8", "stable")
 
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -308,7 +308,8 @@ class TestEndToEnd(unittest.TestCase):
         image.write_bytes(make_image(version=version))
         out = Path(self.tmp.name) / "manifest.json"
         url = url or ("https://github.com/ktahatastan/esp32-airplay-speakers"
-                      f"/releases/download/v{version}/harman-kardom.bin")
+                      f"/releases/download/v{version}/"
+                      f"merzarkabul-airplay-speakers-esp32s3-n16r8-v{version}.bin")
         result = subprocess.run(
             [sys.executable, str(TOOL), "--image", str(image), "--tag", f"v{version}",
              "--asset-url", url, "--out", str(out), *extra],
@@ -361,7 +362,7 @@ class TestEndToEnd(unittest.TestCase):
 
     def test_other_hardware_is_refused(self):
         result = self._judge(self._manifest(),
-                             device=("harman-kardom", "esp32s3",
+                             device=("merzarkabul-airplay-speakers", "esp32s3",
                                      "rev-b", "stable"))
         self.assertIn("wrong_hardware", result.stdout, result.stdout)
 

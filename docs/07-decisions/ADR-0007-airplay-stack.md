@@ -76,7 +76,7 @@ Bu, bizim donanımımızda çalışacağının kanıtı değildir; yalnız proto
 
 ### Lisansın kalıcı sonucu
 
-Bu seçim projeyi **ticari olmayan** kullanıma bağlar. Harman Kardom firmware'i satılamaz veya ticari bir üründe kullanılamaz; bunun için yazarın yazılı izni gerekir.
+Bu seçim projeyi **ticari olmayan** kullanıma bağlar. Merzarkabul Airplay Speakers firmware'i satılamaz veya ticari bir üründe kullanılamaz; bunun için yazarın yazılı izni gerekir.
 
 [[ADR-0008-github-releases-ota|ADR-0008]] release hattı için somut zorunluluk: yayımlanan her firmware asset'i, vendor edilmiş kaynağın lisans metnini ve telif bildirimini taşımalıdır. Bu, `F7` release iş listesine girer.
 
@@ -89,7 +89,7 @@ Bu seçim projeyi **ticari olmayan** kullanıma bağlar. Harman Kardom firmware'
 Havadan ölçüm yapılmaz: sesin yayılma gecikmesi `1 ms ≈ 34 cm`'dir ve mikrofon yerleşimi hatası ölçülecek büyüklüğü aşar.
 
 1. Dört cihaz aynı AirPlay grubuna alınır ve aynı test sinyali çalınır: `1 kHz` tek darbe treni, tercihen 10 s aralıklı.
-2. İki cihazın **DAC analog çıkışından** (`TP14`) eşzamanlı iki kanallı kayıt alınır. Amfi çıkışı kullanılmaz: Class-D anahtarlama ve BTL topolojisi ölçümü bozar.
+2. İki cihazın **DAC analog çıkışından** (PCM5102A `LOUT` prob noktası) eşzamanlı iki kanallı kayıt alınır. Amfi çıkışı kullanılmaz: Class-D anahtarlama ve BTL topolojisi ölçümü bozar.
 3. Kanallar arası gecikme `Δt`, çapraz korelasyonun tepe noktasından hesaplanır.
 4. Kayıt 2 saat boyunca 5 dakikada bir tekrarlanır. Her cihaz çifti en az bir kez ölçülür.
 5. Aynı düzende paket kaybı, yeniden bağlanma ve tek cihazın kapatılması senaryoları çalıştırılır.

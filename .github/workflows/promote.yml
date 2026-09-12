@@ -48,6 +48,9 @@ jobs:
             *) echo "refusing '$RAW_TAG': not a vMAJOR.MINOR.PATCH tag"; exit 1 ;;
           esac
           echo "value=$RAW_TAG" >> "$GITHUB_OUTPUT"
+          # The same name release.yml derives from the same tag. Promotion
+          # fetches the asset by it, so it must not be typed anywhere else.
+          echo "asset=merzarkabul-airplay-speakers-esp32s3-n16r8-$RAW_TAG.bin" >> "$GITHUB_OUTPUT"
 
       - name: fetch the published binary
         env:
@@ -55,15 +58,15 @@ jobs:
         run: |
           gh release download "${{ steps.tag.outputs.value }}" \
             --repo "${{ github.repository }}" \
-            --pattern harman-kardom.bin --dir published
-          test -s published/harman-kardom.bin
+            --pattern "${{ steps.tag.outputs.asset }}" --dir published
+          test -s "published/${{ steps.tag.outputs.asset }}"
 
       - name: describe it as stable
         run: |
           python3 firmware/tools/make_manifest.py \
-            --image published/harman-kardom.bin \
+            --image "published/${{ steps.tag.outputs.asset }}" \
             --tag "${{ steps.tag.outputs.value }}" \
-            --asset-url "https://github.com/${{ github.repository }}/releases/download/${{ steps.tag.outputs.value }}/harman-kardom.bin" \
+            --asset-url "https://github.com/${{ github.repository }}/releases/download/${{ steps.tag.outputs.value }}/${{ steps.tag.outputs.asset }}" \
             --channel stable \
             --out manifest.json
           cat manifest.json
@@ -76,7 +79,7 @@ jobs:
           python3 - <<'PY'
           import hashlib, json, pathlib, sys
           manifest = json.loads(pathlib.Path("manifest.json").read_text())
-          blob = pathlib.Path("published/harman-kardom.bin").read_bytes()
+          blob = pathlib.Path("published/${{ steps.tag.outputs.asset }}").read_bytes()
           if manifest["sha256"] != hashlib.sha256(blob).hexdigest():
               sys.exit("manifest does not describe the published binary")
           if manifest["size"] != len(blob):

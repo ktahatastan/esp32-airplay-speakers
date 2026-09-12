@@ -89,7 +89,7 @@ Mutasyon testi bir kez gerçek bir kusur gösterdi. URL doğrulayıcıda `@` ve 
 - Güncelleme zamanlayıcısı (rastgele gecikme, günde bir kontrol, backoff) ve LED entegrasyonu yok.
 - USB/UART recovery prosedürü yazılmadı.
 - `HK_SIGNING_KEY` üretilmedi ve `release` ortamı korumaya alınmadı. Bu sahibinin işi; anahtar çevrimdışı üretilmeli ve CI'da asla üretilmemeli.
-- `G6` matrisinin **on iki satırının hiçbiri çalıştırılmadı**. Donanım elde değil. Bu aşama "yazıldı", "kanıtlandı" değil.
+- `G6` matrisinin **on bir satırının hiçbiri çalıştırılmadı**. Donanım elde değil. Bu aşama "yazıldı", "kanıtlandı" değil.
 
 ## Sıradaki
 

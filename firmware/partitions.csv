@@ -1,4 +1,4 @@
-# Harman Kardom partition table - ESP32-S3 N16R8, 16 MB flash (ADR-0010).
+# Merzarkabul Airplay Speakers partition table - ESP32-S3 N16R8, 16 MB flash (ADR-0010).
 #
 # Layout rules this table has to satisfy, from docs/03-firmware/ota-and-release-plan.md:
 #   - two equally sized application slots so an OTA can be rolled back (ADR-0008)

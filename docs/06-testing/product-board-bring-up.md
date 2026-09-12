@@ -10,7 +10,7 @@ tags: [testing, product-board, bring-up, firmware, evidence]
 
 Bu, deponun firmware'inin **ürün kartında** ilk kez çalıştığı kayıt. Kart, [[../07-decisions/ADR-0010-esp32-s3-n16r8-board|ADR-0010]]'un kilitlediği `N16R8`'dir — [[devkit-bring-up|geliştirme kartı]] değil.
 
-> Buradaki hiçbir satır bir fiziksel kapı (`G0`-`G8`) açmaz. Karta sürücü, amfi, DAC ve batarya bağlı değildi; ölçülen tek şey işlemci, bellek ve bölüm yerleşimidir.
+> Buradaki hiçbir satır bir fiziksel kapı (`G0`-`G8`) açmaz. Karta sürücü, amfi, DAC bağlı değildi; ölçülen tek şey işlemci, bellek ve bölüm yerleşimidir.
 
 ## Kart kimliği
 
@@ -84,7 +84,7 @@ Dört bölge, dördünde de `Hash of data verified`:
 | `0x0` | `bootloader.bin` | 22.496 | `d19e2ad8f9349438` |
 | `0x8000` | `partition-table.bin` | 3.072 | `9e7f93481767aa09` |
 | `0xf000` | `ota_data_initial.bin` | 8.192 | `7d2c7ac4888bfd75` |
-| `0x20000` | `harman-kardom.bin` | 1.324.368 | `d45eb850f8592cfd` |
+| `0x20000` | `merzarkabul-airplay-speakers.bin` | 1.324.368 | `d45eb850f8592cfd` |
 
 Depo durumu: `cd222d4`, çalışma ağacı temiz.
 
@@ -105,7 +105,7 @@ I (898) esp_psram: Adding pool of 8192K of PSRAM memory to heap allocator
 I (905) spi_flash: detected chip: boya
 I (907) spi_flash: flash io: qio
 I (955) hk_health: image state 2: nothing to confirm
-I (979) hk: Harman Kardom
+I (979) hk: Merzarkabul Airplay Speakers
 I (980) hk: firmware    0.1.0
 I (980) hk: idf         v5.5.1
 I (987) hk: slot        ota_0 at 0x00020000, 7208960 bytes
@@ -115,12 +115,11 @@ I (999) hk: flash       16 MB detected
 I (1003) hk: psram       8 MB
 I (1006) hk: free        289667 B internal (largest block 196608 B), 8386156 B psram
 I (1013) hk: device id   932C
-I (1016) hk: airplay     Harman Kardom 932C
-I (1020) hk: ble         HarmanKardom-932C
-I (1023) hk: softap      HarmanKardom-Setup-932C
-I (1028) hk: mdns        harman-kardom-932c.local
+I (1016) hk: airplay     Merzarkabul 932C
+I (1020) hk: ble         Merzarkabul-932C
+I (1023) hk: softap      Merzarkabul-Setup-932C
+I (1028) hk: mdns        merzarkabul-932c.local
 I (1077) hk: storage     user=use calibration=fail_safe
-I (1110) hk: power       UNKNOWN (no calibrated limits, no ADC driver)
 I (1116) hk: audio       NOT permitted
 I (1120) hk: output      SILENT (i2s=0 dac=0 amp=0)
 I (1124) hk: first boot  WAIT (INCOMPLETE)
@@ -153,7 +152,7 @@ Boş bellek, geliştirme kartına göre beklendiği gibi büyük: **8.386.156 B 
 - **GPIO tablosu hâlâ `candidate`.** Açılış raporu tabloyu basıyor ve kendini `candidate` diye adlandırıyor. [[../07-decisions/ADR-0011-audio-side-gpio-reservation|ADR-0011]] tabloyu `accepted` yapmak için açılış testini yeterli saymıyor: **satın alınan kartın kendi şeması** gerekiyor. Kart açıldı diye pinler doğru demek değil — firmware o pinleri henüz sürmedi, ve kartın üzerinde o pinlere bağlı ne olduğu bilinmiyor.
 - **Wi-Fi başlamadı** ve bu doğru davranış: `factory_cal` yok, provisioning kimlik bilgisi yok, firmware zayıf moda düşmeyi reddediyor (`network did not start: ESP_ERR_NOT_FOUND`). Ağ yolu bu kartta henüz hiç sınanmadı.
 - **`hk_portal` çalıştırılmadı.** Kurulum ağı ancak kimlik bilgileri yazıldıktan sonra açılır.
-- **Hiçbir fiziksel kapı açılmadı.** Kartta sürücü, amfi, DAC, batarya yok.
+- **Hiçbir fiziksel kapı açılmadı.** Kartta sürücü, amfi, DAC yok.
 
 ## Küçük bir tutarsızlık
 
@@ -199,7 +198,7 @@ hk_net: setup network key loaded: 12 B
 hk_portal: setup page open at http://192.168.4.1/
 wifi:mode : sta + softAP
 esp_netif_lwip: DHCP server started on interface WIFI_AP_DEF with IP: 192.168.4.1
-wifi_prov_mgr: Provisioning started with service name : HarmanKardom-Setup-932C
+wifi_prov_mgr: Provisioning started with service name : Merzarkabul-Setup-932C
 hk_net: provisioning open over softap
 ```
 
@@ -210,11 +209,11 @@ hk_net: provisioning open over softap
 | ADR-0015'in `ap_pass`'i yükleniyor | **PASS** — 12 B, ilk kez bir cihazda |
 | Portal ayağa kalkıyor | **PASS** — `192.168.4.1` |
 | SoftAP + DHCP açılıyor | **PASS** |
-| Provisioning doğru adla açılıyor | **PASS** — `HarmanKardom-Setup-932C` |
+| Provisioning doğru adla açılıyor | **PASS** — `Merzarkabul-Setup-932C` |
 | Açılış döngüsü / panik | **PASS** — 1 açılış, 0 panik |
 | Ses hâlâ izinsiz | **PASS** — kalibrasyon var ama sürücü profili yok |
 
-**Dışarıdan doğrulanmadı:** Mac'in komşu ağ taraması 17 ağ döndürdüğü hâlde `HarmanKardom-Setup-932C`'yi göstermedi. Bu, ağın yayında olmadığı anlamına gelmez — macOS'un komşu listesi önbelleklidir ve seri porta her dokunuşum kartı sıfırlayıp AP'yi indirip kaldırıyor. Kesin cevap telefondan gelecek: ağ listesinde görünüyor mu, ve **kilit simgesi var mı** (ADR-0015'in WPA2 iddiası).
+**Dışarıdan doğrulanmadı:** Mac'in komşu ağ taraması 17 ağ döndürdüğü hâlde `Merzarkabul-Setup-932C`'yi göstermedi. Bu, ağın yayında olmadığı anlamına gelmez — macOS'un komşu listesi önbelleklidir ve seri porta her dokunuşum kartı sıfırlayıp AP'yi indirip kaldırıyor. Kesin cevap telefondan gelecek: ağ listesinde görünüyor mu, ve **kilit simgesi var mı** (ADR-0015'in WPA2 iddiası).
 
 ## Kart üzerindeki durum LED'i
 
@@ -253,58 +252,3 @@ Düzeltme iki dalı da kapatıyor: pencere radyonun sahibiyken istasyon bağlanm
 Operatör kurulum ağını telefonunun Wi-Fi listesinde **gördü**. Mac'in `system_profiler` komşu listesi onu göstermemişti; o liste önbelleklidir ve seri porta her dokunuş kartı sıfırlayıp AP'yi indirip kaldırıyordu. Cihazın kendi logu ile dış gözlem bu kez uyuştu.
 
 **Hâlâ doğrulanmadı:** ağın WPA2 olduğu (kilit simgesi), portalın kendiliğinden açıldığı, ve kurulumun uçtan uca tamamlandığı.
-
-## Ekran: kare bütçesi ölçümü (kart 056C, 2026-09-08)
-
-Kartın kendi raporladığı sayılar. Ölçüm ilk kareden **sonra** alınıyor: SPI, PSRAM
-kaynaklı bir aktarımın DMA tamponlarını ilk gönderimde ayırdığı için, öncesinde
-alınan sayı yanlış soruyu cevaplıyor.
-
-| aşama | render | aktarım | galaksi | kare | 42 ms'yi aşan |
-|---|---:|---:|---:|---:|---|
-| ilk hâli | 112.356 µs | 9.500 µs | 3.029 µs | ~62 ms | hepsi |
-| vignette geçişi kaldırıldı | 52.861 µs | 9.465 µs | 3.060 µs | ~52 ms | — |
-| iris satır aralığı + 240 MHz | **5.604 µs** | 9.494 µs | 2.912 µs | **22 ms** | **720 karede 0** |
-
-Ham kayıt:
-
-```text
-I (8322) hk_lcd: first frame sent: render 5604 us, transfer 9494 us, sky 2912 us;
-                 internal free 151663 B (largest block 77824 B)
-I (13331) hk_lcd: 120 frames, 0 over 42 ms; last 22 ms (sky 2904 us)
-I (38551) hk_lcd: 720 frames, 0 over 42 ms; last 23 ms (sky 2926 us)
-```
-
-Panel aktarımı 80 MHz'de 9,5 ms ve kısaltılamaz — 240×240×16 bit = 115.200 bayt.
-Kısalması gereken render'dı.
-
-### Dahili RAM
-
-| durum | boş | en büyük blok |
-|---|---:|---:|
-| ekran eklenmeden önce, iki taşıma açık | 148.007 B | — |
-| ekran eklendikten sonra (kuyruk derinliği 10) | **6.291 B** | 2.176 B |
-| kuyruk derinliği 2 | 81.783 B | 31.744 B |
-| tam arayüz, 240 MHz | 151.663 B | 77.824 B |
-
-### Karekod: çözücüyle doğrulama
-
-İkinci bir kodlayıcıyla modül karşılaştırması yapıldı ve **tutmadı** — aynı sürüm ve
-boyut, farklı maske. Maske seçimi standardın serbest bıraktığı bir arama olduğu için
-bu yanlış testtir. Doğru test çözmektir; OpenCV `QRCodeDetector` ile:
-
-```text
-qr0: DECODED OK  'HELLO'
-qr1: DECODED OK  'WIFI:T:WPA;S:HarmanKardom-Setup-932C;P:...;;'
-qr2: DECODED OK  '{"ver":"v1","name":"HarmanKardom-932C","username":"wifiprov",...'
-qr3: DECODED OK  'WIFI:T:WPA;S:HarmanKardom-Setup-932C;P:4719;;'
-4/4 decoded correctly
-```
-
-### Hâlâ açık
-
-- **Yön.** Panelin aynalanıp aynalanmadığı operatör tarafından okunmadı. Açılıştaki
-  yön kartı (`ÜST/SOL/SAĞ/ALT` + asimetrik bir `F`) bunu X ve Y için ayrı ayrı çözer;
-  merkezi artı işareti çözemez, çünkü her çevirme altında aynı görünür.
-- Ekranın yazı ve simge okunabilirliği yalnız host PNG'lerinde bakıldı; 240 piksellik
-  yuvarlak camda kol mesafesinden hiçbir şey doğrulanmadı.

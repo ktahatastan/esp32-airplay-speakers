@@ -13,7 +13,7 @@
 static hk_audio_timing_t timing(void)
 {
     /* Stand-ins. The real settle times come from watching the rails on a scope
-     * at G1/G3 and do not exist yet. */
+     * at G1 and do not exist yet. */
     hk_audio_timing_t t = {.clock_settle_ms = 50, .dac_settle_ms = 100,
                            .mute_settle_ms = 20};
     return t;
@@ -133,7 +133,7 @@ void test_audio(void)
     tick(&seq, true, true, 50);
     tick(&seq, true, true, 150);
     HK_CHECK_EQ_INT(seq.state, HK_AUDIO_PLAYING);
-    tick(&seq, false, true, 200);            /* pack went flat, or charging started */
+    tick(&seq, false, true, 200);            /* permission withdrawn */
     HK_CHECK_EQ_INT(seq.state, HK_AUDIO_MUTING);
     HK_CHECK(!hk_audio_outputs(seq.state).amp_enabled);
 

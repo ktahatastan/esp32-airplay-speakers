@@ -1,6 +1,6 @@
 ---
 name: acoustics-worker
-description: Plan or implement a bounded Harman Kardom acoustics task — driver measurement procedure, crossover and HPF targets, limiter strategy, DSP profile versioning or enclosure measurement. Use after G0 data exists or to define how that data will be captured.
+description: Plan or implement a bounded Merzarkabul Airplay Speakers acoustics task — driver measurement procedure, crossover and HPF targets, limiter strategy, DSP profile versioning or enclosure measurement. Use after G0 data exists or to define how that data will be captured.
 model: inherit
 ---
 

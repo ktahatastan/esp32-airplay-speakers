@@ -83,11 +83,11 @@ Portal kendi taramasını yapıyor, yöneticinin `prov-scan` uç noktası kendi 
 
 ```text
 NimBLE: GAP procedure initiated: advertise
-wifi_prov_mgr: Provisioning started with service name : HarmanKardom-932C
+wifi_prov_mgr: Provisioning started with service name : Merzarkabul-932C
 wifi:mode : sta + softAP
 esp_netif_lwip: DHCP server started ... 192.168.4.1
 hk_portal: setup page open at http://192.168.4.1/
-hk_net: provisioning open on both: ble "HarmanKardom-932C" and softap "HarmanKardom-Setup-932C"
+hk_net: provisioning open on both: ble "Merzarkabul-932C" and softap "Merzarkabul-Setup-932C"
 ```
 
 **Kapanmayanlar** ve hepsi operatör kaydı ister:

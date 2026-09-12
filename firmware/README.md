@@ -1,4 +1,4 @@
-# Harman Kardom firmware
+# Merzarkabul Airplay Speakers firmware
 
 ESP32-S3 firmware for one speaker. Four speakers run the same image and are told
 apart by a device identity derived from their MAC.
@@ -176,7 +176,7 @@ ctest --test-dir build/host-tests --output-on-failure
 
 # 2. Partition layout, and the image size gate once a build exists
 python3 firmware/tools/check_partitions.py
-python3 firmware/tools/check_partitions.py --app-size firmware/build/harman-kardom.bin
+python3 firmware/tools/check_partitions.py --app-size firmware/build/merzarkabul-airplay-speakers.bin
 
 # 3. The partition validator's own tests, so a gate that accepts everything
 #    cannot pass unnoticed
@@ -240,8 +240,8 @@ its pin table: the firmware has not driven those pins, and what sits on them is 
 property of the board, not of the image. ADR-0011 wants the purchased board's own
 schematic before the table is `accepted`, and it has not been checked against one.
 
-**No physical gate is open.** No driver, amplifier, DAC or battery has been
-attached to anything, so `G0`-`G8` are all untouched, and neither the
+**No physical gate is open.** No driver, amplifier or DAC has been attached to
+anything, so `G0`-`G2` and `G6`-`G8` are all untouched, and neither the
 twelve-second button press nor four-device synchronisation has ever been
 exercised. The product profile also leaves the AirPlay receiver out entirely
 (`CONFIG_HK_AIRPLAY` defaults to `n`); it is the devkit profile that enables it.
@@ -301,7 +301,7 @@ impedance has not been measured. Until the relevant gate passes:
 - the tweeter path stays muted without a verified high-pass and limiter
 - a user reset must never erase `factory_cal`: enforced by a partition boundary,
   a read-only open, and `tools/check_storage_isolation.py` in CI
-- OTA must not start on low battery, high temperature or during playback
+- OTA must not start during playback or without Wi-Fi
 
 An automated test can show that logic behaves. It cannot show that a gate
 passed; only a recorded operator measurement can.

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Harman Kardom repository integrity checker.
+"""Merzarkabul Airplay Speakers repository integrity checker.
 
 Validates what the project claims about itself: that wiki links resolve, that
 notes carry the frontmatter the contract requires, that ADR statuses use the
-agreed vocabulary, and that decisions locked by an ADR are not silently
-contradicted somewhere else in the vault.
+agreed vocabulary, that decisions locked by an ADR are not silently
+contradicted somewhere else in the vault, and that no file in the tree names a
+part the product does not have.
 
 This is a documentation check. It never asserts that a physical gate passed.
 
@@ -20,6 +21,7 @@ import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Iterator
 
 ROOT = Path(__file__).resolve().parent.parent
 # Third-party and generated trees. managed_components holds vendored ESP-IDF
@@ -30,6 +32,9 @@ SKIP_DIRS = {".git", ".obsidian", "node_modules", "generated",
              # not this project's notes and would be judged against a
              # frontmatter contract they never agreed to.
              ".venv", "venv", "site-packages", "__pycache__"}
+# Build trees (build, build-devkit, build-release, ...) hold generated
+# sdkconfigs and compile databases: output, not record.
+SKIP_DIR_PREFIXES = ("build",)
 
 # The vault frontmatter contract applies to notes under docs/ only. Agent and
 # skill definitions follow their own tool-defined schema, checked separately.
@@ -45,25 +50,42 @@ SKILL_GLOB = ".agents/skills/*/SKILL.md"
 REQUIRED_FRONTMATTER = ("status", "owner", "updated")
 ADR_STATUSES = {"proposed", "accepted", "superseded", "rejected"}
 
+# ADR numbers that stay vacant. A number is a permanent identifier: once
+# issued it is never issued again, so the index check refuses a file that
+# takes one of these.
+RETIRED_ADR_NUMBERS = {3, 4, 9, 17, 18, 19}
+ADR_NUMBER = re.compile(r"^ADR-(\d{4})")
+
 # `\|` is the Obsidian escape for an alias pipe inside a markdown table cell.
 WIKILINK = re.compile(r"\[\[([^\]|#\\]+)\\?(?:#[^\]|\\]*)?\\?(?:\|[^\]]*)?\]\]")
 FRONTMATTER = re.compile(r"\A---\n(.*?)\n---\n", re.DOTALL)
 DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
-# Canonical values locked by an accepted ADR. A hit outside `allowed` means the
-# vault contradicts a decision, which is exactly how an agent gets misled.
+# Canonical values locked by an accepted ADR, and terms for things this
+# product does not contain. A hit outside `allowed` means the record
+# contradicts a decision, which is exactly how an agent gets misled.
+#
+# Case sensitivity is part of each pattern (`(?i)` where wanted), not a global
+# flag: the removed-subsystem rule hunts the exact identifiers, and a lowercase
+# "overheat" in a note about the amplifier on the dummy load is a legitimate G1
+# concern that must stay writable.
 @dataclass(frozen=True)
 class Drift:
     label: str
     pattern: str
     allowed: tuple[str, ...]
     hint: str
+    # "vault": the markdown notes, where a locked value can be misquoted.
+    # "repo": every text file in the tree, for terms that must not exist
+    # anywhere — a stray one in a workflow, a generator or a code comment is
+    # as misleading as one in a note.
+    scope: str = "vault"
 
 
 DRIFT_RULES = (
     Drift(
         label="board-variant",
-        pattern=r"\bN8R8\b",
+        pattern=r"(?i)\bN8R8\b",
         allowed=(
             "docs/07-decisions/ADR-0010-esp32-s3-n16r8-board.md",
             "docs/07-decisions/ADR-0012-n8r2-bringup-target.md",
@@ -78,7 +100,7 @@ DRIFT_RULES = (
     ),
     Drift(
         label="devkit-variant",
-        pattern=r"\bN8R2\b",
+        pattern=r"(?i)\bN8R2\b",
         allowed=(
             "docs/07-decisions/ADR-0012-n8r2-bringup-target.md",
             "docs/07-decisions/ADR-0013-airplay-integration-shape.md",
@@ -93,16 +115,25 @@ DRIFT_RULES = (
               "It may only appear where that distinction is being made."),
     ),
     Drift(
-        label="charge-source",
-        pattern=r"16[,.]8\s*V\s*CC/CV\s*(şarj\s*)?adapt",
-        allowed=(
-            "docs/07-decisions/ADR-0009-usb-c-pd-charge-chain.md",
-            "docs/power-and-battery-plan.md",
-            "docs/05-procurement/",
-            "docs/08-development-log/",
-            "scripts/check_docs.py",
-        ),
-        hint="ADR-0009 locks the V1 charge chain to USB-C PD -> 20 V trigger -> XL4015 CC/CV. A ready-made brick is the documented backup only.",
+        label="product-identity",
+        pattern=r"(?i)kardom|HarmanKardom|harman-kardom",
+        allowed=("scripts/check_docs.py",),
+        hint=("The product is Merzarkabul Airplay Speakers. 'Harman Kardon' is the "
+              "driver brand and stays; 'Kardom' is not a name this project uses."),
+        scope="repo",
+    ),
+    Drift(
+        label="removed-subsystem",
+        # Identifiers are matched case-insensitively (gc9a01 in a lock file is
+        # still the display driver); OVERHEAT stays exact so prose about the
+        # amplifier's heat on the dummy load in G1 remains writable.
+        pattern=(r"(?i:\bBMS\b|XL4015|INA219|GC9A01|LVGL|\bNTC\b|batarya|"
+                 r"Li-ion|4S1P|hk_power|hk_display|KM103|DC-132A)|OVERHEAT"),
+        allowed=("scripts/check_docs.py",),
+        hint=("The speaker runs from a 19 V DC adapter (ADR-0020): it has no battery, "
+              "charger, display, cell thermistor or current sensor, so nothing in the "
+              "tree may describe one."),
+        scope="repo",
     ),
 )
 
@@ -127,11 +158,48 @@ class Report:
         self.warnings.append(f"{path.relative_to(ROOT)}: {message}")
 
 
+def skipped(path: Path) -> bool:
+    parts = path.relative_to(ROOT).parts[:-1]
+    return any(part in SKIP_DIRS or part.startswith(SKIP_DIR_PREFIXES)
+               for part in parts)
+
+
 def markdown_files() -> list[Path]:
-    return sorted(
-        p for p in ROOT.rglob("*.md")
-        if not SKIP_DIRS.intersection(p.relative_to(ROOT).parts)
-    )
+    return sorted(p for p in ROOT.rglob("*.md") if not skipped(p))
+
+
+def read_text(path: Path) -> str | None:
+    """None when the file vanished between being listed and being read.
+
+    Writers work in parallel on this tree; a note deleted mid-run is not a
+    finding, it is simply no longer a note.
+    """
+    try:
+        return path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return None
+
+
+def text_files() -> Iterator[tuple[Path, str]]:
+    """Every file in the tree that reads as UTF-8 text, outside skipped trees.
+
+    Binary artefacts (images, firmware images, key material) are recognised by
+    content, not by extension, so a file called anything at all is either
+    scanned or skipped for what it is.
+    """
+    for path in sorted(ROOT.rglob("*")):
+        if not path.is_file() or skipped(path):
+            continue
+        try:
+            raw = path.read_bytes()
+        except OSError:
+            continue
+        if b"\0" in raw:
+            continue
+        try:
+            yield path, raw.decode("utf-8")
+        except UnicodeDecodeError:
+            continue
 
 
 def parse_frontmatter(text: str) -> dict[str, str] | None:
@@ -190,16 +258,22 @@ def check_adr_index(report: Report) -> None:
     index = ROOT / "docs/07-decisions/README.md"
     listed = set(WIKILINK.findall(index.read_text(encoding="utf-8")))
     for adr in sorted((ROOT / "docs/07-decisions").glob("ADR-*.md")):
+        match = ADR_NUMBER.match(adr.stem)
+        if match and int(match.group(1)) in RETIRED_ADR_NUMBERS:
+            report.error(adr, f"ADR number {match.group(1)} stays vacant; "
+                              "file the decision under the next free number")
         if adr.stem not in listed:
             report.error(index, f"{adr.stem} is not listed in the ADR index")
 
 
-def check_drift(path: Path, text: str, report: Report) -> None:
+def check_drift(path: Path, text: str, report: Report, scope: str) -> None:
     relative = str(path.relative_to(ROOT))
     for rule in DRIFT_RULES:
+        if rule.scope != scope:
+            continue
         if any(relative.startswith(prefix) for prefix in rule.allowed):
             continue
-        if re.search(rule.pattern, text, re.IGNORECASE):
+        if re.search(rule.pattern, text):
             report.error(path, f"[{rule.label}] {rule.hint}")
 
 
@@ -216,7 +290,10 @@ def check_agent_definitions(report: Report) -> None:
         targets.extend(sorted(ROOT.glob(pattern)))
     targets.extend(sorted(ROOT.glob(SKILL_GLOB)))
     for path in targets:
-        fields = parse_frontmatter(path.read_text(encoding="utf-8"))
+        text = read_text(path)
+        if text is None:
+            continue
+        fields = parse_frontmatter(text)
         if fields is None:
             report.error(path, "agent/skill definition has no frontmatter")
             continue
@@ -228,11 +305,11 @@ def check_agent_definitions(report: Report) -> None:
             report.error(path, f"frontmatter name {name!r} does not match filename {path.stem!r}")
 
 
-def check_ambiguous_stems(files: list[Path], stems: dict[str, list[Path]], report: Report) -> None:
+def check_ambiguous_stems(texts: dict[Path, str], stems: dict[str, list[Path]], report: Report) -> None:
     """Only complain about a duplicated stem if something links to it bare."""
     used: set[str] = set()
-    for path in files:
-        for target in WIKILINK.findall(path.read_text(encoding="utf-8")):
+    for text in texts.values():
+        for target in WIKILINK.findall(text):
             if "/" not in target:
                 used.add(target.strip())
     for stem in sorted(used):
@@ -247,22 +324,31 @@ def main() -> int:
     parser.add_argument("--quiet", action="store_true", help="only print the summary line")
     args = parser.parse_args()
 
-    files = markdown_files()
+    texts: dict[Path, str] = {}
+    for path in markdown_files():
+        text = read_text(path)
+        if text is not None:
+            texts[path] = text
+    files = list(texts)
     stems: dict[str, list[Path]] = {}
     for path in files:
         stems.setdefault(path.stem, []).append(path)
 
     report = Report()
-    for path in files:
-        text = path.read_text(encoding="utf-8")
+    for path, text in texts.items():
         check_wikilinks(path, text, stems, report)
         check_frontmatter(path, text, report)
-        check_drift(path, text, report)
+        check_drift(path, text, report, scope="vault")
         check_forbidden_claims(path, text, report)
     check_adr_index(report)
 
+    scanned = 0
+    for path, text in text_files():
+        scanned += 1
+        check_drift(path, text, report, scope="repo")
+
     check_agent_definitions(report)
-    check_ambiguous_stems(files, stems, report)
+    check_ambiguous_stems(texts, stems, report)
 
     if not args.quiet:
         for line in report.errors:
@@ -270,7 +356,8 @@ def main() -> int:
         for line in report.warnings:
             print(f"WARN    {line}")
 
-    print(f"check_docs: {len(files)} files, {len(report.errors)} errors, {len(report.warnings)} warnings")
+    print(f"check_docs: {len(files)} notes, {scanned} text files, "
+          f"{len(report.errors)} errors, {len(report.warnings)} warnings")
     return 1 if report.errors else 0
 
 

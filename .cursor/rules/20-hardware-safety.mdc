@@ -1,7 +1,7 @@
 ---
-description: Safety constraints for battery, amplifier, driver and enclosure work
+description: Safety constraints for power-input, amplifier, driver and enclosure work
 globs: "**/*.{c,cc,cpp,h,hpp,md,kicad_sch,kicad_pcb}"
 alwaysApply: false
 ---
 
-Apply `AGENTS.md` hardware safety rules. Unknown drivers start with G0; tweeters require verified HPF/limiter/mute; battery work requires matched cells, balanced BMS, fuse, NTC and supervised current-limited tests. Do not scale to four packs before G0-G5 pass.
+Apply `AGENTS.md` hardware safety rules. Unknown drivers start with G0; tweeters require verified HPF/limiter/mute (G2); barrel-jack polarity is verified with a meter before first power-up, and the 19 V adapter, the 5 V buck and the amplifier are first run from a current-limited bench supply into a dummy load (G1); BTL speaker negatives are not chassis ground. Do not replicate to four units until G0-G2 pass.

@@ -1,6 +1,6 @@
 ---
 name: hardware-reviewer
-description: Read-only reviewer for Harman Kardom electrical, battery, EMI, thermal and driver-safety work.
+description: Read-only reviewer for Merzarkabul Airplay Speakers electrical, power-input, EMI and driver-safety work.
 model: inherit
 readonly: true
 is_background: false

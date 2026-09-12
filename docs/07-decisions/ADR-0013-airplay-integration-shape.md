@@ -19,7 +19,7 @@ Test edilebilir donanım geldi ([[ADR-0012-n8r2-bringup-target|ADR-0012]]).
 
 Yığın, `firmware/components/hk_airplay/vendor/` altına sabitlenmiş commit'ten (`38027441ff4327611d26153a8e8b06636cdf009f`, v0.2.0) **birebir** kopyalanır. Vendor ağacında tek satır değişiklik yoktur.
 
-Yukarı akışın `app_main`'i **alınmaz**. Onunla birlikte alınmayanlar: Wi-Fi yöneticisi, web sunucusu, captive DNS, LED sürücüsü, buton, kart profili, ekran, TI DAC sürücüleri, Ethernet ve A2DP. Bunların hepsinin karşılığı bu firmware'de zaten var ve sahibi bellidir.
+Yukarı akışın `app_main`'i **alınmaz**. Onunla birlikte alınmayanlar: Wi-Fi yöneticisi, web sunucusu, captive DNS, LED sürücüsü, buton, kart profili, TI DAC sürücüleri, Ethernet ve A2DP. Bunların karşılığı ya bu firmware'de zaten var ve sahibi belli, ya da üründe yok.
 
 Alınan dosyalar bir bileşen olarak derlenir; `hk_airplay_start()` yukarı akışın `start_airplay_services()` işlevini **yeniden yazar**, kopyalamaz. Çağrı sırası onlarındır çünkü taşıyıcıdır; sapmalar bilinçlidir ve kod içinde gerekçelidir.
 

@@ -1,4 +1,4 @@
-name = "harman_kardom_verifier"
+name = "merzarkabul_verifier"
 description = "Read-only independent verifier for requirements, ADRs, documentation and automated evidence."
 sandbox_mode = "read-only"
 developer_instructions = """

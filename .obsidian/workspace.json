@@ -1,8 +1,8 @@
 {
-  "main": {"id": "harman-kardom-main", "type": "split", "children": []},
-  "left": {"id": "harman-kardom-left", "type": "split", "children": [], "width": 300},
-  "right": {"id": "harman-kardom-right", "type": "split", "children": [], "width": 300},
-  "active": "harman-kardom-main",
+  "main": {"id": "merzarkabul-main", "type": "split", "children": []},
+  "left": {"id": "merzarkabul-left", "type": "split", "children": [], "width": 300},
+  "right": {"id": "merzarkabul-right", "type": "split", "children": [], "width": 300},
+  "active": "merzarkabul-main",
   "lastOpenFiles": [
     "docs/Home.md",
     "docs/01-planning/roadmap.md",

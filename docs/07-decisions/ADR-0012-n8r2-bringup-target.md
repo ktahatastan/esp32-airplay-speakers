@@ -67,6 +67,6 @@ toplam           0x7e0000  -> tam, artik yok
 
 - **Bu kart hiçbir zaman ürün olmaz.** ADR-0010 yürürlükte, supersede edilmiyor.
 - **Bu kartta ölçülen hiçbir sayı ürün kartı için geçerli değildir.** Quad PSRAM'in veri yolu oktalin yarısıdır ve bu kartta 2 MB var, 8 MB değil. Buradan çıkan bir CPU yükü, DMA veya jitter rakamı en iyi ihtimalle karamsar bir sınırdır; buradaki bir başarı orada bir başarı kanıtı değildir.
-- **Fiziksel kapılar açılmadı.** `G0`-`G8` bu kartla ilgisizdir: kartta sürücü, amfi, DAC ve batarya yoktur.
+- **Fiziksel kapılar açılmadı.** Fiziksel kapılar (`G0`-`G2`, `G6`-`G8`) bu kartla ilgisizdir: kartta sürücü, amfi ve DAC yoktur.
 - Kanıt: [[../06-testing/devkit-bring-up|geliştirme kartı bring-up kaydı]].
 - Ses tarafı GPIO'ları ([[ADR-0011-audio-side-gpio-reservation|ADR-0011]]) bu kartta hiçbir şeye bağlı değildir; `hk_audio` zaten `audio NOT permitted` durumundadır ve mute hatları hiçbir yükü sürmez.

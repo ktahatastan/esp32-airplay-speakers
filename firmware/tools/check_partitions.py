@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the Harman Kardom partition table against the layout the project needs.
+"""Validate the Merzarkabul Airplay Speakers partition table against the layout the project needs.
 
 ESP-IDF checks that a partition table is syntactically valid and fits the flash.
 It does not check the things this project actually depends on: two equally sized
@@ -7,7 +7,7 @@ OTA slots, calibration that a user reset cannot reach, and enough headroom that 
 firmware growing by a megabyte does not quietly stop fitting.
 
     python3 firmware/tools/check_partitions.py
-    python3 firmware/tools/check_partitions.py --app-size build/harman-kardom.bin
+    python3 firmware/tools/check_partitions.py --app-size build/merzarkabul-airplay-speakers.bin
 
 With --app-size the script also acts as the CI size gate: it fails when the built
 image no longer leaves the required free margin in its slot.

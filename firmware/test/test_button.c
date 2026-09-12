@@ -59,7 +59,7 @@ void test_button(void)
     hk_button_init(&button, false, clock);
     HK_CHECK_EQ_INT(hold_and_release(&button, &clock, 20u), HK_BUTTON_EVENT_NONE);
 
-    /* A brush against the panel is not an intentional tap. */
+    /* A brush against the button is not an intentional tap. */
     hk_button_init(&button, false, clock);
     HK_CHECK_EQ_INT(hold_and_release(&button, &clock, 80u), HK_BUTTON_EVENT_NONE);
 

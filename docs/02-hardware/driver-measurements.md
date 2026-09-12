@@ -174,20 +174,19 @@ adım başına tuşa basılması gereken bir ölçüm dokuzuncu adımda yarım k
 yarım bir tablo hiç tablo olmamasından kötüdür çünkü birileri ondan sonuç
 çıkarmaya çalışır.
 
-`sdkconfig.bench`'teki iki tezgâh istisnası da gerekli, yoksa `XSMT` düşük kalır
+`sdkconfig.bench`'teki tezgâh istisnası da gerekli, yoksa `XSMT` düşük kalır
 ve DAC hiç çıkış vermez. Bu, bir sonraki bölümün konusu.
 
 ### 2. GÜVENLİK — amfi devrede OLMAYACAK
 
-> **`CONFIG_HK_BENCH_AUDIO_WITHOUT_PROFILE` ve
-> `CONFIG_HK_BENCH_AUDIO_WITHOUT_POWER_TELEMETRY` olmadan DAC susturulmuş kalır,
-> yani tarama için bu iki sembol zorunlu. Ama aynı iki sembol amfinin mute
-> hattını da bırakıyor. DAC'ı açıp amfiyi kapalı tutan bir ayar yok.**
+> **`CONFIG_HK_BENCH_AUDIO_WITHOUT_PROFILE` olmadan DAC susturulmuş kalır,
+> yani tarama için bu sembol zorunlu. Ama aynı sembol amfinin mute hattını da
+> bırakıyor. DAC'ı açıp amfiyi kapalı tutan bir ayar yok.**
 >
 > Amfiyi devre dışı bırakmak **yapılandırmayla değil, kabloyla** olur: TPA3110'un
 > girişini sök ya da beslemesini kes. Firmware kartın nasıl kablolandığını
 > göremez; bu yüzden tarama uyarıyı basıp **ilk adımdan önce 10 saniye susuyor**.
-> O 10 saniye, uyarıyı okuyup güç anahtarına yetişmek içindir.
+> O 10 saniye, uyarıyı okuyup lab kaynağının çıkışını kapatmaya yetişmek içindir.
 
 Amfi devrede kalırsa ne olur, açıkça: `-6 dBFS`, 36 dB'lik bir kazançla
 (bkz. [[../06-testing/bench-measurement-order|tezgâh ölçüm sırası]], `C3`) 4 Ω'a

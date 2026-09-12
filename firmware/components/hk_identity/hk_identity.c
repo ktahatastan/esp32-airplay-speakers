@@ -34,10 +34,10 @@ int hk_identity_from_mac(const uint8_t mac[6], hk_identity_t *out)
 
     /* Buffer sizes are exact, so these cannot truncate; snprintf is used for
      * the guaranteed termination rather than for the bound. */
-    snprintf(out->airplay, sizeof(out->airplay), HK_PRODUCT_FAMILY " %s", out->suffix);
-    snprintf(out->ble, sizeof(out->ble), "HarmanKardom-%s", out->suffix);
-    snprintf(out->softap, sizeof(out->softap), "HarmanKardom-Setup-%s", out->suffix);
-    snprintf(out->mdns, sizeof(out->mdns), "harman-kardom-%s", lower);
+    snprintf(out->airplay, sizeof(out->airplay), HK_NAME_PREFIX " %s", out->suffix);
+    snprintf(out->ble, sizeof(out->ble), HK_NAME_PREFIX_BLE "%s", out->suffix);
+    snprintf(out->softap, sizeof(out->softap), HK_NAME_PREFIX_SOFTAP "%s", out->suffix);
+    snprintf(out->mdns, sizeof(out->mdns), HK_NAME_PREFIX_MDNS "%s", lower);
 
     return HK_IDENTITY_OK;
 }

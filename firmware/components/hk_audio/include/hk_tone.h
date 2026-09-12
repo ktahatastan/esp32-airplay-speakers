@@ -5,9 +5,9 @@
  * WHY THIS EXISTS
  *
  * On 2026-09-08 the bench board reached the state where AirPlay metadata
- * appears on the screen -- so the RTSP session, the network and the display all
- * work -- and no sound comes out. From the device's side those two facts are
- * compatible with two completely different faults:
+ * appears in the log -- so the RTSP session and the network work -- and no
+ * sound comes out. From the device's side those two facts are compatible with
+ * two completely different faults:
  *
  *   1. the receiver is not delivering samples to I2S at all, or is delivering
  *      silence, in which case everything after the ESP32 is innocent; or

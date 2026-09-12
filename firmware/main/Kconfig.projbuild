@@ -1,4 +1,4 @@
-menu "Harman Kardom board"
+menu "Merzarkabul Airplay Speakers board"
 
 config HK_BOARD_DEVKIT_N8R2
     bool "Build for the ESP32-S3 N8R2 development kit"
@@ -46,42 +46,33 @@ config HK_ONBOARD_STATUS_LED_GPIO
         It must not collide with the assignment in hk_pins; nothing enforces that
         here, because a Kconfig integer cannot see that table.
 
-config HK_DISPLAY_SELF_TEST
-    bool "Show a colour self test for three seconds at boot"
-    default n
+config HK_SUPPLY_MV
+    int "Amplifier supply voltage, in millivolts"
+    range 8000 26000
+    default 19000
     help
-        Four flat colours and a cross, before the status screen. It answers a
-        question the serial log cannot: 4-wire SPI has no readback, so a panel
-        that received nothing and a panel showing another firmware's leftovers
-        look identical from the device's side.
+        The DC adapter on the barrel jack, as the wiring plan names it: 19 V,
+        feeding the XH-A232 directly (ADR-0020). The amplifier accepts 8-26 V,
+        and the range here is that range -- a value outside it describes a
+        board that cannot exist.
 
-        Off in a product: nobody wants their speaker to flash colours at them.
-
-config HK_DISPLAY
-    bool "Round GC9A01 display"
-    default y
-    help
-        Compile and run the panel. Off removes the SPI bus entirely -- not a
-        blank screen, no peripheral at all.
-
-        That is the point of having the switch. The panel moves 115,200 bytes at
-        80 MHz thirty times a second, which is a large periodic burst of
-        switching next to an analogue audio pair, and while the audio path is
-        being brought up it is the loudest thing in the room that is not the
-        speaker. Turning it off makes "is the display the noise source?" a
-        question the build answers rather than one the listener guesses at.
-
-        On means the product build. Off is for bench sessions that are chasing
-        something else.
+        This is the single place the supply voltage is stated. The firmware
+        cannot measure it; it is a declaration about the adapter, and its one
+        consumer is the limiter: every ceiling in a driver-protection profile
+        is stored with the supply it was measured at, and hk_profile_build()
+        scales it to this value. A 24 V adapter plugged in by mistake needs
+        this number changed to be handled correctly -- but even unchanged, a
+        profile measured at 12 V is already scaled DOWN to 19 V, so the error
+        is in the quiet direction.
 
 config HK_BENCH_PROVISIONAL_PROFILE
     bool "Use a compiled-in provisional profile when factory_cal has none"
     default n
     help
         DANGEROUS ON A BOARD WITH DRIVERS ATTACHED, and differently dangerous
-        from the other two: this one does not bypass a gate, it FEEDS it a
-        profile nobody measured, so everything downstream behaves as though the
-        speaker were calibrated.
+        from the bench exception below: this one does not bypass a gate, it
+        FEEDS it a profile nobody measured, so everything downstream behaves as
+        though the speaker were calibrated.
 
         What it supplies: a crossover corner, a subsonic corner, branch gains
         and limiter ceilings, derived on a bench from exactly two measurements
@@ -93,9 +84,10 @@ config HK_BENCH_PROVISIONAL_PROFILE
         factory_cal is a manufacturing step. This is the bench shortcut, and the
         boot log says so in as many words every time it is used.
 
-        It also makes pack_mv_now() return the profile's own reference voltage,
-        so the ceiling is used exactly as written instead of being scaled by a
-        pack nobody can measure.
+        Its ceilings are stored against the supply voltage they were listened
+        to at, 12 V on the bench, and hk_profile_build() scales them to
+        HK_SUPPLY_MV like any other profile's. On the 19 V adapter that is a
+        scale-down: the volts at the driver stay what the bench heard.
 
         Off for any build that leaves the bench.
 
@@ -119,63 +111,18 @@ config HK_BENCH_AUDIO_WITHOUT_PROFILE
         credentials put a schema version into the calibration namespace, and
         that alone was read as "calibrated".
 
-        It is not the only gate. HK_BENCH_AUDIO_WITHOUT_POWER_TELEMETRY below
-        bypasses the other one, and the amplifier is only released when both
-        answer yes.
-
-config HK_BENCH_AUDIO_WITHOUT_POWER_TELEMETRY
-    bool "Permit audio on a board that cannot measure its own pack"
-    default n
-    help
-        DANGEROUS ON A BATTERY. Leave this off unless the board is running from
-        USB or a current-limited bench supply and you can see that no Li-ion
-        pack is connected to it.
-
-        The evidence this one skips, named exactly: there is no ADC driver
-        (firmware stage F6) and no G3/G4 thresholds, so hk_power_evaluate() is
-        handed HK_POWER_MV_UNKNOWN and a NULL limits set, returns
-        HK_POWER_UNKNOWN, and hk_power_audio_permitted() then refuses. That
-        refusal is CORRECT and stays correct for the product: a pack nobody can
-        measure is not a pack known to be fine, and driving an amplifier from
-        one is how a cell gets taken below its floor with nothing to notice.
-
-        It is a SEPARATE symbol from HK_BENCH_AUDIO_WITHOUT_PROFILE, and
-        deliberately so. The two gates answer different questions -- does a
-        measured driver-protection profile exist, and does the pack allow sound
-        right now -- and folding them into one switch would destroy the only
-        thing these symbols are for: the record of WHICH safety evidence a
-        given build went without. A board on USB with a dummy load needs this
-        one and not that one; a board with a good pack and no calibration needs
-        that one and not this one.
-
-        Narrow on purpose. It only applies where the state is HK_POWER_UNKNOWN,
-        which is the "no telemetry exists" case it is named after. On the day
-        an ADC driver lands and reports CRITICAL, SHUTDOWN, SENSOR_FAULT or
-        OVERHEAT, this symbol does nothing and the amplifier stays down. It
-        does not turn the power gate off; it declares that the gate has no
-        input yet.
-
-        ONE THING IT CANNOT TELL YOU. ADR-0004 says V1 does not play while
-        charging, and that lock lives inside the same function. With no
-        telemetry the `charging` flag is reported false because nothing can
-        read it, not because the device knows it is not charging. So on a board
-        that is both on this exception and on a charger, the charge lock is not
-        being enforced -- it is being answered by a placeholder. That is
-        survivable on USB and it is not survivable on the XL4015 charge chain
-        of ADR-0009.
-
 config HK_BENCH_TONE_INSTEAD_OF_AIRPLAY
     bool "Replace the AirPlay receiver with a locally generated test tone"
     default n
     help
-        DANGEROUS ON A BOARD WITH DRIVERS ATTACHED, for exactly the reasons the
-        two symbols above are: this build makes sound, and there is still no
+        DANGEROUS ON A BOARD WITH DRIVERS ATTACHED, for exactly the reason the
+        symbol above is: this build makes sound, and there is still no
         crossover, no protective high-pass and no limiter in front of the
         amplifier. Leave it off unless you can see what is on the speaker
         terminals.
 
-        It is an INSTRUMENT, not a feature. On 2026-09-08 the bench board showed
-        AirPlay metadata on its screen -- so the RTSP session works -- and made
+        It is an INSTRUMENT, not a feature. On 2026-09-08 the bench board logged
+        AirPlay metadata -- so the RTSP session works -- and made
         no sound, and nothing in the log could separate "the receiver is not
         delivering samples" from "the DAC or the amplifier chain is broken".
         This symbol separates them: it puts a 1 kHz sine at -30 dBFS, generated
@@ -191,14 +138,14 @@ config HK_BENCH_TONE_INSTEAD_OF_AIRPLAY
         misread as more evidence about the DAC.
 
         It does not open any gate. The mute lines still follow hk_audio's
-        sequence and are still released only when the profile and power gates
-        both say yes, which on this board means the two bench exceptions above
-        must ALSO be set or the tone will be generated into an asserted mute
-        and heard by nobody. hk_main says so in the log when that is the case.
+        sequence and are still released only when the profile gate says yes,
+        which on this board means HK_BENCH_AUDIO_WITHOUT_PROFILE must ALSO be
+        set or the tone will be generated into an asserted mute and heard by
+        nobody. hk_main says so in the log when that is the case.
 
         Not in sdkconfig.bench: turning this on is an operator's decision taken
         while looking at the bench, not something inherited from a file. Set it
-        with `idf.py menuconfig` under "Harman Kardom board", or add
+        with `idf.py menuconfig` under "Merzarkabul Airplay Speakers board", or add
         CONFIG_HK_BENCH_TONE_INSTEAD_OF_AIRPLAY=y to a local sdkconfig fragment
         that is not committed. The source is only compiled when it is set, so a
         release image never carries it.
@@ -245,9 +192,9 @@ config HK_BENCH_SWEEP
         THE DANGER IS THE WIRING, AND FIRMWARE CANNOT SEE IT. Left connected to
         the TPA3110, -6 dBFS through a possibly 36 dB amplifier is well past
         clipping into an unmeasured tweeter, held near its resonance for eight
-        seconds at a time. Worse, the two bench exception symbols above that
-        unmute the DAC are the same two that unmute the AMPLIFIER: there is no
-        configuration that releases one and holds the other. Unplug the
+        seconds at a time. Worse, the bench exception symbol above that unmutes
+        the DAC also unmutes the AMPLIFIER: there is no configuration that
+        releases one and holds the other. Unplug the
         amplifier's input or cut its supply. The sweep prints this and then
         stays silent for ten seconds before the first step, so there is time to
         act on it.

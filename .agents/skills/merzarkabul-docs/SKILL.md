@@ -1,9 +1,9 @@
 ---
-name: harman-kardom-docs
-description: Maintain the Harman Kardom Obsidian vault, README, ADRs, development logs, handoffs, test records and internal links. Use when project knowledge, plans or agent records change. Do not rewrite accepted decisions without a superseding ADR.
+name: merzarkabul-docs
+description: Maintain the Merzarkabul Airplay Speakers Obsidian vault, README, ADRs, development logs, handoffs, test records and internal links. Use when project knowledge, plans or agent records change. Do not rewrite accepted decisions without a superseding ADR.
 ---
 
-# Harman Kardom documentation
+# Merzarkabul Airplay Speakers documentation
 
 1. Start at `docs/Home.md` and locate the canonical domain page.
 2. Use frontmatter fields consistently: `status`, `owner`, `updated`, optional `reviewers`, `decision`, `tags`.

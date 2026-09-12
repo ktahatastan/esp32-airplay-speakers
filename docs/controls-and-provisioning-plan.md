@@ -5,17 +5,18 @@ updated: 2026-09-05
 tags: [controls, provisioning, firmware]
 ---
 
-# Harman Kardom kontroller, LED ve Wi-Fi provisioning planı
+# Merzarkabul Airplay Speakers kontroller, LED ve Wi-Fi provisioning planı
 
 Güncelleme: 2026-09-05
 
 ## Karar özeti
 
-Her hoparlörde üç kullanıcı arayüzü öğesi bulunacak:
+Her hoparlörde iki kullanıcı arayüzü öğesi bulunacak:
 
 1. Bir adet çok-fonksiyonlu anlık buton: provisioning, ağ sıfırlama ve fabrika sıfırlama.
-2. Bir adet RGB durum LED'i: açılış, provisioning, Wi-Fi, AirPlay, hata ve düşük batarya durumları.
-3. Ayrı bir kilitlemeli mekanik güç anahtarı: yükleri fiziksel olarak bataryadan ayırır.
+2. Bir adet RGB durum LED'i: açılış, provisioning, Wi-Fi, AirPlay ve hata durumları.
+
+V1'de fiziksel güç anahtarı yoktur: cihaz 19 V adaptörü çekilerek kapatılır, gerisini firmware'in boşta bekleme durumu karşılar ([[07-decisions/ADR-0020-dc-adapter-power|ADR-0020]]).
 
 Wi-Fi kurulumu iki yöntemle sunulacak:
 
@@ -35,12 +36,11 @@ Plan duruyor. Değişen, ilk kez bir geliştirme kartında denenmiş olması —
 
 | Plandaki söz | 2026-09-05'te ne var |
 |---|---|
-| SoftAP açılıyor, adı `HarmanKardom-Setup-XXXX` | **Var.** Donanımda açıldı; kimlik bilgileri `factory_cal`'dan yükleniyor (salt 16 B, verifier 384 B). |
+| SoftAP açılıyor, adı `Merzarkabul-Setup-XXXX` | **Var.** Donanımda açıldı; kimlik bilgileri `factory_cal`'dan yükleniyor (salt 16 B, verifier 384 B). |
 | SoftAP'a bağlanan telefonda kurulum sayfası açılıyor | **O gün yoktu.** 2026-09-08'de yazıldı (ADR-0015, `hk_portal`) ve **hiçbir donanımda denenmedi**. |
 | BLE yayını, Security 2 / SRP6a, QR ile kurulum | **Var ve uçtan uca çalışıyor.** Bir iPhone'dan ağa katılındı. |
-| LED desenleri | **Kısmen görüldü.** Kartta harici RGB LED yok, ama `hk_ui` aynı render geçişini kartın kendi adreslenebilir LED'ine aynalıyor; `ready` (yeşil) ve `playing` (mor nefes) sahibi tarafından doğrulandı. `ota`, `battery_low` ve buton geri sayımları görülmedi. |
+| LED desenleri | **Kısmen görüldü.** Kartta harici RGB LED yok, ama `hk_ui` aynı render geçişini kartın kendi adreslenebilir LED'ine aynalıyor; `ready` (yeşil) ve `playing` (mor nefes) sahibi tarafından doğrulandı. `ota` ve buton geri sayımları görülmedi. |
 | Butonla açılan pencere | **Kısa basış ve 5 sn doğrulandı** (`GPIO7`-`GND` köprüsüyle), çökme yok. 12 sn fabrika sıfırlaması henüz üretilmedi. Pencerenin 10 dakikada kendi kendine kapanması ölçülmedi. |
-| Güç anahtarı | **Denenmedi.** Kartta yok. |
 
 ### Uygulamasız yol: 2026-09-05'te yoktu, 2026-09-08'de yazıldı
 
@@ -69,7 +69,7 @@ QR yükü SRP6a kullanıcı adını da taşıyor. Sonucu şu: QR ile kurulan bir
 İkisi de donanım olmadan görünmüyordu. Derleme, testler ve cihazın kendi logu hep doğru diyordu.
 
 1. **BLE hiç yayın yapmıyordu.** `hk_network_start()`, "bu cihaz kurulmuş mu?" sorusunu sorabilmek için provisioning yöneticisini SoftAP şemasıyla kuruyor, sonra gerçek transport'u seçiyor ve **yöneticiyi bir daha kurmuyordu** — yanındaki yorum kurduğunu söylediği hâlde. `wifi_prov_mgr_init()` taşımayı bağlar; sonrasında başlayan şey seçilen değil, bağlanmış olandır. Cihaz `provisioning open over ble` yazarken SoftAP yayınlıyordu. Log dışında her yüzey tutarlıydı, o yüzden kusur yalnız radyoya bakınca görülüyordu. Artık yeniden kuruluyor ve NimBLE gerçekten yayın yapıyor.
-2. **BLE'nin yayınladığı ad SoftAP SSID'siydi.** Yayın `HarmanKardom-Setup-XXXX` derken cihazla gelen QR `HarmanKardom-XXXX` arıyordu; yani QR'lı kurulum hiçbir zaman eşleşemezdi. Aşağıdaki kimlik tablosundaki iki satır zaten ayrıydı, karışan kod tarafıydı.
+2. **BLE'nin yayınladığı ad SoftAP SSID'siydi.** Yayın `Merzarkabul-Setup-XXXX` derken cihazla gelen QR `Merzarkabul-XXXX` arıyordu; yani QR'lı kurulum hiçbir zaman eşleşemezdi. Aşağıdaki kimlik tablosundaki iki satır zaten ayrıydı, karışan kod tarafıydı.
 
 ### Provisioning'de seçilen ağ ürünü belirliyor
 
@@ -79,7 +79,7 @@ Kart geliştirme sırasında yönlendiricinin misafir ağındaydı ve o ağ tasa
 
 ### Uygulamasız deneyim
 
-- Cihaz ilk açılışta veya provisioning tuşuna basılınca `HarmanKardom-Setup-XXXX` isimli 2,4 GHz SoftAP açar.
+- Cihaz ilk açılışta veya provisioning tuşuna basılınca `Merzarkabul-Setup-XXXX` isimli 2,4 GHz SoftAP açar.
 - Kullanıcı telefonun Wi-Fi listesinden bu ağı seçer ve etiketteki kurulum parolasını girer; ağ WPA2 korumalıdır (ADR-0015).
 - iOS/Android captive portal algılaması kurulum sayfasını otomatik açmayı dener.
 - Portal otomatik açılmazsa sabit adres `192.168.4.1` kullanılır.
@@ -91,7 +91,7 @@ Bu yöntem özel uygulama istemez, ancak telefonun BLE yayınını görür görm
 
 ### BLE ile uygulamalı deneyim
 
-- Cihaz `HarmanKardom-XXXX` adı ve üretici servis UUID'si ile BLE yayını yapar.
+- Cihaz `Merzarkabul-XXXX` adı ve üretici servis UUID'si ile BLE yayını yapar.
 - ESP-IDF Unified Provisioning, Security 2 / SRP6a ve cihaza özel proof-of-possession kullanır.
 - QR kod cihaz adı, transport, güvenlik sürümü ve benzersiz PoP bilgisini taşır.
 - İlk prototip Espressif Provisioning iOS/Android uygulamalarıyla kurulabilir.
@@ -102,17 +102,17 @@ Bu yöntem özel uygulama istemez, ancak telefonun BLE yayınını görür görm
 
 iOS AccessorySetupKit ve Android Companion Device Manager bir uygulama tarafından çağrılan API'lerdir. Uygulama olmadan özel ürün görseli ve sistem eşleştirme kartı açma kapsam dışıdır. Apple HomeKit/MFi veya Google Fast Pair kimliği taklit edilmeyecektir.
 
-## Harman Kardom ürün kimliği
+## Merzarkabul Airplay Speakers ürün kimliği
 
 | Yüzey | Varsayılan ad |
 |---|---|
-| Proje/ürün ailesi | `Harman Kardom` |
-| AirPlay görünen adı | `Harman Kardom XXXX` |
-| BLE provisioning yayını | `HarmanKardom-XXXX` |
-| SoftAP SSID | `HarmanKardom-Setup-XXXX` |
-| mDNS/yerel ağ adı | `harman-kardom-xxxx.local` |
-| Captive portal başlığı | `Harman Kardom Kurulum` |
-| QR ürün etiketi | `Harman Kardom` |
+| Proje/ürün ailesi | `Merzarkabul Airplay Speakers` |
+| AirPlay görünen adı | `Merzarkabul XXXX` |
+| BLE provisioning yayını | `Merzarkabul-XXXX` |
+| SoftAP SSID | `Merzarkabul-Setup-XXXX` |
+| mDNS/yerel ağ adı | `merzarkabul-xxxx.local` |
+| Captive portal başlığı | `Merzarkabul Kurulum` |
+| QR ürün etiketi | `Merzarkabul Airplay Speakers` |
 
 `XXXX`, MAC adresinden türetilen kısa benzersiz cihaz kimliğidir. Kullanıcı AirPlay adını değiştirebilir; BLE ve SoftAP adlarında benzersiz son ek korunur. Dört hoparlör ilk açılışta birbirinden bu kimlikle ayrılır.
 
@@ -168,33 +168,26 @@ Tek gövdeli, ortak katot RGB LED ve her renk için ayrı seri direnç kullanıl
 
 | Renk/desen | Durum |
 |---|---|
-| Kapalı | Fiziksel güç kapalı veya uyku göstergesi |
+| Kapalı | Adaptör takılı değil veya boşta bekleme |
 | Beyaz nefes | Açılış ve donanım testi |
 | Mavi nefes | BLE/SoftAP provisioning aktif |
 | Sarı yavaş yanıp sönme | Wi-Fi ağına bağlanıyor |
 | Yeşil 3 sn, sonra sönük | Wi-Fi bağlı ve AirPlay hazır |
 | Mor nefes, düşük parlaklık | Aktif AirPlay oynatma |
 | Camgöbeği yanıp sönme | OTA güncelleme; güç kesilmemeli |
-| Kırmızı yavaş | Batarya düşük |
-| Kırmızı hızlı | Wi-Fi, ses veya batarya hatası |
+| Kırmızı hızlı | Wi-Fi veya ses hatası |
 
-> **2026-09-05 — hangi satırlar gerçekten sürülüyor.** Tablo baştan beri eksiksizdi ve `hk_led` her satırı uygulamıştı, ama iki durumu hiçbir yer set etmiyordu: `playing` ve `battery_low`. Oynatma durumu bu tarihte bağlandı — AirPlay yığınının kendi RTSP olayları `hk_main` üzerinden `hk_ui`'ya taşınıyor, LED'in tek sahibi `hk_ui` kalmaya devam ediyor. Sahibi "mor nefes" istediği için desen `SOLID`'den `BREATHE`'e alındı ve satır buna göre güncellendi.
+> **2026-09-05 — hangi satırlar gerçekten sürülüyor.** Tablo baştan beri eksiksizdi ve `hk_led` her satırı uygulamıştı, ama bir durumu hiçbir yer set etmiyordu: `playing`. Oynatma durumu bu tarihte bağlandı — AirPlay yığınının kendi RTSP olayları `hk_main` üzerinden `hk_ui`'ya taşınıyor, LED'in tek sahibi `hk_ui` kalmaya devam ediyor. Sahibi "mor nefes" istediği için desen `SOLID`'den `BREATHE`'e alındı ve satır buna göre güncellendi.
 >
 > Aynı turda nefes efektinin kendisi de düzeltildi ve bu tablodaki üç "nefes" satırının hepsini etkiliyor: zarf üçgendi, kosinüs oldu (üçgen iki uçta da anında döndüğü için göz onu nefes değil sıçrama olarak görüyor), ve artık sıfıra inmiyor — sıfıra inen bir nefes yavaş yanıp sönmedir, renk kaybolur ve göz ritmi değil kaybolmayı fark eder.
->
-> `battery_low` hâlâ ölü ve yazılımla açılamaz: ADC sürücüsü yok ve eşikler `G3`/`G4` ölçümlerine bağlı. Uydurma bir eşikle yakmak, batarya göstergesini güvenilmez yapardı.
 
 LED animasyonları audio task üzerinde çalışmayacak; düşük öncelikli ayrı görev/timer kullanılacak. PWM veya GPIO güncellemelerinin I2S zamanlamasına ve analog dip gürültüsüne etkisi ölçülecek.
 
-## Fiziksel güç anahtarı
+## Güç: açma ve kapatma
 
-- Ayrı, kilitlemeli ve en az 24 V DC / 5 A değerli mekanik anahtar kullanılacak.
-- Kullanıcının seçtiği panel parçası [KM103 / DC-132A 12 V beyaz nokta ışıklı 3P rocker](https://www.direnc.net/dc-132a-12v-yuvarlak-nokta-isikli-on-off-anahtar-3p-beyaz) modelidir; ancak bu seçim elektriksel onay değildir. Ürün sayfasında kontak DC akım değeri bulunmadığından 16,8 V / 5 A yeterliliği yazılı doğrulanacak ve G3'te test edilecek.
-- Dahili ışık 12 V DC sınıfındadır. İlk prototipte LED pini bağlanmayacak; kullanılacaksa 12 V akımı ölçülüp 16,8 V tam dolu gerilime uygun harici seri direnç seçilecektir.
-- Anahtar BMS ile sistem yükleri arasına yerleştirilecek; amfi ve 5 V buck hattını birlikte kesecek.
-- Şarj jakı BMS tarafında kalacak; hoparlör kapalıyken batarya şarj edilebilecek.
-- Anahtar şarj akımını veya BMS balans işlevini kesmeyecek.
-- Açma/kapatmada amfi mute sıralaması ve pop sesi ayrıca test edilecek.
+- V1'de güç anahtarı yoktur ([[07-decisions/ADR-0020-dc-adapter-power|ADR-0020]]). Cihaz 19 V adaptörü takılınca açılır, çekilince kapanır; adaptör hem amfiyi hem 5 V buck üzerinden dijital katı besler.
+- Boşta bekleme kullanıcı ayarı `standby_min` ile zamanlanır (varsayılan 30 dk, `0` kapatır). Davranışın kendisi henüz yazılmadı; yazıldığında amfi mute sıralayıcısı üzerinden geçecek ve AirPlay hedefi görünür kalacak.
+- Adaptör takılırken ve çalarken çekilirken amfi mute sıralaması ve pop sesi G1'de dummy-load üzerinde ölçülür; kapanış pop'u `PRD-007`'nin konusudur.
 
 ## Güvenlik ve gizlilik
 
@@ -203,7 +196,6 @@ LED animasyonları audio task üzerinde çalışmayacak; düşük öncelikli ayr
 - BLE provisioning yalnız ilk kurulumda veya fiziksel butonla zaman sınırlı olarak açılacak.
 - Provisioning istekleri hız sınırlı olacak ve başarısız kimlik doğrulamalar loglarda parola içermeyecek.
 - Saklanan Wi-Fi kimlik bilgileri için ESP-IDF NVS encryption seçeneği değerlendirilecek.
-- OTA sırasında düşük batarya eşiği ve harici güç kontrolü uygulanacak.
 
 ## Teknik kaynaklar
 

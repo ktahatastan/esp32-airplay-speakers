@@ -33,7 +33,6 @@ add_executable(hk_host_tests
     test_gate.c
     test_ota.c
     test_health.c
-    test_power.c
     test_audio.c
     test_limiter.c
     test_biquad.c
@@ -42,10 +41,6 @@ add_executable(hk_host_tests
     test_portal.c
     test_profile.c
     test_dsp.c
-    test_draw.c
-    test_gfx.c
-    test_qr.c
-    test_screen.c
     ${HK_COMPONENTS}/hk_pins/hk_pins.c
     ${HK_COMPONENTS}/hk_identity/hk_identity.c
     ${HK_COMPONENTS}/hk_version/hk_version.c
@@ -57,22 +52,12 @@ add_executable(hk_host_tests
     ${HK_COMPONENTS}/hk_gate/hk_gate.c
     ${HK_COMPONENTS}/hk_ota/hk_ota.c
     ${HK_COMPONENTS}/hk_health/hk_health.c
-    ${HK_COMPONENTS}/hk_power/hk_power.c
     ${HK_COMPONENTS}/hk_audio/hk_audio.c
     ${HK_COMPONENTS}/hk_audio/hk_limiter.c
     ${HK_COMPONENTS}/hk_audio/hk_biquad.c
     ${HK_COMPONENTS}/hk_audio/hk_profile.c
     ${HK_COMPONENTS}/hk_audio/hk_dsp.c
     ${HK_COMPONENTS}/hk_audio/hk_eq.c
-    ${HK_COMPONENTS}/hk_display/hk_draw.c
-    ${HK_COMPONENTS}/hk_display/hk_gfx.c
-    ${HK_COMPONENTS}/hk_display/hk_font.c
-    ${HK_COMPONENTS}/hk_display/hk_font_data.c
-    ${HK_COMPONENTS}/hk_display/hk_icons.c
-    ${HK_COMPONENTS}/hk_display/hk_icons_data.c
-    ${HK_COMPONENTS}/hk_display/hk_qr.c
-    ${HK_COMPONENTS}/hk_display/hk_sky.c
-    ${HK_COMPONENTS}/hk_display/hk_screen.c
     ${HK_COMPONENTS}/hk_sched/hk_sched.c
     ${HK_COMPONENTS}/hk_settings/hk_settings.c
     ${HK_COMPONENTS}/hk_portal/hk_portal_form.c
@@ -91,13 +76,10 @@ target_include_directories(hk_host_tests PRIVATE
     ${HK_COMPONENTS}/hk_gate/include
     ${HK_COMPONENTS}/hk_ota/include
     ${HK_COMPONENTS}/hk_health/include
-    ${HK_COMPONENTS}/hk_power/include
     ${HK_COMPONENTS}/hk_audio/include
     ${HK_COMPONENTS}/hk_sched/include
     ${HK_COMPONENTS}/hk_settings/include
     ${HK_COMPONENTS}/hk_portal/include
-    ${HK_COMPONENTS}/hk_display/include
-    ${HK_COMPONENTS}/hk_ui/include
 )
 
 # ---------------------------------------------------------------------------

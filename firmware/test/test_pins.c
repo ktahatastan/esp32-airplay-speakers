@@ -17,12 +17,8 @@ void test_pins(void)
     HK_CHECK_EQ_INT(HK_PIN_LED_R, 8);
     HK_CHECK_EQ_INT(HK_PIN_LED_G, 9);
     HK_CHECK_EQ_INT(HK_PIN_LED_B, 10);
-    HK_CHECK_EQ_INT(HK_PIN_I2C_SDA, 11);
-    HK_CHECK_EQ_INT(HK_PIN_I2C_SCL, 12);
     HK_CHECK_EQ_INT(HK_PIN_AMP_MUTE, 21);
     HK_CHECK_EQ_INT(HK_PIN_DAC_XSMT, 13);
-    HK_CHECK_EQ_INT(HK_PIN_BATT_SENSE, 1);
-    HK_CHECK_EQ_INT(HK_PIN_NTC_SENSE, 2);
 
     HK_CHECK_EQ_INT(hk_pin_table_size(), HK_PIN_COUNT);
 
@@ -63,13 +59,6 @@ void test_pins(void)
             HK_CHECK(HK_PIN_DAC_XSMT != unsafe_for_mute[u]);
         }
     }
-
-    /* --- the last two ADC1 channels ---
-     * ADC1 is GPIO1-10 on this part and GPIO4-10 are already spent, so these
-     * two are the only Wi-Fi-safe analogue inputs left. If either ever moves
-     * outside ADC1, battery and temperature sensing lose their controller. */
-    HK_CHECK(HK_PIN_BATT_SENSE >= 1 && HK_PIN_BATT_SENSE <= 10);
-    HK_CHECK(HK_PIN_NTC_SENSE >= 1 && HK_PIN_NTC_SENSE <= 10);
 
     /* The DAC runs in 3-wire mode with SCK grounded, so no GPIO may be spent on
      * a master clock. Guard against someone "helpfully" adding one. */

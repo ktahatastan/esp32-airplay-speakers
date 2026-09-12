@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Minimal SVG schematic primitives for the Harman Kardom documentation sheet.
+"""Minimal SVG schematic primitives for the Merzarkabul Airplay Speakers documentation sheet.
 
 The point of this module is that geometry is computed, never hand-placed. A pin
 knows its own coordinate, a wire is routed between two known coordinates, and a
@@ -164,15 +164,6 @@ class Sheet:
             self.symbols.append(
                 f'<text class="gnd-name" text-anchor="middle" x="{x}" y="{y + 42}">{escape(name)}</text>')
 
-    def fuse(self, x: float, y: float, ref: str, value: str) -> tuple[tuple[float, float], tuple[float, float]]:
-        """Horizontal fuse. Returns the left and right terminals."""
-        self.symbols.append(
-            f'<rect class="sym" x="{x}" y="{y - 10}" width="56" height="20" rx="3"/>'
-            f'<line class="sym-line" x1="{x}" y1="{y}" x2="{x + 56}" y2="{y}"/>'
-            f'<text class="sym-ref" text-anchor="middle" x="{x + 28}" y="{y - 18}">{escape(ref)}</text>'
-            f'<text class="sym-val" text-anchor="middle" x="{x + 28}" y="{y + 30}">{escape(value)}</text>')
-        return (x, y), (x + 56, y)
-
     def switch(self, x: float, y: float, ref: str, value: str) -> tuple[tuple[float, float], tuple[float, float]]:
         """Horizontal SPST, drawn open. Returns the left and right terminals."""
         self.symbols.append(
@@ -240,30 +231,18 @@ class Sheet:
             f'<text class="sym-val" text-anchor="start" x="{x + 32}" y="{y + 38}">{escape(value)}</text>')
         return (x, y), (x, y + 52)
 
-    def cell_h(self, x: float, y: float, label: str) -> tuple[tuple[float, float], tuple[float, float]]:
-        """One battery cell, positive terminal on the right."""
+    def diode_h(self, x: float, y: float, ref: str, value: str,
+                dnp: bool = False) -> tuple[tuple[float, float], tuple[float, float]]:
+        """Horizontal diode, anode on the left. Returns the anode and cathode terminals."""
+        cls = "sym dnp" if dnp else "sym"
         self.symbols.append(
-            f'<line class="sym-line" x1="{x}" y1="{y}" x2="{x + 22}" y2="{y}"/>'
-            f'<line class="sym-plate-long" x1="{x + 22}" y1="{y - 20}" x2="{x + 22}" y2="{y + 20}"/>'
-            f'<line class="sym-plate" x1="{x + 34}" y1="{y - 11}" x2="{x + 34}" y2="{y + 11}"/>'
-            f'<line class="sym-line" x1="{x + 34}" y1="{y}" x2="{x + 56}" y2="{y}"/>'
-            f'<text class="cell-name" text-anchor="middle" x="{x + 28}" y="{y - 28}">{escape(label)}</text>')
-        return (x, y), (x + 56, y)
-
-    def cell_v(self, x: float, y: float, label: str) -> tuple[tuple[float, float], tuple[float, float]]:
-        """One battery cell drawn vertically, positive on top.
-
-        Returns the positive and negative terminals so a series string can be
-        wired without guessing the symbol height.
-        """
-        self.symbols.append(
-            f'<line class="sym-line" x1="{x}" y1="{y}" x2="{x}" y2="{y + 18}"/>'
-            f'<line class="sym-plate-long" x1="{x - 20}" y1="{y + 18}" x2="{x + 20}" y2="{y + 18}"/>'
-            f'<line class="sym-plate" x1="{x - 11}" y1="{y + 30}" x2="{x + 11}" y2="{y + 30}"/>'
-            f'<line class="sym-line" x1="{x}" y1="{y + 30}" x2="{x}" y2="{y + 48}"/>'
-            f'<text class="sym-pol" x="{x - 34}" y="{y + 16}">+</text>'
-            f'<text class="cell-name" text-anchor="start" x="{x + 30}" y="{y + 28}">{escape(label)}</text>')
-        return (x, y), (x, y + 48)
+            f'<line class="sym-line" x1="{x}" y1="{y}" x2="{x + 20}" y2="{y}"/>'
+            f'<path class="{cls}" d="M {x + 20} {y - 14} L {x + 44} {y} L {x + 20} {y + 14} Z"/>'
+            f'<line class="sym-plate" x1="{x + 44}" y1="{y - 14}" x2="{x + 44}" y2="{y + 14}"/>'
+            f'<line class="sym-line" x1="{x + 44}" y1="{y}" x2="{x + 64}" y2="{y}"/>'
+            f'<text class="sym-ref" text-anchor="middle" x="{x + 32}" y="{y - 24}">{escape(ref)}</text>'
+            f'<text class="sym-val" text-anchor="middle" x="{x + 32}" y="{y + 34}">{escape(value)}</text>')
+        return (x, y), (x + 64, y)
 
     def speaker(self, x: float, y: float, ref: str, label: str, detail: str) -> tuple[tuple[float, float], tuple[float, float]]:
         """Driver symbol. Returns the plus and minus terminals on the left."""

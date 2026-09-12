@@ -44,7 +44,7 @@ ADR-0005'ten korunanlar: taşıma çağıranın seçtiği bir parametre değildi
 
 ### Cihaz artık bir parolayı düz metin saklıyor, ve bunun bedeli sanıldığından küçük
 
-WPA2-PSK her iki uçta da anahtarı ister. Yani `factory_cal`, SRP6a salt/verifier'ının yanına düz metin bir `ap_pass` alır. Bu, "flash'ı okumak kimlik bilgisini vermez" özelliğini kurulum parolası için kaybettirir.
+WPA2-PSK her iki uçta da anahtarı ister. Yani `factory_cal`, SRP6a salt/verifier'ının yanına düz metin bir `ap_pass` alır. Bu `ap_pass`, eşleşme uygulamasının sorduğu SRP6a proof-of-possession değerinin ta kendisidir: kurulum ağının WPA2 anahtarı ile `pop` aynı cihaz başına sırdır, iki ayrı parola yoktur. Bu, "flash'ı okumak kimlik bilgisini vermez" özelliğini kurulum parolası için kaybettirir.
 
 Kaybedilen şey, ölçüldüğünde zaten yoktu: **flash'ı okuyabilen biri kullanıcının ev Wi-Fi parolasını hâlihazırda alıyor.** ESP-IDF'in Wi-Fi sürücüsü onu `nvs` bölümünde tutar, ve bu bir varsayım değil — 2026-09-05 oturumu tam olarak bunu yaptı: yedekten yalnız `nvs` geri yazıldı ve kart kullanıcının ağına yeniden katıldı. Korunacak şeyin kendisi zaten oradayken, onun yanına bir kurulum PSK'sı koymak yeni bir maruziyet açmıyor.
 

@@ -32,7 +32,6 @@ static hk_health_inputs_t healthy(void)
         .storage = HK_HEALTH_PASS,
         .network = HK_HEALTH_PASS,
         .audio = HK_HEALTH_PASS,
-        .telemetry = HK_HEALTH_PASS,
         .uptime_ms = 31000u,
         .critical_fault = false,
     };
@@ -79,11 +78,6 @@ void test_health(void)
     HK_CHECK_EQ_INT(judge(in, &why), HK_HEALTH_ROLLBACK);
     HK_CHECK_EQ_INT(why, HK_HEALTH_REASON_STORAGE_FAILED);
 
-    in = healthy();
-    in.telemetry = HK_HEALTH_FAIL;
-    HK_CHECK_EQ_INT(judge(in, &why), HK_HEALTH_ROLLBACK);
-    HK_CHECK_EQ_INT(why, HK_HEALTH_REASON_TELEMETRY_FAILED);
-
     /* --- a recorded panic outranks every subsystem's own opinion --- */
     in = healthy();
     in.critical_fault = true;
@@ -129,22 +123,17 @@ void test_health(void)
 
     /* Each silent subsystem names itself. */
     in = healthy();
-    in.telemetry = HK_HEALTH_UNKNOWN;
+    in.network = HK_HEALTH_UNKNOWN;
     in.uptime_ms = HK_HEALTH_DEADLINE_MS_DEFAULT;
     HK_CHECK_EQ_INT(why = HK_HEALTH_REASON_OK, HK_HEALTH_REASON_OK);
     HK_CHECK_EQ_INT(judge(in, &why), HK_HEALTH_ROLLBACK);
-    HK_CHECK_EQ_INT(why, HK_HEALTH_REASON_TELEMETRY_SILENT);
+    HK_CHECK_EQ_INT(why, HK_HEALTH_REASON_NETWORK_SILENT);
 
     /* --- a criterion the build does not have is satisfied, not pending ---
-     * A prototype with no NTC fitted must still be able to confirm, and it
+     * A build with no audio driver must still be able to confirm, and it
      * must have to say so explicitly rather than get there by accident. */
     in = healthy();
-    in.telemetry = HK_HEALTH_SKIP;
-    HK_CHECK_EQ_INT(judge(in, &why), HK_HEALTH_CONFIRM);
-
-    in = healthy();
     in.audio = HK_HEALTH_SKIP;
-    in.telemetry = HK_HEALTH_SKIP;
     HK_CHECK_EQ_INT(judge(in, &why), HK_HEALTH_CONFIRM);
 
     /* --- but the check cannot be switched off ---
@@ -156,7 +145,6 @@ void test_health(void)
     in.storage = HK_HEALTH_SKIP;
     in.network = HK_HEALTH_SKIP;
     in.audio = HK_HEALTH_SKIP;
-    in.telemetry = HK_HEALTH_SKIP;
     HK_CHECK_EQ_INT(judge(in, &why), HK_HEALTH_WAIT);
     HK_CHECK_EQ_INT(why, HK_HEALTH_REASON_UNSKIPPABLE);
 
@@ -254,16 +242,15 @@ void test_health(void)
     }
 
     /* ===== the posture the firmware actually starts from =====
-     * hk_health_monitor begins with storage and network unknown and audio and
-     * telemetry skipped, because those two subsystems do not exist yet. If
-     * that combination could never reach CONFIRM, every OTA would roll back
+     * hk_health_monitor begins with storage and network unknown and audio
+     * skipped, because that subsystem does not exist yet. If that
+     * combination could never reach CONFIRM, every OTA would roll back
      * and the only symptom would be updates that quietly never stick. */
     {
         hk_health_inputs_t wired = {
             .storage = HK_HEALTH_UNKNOWN,
             .network = HK_HEALTH_UNKNOWN,
             .audio = HK_HEALTH_SKIP,
-            .telemetry = HK_HEALTH_SKIP,
             .uptime_ms = 0,
             .critical_fault = false,
         };

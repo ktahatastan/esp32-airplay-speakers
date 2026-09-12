@@ -21,7 +21,6 @@ void test_led(void)
     HK_CHECK_EQ_INT(resolve((hk_led_inputs_t){.ready = true}), HK_LED_READY);
     HK_CHECK_EQ_INT(resolve((hk_led_inputs_t){.playing = true}), HK_LED_PLAYING);
     HK_CHECK_EQ_INT(resolve((hk_led_inputs_t){.ota = true}), HK_LED_OTA);
-    HK_CHECK_EQ_INT(resolve((hk_led_inputs_t){.battery_low = true}), HK_LED_BATTERY_LOW);
     HK_CHECK_EQ_INT(resolve((hk_led_inputs_t){.error = true}), HK_LED_ERROR);
     HK_CHECK_EQ_INT(resolve((hk_led_inputs_t){0}), HK_LED_OFF);
 
@@ -33,12 +32,12 @@ void test_led(void)
 
     /* Cutting power mid-update is destructive, so the update warning beats
      * every merely informational state. */
-    HK_CHECK_EQ_INT(resolve((hk_led_inputs_t){.ota = true, .playing = true, .battery_low = true}),
+    HK_CHECK_EQ_INT(resolve((hk_led_inputs_t){.ota = true, .playing = true}),
                     HK_LED_OTA);
 
     /* The user is holding the button and is about to commit to something
-     * destructive: show them which, even while playing or on a low battery. */
-    HK_CHECK_EQ_INT(resolve((hk_led_inputs_t){.playing = true, .battery_low = true,
+     * destructive: show them which, even while playing. */
+    HK_CHECK_EQ_INT(resolve((hk_led_inputs_t){.playing = true,
                                               .button_hold = HK_BUTTON_HOLD_NETWORK_ARMED}),
                     HK_LED_HOLD_NETWORK);
     HK_CHECK_EQ_INT(resolve((hk_led_inputs_t){.playing = true,
@@ -59,9 +58,6 @@ void test_led(void)
                                               .button_hold = HK_BUTTON_HOLD_NEUTRAL}),
                     HK_LED_PLAYING);
 
-    /* A low battery matters more than what is playing. */
-    HK_CHECK_EQ_INT(resolve((hk_led_inputs_t){.battery_low = true, .playing = true, .ready = true}),
-                    HK_LED_BATTERY_LOW);
     /* Activity beats mere readiness, and readiness beats still connecting. */
     HK_CHECK_EQ_INT(resolve((hk_led_inputs_t){.playing = true, .ready = true}), HK_LED_PLAYING);
     HK_CHECK_EQ_INT(resolve((hk_led_inputs_t){.ready = true, .connecting = true}), HK_LED_READY);

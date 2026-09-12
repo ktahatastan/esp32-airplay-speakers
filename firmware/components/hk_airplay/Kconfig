@@ -1,4 +1,4 @@
-menu "Harman Kardom AirPlay"
+menu "Merzarkabul AirPlay"
 
 config HK_AIRPLAY
     bool "Build the vendored AirPlay 2 receiver (ADR-0007)"

@@ -60,14 +60,15 @@ _Static_assert((HK_AUDIO_HW_MUTE_MASK & HK_PIN_FORBIDDEN_MASK) == 0,
  * Settle times.
  *
  * THESE ARE PROVISIONAL. They are reasoning, not measurement, and they belong
- * to G1 (the amplifier on a dummy load) and G3 (the loaded rails), neither of
- * which has been run. hk_audio.h leaves hk_audio_timing_t without defaults for
- * exactly this reason: a number invented here is indistinguishable from a
- * measured one once it is in the source. So it is said here, once, plainly, and
- * the values are logged at start so the boot record shows what was used rather
- * than what someone assumed.
+ * to G1 (the amplifier on a dummy load, with the supply dip and the power-on
+ * and power-off pop on the same bench), which has not been run. hk_audio.h
+ * leaves hk_audio_timing_t without defaults for exactly this reason: a number
+ * invented here is indistinguishable from a measured one once it is in the
+ * source. So it is said here, once, plainly, and the values are logged at
+ * start so the boot record shows what was used rather than what someone
+ * assumed.
  *
- * The reasoning behind each, so that the G1/G3 operator knows what to check:
+ * The reasoning behind each, so that the G1 operator knows what to check:
  *
  *   clock_settle_ms  The PCM5102A runs in 3-wire mode with SCK grounded and
  *                    recovers its clock from BCK with an internal PLL
@@ -423,7 +424,7 @@ esp_err_t hk_audio_hw_start(void)
              hk_audio_state_name(s_chain.state));
     ESP_LOGW(TAG, "settle times %" PRIu32 "/%" PRIu32 "/%" PRIu32 " ms "
                   "(clock/dac/mute) are PROVISIONAL: reasoned, not measured. "
-                  "They belong to G1 and G3.",
+                  "They belong to G1.",
              HK_AUDIO_HW_TIMING.clock_settle_ms,
              HK_AUDIO_HW_TIMING.dac_settle_ms,
              HK_AUDIO_HW_TIMING.mute_settle_ms);

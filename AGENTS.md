@@ -1,8 +1,8 @@
-# Harman Kardom agent contract
+# Merzarkabul Airplay Speakers agent contract
 
 ## Mission
 
-Build four safe, measurable, battery-powered active speakers from Harman Kardon Nova drivers. The product name is **Harman Kardom**. Never present unverified driver impedance or AirPlay multiroom support as confirmed.
+Build four safe, measurable, mains-powered active speakers from Harman Kardon Nova drivers, each fed by a 19 V DC desktop adapter. The product name is **Merzarkabul Airplay Speakers**. Never present unverified driver impedance or AirPlay multiroom support as confirmed.
 
 ## Source of truth
 
@@ -29,9 +29,8 @@ Before work, read `docs/Home.md`, the relevant accepted ADRs under `docs/07-deci
 
 - Never energize an unknown driver at full level. G0 and the relevant G1-G2 checks come first.
 - Tweeter output requires a verified HPF, limiter and safe boot/mute sequence.
-- Li-ion packs use matched new cells, professional spot welding, balanced BMS, fuse and temperature monitoring.
-- Battery/charger tests start outside the enclosure on a non-flammable surface with current limiting and supervision.
-- Do not scale to four packs until G0-G5 pass. Agents cannot claim a physical test passed without recorded operator measurements.
+- First power-up of the amplifier goes through a current-limited bench supply, on the dummy load, with the barrel jack polarity (centre-positive) verified with a meter before the adapter is connected (ADR-0020).
+- Do not replicate to four units until G0-G2 pass. Agents cannot claim a physical test passed without recorded operator measurements.
 - BTL amplifier speaker negatives are not chassis ground.
 
 ## Verification
@@ -47,15 +46,11 @@ These are the open `Kritik` risks from `docs/01-planning/risk-register.md` that 
 
 - Individual Nova driver impedance is **partly** confirmed. DC resistance is measured -- woofer 4.0 ohm, tweeter 3.5 ohm, both 4 ohm class -- which settles nominal impedance and `C_SAFE`. Still open, and still blocking: the impedance curve and both drivers' `Fs`. The tweeter's `Fs` is what sets the minimum safe high-pass corner, so the crossover corner remains a conservative guess rather than a measurement. Follow `docs/02-hardware/driver-measurements.md`. Blocks G0, the crossover corner and safe amplifier level.
 - AirPlay 2 group synchronization is not measured. The stack is chosen and its AirPlay 2 and PTP capability is verified in source (ADR-0007), but no four-device measurement exists. Follow `docs/01-architecture/audio-network-feasibility.md`. Blocks G7 and PRD-002.
-- The XL4015 charge stage has no guaranteed charge termination; follow ADR-0009. No unattended or overnight charging before the G4 termination measurement.
-- The KM103 / DC-132A switch has no documented 16.8 VDC contact rating; it stays off the main battery line until written vendor data and the G3 load test exist.
-- BMS real continuous current, balance threshold/current and NTC behaviour are vendor claims only; they are not verified.
 
 ## Locked decisions agents must not re-open silently
 
 - Board: ESP32-S3 `N16R8`, 16 MB flash + 8 MB PSRAM (ADR-0010). The GPIO assignment is still a candidate.
-- V1 charge chain: USB-C PD -> 20 V trigger -> XL4015 16.80 V / 2.00 A CC/CV -> 4S BMS (ADR-0009).
-- V1 does not play audio while charging (ADR-0004).
+- Power: a 19 V DC desktop adapter through a 5.5 x 2.1 mm centre-positive barrel jack feeds the XH-A232 (8-26 V input) directly as `VIN`; the 5 V buck feeds the ESP32-S3 and the PCM5102A. No power switch in V1 (ADR-0020).
 - AirPlay receiver: `rbouteiller/airplay-esp32`, vendored at a pinned commit (ADR-0007). Its licence permits non-commercial use only, which binds the whole project.
 
 ## Documentation integrity

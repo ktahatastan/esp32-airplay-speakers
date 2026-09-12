@@ -1,4 +1,4 @@
-# Harman Kardom overlay for the ESP32-S3 N8R2 DEVELOPMENT KIT.
+# Merzarkabul Airplay Speakers overlay for the ESP32-S3 N8R2 DEVELOPMENT KIT.
 #
 # Applied on top of sdkconfig.defaults, never instead of it:
 #

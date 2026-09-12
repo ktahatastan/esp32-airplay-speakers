@@ -23,14 +23,12 @@
 
 #include "esp_log.h"
 #include "esp_mac.h"
-#include "esp_timer.h"
 #include "sdkconfig.h"
 
 #include "hk_identity.h"
 #include "hk_pins.h"
 #include "hk_settings.h"
 #include "hk_storage.h"
-#include "hk_view.h"
 
 /* Vendored, and reachable only through PRIV_INCLUDE_DIRS: nothing outside this
  * component gets to depend on upstream's headers. */
@@ -51,7 +49,7 @@ static const char *TAG = "hk_airplay";
  * assignment comes from hk_pins.h. Two places naming the same three pins is
  * two places to change, so the compiler is told they must agree -- a silent
  * disagreement would clock audio out of whichever pins hk_pins reserved for
- * something else, which on the product board means I2C to the DAC.
+ * something else -- on the product board, the button, the LED or a mute line.
  */
 _Static_assert(CONFIG_I2S_BCK_IO == HK_PIN_I2S_BCLK,
                "AirPlay bit clock does not match hk_pins");
@@ -84,44 +82,8 @@ static void                 *s_state_context;
 static void on_rtsp_event(rtsp_event_t event, const rtsp_event_data_t *data,
                           void *user_data)
 {
+    (void)data;
     (void)user_data;
-
-    /* The screen is fed here rather than polled, because the receiver reports
-     * metadata when the source sends it and nothing else knows when that was.
-     * The volume is different -- the receiver keeps it and there is no event
-     * for it -- so it is read on every event instead, which is often enough
-     * for a control the user is turning by hand. */
-    switch (event) {
-    case RTSP_EVENT_METADATA:
-        if (data != NULL) {
-            hk_view_media_t media = {0};
-            /* Copied field by field rather than cast: rtsp_metadata_t and
-             * hk_view_media_t agree today, and a memcpy would keep compiling on
-             * the day the vendored receiver changes one of them. */
-            strlcpy(media.title, data->metadata.title, sizeof(media.title));
-            strlcpy(media.artist, data->metadata.artist, sizeof(media.artist));
-            strlcpy(media.album, data->metadata.album, sizeof(media.album));
-            media.duration_secs = data->metadata.duration_secs;
-            media.position_secs = data->metadata.position_secs;
-            /* Stamped on arrival so the progress ring can coast between
-             * reports instead of stepping once a source feels like updating. */
-            media.position_at_ms = (uint32_t)(esp_timer_get_time() / 1000);
-            media.has_artwork = data->metadata.has_artwork;
-            hk_view_set_metadata(&media);
-        }
-        break;
-    case RTSP_EVENT_DISCONNECTED:
-        /* The stream is gone, so what it said about itself is gone with it.
-         * Leaving the last title on screen would show a track nothing is
-         * playing. */
-        hk_view_clear_metadata();
-        break;
-    default:
-        break;
-    }
-
-    const int volume = playback_control_get_volume_percent();
-    hk_view_set_volume(volume, volume == 0);
 
     if (s_on_state == NULL) {
         return;
@@ -254,15 +216,15 @@ esp_err_t hk_airplay_start(hk_airplay_state_cb_t on_state, void *context)
         return err;
     }
 
-    /* Registered unconditionally now: this listener feeds the screen as well as
-     * the status light, and the screen is worth having even in a build that
-     * passed no state callback. */
+    /* Registered unconditionally: the listener is cheap, it forwards nothing
+     * when no state callback was passed, and registering it in every build
+     * means the one code path is the one that gets exercised. */
     if (rtsp_events_register(on_rtsp_event, NULL) != 0) {
-        /* Not fatal. The receiver works; only the status light and the track
-         * on screen go quiet, and a speaker that plays without showing what it
-         * is playing is better than one that refuses to start. */
-        ESP_LOGW(TAG, "no room to listen for playback events; the status LED and "
-                      "the screen will not show playback");
+        /* Not fatal. The receiver works; only the status light goes quiet,
+         * and a speaker that plays without showing that it is playing is
+         * better than one that refuses to start. */
+        ESP_LOGW(TAG, "no room to listen for playback events; the status LED "
+                      "will not show playback");
     }
 
     /* Which part of the image this box plays, from the owner's setting.

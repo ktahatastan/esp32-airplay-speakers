@@ -80,7 +80,7 @@ static bool read_calibration(uint32_t *marker)
 
 int main(void)
 {
-    printf("Harman Kardom storage wall, on real NVS\n");
+    printf("Merzarkabul Airplay Speakers storage wall, on real NVS\n");
 
     /* Point the linux partition layer at the table the device actually uses.
      * Generating it from partitions.csv at build time is what stops this test

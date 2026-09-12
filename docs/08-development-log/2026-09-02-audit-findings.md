@@ -7,17 +7,15 @@ updated: 2026-09-02
 tags: [development-log, verification, audit, firmware, ci]
 ---
 
-# 2026-09-02 — Bağımsız denetimin bulduğu on beş şey
+# 2026-09-02 — Bağımsız denetimin bulduğu on dört şey
 
-Bu oturumda yazılan her şeye karşı çok açılı, çürütmeli bir denetim çalıştırıldı: hata avı, test kalitesi, belge doğruluğu, CI bütünlüğü ve modüller arası tutarlılık. Otuz beş ajanın yirmi dokuzu tamamlandı; **`verify:claims` doğrulayıcılarının altısı da oturum limitine takıldı**, o yüzden belge bulguları doğrulanmamış geldi ve tek tek elle teyit edildi. On beş bulgu onaylandı, dokuzu çürütüldü.
+Bu oturumda yazılan her şeye karşı çok açılı, çürütmeli bir denetim çalıştırıldı: hata avı, test kalitesi, belge doğruluğu, CI bütünlüğü ve modüller arası tutarlılık. Otuz beş ajanın yirmi dokuzu tamamlandı; **`verify:claims` doğrulayıcılarının altısı da oturum limitine takıldı**, o yüzden belge bulguları doğrulanmamış geldi ve tek tek elle teyit edildi. On dört bulgu onaylandı, dokuzu çürütüldü.
 
 ## Kodda gerçek kusurlar
 
 **Limiter sonsuz bir örnekte susuyordu.** Koruma yalnız `isnan` bakıyordu. `fabsf(INFINITY)` her tavanı aştığı için indirim çalışıyor ve `gain = tavan / INFINITY = 0` oluyordu; hold onu orada tutuyordu. Tek bozuk örnek çıkışı **hold süresi boyunca susturuyordu** — bu ayarlarda ~10 ms. Bir koruma katının vaadinin tam tersi. Üretip gördüm: `gain=0, held=478`. `isfinite`'a çevrildi.
 
 **Biquad sonsuz Q kabul ediyordu.** `sinf(w0)/(2*INFINITY)` sıfır, yani `alpha` yok oluyor ve `a2` tam olarak 1 çıkıyordu — kutupları birim çemberin üstünde bir bölüm, ki aynı dosyadaki kararlılık denetimi onu reddediyor. Modülün kendi kararsız dediği katsayıları döndürmek, isteği reddetmekten kötü.
-
-**Sıcaklıkta histerezis yoktu.** Gerilimde vardı, sıcaklıkta yoktu — hem de "kötüleşme anında, iyileşme hak edilir" diye yazan modülde. Sınırda duran bir NTC her okumada `OVERHEAT`/`NORMAL` arasında gidip geliyordu ve her geçiş susturma sıralayıcısını çalıştırıyordu. Ölçtüm: 10 okumada 10 geçiş. `recover_cell_c` eklendi; aynı salınım artık **tek** geçiş üretiyor. NTC susarsa da paket sıcakken `OVERHEAT` bırakılıyor: raporlamayı kesmesi soğuduğunun kanıtı değil.
 
 **Provisioning durumu iki görevden kilitsiz değiştiriliyordu.** `on_button` `hk_ui` görevinde, tick `app_main`'de, iki çekirdek açık. `hk_prov_t` birlikte değişmesi gereken birkaç alan. Kilit `hk_main`'e kondu — `hk_provision` bilerek RTOS'suz, host'ta test edilebilmesi için.
 
@@ -52,7 +50,7 @@ Dördü de artık mutasyonla yakalanıyor.
 
 ## Doğrulama
 
-393223 host kontrolü / 0 hata · ASan+UBSan temiz · fuzz tüm değişmezleri koruyor · her `firmware-ci` adımı yerelde geçti · iki iş akışı da ayrıştı · beş kusurun beşi de geri alındığında test düşüyor.
+393223 host kontrolü / 0 hata · ASan+UBSan temiz · fuzz tüm değişmezleri koruyor · her `firmware-ci` adımı yerelde geçti · iki iş akışı da ayrıştı · dört kusurun dördü de geri alındığında test düşüyor.
 
 ## Denetimin çürüttükleri
 

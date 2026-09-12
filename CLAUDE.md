@@ -1,4 +1,4 @@
-# Harman Kardom — Claude Code
+# Merzarkabul Airplay Speakers — Claude Code
 
 @AGENTS.md
 @docs/10-agentic-development/README.md

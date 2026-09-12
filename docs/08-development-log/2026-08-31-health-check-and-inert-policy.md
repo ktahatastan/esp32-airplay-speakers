@@ -27,7 +27,7 @@ Her şeyi şekillendiren kural: henüz rapor vermemiş bir alt sistem `UNKNOWN`'
 İki sertleştirme:
 
 - `deadline <= settle` ise karar verilmez. Aksi hâlde her imaj onaylanmaya hak kazanmadan süreye takılır ve günlük, gerçek kusur yapılandırmadayken en yavaş alt sistemi suçlar.
-- `storage` ve `network` **atlanamaz**. Her ölçütü `SKIP` yapmak, her imajı koşulsuz onaylayan bir sağlık kontrolü demek: kapatılmış ama hâlâ çalışıyor görünen bir geri alma mekanizması. `SKIP`, henüz var olmayan `hk_audio` ve `hk_power` içindir.
+- `storage` ve `network` **atlanamaz**. Her ölçütü `SKIP` yapmak, her imajı koşulsuz onaylayan bir sağlık kontrolü demek: kapatılmış ama hâlâ çalışıyor görünen bir geri alma mekanizması. `SKIP`, henüz var olmayan `hk_audio` içindir.
 
 On mutasyonun dokuzu yakalandı (onuncusu geçersiz mutasyondu, derlenmedi).
 
@@ -51,11 +51,11 @@ Düzeltme: ana döngü artık saniyede bir tick veriyor, gerçek saat geçiriliy
 
 Bugün gizli bir kusur, çünkü henüz OTA görevi yok — ama tam da yazmak üzere olduğum koda kurulmuş bir tuzaktı.
 
-Çözüm yorum değil, yapı: tüm-yapı ataması kaldırıldı ve her üretici yalnız kendi alanını yazıyor. `error` bayrağı için de kaynak maskesi kondu (`HK_UI_FAULT_NETWORK`, `_AUDIO`, `_POWER`, `_UPDATE`), yoksa aynı sorun bir seviye aşağıda tekrarlanırdı: bir ağ hatasının temizlenmesi, sesteki bir hatayı da sessizce temizlerdi.
+Çözüm yorum değil, yapı: tüm-yapı ataması kaldırıldı ve her üretici yalnız kendi alanını yazıyor. `error` bayrağı için de kaynak maskesi kondu (`HK_UI_FAULT_NETWORK`, `_AUDIO`, `_UPDATE`), yoksa aynı sorun bir seviye aşağıda tekrarlanırdı: bir ağ hatasının temizlenmesi, sesteki bir hatayı da sessizce temizlerdi.
 
 ## Belge tarafında kendi hatam
 
-`AGENTS.md`, risk kaydındaki "burada tekrarlanmayan **iki** `Kritik` satır"dan söz ediyordu. Bugün imzalama anahtarı satırını eklediğimde sayı 7'den 8'e çıktı ve cümle geçersizleşti. Sayıyı güncellemek yerine cümleyi sayıdan kurtardım: kendi kaynağını yanlış tarif eden bir sözleşme, ona işaret eden bir sözleşmeden kötüdür.
+`AGENTS.md`, risk kaydındaki "burada tekrarlanmayan **bir** `Kritik` satır"dan söz ediyordu. Bugün imzalama anahtarı satırını eklediğimde sayı 3'ten 4'e çıktı ve cümle geçersizleşti. Sayıyı güncellemek yerine cümleyi sayıdan kurtardım: kendi kaynağını yanlış tarif eden bir sözleşme, ona işaret eden bir sözleşmeden kötüdür.
 
 Ayrıca bayat bir risk satırı gerçekleştirildi: provisioning kimlik üretim aracı artık **var**; kalan risk hiçbir cihaza yazılmamış olması.
 
@@ -72,6 +72,6 @@ Ayrıca bayat bir risk satırı gerçekleştirildi: provisioning kimlik üretim 
 ## Açık kalanlar
 
 - `esp_ota_mark_app_valid_cancel_rollback()` çağrısı ve alt sistem raporlayıcıları. Bunlar olmadan `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` kapalı kalır; yayın hattı eşleşmeyi zaten denetliyor.
-- `hk_audio` ve `hk_power` hâlâ yok; sağlık kontrolünün iki ölçütü bu yüzden `SKIP` ile geçilecek.
+- `hk_audio` hâlâ yok; sağlık kontrolünün bir ölçütü bu yüzden `SKIP` ile geçilecek.
 - ADR-0007 vendor'lanmış AirPlay yığınını şart koşuyor ama yığın **depoda değil**; F1 kanıtı bugün yeniden üretilemez durumda.
-- `hk_pins.h` ses tarafında yalnız I2S'i tanımlıyor: amfi mute/standby, PCM5102A `XSMT`, şarj algılama ve DC sezme için GPIO **yok**. Pin tablosu hâlâ `candidate` ve hiçbir şey lehimlenmedi, yani şimdi eklemek bedava.
+- `hk_pins.h` ses tarafında yalnız I2S'i tanımlıyor: amfi mute/standby, PCM5102A `XSMT` ve DC sezme için GPIO **yok**. Pin tablosu hâlâ `candidate` ve hiçbir şey lehimlenmedi, yani şimdi eklemek bedava.

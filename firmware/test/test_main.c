@@ -5,7 +5,7 @@ int hk_test_checks = 0;
 
 int main(void)
 {
-    printf("Harman Kardom host tests\n");
+    printf("Merzarkabul Airplay Speakers host tests\n");
     HK_RUN(test_pins);
     HK_RUN(test_identity);
     HK_RUN(test_version);
@@ -17,7 +17,6 @@ int main(void)
     HK_RUN(test_gate);
     HK_RUN(test_ota);
     HK_RUN(test_health);
-    HK_RUN(test_power);
     HK_RUN(test_audio);
     HK_RUN(test_limiter);
     HK_RUN(test_biquad);
@@ -26,10 +25,6 @@ int main(void)
     HK_RUN(test_portal);
     HK_RUN(test_profile);
     HK_RUN(test_dsp);
-    HK_RUN(test_draw);
-    HK_RUN(test_gfx);
-    HK_RUN(test_qr);
-    HK_RUN(test_screen);
 #ifdef HK_HAVE_CJSON
     HK_RUN(test_manifest_json);
 #endif

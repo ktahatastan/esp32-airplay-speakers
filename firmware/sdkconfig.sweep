@@ -6,7 +6,7 @@
 # 100 Hz and the woofer's resonance is at or below that -- the one part of the
 # curve that decides Fs was the part the app could not reach.
 #
-# THE AMPLIFIER MUST BE OUT OF THE PATH. The two exceptions in sdkconfig.bench
+# THE AMPLIFIER MUST BE OUT OF THE PATH. The bench exception in sdkconfig.bench
 # release the DAC's mute and the amplifier's together; there is no setting that
 # separates them. Keeping the amp out is a wiring act, which is why the sweep
 # begins with ten seconds of silence.

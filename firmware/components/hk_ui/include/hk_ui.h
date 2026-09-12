@@ -32,8 +32,8 @@
  * inside the audio band would be audible if it coupled at all. 25 kHz also
  * keeps 10-bit resolution available from the 80 MHz APB clock.
  *
- * This is reasoning, not measurement. The G3 noise measurement decides the
- * final value, and it may well move.
+ * This is reasoning, not measurement. A bench noise measurement at G1 decides
+ * the final value, and it may well move.
  */
 #define HK_UI_LED_PWM_HZ 25000
 
@@ -69,8 +69,7 @@ esp_err_t hk_ui_start(hk_ui_event_cb_t callback, void *context);
 typedef enum {
     HK_UI_FAULT_NETWORK = 1u << 0,
     HK_UI_FAULT_AUDIO   = 1u << 1,
-    HK_UI_FAULT_POWER   = 1u << 2,
-    HK_UI_FAULT_UPDATE  = 1u << 3,
+    HK_UI_FAULT_UPDATE  = 1u << 2,
 } hk_ui_fault_t;
 
 /*
@@ -96,21 +95,8 @@ void hk_ui_set_ota(bool active);
 /** Playback is running. */
 void hk_ui_set_playing(bool playing);
 
-/** The pack is below its warning threshold. */
-void hk_ui_set_battery_low(bool low);
-
 /** Boot is finished; stop showing the boot state. */
 void hk_ui_clear_booting(void);
-
-/**
- * The inputs the LED is rendering from, right now.
- *
- * Published so a second surface -- the round panel -- can render from the same
- * struct rather than from its own copy assembled out of the same setters. Two
- * copies is how two indicators end up disagreeing about what the device is
- * doing, and the one that is wrong is whichever the user happens to look at.
- */
-void hk_ui_snapshot(hk_led_inputs_t *out);
 
 /**
  * Whether the button was already held when hk_ui_start() ran.

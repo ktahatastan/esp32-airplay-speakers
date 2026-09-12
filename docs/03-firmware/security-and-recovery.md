@@ -14,8 +14,8 @@ tags: [security, ota, provisioning]
 - Wi-Fi parolası log, crash dump veya portal yanıtında gösterilmez. `firmware/tools/check_no_credential_logs.py` bunu kaynak üzerinde denetler ve CI'da çalışır: gizli bir değerin **uzunluğunu** loglamak serbest, **değerini** loglamak değil.
 - Provisioning ilk açılışta veya fiziksel butonla zaman sınırlı açılır.
 - Kullanıcı reseti fabrika kalibrasyonunu silemez.
-- OTA düşük bataryada başlamaz; güç kaybında önceki çalışan imaja döner.
-- OTA yalnız HTTPS ve imzalı image ile; idle audio, güvenli batarya/sıcaklık ve eşleşen donanım manifesti koşullarında başlar.
+- OTA güç kaybında önceki çalışan imaja döner.
+- OTA yalnız HTTPS ve imzalı image ile; idle audio ve eşleşen donanım manifesti koşullarında başlar.
 - GitHub tokenı veya firmware signing özel anahtarı uygulama imajına gömülmez.
 - Yeni image ilk-boot sağlık kontrolü geçmeden valid işaretlenmez; ayrıntı [[ota-and-release-plan]].
 - Kurtarma yolu USB/UART ve belgelenmiş boot prosedürü içerir.

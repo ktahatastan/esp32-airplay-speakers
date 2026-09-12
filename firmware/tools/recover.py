@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bring a Harman Kardom speaker back over USB without destroying its calibration.
+"""Bring a Merzarkabul Airplay Speakers unit back over USB without destroying its calibration.
 
 This is the recovery path the OTA plan promises will exist in every release. It
 is a script rather than a paragraph because the dangerous mistake here is one
@@ -23,7 +23,7 @@ repartition cannot leave this script quietly writing into the wrong place.
 
 Usage:
     recover.py --port /dev/cu.usbmodem1101
-    recover.py --port ... --build build-release --image harman-kardom-signed.bin
+    recover.py --port ... --build build-release --image merzarkabul-airplay-speakers-signed.bin
     recover.py --port ... --dry-run
 """
 from __future__ import annotations
@@ -155,7 +155,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--port", help="serial port; esptool autodetects if omitted")
     parser.add_argument("--build", default="build",
                         help="build directory under firmware/ (default: build)")
-    parser.add_argument("--image", default="harman-kardom.bin",
+    parser.add_argument("--image", default="merzarkabul-airplay-speakers.bin",
                         help="application image within the build directory")
     parser.add_argument("--baud", default="460800")
     parser.add_argument("--partitions", type=Path, default=PARTITIONS,

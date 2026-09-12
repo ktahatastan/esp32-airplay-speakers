@@ -1,4 +1,4 @@
-# Harman Kardom belge şeması
+# Merzarkabul belge şeması
 
 Belgelerde kullanılan tek sayfalık, okunabilir devre paftasını üretir. Elektriksel kaynak burası değildir; netlist ve ERC için `hardware/kicad/` esastır.
 
@@ -8,7 +8,7 @@ Belgelerde kullanılan tek sayfalık, okunabilir devre paftasını üretir. Elek
 python3 hardware/diagrams/generate_schematic_svg.py
 ```
 
-Çıktı: `docs/02-hardware/assets/harman-kardom-schematic.svg`. Bağımlılık yoktur; yalnız standart kütüphane kullanılır.
+Çıktı: `docs/02-hardware/assets/merzarkabul-schematic.svg`. Bağımlılık yoktur; yalnız standart kütüphane kullanılır.
 
 ## Neden script
 
@@ -23,6 +23,6 @@ Yeni bir blok eklerken `schematic_lib.Sheet.block()` kullanın ve teli `block.pi
 
 ## İçerik
 
-Pafta; USB-C PD şarj zincirini, 4S paketi ve BMS'i, sigorta ve ana anahtarı, 5 V lojik beslemesini, ESP32-S3 N16R8'i, PCM5102A'yı, XH-A232 BTL bi-amp'ı, woofer ve `C_SAFE` korumalı tweeter'ı, kullanıcı arayüzünü, `TP0…TP27` test noktalarını, güvenlik kurallarını ve zorunlu kapıları tek sayfada gösterir.
+Pafta; DC giriş jakını ve 19 V adaptörü, seri ters polarite adayını ve bulk kondansatörü, 5 V lojik beslemesini, ESP32-S3 N16R8'i, PCM5102A'yı, XH-A232 BTL bi-amp'ı, woofer ve `C_SAFE` korumalı tweeter'ı, susturma hatlarını, kullanıcı arayüzünü, `TP0…TP21` test noktalarını, güvenlik kurallarını ve zorunlu kapıları tek sayfada gösterir.
 
 Kanonik değerler ve gerekçeler için [devre ve bağlantı planına](../../docs/02-hardware/circuit-and-wiring-plan.md) bakın.

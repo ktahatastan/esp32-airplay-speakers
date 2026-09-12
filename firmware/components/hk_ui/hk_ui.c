@@ -335,23 +335,6 @@ void hk_ui_set_playing(bool playing)
     portEXIT_CRITICAL(&s_status_lock);
 }
 
-void hk_ui_set_battery_low(bool low)
-{
-    portENTER_CRITICAL(&s_status_lock);
-    s_status.battery_low = low;
-    portEXIT_CRITICAL(&s_status_lock);
-}
-
-void hk_ui_snapshot(hk_led_inputs_t *out)
-{
-    if (out == NULL) {
-        return;
-    }
-    portENTER_CRITICAL(&s_status_lock);
-    *out = s_status;
-    portEXIT_CRITICAL(&s_status_lock);
-}
-
 void hk_ui_clear_booting(void)
 {
     portENTER_CRITICAL(&s_status_lock);

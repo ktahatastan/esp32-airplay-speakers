@@ -46,7 +46,7 @@
  * Five seconds, and the number is a compromise between two ways of being wrong.
  *
  * Too short and the gate is not a confirmation but a trick. The owner has to
- * notice the LED change or the screen, decide, and press again; someone who
+ * notice the LED change, decide, and press again; someone who
  * looks down at the speaker first has already spent a second or two. Much below
  * three seconds this starts rejecting presses that were entirely deliberate,
  * and a confirmation the user keeps failing is worse than no confirmation.
@@ -117,7 +117,7 @@ hk_prov_radios_t hk_prov_radios(const hk_prov_t *prov);
 /**
  * True while the speaker is waiting for the second press.
  *
- * For the LED and the screen, so they can say "press again" -- the whole point
+ * For the LED and the log, so they can say "press again" -- the whole point
  * of the gate is that the user is told what the first press did. Takes the time
  * rather than reading the flag alone, so a caller polling once a second never
  * shows a prompt for an arm that has already expired.

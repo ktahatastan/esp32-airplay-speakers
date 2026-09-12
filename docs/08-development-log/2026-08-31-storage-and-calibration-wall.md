@@ -1,17 +1,17 @@
 ---
-title: F6 depolama ve kalibrasyon duvarı
+title: Depolama ve kalibrasyon duvarı
 status: partial
 owner: firmware-engineer
 reviewers: [orchestrator, qa-engineer]
 updated: 2026-08-31
-tags: [development-log, firmware, f6, storage, nvs, prd-008]
+tags: [development-log, firmware, f0, storage, nvs, prd-008]
 ---
 
 # 2026-08-31 — Depolama ve kalibrasyon duvarı
 
 ## Amaç
 
-`F6`'nın donanım gerektirmeyen yarısı: iki NVS deposu, şema kararları ve PRD-008'in gerçek garantisi. Güç telemetrisi (paket gerilimi, NTC, düşük gerilim kapanışı) G4 bekliyor.
+İki NVS deposu, şema kararları ve PRD-008'in gerçek garantisi: `F0`'ın depolama yarısı.
 
 ## Tasarımın özü: iki depo eşdeğer değil
 
@@ -67,6 +67,5 @@ Butonun 12 saniyelik dalı artık gerçekten çalışıyor: `hk_storage_user_res
 
 ## Kalan iş
 
-- Güç telemetrisi: paket gerilimi, NTC, düşük gerilimde kontrollü kapanış, `OTA_MIN_PACK_MV` eşiği. Hepsi G4 ölçümüne bağlı.
 - Kalibrasyon yazıcısı G2 ile gelecek; o zamana kadar `factory_cal` salt okunur.
 - Cihaz başına salt/verifier üreten üretim aracı hâlâ yok; provisioning bu yüzden açılmıyor (kasıtlı).

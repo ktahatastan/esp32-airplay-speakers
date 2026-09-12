@@ -10,8 +10,8 @@ tags: [testing, bench, audio, grounding, mute, procedure]
 # Tezgâh ölçüm sırası
 
 `2026-09-08` tezgâh oturumunda açık kalan her soruyu kapatmak için. Sıra keyfî
-değil: önce **hiçbir alet gerektirmeyen** ve en büyük bilinmezi kapatan test,
-sonra **lehimden önce yapılması zorunlu** güvenlik ölçümleri, sonra gerisi.
+değil: önce **hiçbir alet gerektirmeyen** dinleme testi, sonra **lehimden önce
+yapılması zorunlu** güvenlik ölçümleri, sonra gerisi.
 
 Her adımda ne ölçüleceği, aletin hangi konumda olacağı, **beklenen değer** ve o
 değer çıkmazsa ne anlama geldiği yazıyor. Sonucu buraya yaz; bir agent fiziksel
@@ -23,41 +23,9 @@ bir testi geçmiş sayamaz, operatör kaydeder.
 
 ---
 
-## A — Alet gerekmiyor: gürültünün kaynağı ekran mı?
+## A — Alet gerekmiyor: dinleme testi
 
-En büyük açık soru bu, ve cevabı kulakla veriliyor. Karttaki firmware 8 saniye
-paneli normal sürüyor, 8 saniye **hiçbir şey göndermiyor**, ve her geçişi
-yazıyor:
-
-```text
-W hk_lcd: noise probe: panel bus ACTIVE (30 fps) -- listen now
-W hk_lcd: noise probe: panel bus SILENT (no transfers at all) -- listen now
-```
-
-### A1. Parazit döngüyü takip ediyor mu?
-
-Hiçbir şey çalmadan dinle, en az üç tam döngü.
-
-| gözlem | anlamı |
-|---|---|
-| Sessiz yarıda parazit **kesiliyor** | Kaynak ekran veri yolu. Çözüm yazılımda değil: kablo ayrımı, SPI hızını düşürmek, seri direnç. |
-| İki yarıda da **aynı** | Ekran değil. Sıradaki şüpheliler Wi-Fi ve ortak 5 V rayı. |
-| Sessiz yarıda **azalıyor ama bitmiyor** | Birden fazla kaynak var; ekran bir tanesi. |
-
-**Sonuç:** _(yazılacak)_
-
-### A2. Buton da aynı döngüyü takip ediyor mu?
-
-Aynı derlemede, **her iki yarıda da** butona bas.
-
-| gözlem | anlamı |
-|---|---|
-| Sessiz yarıda düzgün, aktif yarıda garip | Ekran veri yolu butona da biniyor — parazitle **aynı kök sebep**. |
-| İki yarıda da aynı | Ekranla ilgisi yok; buton hattına ayrıca bakılır. |
-
-**Sonuç:** _(yazılacak)_
-
-### A3. Çalma durunca fısıltı tamamen kesiliyor mu?
+### A1. Çalma durunca fısıltı tamamen kesiliyor mu?
 
 Bir şey çal, sonra durdur ve birkaç saniye bekle. `hk_audio_hw` sekansı geri
 sarmalı ve `XSMT` tekrar düşmeli. Seri kayıtta görülmesi gereken:
@@ -221,7 +189,7 @@ planlı yıldız noktada birleşir."* Şemada ESP, DAC, amfi, buck — hepsi ayr
 `STAR_GND`'ye gidiyor, birbirine değil.
 
 **Yapılacak:** ESP GND ve DAC GND, birbirine değil, **ikisi de ayrı tellerle tek
-bir yıldız noktasına** (pratikte güç girişinin toprağı). Sonra A1'i tekrarla.
+bir yıldız noktasına** (pratikte güç girişinin toprağı). Sonra A1 dinleme testini tekrarla.
 
 **Sonuç:** _(yazılacak)_
 
@@ -231,7 +199,6 @@ bir yıldız noktasına** (pratikte güç girişinin toprağı). Sonra A1'i tekr
 
 Bu ölçümler kapandıkça:
 
-- `A1`/`A2` ekranı işaret ederse: SPI hızı, kablo ayrımı ve seri direnç değerlendirilir.
 - `B4` bir `SD` noktası bulursa: şemadaki kesikli dal kesinleşir, `R7` takılır.
 - `C3` 36 dB gösterirse: kazanç düşürülür ve EQ bunun üstüne kurulur.
-- Hepsi kapandıktan sonra `G1` (amfi kukla yükte) ve `TP30`/`TP31` osiloskop kaydı.
+- Hepsi kapandıktan sonra `G1` (amfi kukla yükte) ve amfi çıkışı test noktalarının osiloskop kaydı.

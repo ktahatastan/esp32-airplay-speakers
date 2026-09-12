@@ -1,5 +1,5 @@
 #!/bin/sh
-# Harman Kardom pre-commit guard.
+# Merzarkabul Airplay Speakers pre-commit guard.
 #
 # Enable with:  git config core.hooksPath .githooks
 #

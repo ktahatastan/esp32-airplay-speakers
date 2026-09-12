@@ -22,7 +22,7 @@ Donanım gelene kadar sürücü katmanlarını yazmak; doğrulama karta kavuşun
 
 `hk_ui` kendi düşük öncelikli görevinde çalışıyor. Kontrol planı LED animasyonunun ses göreviyle aynı görevde çalışmamasını açıkça istiyor: oradaki uzun bir adım I2S underrun olarak görünür.
 
-LED PWM taşıyıcısı **25 kHz** seçildi — işitme bandının üstünde, çünkü LED hatları analog ses yolu ve Class-D amfiyle aynı kutuda. Bu bir gerekçe, ölçüm değil; nihai değeri G3 gürültü ölçümü belirler.
+LED PWM taşıyıcısı **25 kHz** seçildi — işitme bandının üstünde, çünkü LED hatları analog ses yolu ve Class-D amfiyle aynı kutuda. Bu bir gerekçe, ölçüm değil; nihai değeri G1 gürültü ölçümü belirler.
 
 Parlaklık gama düzeltmeli: algılanan parlaklık ışığın karekökü gibi davrandığından doğrusal duty rampası "parlak flaş sonra hiçlik" gibi okunur. Kareleme, nefes efektini nefes gibi gösteriyor.
 
@@ -58,7 +58,7 @@ Kodda scheme bir parametre değil; `hk_network_scheme_for()` durumdan türetiyor
 - `dependencies.lock` artık Git'te. Yönetilen bileşenlerin (mDNS) sürümünü sabitliyor; tekrar üretilemeyen bir derleme derleme sayılmaz.
 - `scripts/check_docs.py` artık `managed_components/` ve `build/` altını taramıyor — üçüncü taraf belgeleri bizim denetleyeceğimiz şey değil.
 - **ESP-IDF tuzağı bulundu ve belgelendi:** `sdkconfig.defaults` değişikliği mevcut `sdkconfig`'e uygulanmıyor. ESP-IDF varsayılanları yalnız dosyayı ilk ürettiğinde okuyor, dolayısıyla yerel bir derleme yeni açtığınız ayarı sessizce yok sayıyor. NimBLE'ı etkinleştirdiğimde imaj hiç büyümediği için fark edildi. CI etkilenmiyor (temiz checkout'tan başlıyor); `firmware/README.md`'ye uyarı eklendi.
-- Butonun yıkıcı dalları hâlâ yalnız log basıyor. Depolama katmanı `F6`; yarı kurulu bir silme yolunu fiziksel bir butona bağlamak, kullanıcının kalibrasyonunu kazayla kaybetmesinin yoludur.
+- Butonun yıkıcı dalları hâlâ yalnız log basıyor. Depolama katmanı henüz yok; yarı kurulu bir silme yolunu fiziksel bir butona bağlamak, kullanıcının kalibrasyonunu kazayla kaybetmesinin yoludur.
 
 ## Doğrulama
 
@@ -77,7 +77,7 @@ Kodda scheme bir parametre değil; `hk_network_scheme_for()` durumdan türetiyor
 Politika modüllerinin altındaki her şey **yazıldı ama çalıştırılmadı**. Kart geldiğinde tek tek doğrulanacaklar:
 
 - Buton GPIO'su gerçekten okunuyor mu; debounce sahada nasıl davranıyor.
-- RGB PWM'i doğru renkleri veriyor mu; 25 kHz taşıyıcı ses tabanına giriyor mu (G3).
+- RGB PWM'i doğru renkleri veriyor mu; 25 kHz taşıyıcı ses tabanına giriyor mu (G1).
 - Wi-Fi katılımı, yeniden bağlanma ve mDNS keşfi.
 - SoftAP provisioning akışı iOS ve Android'de.
 - BLE provisioning akışı Espressif uygulamasıyla; ve provisioning bitince NimBLE yığınının gerçekten serbest bırakıldığı.

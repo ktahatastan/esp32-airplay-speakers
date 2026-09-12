@@ -1,10 +1,10 @@
 /**
  * @file hk_main.c
- * @brief Harman Kardom application entry point.
+ * @brief Merzarkabul Airplay Speakers application entry point.
  *
  * What this build actually does: come up, report what it is, drive the button
  * and the LED, run the provisioning policy with real radios, hold the output
- * chain's two mute lines and move them when both gates allow it, and print what
+ * chain's two mute lines and move them when the gate allows it, and print what
  * every other policy concludes about the state the device is in.
  *
  * What it does not do, and why — each of these waits on a measurement, not on
@@ -14,8 +14,6 @@
  *       settle times hk_audio_hw is currently guessing
  *   F3  no crossover, no protective high-pass and no limiter. The DSP
  *       coefficients need G0, the driver impedance measurement
- *   F6  power telemetry needs an ADC driver and the G3/G4 thresholds, so the
- *       power gate has no input and refuses on principle
  *   F7  OTA client compiles but nothing runs it; needs G6
  *
  * Most of the policy modules below are still pure logic with no driver behind
@@ -53,19 +51,14 @@
 #include "hk_tone.h"
 #endif
 #include "hk_button.h"
-#if CONFIG_HK_DISPLAY
-#include "hk_display.h"
-#endif
 #include "hk_identity.h"
 #include "hk_led.h"
 #include "hk_network.h"
 #include "hk_gate.h"
 #include "hk_health.h"
-#include "hk_view.h"
 #include "hk_ota.h"
 #include "hk_ota_client.h"
 #include "hk_pins.h"
-#include "hk_power.h"
 #include "hk_sched.h"
 #include "hk_settings.h"
 #include "hk_provision.h"
@@ -153,57 +146,18 @@ static uint32_t now_ms(void)
     return (uint32_t)(esp_timer_get_time() / 1000);
 }
 
-/*
- * What the power policy is given, and why it is so empty.
- *
- * There is no ADC driver yet (F6) and no G3/G4 thresholds, so both readings are
- * the module's own "I do not have this" sentinels and the limits are NULL. The
- * `charging` flag is the one that deserves a second look: it is false because
- * nothing can read it, not because the device knows it is not charging. Written
- * out here rather than inline at each call site so that the two places that ask
- * about power cannot start asking different questions.
- */
-static const hk_power_inputs_t HK_POWER_NO_TELEMETRY = {
-    .pack_mv = HK_POWER_MV_UNKNOWN,
-    .cell_c = HK_POWER_C_UNKNOWN,
-    .charging = false,
-};
-
-/** What the power policy concludes from that: HK_POWER_UNKNOWN, and correctly. */
-static hk_power_state_t power_state_now(void)
-{
-    return hk_power_evaluate(HK_POWER_UNKNOWN, &HK_POWER_NO_TELEMETRY, NULL);
-}
-
 /**
  * Whether sound is allowed, as the whole device sees it.
  *
- * Two gates that answer different questions, and both have to say yes. Storage
- * asks whether a measured driver-protection profile exists; power asks whether
- * the pack and the charger allow sound right now. This is the one place they
- * are combined, because hk_audio_hw is a hardware layer that drives two pins
- * and should hold no policy, and because the bench exceptions below have to be
- * applied where they can also be printed.
- *
- * The bench exception here is narrow on purpose, in the same shape as the one
- * hk_storage already carries: it only lifts the refusal in the state the symbol
- * is named after. HK_POWER_UNKNOWN means "no telemetry exists to judge", which
- * is a true description of this board. CRITICAL, SHUTDOWN, SENSOR_FAULT and
- * OVERHEAT are judgements, and a build that has declared it cannot measure a
- * pack has no business overriding one.
+ * One gate: storage asks whether a measured driver-protection profile exists,
+ * and the bench exception it carries is applied inside that answer. It is
+ * wrapped here rather than called directly from each site because hk_audio_hw
+ * is a hardware layer that drives two pins and should hold no policy, and
+ * because the place the verdict is computed should be the place it is printed.
  */
 static bool audio_permitted_now(void)
 {
-    const hk_power_state_t power = power_state_now();
-    bool by_power = hk_power_audio_permitted(power, HK_POWER_NO_TELEMETRY.charging);
-
-#if CONFIG_HK_BENCH_AUDIO_WITHOUT_POWER_TELEMETRY
-    if (!by_power && power == HK_POWER_UNKNOWN && !HK_POWER_NO_TELEMETRY.charging) {
-        by_power = true;
-    }
-#endif
-
-    return hk_storage_audio_permitted() && by_power;
+    return hk_storage_audio_permitted();
 }
 
 /**
@@ -231,26 +185,13 @@ static void report_policies(void)
         ESP_LOGI(TAG, "  %-12s %-6" PRIu32 " %s", def->key, value, source);
     }
 
-    /* No ADC driver exists, so both readings are unknown. The point of printing
-     * it is that the policy says so rather than assuming a healthy pack. */
-    const hk_power_state_t power = power_state_now();
-    ESP_LOGI(TAG, "power       %s (no calibrated limits, no ADC driver)",
-             hk_power_state_name(power));
-    /* Two gates, reported separately because they answer different questions
-     * and used to be read as one. Storage asks whether a measured protection
-     * profile exists; power asks whether the pack and the charger allow sound
-     * right now. Printing only one of them produced a boot report that said
-     * "audio NOT permitted" while the receiver was clocking I2S.
-     *
-     * The verdict is printed with them, and it is not always their conjunction:
-     * a bench exception can lift one of these refusals, and a report that
-     * showed only the raw gates would say REFUSES on the line above while the
-     * amplifier came up underneath it. What the third field states is what
-     * hk_audio_hw is actually being told. */
-    ESP_LOGI(TAG, "audio       profile %s · power %s · verdict %s",
-             hk_storage_audio_permitted() ? "permits" : "REFUSES",
-             hk_power_audio_permitted(power, HK_POWER_NO_TELEMETRY.charging)
-                 ? "permits" : "REFUSES",
+    /* The gate and the verdict, side by side. The gate is whether a measured
+     * driver-protection profile exists; the verdict is what hk_audio_hw is
+     * actually being told, and the two are not always the same: a bench
+     * exception can lift the refusal, and a report that showed only the raw
+     * gate would say REFUSES while the amplifier came up underneath it. */
+    ESP_LOGI(TAG, "audio       profile %s · verdict %s",
+             hk_storage_profile_present() ? "permits" : "REFUSES",
              audio_permitted_now() ? "PERMITTED" : "muted");
 #if CONFIG_HK_BENCH_AUDIO_WITHOUT_PROFILE
     if (!hk_storage_profile_present()) {
@@ -260,17 +201,9 @@ static void report_policies(void)
                       "connected to the output.");
     }
 #endif
-#if CONFIG_HK_BENCH_AUDIO_WITHOUT_POWER_TELEMETRY
-    if (power == HK_POWER_UNKNOWN) {
-        ESP_LOGW(TAG, "audio       BENCH EXCEPTION: this board cannot measure its pack "
-                      "and the power gate is bypassed anyway "
-                      "(CONFIG_HK_BENCH_AUDIO_WITHOUT_POWER_TELEMETRY). No pack may be "
-                      "connected, and ADR-0004's charge lock is not being enforced.");
-    }
-#endif
     if (audio_permitted_now()) {
-        /* Loud, and only when both exceptions have actually combined into a
-         * released amplifier. This is the state the two symbols exist to make
+        /* Loud, and only when the verdict has actually become a released
+         * amplifier. This is the state the bench exception exists to make
          * visible rather than to make convenient. */
         ESP_LOGW(TAG, "audio       THE AMPLIFIER WILL BE RELEASED when a stream arrives. "
                       "There is no crossover, no protective high-pass and no limiter "
@@ -318,7 +251,6 @@ static void report_policies(void)
         .storage = HK_HEALTH_UNKNOWN,
         .network = HK_HEALTH_UNKNOWN,
         .audio = HK_HEALTH_SKIP,
-        .telemetry = HK_HEALTH_SKIP,
         .uptime_ms = 0,
         .critical_fault = false,
     };
@@ -341,8 +273,8 @@ static void report_policies(void)
  * One turn of the update loop.
  *
  * Kept here rather than inside hk_ota because it is application wiring: which
- * product this is, which channel it follows, where its calibration limits come
- * from. hk_ota stays a component that judges a manifest and writes a slot.
+ * product this is, which channel it follows, what state it is in. hk_ota stays
+ * a component that judges a manifest and writes a slot.
  */
 /** Read a user setting through its definition, so the range is applied. */
 static uint32_t setting_u32(const char *key)
@@ -358,8 +290,8 @@ static uint32_t setting_u32(const char *key)
  *
  * Called from the health monitor immediately before it acts, because the
  * rollback path reboots and never comes back. A device that rolls back, fetches
- * the same release again and rolls back again is spending its battery and its
- * flash on one mistake nightly; the counter is what stops that.
+ * the same release again and rolls back again is spending its flash on one
+ * mistake nightly; the counter is what stops that.
  */
 static void persist_health_verdict(bool confirmed)
 {
@@ -400,12 +332,6 @@ static void run_update_check(void)
         return;
     }
 
-    /* The gate limits come from the calibration store, and there are none:
-     * G3/G4 have not been run. hk_gate answers HK_GATE_NO_LIMITS for a NULL,
-     * so a device that cannot judge its own battery does not start an update.
-     * That is the intended behaviour, not a placeholder. */
-    const hk_gate_limits_t *limits = NULL;
-
     const esp_app_desc_t *app = esp_app_get_description();
     const esp_partition_t *inactive = esp_ota_get_next_update_partition(NULL);
 
@@ -428,11 +354,7 @@ static void run_update_check(void)
             .audio_active = false,
             .wifi_connected = true,
             .update_in_progress = false,
-            .charging = false,
-            .battery_mv = HK_GATE_BATTERY_UNKNOWN,
-            .temperature_c = HK_GATE_TEMPERATURE_UNKNOWN,
         },
-        .gate_limits = limits,
     };
 
     hk_ui_set_ota(true);
@@ -970,8 +892,7 @@ void app_main(void)
                 ESP_LOGW(TAG, "the tone is being generated but audio is NOT permitted, "
                               "so both mute lines stay asserted and you will hear "
                               "nothing. This build also needs "
-                              "CONFIG_HK_BENCH_AUDIO_WITHOUT_PROFILE and "
-                              "CONFIG_HK_BENCH_AUDIO_WITHOUT_POWER_TELEMETRY.");
+                              "CONFIG_HK_BENCH_AUDIO_WITHOUT_PROFILE.");
             }
         }
     }
@@ -983,24 +904,6 @@ void app_main(void)
     s_main_task = xTaskGetCurrentTaskHandle();
     ESP_ERROR_CHECK(hk_ui_start(on_button, NULL));
 
-    /* Started after the UI, because it renders the UI's inputs. Never fatal: a
-     * speaker with a dead screen is still a speaker, and the failure is named
-     * here rather than left as a panel that stays dark for no stated reason. */
-#if CONFIG_HK_DISPLAY
-    {
-        const esp_err_t screen = hk_display_start();
-        if (screen != ESP_OK) {
-            ESP_LOGW(TAG, "display did not start: %s. Everything else continues.",
-                     esp_err_to_name(screen));
-        }
-    }
-#else
-    /* Not merely idle -- not built. The SPI bus is never initialised and its
-     * pins are never driven, which is the whole reason the switch exists while
-     * the audio path is being brought up. */
-    ESP_LOGW(TAG, "display compiled out (CONFIG_HK_DISPLAY=n): no panel, and no "
-                  "SPI3 bus on gpio%d/%d at all.", HK_PIN_LCD_SCK, HK_PIN_LCD_MOSI);
-#endif
     start_network();
     hk_ui_clear_booting();
 #if CONFIG_HK_BENCH_TONE_INSTEAD_OF_AIRPLAY
@@ -1013,8 +916,8 @@ void app_main(void)
     /* Said again here, at the end of the boot report, because this is the last
      * thing on the console before the sweep's own banner and it is the one
      * warning that cannot be enforced anywhere: the amplifier is kept out of
-     * the sweep's circuit by the wiring alone. The two bench exception symbols
-     * that release the DAC release it too, so the boot report above saying
+     * the sweep's circuit by the wiring alone. The bench exception symbol that
+     * releases the DAC releases it too, so the boot report above saying
      * "PERMITTED" is not evidence that the amplifier is idle. */
     ESP_LOGW(TAG, "SWEEP BUILD: this one is not for listening to. It measures ONE driver "
                   "through a 470 ohm series resistor straight off the DAC line output, "
@@ -1074,44 +977,13 @@ void app_main(void)
         }
 #endif
 
-        /* What the screen cannot ask for itself.
+        /* The gate, on the same clock, to the thing that acts on it.
          *
-         * Both of these are polled rather than pushed because neither has an
-         * event: the radio does not announce a change in signal strength, and
+         * Polled rather than pushed because the gate has no event behind it:
          * whether audio is permitted is a conclusion drawn from storage rather
-         * than something that happens. Once a second is finer than either
-         * changes and costs nothing next to the radios. */
-        int rssi = 0;
-        if (hk_network_rssi(&rssi)) {
-            hk_view_set_rssi(rssi);
-        } else {
-            hk_view_clear_rssi();
-        }
-
-        /* Both gates, on the same clock, to the two things that act on them.
-         *
-         * Polled for the same reason the rest of this block is: neither gate
-         * has an event behind it. A profile appears when a calibration is
-         * written, and the power state will change when an ADC driver exists
-         * to change it -- and when it does, this is where the latency lives.
-         * One second is far finer than a profile changes and much coarser than
-         * a pack sagging under load, so F6 will need to push this rather than
-         * let it be polled. Said here because that is where it will be missed.
-         *
-         * The screen is told the same conclusion the amplifier is. It used to
-         * be shown only the storage gate, which meant the padlock could be
-         * open on a board whose power gate was refusing and whose amplifier
-         * was therefore never going to make a sound. */
-        const bool audio_ok = audio_permitted_now();
-        hk_audio_hw_set_permitted(audio_ok);
-        hk_view_set_audio_locked(!audio_ok);
-        /* The arm expires on its own, so this is polled rather than pushed:
-         * nothing happens at the moment it lapses, and a prompt left on screen
-         * after the chance has gone is worse than one that never appeared. */
-        {
-            const hk_prov_t prov_now = prov_snapshot();
-            hk_view_set_confirm_setup(hk_prov_confirm_pending(&prov_now, now_ms()));
-        }
+         * than something that happens. A profile appears when a calibration is
+         * written, and one second is far finer than that changes. */
+        hk_audio_hw_set_permitted(audio_permitted_now());
 
         /* Confirm or roll back this image, once, when the evidence is in. */
         hk_health_monitor_tick(now_ms());

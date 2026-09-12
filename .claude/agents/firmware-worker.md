@@ -1,6 +1,6 @@
 ---
 name: firmware-worker
-description: Implement a bounded Harman Kardom ESP32 firmware task after architecture and file ownership are assigned by the orchestrator.
+description: Implement a bounded Merzarkabul Airplay Speakers ESP32 firmware task after architecture and file ownership are assigned by the orchestrator.
 model: inherit
 ---
 

@@ -152,7 +152,7 @@
 #include "hk_limiter.h"
 #include "hk_profile.h"
 
-/** Why a chain was refused, so a bench or a display can say which number. */
+/** Why a chain was refused, so a bench report can say which number. */
 typedef enum {
     HK_DSP_OK = 0,
     HK_DSP_NO_CHAIN,    /**< No chain was supplied; the device is uncalibrated */
@@ -257,7 +257,7 @@ bool hk_dsp_ready(const hk_dsp_t *dsp);
 /** Why it may not. ::HK_DSP_OK when it may. */
 hk_dsp_refusal_t hk_dsp_refusal(const hk_dsp_t *dsp);
 
-/** A one-word reason, for a log line, a display or a bench report. */
+/** A one-word reason, for a log line or a bench report. */
 const char *hk_dsp_refusal_name(hk_dsp_refusal_t refusal);
 
 /**

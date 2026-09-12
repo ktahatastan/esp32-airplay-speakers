@@ -17,7 +17,7 @@ Depoda iki kart varyantı paralel yaşıyordu. BOM ana tablosu, pin planı, şem
 
 Kanonik prototip kartı **ESP32-S3, 16 MB flash + 8 MB PSRAM (`N16R8` sınıfı)** olacaktır. Tüm belgeler, şema, KiCad paftası ve OTA manifesti tek bu değeri kullanır.
 
-OTA donanım kimliği: `hw_revision = "prototype-n16r8"`, release asset adı `harman-kardom-esp32s3-n16r8-vX.Y.Z.bin`.
+OTA donanım kimliği: `hw_revision = "prototype-n16r8"`, release asset adı `merzarkabul-airplay-speakers-esp32s3-n16r8-vX.Y.Z.bin`.
 
 ## Gerekçe
 

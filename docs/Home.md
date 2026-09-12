@@ -1,12 +1,12 @@
 ---
-title: Harman Kardom Proje Merkezi
+title: Merzarkabul Airplay Speakers Proje Merkezi
 status: active
 owner: orchestrator
 updated: 2026-09-08
-tags: [harman-kardom, moc]
+tags: [merzarkabul, moc]
 ---
 
-# Harman Kardom
+# Merzarkabul Airplay Speakers
 
 Bu sayfa ortak Obsidian kasasının ana haritasıdır.
 
@@ -28,7 +28,7 @@ Bu sayfa ortak Obsidian kasasının ana haritasıdır.
 - [[02-hardware/circuit-and-wiring-plan|Devre ve bağlantı şemaları]]
 - [[02-hardware/kicad-schematic|KiCad şeması ve üretim scripti]]
 - [[03-firmware/firmware-plan|Firmware planı ve aşamalandırma]]
-- [[power-and-battery-plan|Güç ve batarya]]
+- [[power-plan|Güç]]
 - [[controls-and-provisioning-plan|Kontroller ve provisioning]]
 
 ## Uygulama alanları
@@ -52,8 +52,5 @@ Bu sayfa ortak Obsidian kasasının ana haritasıdır.
 
 > [!WARNING]
 > AirPlay 2 grup/multiroom senkronu gerçek testle kanıtlanmadan “4 senkron hoparlör” gereksinimi tamamlanmış sayılmaz.
-
-> [!IMPORTANT]
-> XL4015 şarj katının sonlandırma garantisi yoktur. G4 ölçümü tamamlanmadan gözetimsiz veya gece boyu şarj yapılmaz. Ayrıntı: [[07-decisions/ADR-0009-usb-c-pd-charge-chain|ADR-0009]].
 
 Birleşme öncesi `python3 scripts/check_docs.py` çalıştırılır.

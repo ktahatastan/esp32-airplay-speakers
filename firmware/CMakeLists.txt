@@ -1,4 +1,4 @@
-# Harman Kardom firmware, ESP32-S3 N16R8 (ADR-0010).
+# Merzarkabul Airplay Speakers firmware, ESP32-S3 N16R8 (ADR-0010).
 #
 #   . $IDF_PATH/export.sh
 #   idf.py -C firmware build
@@ -21,7 +21,7 @@ set(EXTRA_COMPONENT_DIRS
     "${CMAKE_CURRENT_LIST_DIR}/components/hk_airplay/vendor/components")
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-project(harman-kardom)
+project(merzarkabul-airplay-speakers)
 
 # --- Board configuration guards -------------------------------------------------
 #

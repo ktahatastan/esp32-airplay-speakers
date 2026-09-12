@@ -14,7 +14,20 @@
 #include <stdint.h>
 
 /** Product family name. The user may rename the AirPlay surface; this stays. */
-#define HK_PRODUCT_FAMILY "Harman Kardom"
+#define HK_PRODUCT_FAMILY "Merzarkabul Airplay Speakers"
+
+/*
+ * The short name every per-device surface is built from. The family name is
+ * the boot banner and the label; it is too long to lead an SSID or a BLE
+ * advertisement once a suffix is appended, so the surfaces use this instead.
+ * Each spelling is defined exactly once and the size macros below are derived
+ * from the same literal the formatter prints, so a rename cannot leave a
+ * buffer one byte short of the string that goes into it.
+ */
+#define HK_NAME_PREFIX        "Merzarkabul"
+#define HK_NAME_PREFIX_BLE    HK_NAME_PREFIX "-"
+#define HK_NAME_PREFIX_SOFTAP HK_NAME_PREFIX "-Setup-"
+#define HK_NAME_PREFIX_MDNS   "merzarkabul-"
 
 /**
  * Hardware revision. The product board is N16R8 (ADR-0010).
@@ -40,7 +53,7 @@
 #endif
 
 /** Captive portal page title. */
-#define HK_PORTAL_TITLE "Harman Kardom Kurulum"
+#define HK_PORTAL_TITLE "Merzarkabul Kurulum"
 
 /** Suffix length in characters, excluding the terminator. */
 #define HK_SUFFIX_LEN 4
@@ -50,10 +63,10 @@
  * checked against the protocol limits by static assertions below, so a future
  * rename cannot silently produce an SSID the radio will truncate.
  */
-#define HK_NAME_AIRPLAY_SIZE (sizeof(HK_PRODUCT_FAMILY) + 1 + HK_SUFFIX_LEN)
-#define HK_NAME_BLE_SIZE     (sizeof("HarmanKardom-") + HK_SUFFIX_LEN)
-#define HK_NAME_SOFTAP_SIZE  (sizeof("HarmanKardom-Setup-") + HK_SUFFIX_LEN)
-#define HK_NAME_MDNS_SIZE    (sizeof("harman-kardom-") + HK_SUFFIX_LEN)
+#define HK_NAME_AIRPLAY_SIZE (sizeof(HK_NAME_PREFIX) + 1 + HK_SUFFIX_LEN)
+#define HK_NAME_BLE_SIZE     (sizeof(HK_NAME_PREFIX_BLE) + HK_SUFFIX_LEN)
+#define HK_NAME_SOFTAP_SIZE  (sizeof(HK_NAME_PREFIX_SOFTAP) + HK_SUFFIX_LEN)
+#define HK_NAME_MDNS_SIZE    (sizeof(HK_NAME_PREFIX_MDNS) + HK_SUFFIX_LEN)
 
 /** IEEE 802.11 caps an SSID at 32 octets. */
 _Static_assert(HK_NAME_SOFTAP_SIZE - 1 <= 32, "SoftAP SSID would be truncated");
@@ -68,10 +81,10 @@ _Static_assert(HK_NAME_MDNS_SIZE - 1 <= 63, "mDNS host label exceeds one DNS lab
 /** Every name this device answers to. */
 typedef struct {
     char suffix[HK_SUFFIX_LEN + 1];        /**< Uppercase, e.g. "A1B2" */
-    char airplay[HK_NAME_AIRPLAY_SIZE];    /**< "Harman Kardom A1B2" */
-    char ble[HK_NAME_BLE_SIZE];            /**< "HarmanKardom-A1B2" */
-    char softap[HK_NAME_SOFTAP_SIZE];      /**< "HarmanKardom-Setup-A1B2" */
-    char mdns[HK_NAME_MDNS_SIZE];          /**< "harman-kardom-a1b2", lowercase */
+    char airplay[HK_NAME_AIRPLAY_SIZE];    /**< "Merzarkabul A1B2" */
+    char ble[HK_NAME_BLE_SIZE];            /**< "Merzarkabul-A1B2" */
+    char softap[HK_NAME_SOFTAP_SIZE];      /**< "Merzarkabul-Setup-A1B2" */
+    char mdns[HK_NAME_MDNS_SIZE];          /**< "merzarkabul-a1b2", lowercase */
 } hk_identity_t;
 
 /** Result of ::hk_identity_from_mac. */

@@ -20,7 +20,7 @@
  *
  * The state machine is pure and takes its timings as arguments, so an entire
  * start-up and shutdown can be driven in a test in microseconds instead of
- * seconds, and so the settle times can come from G1/G3 measurements rather
+ * seconds, and so the settle times can come from G1 measurements rather
  * than from a guess made here.
  *
  * The invariant worth stating once, because everything else follows from it:
@@ -45,7 +45,7 @@ typedef enum {
 
 /** What the rest of the device says about whether sound is allowed and wanted. */
 typedef struct {
-    bool     permitted;   /**< Calibration present, power sane, not charging */
+    bool     permitted;   /**< A driver-protection profile is present (or a bench exception stands in) */
     bool     stream_live; /**< AirPlay is delivering audio */
     uint32_t now_ms;
 } hk_audio_inputs_t;
@@ -54,7 +54,7 @@ typedef struct {
  * Settle times.
  *
  * No defaults, for the usual reason: the right values come from watching the
- * rails and the outputs on a scope at G1/G3, and a number invented here would
+ * rails and the outputs on a scope at G1, and a number invented here would
  * be indistinguishable from a measured one. A test supplies its own.
  */
 typedef struct {

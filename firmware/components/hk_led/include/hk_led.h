@@ -6,19 +6,18 @@
  * so the priority rules are testable without a board.
  *
  * Several conditions are usually true at once — the device can be playing,
- * on a low battery, and have the button held, all at the same moment. A single
- * LED can only say one thing, so the order is a decision, not an accident:
+ * mid-update, and have the button held, all at the same moment. A single LED
+ * can only say one thing, so the order is a decision, not an accident:
  *
  *   1. error            something is wrong and the user must know
  *   2. OTA              power must not be cut while flashing
  *   3. button feedback  the user is holding the button and needs to see which
  *                       action they are about to commit to
- *   4. battery low
- *   5. playing / ready / connecting / provisioning / boot
+ *   4. playing / ready / connecting / provisioning / boot
  *
- * Button feedback outranks battery low because the user is actively doing
- * something and a wrong guess is destructive; the battery warning is still
- * true a second later, when they let go.
+ * Button feedback sits above every informational state because the user is
+ * actively doing something and a wrong guess is destructive; whatever the
+ * device was showing is still true a second later, when they let go.
  */
 #ifndef HK_LED_H
 #define HK_LED_H
@@ -37,7 +36,6 @@ typedef enum {
     HK_LED_READY,           /**< Green: connected, AirPlay ready */
     HK_LED_PLAYING,         /**< Purple, dim: audio playing */
     HK_LED_OTA,             /**< Cyan blink: updating, do not cut power */
-    HK_LED_BATTERY_LOW,     /**< Red slow */
     HK_LED_ERROR,           /**< Red fast */
     HK_LED_HOLD_NETWORK,    /**< Yellow countdown: release clears Wi-Fi */
     HK_LED_HOLD_FACTORY,    /**< Red fast: release restores user settings */
@@ -85,9 +83,8 @@ typedef struct {
 
 /** Everything that could want the LED, sampled at one instant. */
 typedef struct {
-    bool             error;         /**< Wi-Fi, audio or battery fault */
+    bool             error;         /**< Wi-Fi or audio fault */
     bool             ota;           /**< Update in progress */
-    bool             battery_low;
     bool             playing;       /**< AirPlay audio active */
     bool             ready;         /**< Connected and announced */
     bool             connecting;    /**< Joining Wi-Fi */

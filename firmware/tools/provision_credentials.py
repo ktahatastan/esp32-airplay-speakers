@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate the per-device provisioning credentials and the label that carries them.
 
-Every Harman Kardom speaker gets its own provisioning password. There is no
+Every Merzarkabul Airplay Speakers unit gets its own provisioning password. There is no
 shared factory password, because four speakers on one network with one password
 means compromising one compromises all of them, and a password printed in a
 public repository is not a password at all.
@@ -55,8 +55,8 @@ from pathlib import Path
 USERNAME = "wifiprov"
 
 #: Product surfaces, from docs/controls-and-provisioning-plan.md and ADR-0001.
-SOFTAP_NAME = "HarmanKardom-Setup-{device_id}"
-BLE_NAME = "HarmanKardom-{device_id}"
+SOFTAP_NAME = "Merzarkabul-Setup-{device_id}"
+BLE_NAME = "Merzarkabul-{device_id}"
 
 #: Salt length requested from the generator, in bytes.
 #:
@@ -242,7 +242,7 @@ def write_device(out_dir: Path, device_id: str, srp6a) -> str:
 
     label = device_dir / "label.txt"
     label.write_text(
-        f"Harman Kardom {device_id}\n"
+        f"Merzarkabul Airplay Speakers {device_id}\n"
         f"\n"
         f"setup password : {password}\n"
         f"username       : {USERNAME}\n"

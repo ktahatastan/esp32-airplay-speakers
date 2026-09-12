@@ -12,36 +12,39 @@ Her kayıt; seri no, firmware/PCB sürümü, ölçüm cihazı, ortam, önkoşul,
 | Gate | Kapsam | Geçiş koşulu |
 |---|---|---|
 | G0 | Sürücü | DC/empedans/polarite verisi kayıtlı |
-| G1 | Amfi/dummy-load | Güç, clipping, DC offset ve termal güvenli |
+| G1 | Amfi/dummy-load | Jak polaritesi, güç, clipping, DC offset, termal, besleme dip/brownout ve açılış-kapanış pop güvenli |
 | G2 | Sürücü bring-up | HPF/crossover/limiter doğrulandı |
-| G3 | Güç/EMI | Brownout, dip gürültü, pop ve batarya aralığı geçti |
-| G4 | Batarya/şarj | BMS, sigorta, NTC, CC/CV, **şarj sonlandırma** ve korumalar geçti |
-| G5 | Kapalı kabin | Sürekli sıcaklık ve mekanik güvenlik geçti |
-| G6 | OTA/recovery | İmza/manifest, düşük güç erteleme, enerji kesintisi, ilk-boot sağlık kontrolü, rollback ve USB/UART recovery geçti |
+| G6 | OTA/recovery | İmza/manifest, enerji kesintisi, ilk-boot sağlık kontrolü, rollback ve USB/UART recovery geçti |
 | G7 | Dört cihaz | 2+ saat drift/jitter ve yeniden bağlanma geçti |
-| G8 | Dayanıklılık | 24 saat soak ve düşük batarya kapanışı geçti |
+| G8 | Dayanıklılık | 24 saat soak, kapalı kabinde sürekli sıcaklık ve mekanik güvenlik geçti |
 
-G0-G5 geçmeden dört batarya paketine çoğaltma yoktur. Manuel dinleme/ürün kabulü kullanıcıya aittir; agent ölçüm ve otomatik test kanıtını raporlar.
+G0-G2 geçmeden dört üniteye çoğaltma yoktur. Manuel dinleme/ürün kabulü kullanıcıya aittir; agent ölçüm ve otomatik test kanıtını raporlar.
 
-Elektriksel bring-up sırasında kullanılacak `TP0-TP27` test noktaları, beklenen gerilim/dalga şekilleri, BTL çıkış ölçüm yöntemi ve osiloskop kanal planı [[../02-hardware/circuit-and-wiring-plan#7. Test noktaları ve osiloskop planı|devre ve bağlantı planında]] tanımlıdır.
+Elektriksel bring-up sırasında kullanılacak test noktaları, beklenen gerilim/dalga şekilleri, BTL çıkış ölçüm yöntemi ve osiloskop kanal planı [[../02-hardware/circuit-and-wiring-plan#7. Test noktaları ve osiloskop planı|devre ve bağlantı planında]] tanımlıdır.
 
 G6 senaryoları ve release kabul sözleşmesi [[../03-firmware/ota-and-release-plan#G6 kabul matrisi|OTA ve sürüm yönetimi planında]] tanımlıdır.
 
-## G4 şarj zinciri zorunlu ölçümleri
+## G1 besleme ve amfi zorunlu ölçümleri
 
-[[../07-decisions/ADR-0009-usb-c-pd-charge-chain|ADR-0009]] zinciri amaca özel şarj entegresi kullanmadığı için aşağıdakiler G4'te ayrı ayrı kaydedilir. Hiçbiri "modül öyle yazıyor" ile geçilemez.
+[[../07-decisions/ADR-0020-dc-adapter-power|ADR-0020]] amfiyi 19 V DC adaptörden doğrudan besler; araya koruma entegresi girmez. Bu yüzden aşağıdakiler G1'de dummy-load üzerinde ayrı ayrı kaydedilir. Hiçbiri "adaptör öyle yazıyor" ile geçilemez.
 
 | Ölçüm | Yöntem | Geçiş koşulu |
 |---|---|---|
-| PD 20 V profili | Yüksüz ve 2 A yükte USB-C test cihazı | 20 V ± satıcı toleransı; yükte çökme yok |
-| XL4015 CV ayarı | Batarya bağlı değilken DMM | 16,80 V ± 50 mV |
-| XL4015 CC sınırı | Elektronik yük | 2,00 A ± %5; termal kaçış yok |
-| **Şarj sonlandırma** | Dolmuş pakette CV akımının zamana göre kaydı | Akım sonlandırma eşiğine düşüyor ve **kim/ne zaman kesiyor** belgelendi |
-| Hücre balans sapması | Beş tam çevrim sonunda hücre gerilimleri | Sapma satıcı balans eşiğinin altında ve büyümüyor |
-| NTC | Şarj boyunca sıcaklık kaydı | Hücre sıcaklığı üretici sınırının altında |
-| Ters polarite | Enerjisiz süreklilik + prosedür | Kutup etiketli, yanlış takma mekanik olarak zorlaştırıldı |
+| Jak polaritesi | İlk enerjilendirmeden önce adaptör fişinde DMM | Merkez pozitif ölçüldü ve `VIN` girişiyle eşleşiyor; ters polarite koruması (seri Schottky veya ideal diyot) yerinde |
+| Adaptör gerilimi | Yüksüz ve tam yükte DMM | 19 V ± satıcı toleransı; `CONFIG_HK_SUPPLY_MV` ile uyumlu, 8-26 V amfi aralığında |
+| Besleme dip / brownout | Tam yükte bas darbesi, osiloskopla `VIN` ve 5 V ray | Amfi ve ESP32-S3 reset yemiyor; 5 V ray düşmüyor |
+| Açılış pop | Adaptör takılırken çıkışta osiloskop | Mute sıralayıcısı çıkışı susturuyor; dummy-load üzerinde darbe yok |
+| Kapanış pop | Çalarken adaptör çekilirken çıkışta osiloskop | Amfi susturulmadan önce çıkışa DC darbesi gitmiyor |
+| Amfi ısınması | Tam yükte dummy-load üzerinde sıcaklık kaydı | Modül sıcaklığı üretici sınırının altında; termal kaçış yok |
 
-Sonlandırma ölçümü tamamlanmadan gözetimsiz veya gece boyu şarj yapılmaz.
+## G8 kabin ölçümleri
+
+| Ölçüm | Yöntem | Geçiş koşulu |
+|---|---|---|
+| 24 saat soak | Kapalı kabinde sürekli çalma | Kesinti, reset veya ses kaybı yok |
+| Kapalı kabin sıcaklığı | Soak boyunca amfi ve buck üzerinde kayıt | Üretici sınırlarının altında ve kararlı |
+| Mekanik güvenlik | Görsel ve elle kontrol | Gevşeyen bağlantı, sürtünen kablo veya titreşim kaynaklı hasar yok |
+| Besleme kaybında kapanış | Çalarken adaptör çekilir | Pop yok, ayarlar korunmuş, yeniden takınca temiz açılış (PRD-007) |
 
 ## Belge bütünlüğü kapısı
 

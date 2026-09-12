@@ -16,12 +16,12 @@ static hk_manifest_t manifest(void)
 {
     hk_manifest_t m = {0};
     m.present = HK_MANIFEST_REQUIRED_FIELDS;
-    strcpy(m.product, "harman-kardom");
+    strcpy(m.product, "merzarkabul-airplay-speakers");
     strcpy(m.version, "0.2.0");
     strcpy(m.channel, "stable");
     strcpy(m.target, "esp32s3");
     strcpy(m.hw_revision, "prototype-n16r8");
-    strcpy(m.asset, "harman-kardom-0.2.0.bin");
+    strcpy(m.asset, "merzarkabul-airplay-speakers-esp32s3-n16r8-v0.2.0.bin");
     strcpy(m.sha256, "0123456789abcdef0123456789abcdef"
                      "0123456789abcdef0123456789abcdef");
     strcpy(m.min_updater_version, "0.1.0");
@@ -34,7 +34,7 @@ static hk_ota_image_t image(void)
 {
     hk_ota_image_t i = {0};
     i.valid = true;
-    strcpy(i.project_name, "harman-kardom");
+    strcpy(i.project_name, "merzarkabul-airplay-speakers");
     strcpy(i.version, "0.2.0");
     i.secure_version = 0u;
     return i;
@@ -63,7 +63,7 @@ void test_ota(void)
      * because those fields are then uninitialised rather than matching. */
     img = (hk_ota_image_t){0};
     img.valid = false;
-    strcpy(img.project_name, "harman-kardom");
+    strcpy(img.project_name, "merzarkabul-airplay-speakers");
     strcpy(img.version, "0.2.0");
     HK_CHECK_EQ_INT(hk_ota_image_check(&img, &m), HK_OTA_IMAGE_ERR_NO_DESC);
 
@@ -76,12 +76,12 @@ void test_ota(void)
 
     /* A near-miss name is still a different project. */
     img = image();
-    strcpy(img.project_name, "harman-kardon");   /* n, not m */
+    strcpy(img.project_name, "merzarkabul-airplay-speakerz");   /* z, not s */
     HK_CHECK_EQ_INT(hk_ota_image_check(&img, &m), HK_OTA_IMAGE_ERR_PROJECT);
 
     /* A prefix must not pass as a match. */
     img = image();
-    strcpy(img.project_name, "harman");
+    strcpy(img.project_name, "merzarkabul");
     HK_CHECK_EQ_INT(hk_ota_image_check(&img, &m), HK_OTA_IMAGE_ERR_PROJECT);
 
     /* --- manifest and image disagreeing on the version --- */
@@ -123,8 +123,8 @@ void test_ota(void)
     HK_CHECK(strcmp(hk_ota_channel_name(0xFFFFFFFFu), "stable") == 0);
 
     /* Three consecutive rollbacks and this device stops trying: one that keeps
-     * fetching the same broken release spends its battery and its flash on the
-     * same mistake, nightly. */
+     * fetching the same broken release spends its flash on the same mistake,
+     * nightly. */
     HK_CHECK(hk_ota_updates_allowed(0u));
     HK_CHECK(hk_ota_updates_allowed(HK_OTA_MAX_ROLLBACKS - 1u));
     HK_CHECK(!hk_ota_updates_allowed(HK_OTA_MAX_ROLLBACKS));
@@ -169,7 +169,8 @@ void test_ota(void)
 
     /* --- what a real GitHub release link looks like --- */
     HK_CHECK(hk_ota_asset_url_ok(
-        "https://github.com/user/repo/releases/download/v0.2.0/harman-kardom.bin"));
+        "https://github.com/user/repo/releases/download/v0.2.0/"
+        "merzarkabul-airplay-speakers-esp32s3-n16r8-v0.2.0.bin"));
     /* And where it redirects to. */
     HK_CHECK(hk_ota_asset_url_ok(
         "https://release-assets.githubusercontent.com/github-production-release-asset/1/2"));

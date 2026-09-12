@@ -11,7 +11,7 @@ tags: [adr, ota, github-releases, security]
 
 ## Karar
 
-Harman Kardom firmware sürümleri SemVer Git etiketleriyle oluşturulacak ve GitHub Actions tarafından test/build sonrası GitHub Release asset'i olarak yayımlanacaktır. Cihazlar uygun güç, sıcaklık, ağ ve idle-audio koşullarında daha yeni stable sürümü HTTPS üzerinden otomatik olarak alacaktır.
+Merzarkabul Airplay Speakers firmware sürümleri SemVer Git etiketleriyle oluşturulacak ve GitHub Actions tarafından test/build sonrası GitHub Release asset'i olarak yayımlanacaktır. Cihazlar uygun ağ ve idle-audio koşullarında daha yeni stable sürümü HTTPS üzerinden otomatik olarak alacaktır.
 
 OTA; çift uygulama slotu, imzalı image, ilk-açılış sağlık kontrolü, rollback ve USB/UART recovery içerir. Dört cihazın tamamına doğrudan aynı anda dağıtım yapılmaz; bir canary cihazdan sonra stable terfisi uygulanır.
 

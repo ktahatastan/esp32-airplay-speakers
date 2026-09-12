@@ -120,8 +120,8 @@ typedef enum {
  * How many consecutive rollbacks before this device stops updating itself.
  *
  * A speaker that rolls back, downloads the same release again, rolls back
- * again and repeats is not being cautious — it is spending its battery and its
- * flash write cycles on the same mistake, nightly. Three attempts is enough to
+ * again and repeats is not being cautious — it is spending its flash write
+ * cycles on the same mistake, nightly. Three attempts is enough to
  * distinguish a transient failure from a release this device cannot run.
  */
 #define HK_OTA_MAX_ROLLBACKS 3u

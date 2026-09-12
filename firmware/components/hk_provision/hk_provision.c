@@ -100,7 +100,7 @@ void hk_prov_handle(hk_prov_t *prov, hk_prov_event_t event, uint32_t now_ms)
              * from one accidental tap. The disconnect itself is correct and
              * stays -- what was missing is a precondition on getting here.
              *
-             * So the first press only arms, and the LED and the screen say so
+             * So the first press only arms, and the LED and the log say so
              * (hk_prov_confirm_pending). The second press, inside
              * HK_PROV_CONFIRM_MS, opens exactly the window today's code opens.
              * A press that arrives after the arm expired is not a confirmation
@@ -143,7 +143,7 @@ void hk_prov_handle(hk_prov_t *prov, hk_prov_event_t event, uint32_t now_ms)
         }
         if (prov->radios_open) {
             /* The user is standing there watching. Go straight back to the
-             * setup screen instead of retrying silently. */
+             * setup window instead of retrying silently. */
             open_provisioning(prov, prov->bounded, prov->opened_ms);
             return;
         }

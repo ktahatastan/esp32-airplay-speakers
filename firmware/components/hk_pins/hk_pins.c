@@ -10,19 +10,8 @@ const hk_pin_entry_t hk_pin_table[] = {
     {"led_r",     HK_PIN_LED_R},
     {"led_g",     HK_PIN_LED_G},
     {"led_b",     HK_PIN_LED_B},
-    {"i2c_sda",   HK_PIN_I2C_SDA},
-    {"i2c_scl",   HK_PIN_I2C_SCL},
     {"amp_mute",  HK_PIN_AMP_MUTE},
     {"dac_xsmt",  HK_PIN_DAC_XSMT},
-    {"batt_sense", HK_PIN_BATT_SENSE},
-    {"ntc_sense", HK_PIN_NTC_SENSE},
-    /* Listed in the module's own header order, so the boot report can be read
-       against the part in hand: RST, CS, DC, SDA, SCL, then GND and VCC. */
-    {"lcd_rst",   HK_PIN_LCD_RST},
-    {"lcd_cs",    HK_PIN_LCD_CS},
-    {"lcd_dc",    HK_PIN_LCD_DC},
-    {"lcd_mosi",  HK_PIN_LCD_MOSI},
-    {"lcd_sck",   HK_PIN_LCD_SCK},
     {NULL, -1},
 };
 

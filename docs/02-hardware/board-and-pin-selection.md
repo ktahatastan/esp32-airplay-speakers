@@ -25,9 +25,9 @@ Tablonun `accepted` olabilmesi için gerekenler:
 | Koşul | Kanıt |
 |---|---|
 | Satın alınan kartın şeması elde | Üretici/satıcı şeması veya kart baskı yazısı fotoğrafı |
-| I2S üçlüsü boot'u bozmuyor | Kart üzerinde boot + I2S saat ölçümü (TP11-TP13) |
+| I2S üçlüsü boot'u bozmuyor | Kart üzerinde boot + I2S saat ölçümü (TP5-TP7) |
 | Buton pini strapping değil | Boot testi ve datasheet karşılaştırması |
-| RGB PWM ses tabanına girmiyor | G3 dip gürültü ölçümü |
+| RGB PWM ses tabanına girmiyor | G1 dip gürültü ölçümü |
 | USB/UART recovery erişilebilir | Fiziksel kurtarma prosedürü denendi |
 
 ## Kaçınılan pinler

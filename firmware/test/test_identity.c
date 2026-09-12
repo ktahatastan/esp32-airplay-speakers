@@ -13,16 +13,16 @@ void test_identity(void)
 
     HK_CHECK_EQ_INT(hk_identity_from_mac(mac, &id), HK_IDENTITY_OK);
     HK_CHECK_EQ_STR(id.suffix, "A1B2");
-    HK_CHECK_EQ_STR(id.airplay, "Harman Kardom A1B2");
-    HK_CHECK_EQ_STR(id.ble, "HarmanKardom-A1B2");
-    HK_CHECK_EQ_STR(id.softap, "HarmanKardom-Setup-A1B2");
-    HK_CHECK_EQ_STR(id.mdns, "harman-kardom-a1b2");
+    HK_CHECK_EQ_STR(id.airplay, "Merzarkabul A1B2");
+    HK_CHECK_EQ_STR(id.ble, "Merzarkabul-A1B2");
+    HK_CHECK_EQ_STR(id.softap, "Merzarkabul-Setup-A1B2");
+    HK_CHECK_EQ_STR(id.mdns, "merzarkabul-a1b2");
 
     /* Low nibbles and zero bytes must still produce four characters. */
     const uint8_t mac_zeros[6] = {0x24, 0x6F, 0x28, 0x11, 0x00, 0x0F};
     HK_CHECK_EQ_INT(hk_identity_from_mac(mac_zeros, &id), HK_IDENTITY_OK);
     HK_CHECK_EQ_STR(id.suffix, "000F");
-    HK_CHECK_EQ_STR(id.mdns, "harman-kardom-000f");
+    HK_CHECK_EQ_STR(id.mdns, "merzarkabul-000f");
 
     /* Two units differing only in the last octet must not collide. */
     const uint8_t mac_a[6] = {0x24, 0x6F, 0x28, 0x11, 0xA1, 0x01};
@@ -46,8 +46,8 @@ void test_identity(void)
     HK_CHECK(strlen(id_a.ble) <= 29);
     HK_CHECK(hk_identity_is_valid_mdns_label(id_a.mdns));
 
-    HK_CHECK_EQ_INT(hk_identity_is_valid_mdns_label("harman-kardom-a1b2"), 1);
-    HK_CHECK_EQ_INT(hk_identity_is_valid_mdns_label("Harman-Kardom"), 0);  /* uppercase */
+    HK_CHECK_EQ_INT(hk_identity_is_valid_mdns_label("merzarkabul-a1b2"), 1);
+    HK_CHECK_EQ_INT(hk_identity_is_valid_mdns_label("Merzarkabul"), 0);  /* uppercase */
     HK_CHECK_EQ_INT(hk_identity_is_valid_mdns_label("-leading"), 0);
     HK_CHECK_EQ_INT(hk_identity_is_valid_mdns_label("trailing-"), 0);
     HK_CHECK_EQ_INT(hk_identity_is_valid_mdns_label("has_underscore"), 0);

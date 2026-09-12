@@ -1,6 +1,6 @@
 ---
 name: verifier
-description: Independently verify a completed Harman Kardom change, tests, documentation and acceptance evidence without implementing fixes.
+description: Independently verify a completed Merzarkabul Airplay Speakers change, tests, documentation and acceptance evidence without implementing fixes.
 model: inherit
 ---
 

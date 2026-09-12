@@ -95,14 +95,12 @@ else()
     set(VENDOR_SRCS "")
 endif()
 
-# hk_audio and hk_power are named unconditionally, for the reason the block at
-# the top of this file gives: a PRIV_REQUIRES inside an `if(CONFIG_...)` is
-# evaluated in the early pass, where CONFIG_ symbols do not exist, and is
-# silently dropped. The DSP backend needs hk_dsp.h, hk_eq.h and hk_profile.h
-# from hk_audio, and HK_POWER_MV_UNKNOWN from hk_power -- the sentinel it hands
-# hk_profile_build() while no ADC driver exists to replace it. Naming them in a
-# build that does not select that backend costs nothing in the image: the linker
-# discards what nothing calls.
+# hk_audio is named unconditionally, for the reason the block at the top of
+# this file gives: a PRIV_REQUIRES inside an `if(CONFIG_...)` is evaluated in
+# the early pass, where CONFIG_ symbols do not exist, and is silently dropped.
+# The DSP backend needs hk_dsp.h, hk_eq.h and hk_profile.h from hk_audio.
+# Naming it in a build that does not select that backend costs nothing in the
+# image: the linker discards what nothing calls.
 idf_component_register(
     SRCS ${HK_AIRPLAY_SRCS}
     INCLUDE_DIRS "include"
@@ -112,7 +110,7 @@ idf_component_register(
     PRIV_REQUIRES driver nvs_flash esp_wifi esp_netif esp_event esp_ringbuf
                   esp_driver_i2s esp_timer esp_http_client esp_driver_ledc
                   app_update json mbedtls espressif__mdns dac audio-resampler
-                  hk_audio hk_power
+                  hk_audio
 )
 
 # Upstream's own warning posture, not this project's. The vendored tree is not

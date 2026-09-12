@@ -4,9 +4,8 @@
  *
  * Every check here runs on the manifest alone, before a single byte of the
  * image is fetched. That ordering is the point: a device that downloads first
- * and validates afterwards has already spent the airtime, the flash write
- * cycles and the battery, and on a speaker running from a 4S pack that is not
- * free.
+ * and validates afterwards has already spent the airtime and the flash write
+ * cycles, and neither is free.
  *
  * The rule throughout is that anything not understood is refused. An update
  * client that installs an image it could not fully check is how four speakers
@@ -30,15 +29,16 @@
 #define HK_MANIFEST_TARGET_MAX    16
 #define HK_MANIFEST_HW_MAX        32
 /*
- * Long enough for a real GitHub release URL with headroom. The obvious-looking
- * 96 was measured against this repository and came up two bytes short:
+ * Long enough for a real GitHub release URL with headroom. Measured against
+ * this repository rather than guessed:
  *
- *   https://github.com/ktahatastan/esp32-airplay-speakers/releases/download/v0.1.0/harman-kardom.bin
+ *   https://github.com/ktahatastan/esp32-airplay-speakers/releases/download/v0.1.0/merzarkabul-airplay-speakers-esp32s3-n16r8-v0.1.0.bin
  *
- * is 97 bytes, and a two-digit minor version makes it 98. A URL that does not
- * fit is refused as a missing field, so the failure would not have looked like
- * a length problem — it would have looked like every update being rejected,
- * forever, on all four speakers, from the first release onwards.
+ * is 132 bytes, a two-digit minor version makes it 134, and the redirect
+ * GitHub answers with is longer still. A URL that does not fit is refused as
+ * a missing field, so a buffer one byte too short would not look like a
+ * length problem — it would look like every update being rejected, forever,
+ * on all four speakers, from the first release onwards.
  */
 #define HK_MANIFEST_ASSET_MAX     256
 #define HK_MANIFEST_SHA256_CHARS  64

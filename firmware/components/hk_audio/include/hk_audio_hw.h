@@ -72,9 +72,9 @@ esp_err_t hk_audio_hw_start(void);
 /**
  * Whether sound is allowed at all right now.
  *
- * The composition of that answer — a calibration profile exists, the pack and
- * the charger allow it, and any bench exception that has been deliberately
- * configured — belongs to the application, not here. This module is told the
+ * The composition of that answer — a calibration profile exists, and any
+ * bench exception that has been deliberately configured — belongs to the
+ * application, not here. This module is told the
  * conclusion so that it stays a hardware layer with no policy in it, and so
  * that the one place the exceptions are applied is the one place they are
  * printed.

@@ -11,7 +11,7 @@ tags: [adr, provisioning, security, srp6a, compatibility]
 
 ## Bağlam
 
-Provisioning'in güvenliği [[ADR-0005-dual-provisioning|ADR-0005]] uyarınca ESP-IDF'in Security 2'sidir: SRP6a. Cihaz parolayı hiç tutmaz, yalnız bir **salt** ve bir **verifier** tutar. `firmware/tools/provision_credentials.py` bunları cihaz başına üretir ve bugüne kadar kullanıcı adı olarak `harmankardom` kullandı. Espressif'in her örneğinde, testinde ve uygulamasında geçen ad ise `wifiprov`.
+Provisioning'in güvenliği [[ADR-0005-dual-provisioning|ADR-0005]] uyarınca ESP-IDF'in Security 2'sidir: SRP6a. Cihaz parolayı hiç tutmaz, yalnız bir **salt** ve bir **verifier** tutar. `firmware/tools/provision_credentials.py` bunları cihaz başına üretir ve bugüne kadar kullanıcı adı olarak `merzarkabul` kullandı. Espressif'in her örneğinde, testinde ve uygulamasında geçen ad ise `wifiprov`.
 
 Bu, isimlendirme tercihi gibi görünüyor ve değil. Kullanıcı adı **verifier'ın içine giriyor**: `v = g^x`, `x = H(salt, H(I ":" P))`. Yani ad değişirse verifier de değişir; yanlış adla hesaplanmış bir kanıt eşleşmez.
 
@@ -36,13 +36,13 @@ Gerekçe, adın ne olduğu değil, ne olmadığıdır: **kullanıcı adı sır d
 ## Sonuçlar
 
 - `provision_credentials.py` bundan sonra `wifiprov` ile üretir. Etiket dosyası adı yazmaya devam eder, çünkü QR okunamadığında elle kurmanın tek yolu odur.
-- **`harmankardom` ile üretilmiş her kimlik bilgisi geçersizdir** ve yeniden üretilmelidir. Maliyeti bugün sıfır: sahada cihaz yok, üretim yapılmadı, ve tezgâh kartının kimlik bilgileri zaten tek kullanımlık.
+- **`merzarkabul` ile üretilmiş her kimlik bilgisi geçersizdir** ve yeniden üretilmelidir. Maliyeti bugün sıfır: sahada cihaz yok, üretim yapılmadı, ve tezgâh kartının kimlik bilgileri zaten tek kullanımlık.
 - Adın yalnız tek bir yerde tanımlı olması korunur. İki yerde tanımlı bir ad, birinin değişip diğerinin kalmasıyla tam olarak bu ADR'nin engellediği hatayı üretir.
 - QR'sız kurulum yolu bu kararla **açılmış olmuyor**, yalnız adın onu kapatması ortadan kalkıyor. O yolun kendisi hâlâ [[ADR-0005-dual-provisioning|ADR-0005]]'in açık maddesidir.
 
 ## Reddedilen seçenek
 
-**`harmankardom`'da kalmak.** Marka tutarlılığı gerekçesi burada karşılığı olmayan bir gerekçedir: kullanıcı bu dizeyi hiç görmez. Karşılığında QR okunamayan her durumda — kırık etiket, kamerasız cihaz, listeden seçen kullanıcı — kurulum, sebebi hiçbir yüzeyde yazmayan bir kanıt hatasıyla başarısız olur.
+**`merzarkabul`'da kalmak.** Marka tutarlılığı gerekçesi burada karşılığı olmayan bir gerekçedir: kullanıcı bu dizeyi hiç görmez. Karşılığında QR okunamayan her durumda — kırık etiket, kamerasız cihaz, listeden seçen kullanıcı — kurulum, sebebi hiçbir yüzeyde yazmayan bir kanıt hatasıyla başarısız olur.
 
 ## Doğrulama
 

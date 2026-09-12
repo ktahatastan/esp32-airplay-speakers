@@ -1,6 +1,6 @@
 ---
 name: firmware-worker
-description: Bounded implementation worker for ESP32 firmware tasks assigned by the Harman Kardom orchestrator.
+description: Bounded implementation worker for ESP32 firmware tasks assigned by the Merzarkabul Airplay Speakers orchestrator.
 model: inherit
 readonly: false
 is_background: false

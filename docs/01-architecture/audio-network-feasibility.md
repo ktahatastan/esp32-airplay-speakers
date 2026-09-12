@@ -27,7 +27,7 @@ Birincil kaynaklardan (kaynak kodu, lisans dosyaları, Espressif'in kendi kayıt
 
 ADR-0012'nin tanımladığı geliştirme kartında, depodan derlenen imajla. Ham günlük ve karta giden bağlantılar [[../06-testing/devkit-bring-up|bring-up kaydındadır]]; buraya yalnız fizibiliteyi değiştiren satırlar alındı. Hepsi **tek karttır** ve hiçbiri fiziksel bir kapı açmaz.
 
-- **Keşif, cihazın kendi logundan değil, dışarıdan doğrulandı.** Aynı ağdaki bir Mac'in `dns-sd`'si `_airplay._tcp` altında `Harman Kardom 06C4`'ü, `_raop._tcp` altında `A4CB8F9B06C4@Harman Kardom 06C4`'ü buluyor ve `Harman-Kardom-06C4.local:7000`'e çözüyor. TXT kayıtları: `model=AudioAccessory5,1`, `features=0x405C4A00,0x1C340`, `srcvers=377.40.00`, `deviceid=A4:CB:8F:9B:06:C4`.
+- **Keşif, cihazın kendi logundan değil, dışarıdan doğrulandı.** Aynı ağdaki bir Mac'in `dns-sd`'si `_airplay._tcp` altında `Merzarkabul 06C4`'ü, `_raop._tcp` altında `A4CB8F9B06C4@Merzarkabul 06C4`'ü buluyor ve `Merzarkabul-06C4.local:7000`'e çözüyor. TXT kayıtları: `model=AudioAccessory5,1`, `features=0x405C4A00,0x1C340`, `srcvers=377.40.00`, `deviceid=A4:CB:8F:9B:06:C4`.
 - **RTSP telde cevap veriyor.** `OPTIONS` → `RTSP/1.0 200 OK`, `Server: AirTunes/377.40.00`, ve `Public` listesi `SETPEERS`, `SETRATEANCHORTIME`, `FLUSHBUFFERED` içeriyor. Kaynakta okunan AirPlay 2 metot kümesi artık cihazın kendi yanıtında da duruyor.
 - **Gerçek bir oturum kuruldu.** Sahibinin iPhone'undan müzik çalındı; DMAP meta verisi geldi (albüm, sanatçı, tür, başlık, ilerleme). ADR-0013'ün "hiçbir Apple cihazı bu alıcıya bağlanmadı" satırı bu ölçümle artık geçerli değildir.
 - **PTP saati kilitlendi:** `ptp_clock: LOCKED`, `dev=973672 ns`, `samples=62`, `sync=67`, `followup=67`.

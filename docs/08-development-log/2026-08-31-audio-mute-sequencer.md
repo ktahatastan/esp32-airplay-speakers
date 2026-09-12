@@ -44,5 +44,5 @@ Sayaç sarmasi da test edildi: 49,7 gün açık kalan bir hoparlör, sayaç dön
 ## Açık kalanlar
 
 - Sürücü katmanı yok: `GPIO21` ve `GPIO13`'ü gerçekten süren kod `F2`'de, amfi kontrolüyle birlikte gelecek.
-- Oturma süreleri (`clock_settle_ms`, `dac_settle_ms`, `mute_settle_ms`) enjekte ediliyor ve gerçek değerleri `G1`/`G3`'te osiloskopla bakılarak belirlenecek. Testlerdeki sayılar yer tutucu.
+- Oturma süreleri (`clock_settle_ms`, `dac_settle_ms`, `mute_settle_ms`) enjekte ediliyor ve gerçek değerleri `G1`/`G2`'de osiloskopla bakılarak belirlenecek. Testlerdeki sayılar yer tutucu.
 - Limiter ve crossover matematiği hâlâ yazılmadı.

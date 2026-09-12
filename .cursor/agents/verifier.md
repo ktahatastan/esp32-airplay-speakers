@@ -1,6 +1,6 @@
 ---
 name: verifier
-description: Read-only independent verifier for Harman Kardom requirements, ADRs, tests and documentation.
+description: Read-only independent verifier for Merzarkabul Airplay Speakers requirements, ADRs, tests and documentation.
 model: inherit
 readonly: true
 is_background: true

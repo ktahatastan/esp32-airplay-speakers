@@ -290,7 +290,7 @@ static const uint16_t HK_SWEEP_FINE_RATIO_1024[HK_SWEEP_FINE_STEPS] = {
  * or three times a second and its reading takes a second or two to stop moving
  * after the input changes. If it autoranges -- and it will, if the operator
  * left it on auto and the sweep walks up a resonance peak -- add another second
- * or two. Call it three seconds before the display is trustworthy.
+ * or two. Call it three seconds before the meter's reading is trustworthy.
  *
  * Then a person has to look at it, read three or four digits, find the right
  * row, and write them down. Five seconds is not generous for that; it is

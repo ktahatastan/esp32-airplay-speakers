@@ -1,9 +1,9 @@
-# Harman Kardom continuous integration.
+# Merzarkabul Airplay Speakers continuous integration.
 #
 # This is the pull-request gate from docs/03-firmware/firmware-plan.md stage F0.
 # It proves the repository is internally consistent and that the firmware builds
 # and its logic behaves. It proves nothing about hardware: every physical gate
-# (G0-G8) needs recorded operator measurements and cannot run here.
+# (G0-G2, G6-G8) needs recorded operator measurements and cannot run here.
 
 name: firmware-ci
 
@@ -111,19 +111,29 @@ jobs:
         run: python3 hardware/diagrams/generate_schematic_svg.py
       - name: fail if the committed sheet is out of date
         run: |
-          if ! git diff --quiet -- docs/02-hardware/assets/harman-kardom-schematic.svg; then
+          SVG=docs/02-hardware/assets/merzarkabul-schematic.svg
+          # `git diff` is silent about a file Git does not track, so a drawing
+          # that was regenerated but never committed would pass here with the
+          # vault holding no schematic at all. Require it to be tracked first.
+          git ls-files --error-unmatch "$SVG" >/dev/null 2>&1 || {
+            echo "$SVG is not committed: the vault has no schematic drawing."
+            echo "Run: python3 hardware/diagrams/generate_schematic_svg.py && git add $SVG"
+            exit 1
+          }
+          if ! git diff --quiet -- "$SVG"; then
             echo "The committed schematic does not match its generator."
             echo "Run: python3 hardware/diagrams/generate_schematic_svg.py"
-            git --no-pager diff --stat -- docs/02-hardware/assets/harman-kardom-schematic.svg
+            git --no-pager diff --stat -- "$SVG"
             exit 1
           fi
       # The KiCad sheet cannot be regenerated here — it needs KiCad's symbol
       # libraries, which are not on the runner. What CAN be checked is whether
-      # the committed sheet still matches the generator that produced it,
+      # a committed sheet still matches the generator that produced it,
       # because the generator is editable on machines that cannot regenerate
       # the output. A schematic nobody can tell is stale is one someone will
-      # solder from.
-      - name: the generated KiCad sheet must match its generator
+      # solder from. With no sheet committed the check passes with a notice
+      # naming the regeneration command: absence is visible, staleness is not.
+      - name: a generated KiCad sheet, if committed, must match its generator
         run: python3 scripts/check_generated_kicad.py
 
   firmware-build:
@@ -141,7 +151,7 @@ jobs:
         shell: bash
         run: |
           python3 firmware/tools/check_partitions.py \
-            --app-size firmware/build/harman-kardom.bin
+            --app-size firmware/build/merzarkabul-airplay-speakers.bin
       # The bring-up devkit is a second real target, and the four settings that
       # define a board (flash size, PSRAM mode, partition table, OTA hardware
       # revision) are held together by configure-time guards in
@@ -161,7 +171,7 @@ jobs:
             || { echo "the devkit profile did not select the devkit board"; exit 1; }
           python3 firmware/tools/check_partitions.py \
             --csv firmware/partitions-devkit.csv --flash-size 8MB \
-            --app-size firmware/build-devkit/harman-kardom.bin
+            --app-size firmware/build-devkit/merzarkabul-airplay-speakers.bin
       # The host suite again, this time with ESP-IDF present so cJSON exists
       # and the manifest parser plus the generator/validator bridge actually
       # run. Without this the parser would be tested nowhere.
@@ -216,7 +226,7 @@ jobs:
           # Unsigned and not a release. Release artefacts are produced only by
           # the tag pipeline described in docs/03-firmware/ota-and-release-plan.md.
           path: |
-            firmware/build/harman-kardom.bin
-            firmware/build/harman-kardom.elf
+            firmware/build/merzarkabul-airplay-speakers.bin
+            firmware/build/merzarkabul-airplay-speakers.elf
             firmware/build/partition_table/partition-table.bin
           retention-days: 14

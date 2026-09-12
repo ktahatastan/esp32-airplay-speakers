@@ -44,7 +44,7 @@ typedef enum {
 } hk_health_state_t;
 
 /**
- * The five first-boot criteria from docs/03-firmware/ota-and-release-plan.md.
+ * The four first-boot criteria from docs/03-firmware/ota-and-release-plan.md.
  *
  * @c network deserves a word, because getting it wrong is how a good image
  * gets rolled back. It is PASS when the device joined its network *or* when it
@@ -57,7 +57,6 @@ typedef struct {
     hk_health_state_t storage;   /**< NVS opened, schema version understood, migration done */
     hk_health_state_t network;   /**< Joined, or provisioning open on purpose */
     hk_health_state_t audio;     /**< I2S/DAC task running and feeding its watchdog */
-    hk_health_state_t telemetry; /**< Pack voltage and NTC read, and plausible */
     uint32_t uptime_ms;          /**< Milliseconds since boot */
     bool     critical_fault;     /**< A panic, abort or watchdog reset was recorded */
 } hk_health_inputs_t;
@@ -93,11 +92,9 @@ typedef enum {
     HK_HEALTH_REASON_STORAGE_FAILED,
     HK_HEALTH_REASON_NETWORK_FAILED,
     HK_HEALTH_REASON_AUDIO_FAILED,
-    HK_HEALTH_REASON_TELEMETRY_FAILED,
     HK_HEALTH_REASON_STORAGE_SILENT,   /**< Still UNKNOWN at the deadline */
     HK_HEALTH_REASON_NETWORK_SILENT,
     HK_HEALTH_REASON_AUDIO_SILENT,
-    HK_HEALTH_REASON_TELEMETRY_SILENT,
     HK_HEALTH_REASON_SETTLING,         /**< All good so far, still inside settle_ms */
     HK_HEALTH_REASON_INCOMPLETE,       /**< Something has not reported, deadline not reached */
 } hk_health_reason_t;
@@ -116,8 +113,8 @@ typedef enum {
  * @note @c storage and @c network may not be SKIP. They belong to components
  *       that are in every build, so declaring them inapplicable is not a
  *       description of the build — it is switching the check off while leaving
- *       something that still looks like a check. SKIP exists for @c audio and
- *       @c telemetry, whose components do not exist yet.
+ *       something that still looks like a check. SKIP exists for @c audio,
+ *       whose component does not exist yet.
  * @param reason optional; may be NULL
  *
  * @note @c uptime_ms is measured from boot and this runs only in the first
@@ -133,7 +130,6 @@ typedef enum {
     HK_HEALTH_CRITERION_STORAGE = 0,
     HK_HEALTH_CRITERION_NETWORK,
     HK_HEALTH_CRITERION_AUDIO,
-    HK_HEALTH_CRITERION_TELEMETRY,
 } hk_health_criterion_t;
 
 /** Short names, for logs and tests. */

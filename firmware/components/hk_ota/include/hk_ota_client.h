@@ -24,7 +24,6 @@ typedef struct {
     const char        *manifest_url;  /**< HTTPS URL of the release manifest */
     hk_device_t        device;
     hk_gate_inputs_t   gate_inputs;
-    const hk_gate_limits_t *gate_limits;  /**< NULL means uncalibrated: blocks */
 } hk_ota_request_t;
 
 /**

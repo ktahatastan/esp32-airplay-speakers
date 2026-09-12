@@ -1,6 +1,6 @@
 /**
  * @file hk_pins.h
- * @brief The single source of truth for Harman Kardom GPIO assignment.
+ * @brief The single source of truth for Merzarkabul Airplay Speakers GPIO assignment.
  *
  * These numbers mirror the candidate pin table in
  * docs/02-hardware/circuit-and-wiring-plan.md section 3.1 and the generated
@@ -42,38 +42,6 @@
 #define HK_PIN_LED_G      9  /**< PWM */
 #define HK_PIN_LED_B     10  /**< PWM */
 
-/* --- Optional telemetry --------------------------------------------------- */
-#define HK_PIN_I2C_SDA   11  /**< INA219 current sensor (ADR-0018) */
-#define HK_PIN_I2C_SCL   12  /**< INA219 current sensor (ADR-0018) */
-
-/* --- Round display, GC9A01 240x240 over SPI (ADR-0017) -------------------
- * The module in hand is the SEVEN pin variant -- RST, CS, DC, SDA, SCL, GND,
- * VCC -- so there is no backlight pin: the panel lights when VCC does. Five
- * signals, and the cost is stated where it is paid: GPIO39-41 are MTCK, MTDO
- * and MTDI, so taking them spends pad-JTAG entirely (all four are needed and
- * three is enough to lose it). USB Serial/JTAG on GPIO19/20 survives and is
- * already this build's secondary console, so what is lost is the external
- * probe, not the debugger.
- *
- * GPIO14-17 are deliberately NOT used here. They are the only free pins that
- * are both RTC-capable and free of any strapping, USB, UART0 or JTAG role,
- * which makes them the mute lines' fallback pool. Spending them on a display
- * would trade a safety reserve for a convenience.
- *
- * Two pins are chosen for what the silicon does before any firmware runs:
- *   - CS on 39, which comes up with a weak internal pull-up, so the panel sees
- *     its chip select deasserted through ROM and bootloader. An external 10 k
- *     pull-up makes that guaranteed rather than inherited.
- *   - RST on 18, which the silicon drives HIGH at power-up. For an active-low
- *     reset that is the safe level, and it is the one place where GPIO18's
- *     defect -- the reason it is barred from mute duty -- is an asset.
- */
-#define HK_PIN_LCD_SCK   47  /**< Module `SCL`. 33 R series at the ESP end on the product */
-#define HK_PIN_LCD_MOSI  41  /**< Module `SDA`. One direction; `SDO` is not wired */
-#define HK_PIN_LCD_CS    39  /**< Module `CS`, active low. Weak internal pull-up at reset */
-#define HK_PIN_LCD_DC    40  /**< Module `DC`, data/command select */
-#define HK_PIN_LCD_RST   18  /**< Module `RST`, active low. Silicon drives this high at reset */
-
 /* --- Mute lines ----------------------------------------------------------
  * Both are active low, and both are held in their SAFE state by an external
  * pull-down, not by the ESP32. That is not belt-and-braces, it is the whole
@@ -93,6 +61,12 @@
  * would release the amplifier before software exists, into drivers whose
  * impedance is still the open G0 blocker.
  *
+ * GPIO14-17 are deliberately left free. They are the only unclaimed pins that
+ * are both RTC-capable and free of any strapping, USB, UART0 or JTAG role,
+ * which makes them the mute lines' fallback pool if either assignment below
+ * has to move after the board is in hand. Spending them on a convenience would
+ * trade a safety reserve for it.
+ *
  * HK_PIN_AMP_MUTE is a RESERVATION. Whether the XH-A232 board exposes an
  * accessible SD pad is still an open item in the wiring plan, so this may end
  * up connected to nothing. Reserving it costs a pin that nothing else wanted;
@@ -101,45 +75,19 @@
 #define HK_PIN_AMP_MUTE  21  /**< TPA3110 SD, active low. External pull-down. */
 #define HK_PIN_DAC_XSMT  13  /**< PCM5102A XSMT, active low. External pull-down. */
 
-/* --- Analogue sense ------------------------------------------------------
- * ADC1 on the ESP32-S3 is exactly GPIO1-10, and this design already spends
- * GPIO4-10 on I2S, the button and the LED. GPIO3 is ADC1_CH2 but is a
- * strapping pin. That leaves GPIO1 and GPIO2 as the last two ADC1 channels on
- * the part, and the design needs exactly two analogue measurements.
- *
- * They are claimed here rather than left free precisely because they are the
- * last two: a future signal taking one would be invisible until someone tried
- * to add battery sensing and found nowhere to put it. Moving an analogue
- * channel after assembly means moving a divider, not a wire.
- *
- * ADC2 (GPIO11-20) is not an equivalent fallback on this part: only ADC1
- * supports the continuous/DMA controller, per SOC_ADC_DIG_SUPPORTED_UNIT.
- *
- * Both are RESERVATIONS. The divider ratio, the NTC network and every
- * threshold come from G3/G4 measurements that have not been taken; nothing
- * here implies a calibrated reading exists.
- */
-#define HK_PIN_BATT_SENSE 1  /**< ADC1_CH0, 4S pack through a divider */
-#define HK_PIN_NTC_SENSE  2  /**< ADC1_CH1, cell thermistor */
-
 /**
  * Number of GPIOs this design claims:
- * 3 I2S + 1 button + 3 RGB + 2 I2C + 2 mute + 2 analogue + 5 display.
+ * 3 I2S + 1 button + 3 RGB + 2 mute.
  */
-#define HK_PIN_COUNT 18
+#define HK_PIN_COUNT 9
 
 /** Every assigned pin, as a bit mask. */
 #define HK_PIN_MASK ( \
-      (1ULL << HK_PIN_LCD_SCK)   | (1ULL << HK_PIN_LCD_MOSI)  | \
-      (1ULL << HK_PIN_LCD_CS)    | (1ULL << HK_PIN_LCD_DC)    | \
-      (1ULL << HK_PIN_LCD_RST)                                | \
       (1ULL << HK_PIN_I2S_BCLK)  | (1ULL << HK_PIN_I2S_LRCLK) | \
       (1ULL << HK_PIN_I2S_DATA)  | (1ULL << HK_PIN_BUTTON)    | \
       (1ULL << HK_PIN_LED_R)     | (1ULL << HK_PIN_LED_G)     | \
-      (1ULL << HK_PIN_LED_B)     | (1ULL << HK_PIN_I2C_SDA)   | \
-      (1ULL << HK_PIN_I2C_SCL)   | (1ULL << HK_PIN_AMP_MUTE)  | \
-      (1ULL << HK_PIN_DAC_XSMT)  | (1ULL << HK_PIN_BATT_SENSE)| \
-      (1ULL << HK_PIN_NTC_SENSE))
+      (1ULL << HK_PIN_LED_B)     | (1ULL << HK_PIN_AMP_MUTE)  | \
+      (1ULL << HK_PIN_DAC_XSMT))
 
 /**
  * GPIO numbers that do not exist on the ESP32-S3 die.

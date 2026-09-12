@@ -13,7 +13,7 @@ tags: [development-log, firmware, devkit, board, ota, wifi]
 
 ## Kartta kaynağı olmayan bir firmware bulundu
 
-İlk yaptığım şey karta bakmaktı, ve kart boş değildi. Üzerinde `harman-kardom` 0.1.0 vardı — 3 Eylül'de derlenmiş, `ESP-IDF: GIT-NOTFOUND`, 8 MB'lık bir bölüm tablosu, `gpio48`'de bir WS2812 aynası, ve `hk_airplay` ile `mdns_airplay` bileşenleri. İkiliden çıkarılan diziler `fp-setup`, `pair-setup`, `SETPEERS`, `SETRATEANCHORTIME`, `FPLY`, `ptp`, `srp` içeriyordu: ADR-0007'nin gerçek yığını vendor edilmişti ve kart AirPlay hedefi olarak yayın yapıyordu.
+İlk yaptığım şey karta bakmaktı, ve kart boş değildi. Üzerinde `merzarkabul-airplay-speakers` 0.1.0 vardı — 3 Eylül'de derlenmiş, `ESP-IDF: GIT-NOTFOUND`, 8 MB'lık bir bölüm tablosu, `gpio48`'de bir WS2812 aynası, ve `hk_airplay` ile `mdns_airplay` bileşenleri. İkiliden çıkarılan diziler `fp-setup`, `pair-setup`, `SETPEERS`, `SETRATEANCHORTIME`, `FPLY`, `ptp`, `srp` içeriyordu: ADR-0007'nin gerçek yığını vendor edilmişti ve kart AirPlay hedefi olarak yayın yapıyordu.
 
 O kaynak ne bu depoda ne de bu makinede var. Kullanıcı doğruladı: başka bir oturumda denenmiş.
 
@@ -70,7 +70,7 @@ Belgeye uyarı yazmak yerine ayak kaldırıldı: `--image` bayrağı imajı **do
 **Kapatılmayan, karar bekleyen iki şey:**
 
 - **Telefon uygulamasıyla provisioning çalışmıyor.** Espressif SoftAP Prov uygulaması SRP6a el sıkışması **tamamlandıktan sonra** AES-GCM katmanında düşüyor (`mbedtls_gcm_auth_decrypt : -18`). ESP-IDF'in kendi referans istemcisi aynı cihaza aynı kimlik bilgileriyle bağlanıyor, yani firmware doğru, uyumsuzluk istemcide. Son kullanıcının kurulum yolu mobil uygulama olduğu için bu bir **ürün riski**dir, geliştirme sıkıntısı değil.
-- **SRP6a kullanıcı adı.** Tezgâh kartındaki kimlik bilgileri `wifiprov` ile üretilmiş; `provision_credentials.py` hâlâ `harmankardom` üretiyor. Ekosistemin varsayılanı `wifiprov`. Protokolce özel bir ad geçerli, ama uyumluluk riski. Kaynağı bilerek değiştirmedim: bu bir karar konusu, sessizce yapılacak bir düzeltme değil.
+- **SRP6a kullanıcı adı.** Tezgâh kartındaki kimlik bilgileri `wifiprov` ile üretilmiş; `provision_credentials.py` hâlâ `merzarkabul` üretiyor. Ekosistemin varsayılanı `wifiprov`. Protokolce özel bir ad geçerli, ama uyumluluk riski. Kaynağı bilerek değiştirmedim: bu bir karar konusu, sessizce yapılacak bir düzeltme değil.
 
 ## AirPlay vendor edildi, ve ayrılabilirliği bir sayıya indi
 
@@ -80,7 +80,7 @@ Belirleyici ölçüm şu: derlemeye aldığım dosyalar, **almadığım modülle
 
 Vendor ağacında **tek satır değişiklik yok**. Ayarlar bizim tarafımızda ayrı bir `Kconfig`'de; bunun bedeli upstream'in 523 satırlık menüsünü tekrar yazmamak yerine yalnız kullandığımız sembolleri tanımlamak oldu, kazancı ise bir sonraki upstream güncellemesinin birleştirme değil kopyalama işi olması.
 
-Kartta çalıştı: `mDNS hostname: Harman-Kardom-06C4.local`, `RTSP server listening on port 7000`, `receiver ready`. Cihaz adı bizim kimliğimizden geliyor, yukarı akışın varsayılanından değil.
+Kartta çalıştı: `mDNS hostname: Merzarkabul-06C4.local`, `RTSP server listening on port 7000`, `receiver ready`. Cihaz adı bizim kimliğimizden geliyor, yukarı akışın varsayılanından değil.
 
 **Ürün imajı değişmedi** ve bu iddia ölçüldü: `CONFIG_HK_AIRPLAY` varsayılan kapalı, ürün ikilisinde `fp-setup`, `SETPEERS`, `FPLY`, `_airplay._tcp` dizelerinin hepsi sıfır kez geçiyor; geliştirme ikilisinde var.
 
@@ -107,5 +107,5 @@ Başlık düzeltildi. Vaat tasarım olarak duruyor; ne olduğu ile ne olacağı 
 ## Ne yapılmadı
 
 - ~~**AirPlay bu depoda hâlâ vendor edilmedi.**~~ Bu satır aynı oturumun erken bir taslağından kalmış ve yazıldığı anda bile yanlıştı: vendor işi aynı akşam yapıldı ve yukarıdaki *AirPlay vendor edildi* bölümü onu anlatıyor. Düzeltme 2026-09-08'de, bir tutarlılık turunda yapıldı. Satır silinmiyor çünkü günlük bir kayıttır; neyin ne zaman yanlış durduğu da kayıttır.
-- Hiçbir fiziksel kapı açılmadı. Kartta sürücü, amfi, DAC, batarya yok.
+- Hiçbir fiziksel kapı açılmadı. Kartta sürücü, amfi, DAC yok.
 - Bu kartta ölçülen hiçbir sayı ürün kartına taşınmaz: quad 2 MB PSRAM, oktal 8 MB'ın yerine geçmez.

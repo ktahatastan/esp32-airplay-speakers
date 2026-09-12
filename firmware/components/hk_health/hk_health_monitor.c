@@ -27,13 +27,12 @@ static const char *TAG = "hk_health";
 static hk_health_inputs_t s_inputs = {
     .storage = HK_HEALTH_UNKNOWN,
     .network = HK_HEALTH_UNKNOWN,
-    /* No hk_audio driver and no ADC driver exist, so these two subsystems
-     * cannot report. Declaring that explicitly is the difference between "not
-     * applicable to this build" and "has not answered yet": the first lets the
-     * image be confirmed, the second eventually rolls it back. They become
-     * real criteria in the same change that gives them drivers. */
+    /* No hk_audio driver exists, so that subsystem cannot report. Declaring
+     * that explicitly is the difference between "not applicable to this build"
+     * and "has not answered yet": the first lets the image be confirmed, the
+     * second eventually rolls it back. It becomes a real criterion in the same
+     * change that gives it a driver. */
     .audio = HK_HEALTH_SKIP,
-    .telemetry = HK_HEALTH_SKIP,
     .uptime_ms = 0,
     .critical_fault = false,
 };
@@ -54,7 +53,6 @@ void hk_health_report(hk_health_criterion_t which, hk_health_state_t state)
     case HK_HEALTH_CRITERION_STORAGE:   s_inputs.storage = state; break;
     case HK_HEALTH_CRITERION_NETWORK:   s_inputs.network = state; break;
     case HK_HEALTH_CRITERION_AUDIO:     s_inputs.audio = state; break;
-    case HK_HEALTH_CRITERION_TELEMETRY: s_inputs.telemetry = state; break;
     }
     portEXIT_CRITICAL(&s_lock);
 }
@@ -77,8 +75,8 @@ bool hk_health_monitor_begin(void)
 
     /* A reset that came from the firmware misbehaving is evidence about THIS
      * image, and it outranks anything the subsystems go on to report. A
-     * brownout is not: on a battery-powered speaker that is the pack, not the
-     * code, and rolling back over it would punish the wrong thing. */
+     * brownout is not: that is the adapter or the mains, not the code, and
+     * rolling back over it would punish the wrong thing. */
     const esp_reset_reason_t reason = esp_reset_reason();
     if (reason == ESP_RST_PANIC || reason == ESP_RST_TASK_WDT ||
         reason == ESP_RST_INT_WDT) {

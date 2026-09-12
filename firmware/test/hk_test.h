@@ -68,7 +68,6 @@ void test_manifest(void);
 void test_gate(void);
 void test_ota(void);
 void test_health(void);
-void test_power(void);
 void test_audio(void);
 void test_limiter(void);
 void test_biquad(void);
@@ -77,10 +76,6 @@ void test_settings(void);
 void test_portal(void);
 void test_profile(void);
 void test_dsp(void);
-void test_draw(void);
-void test_gfx(void);
-void test_qr(void);
-void test_screen(void);
 #ifdef HK_HAVE_CJSON
 void test_manifest_json(void);
 #endif

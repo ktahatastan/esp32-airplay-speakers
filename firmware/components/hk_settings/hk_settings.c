@@ -11,7 +11,7 @@ const hk_setting_def_t hk_settings_table[] = {
     {"volume", "playback volume, percent", 30u, 0u, 100u},
     {"led_bright", "status LED brightness, percent", 60u, 0u, 100u},
     {"auto_update", "check for updates automatically", 1u, 0u, 1u},
-    {"standby_min", "idle minutes before power save; 0 disables", 30u, 0u, 240u},
+    {"standby_min", "idle minutes before standby; 0 disables", 30u, 0u, 240u},
     /* Which release channel this speaker follows. Stored rather than compiled
      * in, because the canary step in the OTA plan puts ONE device on the
      * candidate channel — and rebuilding a different image for it would mean

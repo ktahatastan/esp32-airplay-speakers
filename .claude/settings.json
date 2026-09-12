@@ -12,7 +12,7 @@
     "ask": [
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(python3 hardware/kicad/generate_harman_kardom.py:*)",
+      "Bash(python3 hardware/kicad/generate_merzarkabul.py:*)",
       "Bash(python3 hardware/diagrams/generate_schematic_svg.py:*)"
     ],
     "deny": [

@@ -1,64 +1,45 @@
-# Harman Kardom iş listesi
+# Merzarkabul Airplay Speakers iş listesi
 
 Kilitli kararlar `AGENTS.md` içindedir ve yalnız supersede eden ADR ile değişir. Firmware aşama sırası [[docs/03-firmware/firmware-plan|firmware planındadır]].
 
 ## P0 - Tasarımı kilitleyen ölçümler
 
-- [ ] Dört woofer'ın DC dirençlerini ayrı ayrı ölç.
-- [ ] Dört tweeter'ın DC dirençlerini ayrı ayrı ölç.
+- [x] Dört woofer'ın DC dirençlerini ayrı ayrı ölç.
+- [x] Dört tweeter'ın DC dirençlerini ayrı ayrı ölç.
 - [ ] Sürücü etiketlerini ve bağlantı uçlarını fotoğraflandır.
 - [ ] Hedefi kesinleştir: dört bağımsız mono kutu mu, iki stereo çift mi?
-- [ ] İstenen normal ses seviyesinde çalışma süresi hedefini belirle.
 - [x] Aday AirPlay yığınının AirPlay 1/2 ve multiroom yeteneklerini kaynak kodu/lisansla doğrula.
 - [ ] Dört hedefin birlikte seçilebildiği en küçük ağ ses prototipini kur.
 - [x] İki saatlik drift/jitter ölçüm düzenini ve G7 sayısal kabul eşiklerini ADR-0007'de kilitle.
 
 ## P1 - Tek hoparlör güç prototipi
 
-- [ ] 4S1P test paketi için dört eşlenmiş hücre seç.
-- [ ] Gerçek balanslı, en az 10 A sürekli 4S BMS seçimini doğrula.
-- [ ] Paketi sigorta, NTC ve uygun izolasyonla punta kaynaklı hazırlat.
-- [ ] PD tetikleyicinin 20 V profilini boşta ve 2 A yükte doğrula.
-- [ ] XL4015'i batarya bağlı değilken 16,80 V / 2,00 A'e kalibre et; elektronik yükle doğrula.
-- [ ] XL4015 şarj sonlandırma davranışını ölç; sonlandırma yoksa ADR-0009 alternatiflerinden birini seç.
-- [ ] Type-C kablosunun 5 A / e-marker kimliğini USB-C test cihazıyla doğrula.
-- [ ] XH-A232'yi 12 V, 14,8 V ve 16,8 V'ta dummy-load ile test et.
+- [ ] 19 V adaptörün boşta ve 2 A yükte gerilimini ölç; jak polaritesini (merkez artı) ilk güç vermeden önce ölçerek doğrula.
+- [ ] `VIN` üzerindeki seri Schottky/ideal diyot adayına karar ver: gerilim düşümünü ölç, reddedilirse 0 Ω köprüle (ADR-0020).
+- [ ] XH-A232'yi 12 V ve 19 V'ta dummy-load ile test et.
 - [ ] MP1584'ü 5,10 V'a ayarla; ESP32 Wi-Fi akım sıçramalarında brownout testi yap.
 - [ ] PCM5102A ve amfi girişinde buck kaynaklı gürültüyü ölç.
-- [ ] INA226 ile bekleme, normal müzik ve yüksek ses güç tüketimini kaydet.
+- [ ] Açılış ve kapanışta hoparlör çıkışında pop ölç; susturma sıralaması G1'de doğrulanır.
 
-## P2 - Ses koruması ve çalışma süresi
+## P2 - Ses koruması
 
 - [x] **G0 kapısındaki deliği kapat:** ses izni artık `factory_cal` içindeki `profile` blob'unun varlığını istiyor, şema sürümünü değil.
 - [ ] Profilin **geçerliliğini** de denetle: `hk_profile_valid()` çağrısını `hk_main`'e ekle (G0 verisi gelince).
 - [ ] Tezgâh istisnasını kaldır: `G0`/`G2` profil ürettiğinde `sdkconfig.bench` gereksiz kalmalı.
-- [ ] Ölçülen sürücü empedansına göre güvenli amfi gerilimini onayla.
+- [ ] Ölçülen sürücü empedansına göre güvenli amfi seviyesini onayla; 19 V'ta XH-A232 4 Ω sınıfı sürücülere önemli güç verir, tavanı limiter belirler.
 - [ ] Woofer HPF, aktif crossover ve tweeter limiter başlangıç değerlerini belirle. **Firmware tarafı hazır:** `hk_profile` profilin biçimini, doğrulamasını ve zincire dönüşmesini taşıyor; kalan iş ölçülen sayıları doldurmak.
-- [ ] Tam dolu ve düşük bataryada clipping/limiter davranışını doğrula. Tavanın gerilimle ölçeklenmesi yazıldı ve testli; ölçüm bekliyor.
-- [ ] 4S1P gerçek çalışma süresini ölç.
-- [ ] Sonuca göre nihai paketi 4S1P veya 4S2P olarak seç.
-
-## P3 - Şarj ve power-path
-
-- [ ] Sürüm 1'de şarj sırasında amfiyi donanımsal olarak kapat.
-- [ ] Şarj akımı, hücre sıcaklığı, balans ve şarj sonlandırmayı doğrula.
-- [ ] BMS balans akımını/eşiğini satıcıdan yazılı al; beş çevrimde hücre sapmasını ölç.
-- [ ] XL4015 ters polarite riskine karşı kutup etiketleme ve bağlantı sırası prosedürünü yaz.
-- [ ] Şarjdayken çalma gereksinimi için BQ24610 hazır kart/modül araştırmasını tamamla.
-- [ ] Hazır çözüm uygun değilse BQ24610 veya BQ25792 tabanlı özel güç PCB'si tasarla.
-- [ ] Adaptör-batarya geçişinde pop, reset ve ses kesintisi testi yap.
+- [ ] Limiter tavanının besleme gerilimiyle ölçeklenmesini 12 V tezgâh referansı ve 19 V ürün beslemesinde doğrula (`HK_BENCH_REFERENCE_SUPPLY_MV`, `CONFIG_HK_SUPPLY_MV`).
 
 ## P4 - Dört hoparlöre çoğaltma
 
 - [ ] İlk prototip kabulünden sonra dört hoparlörlük toplam BOM'u kesinleştir.
-- [ ] Dört batarya paketini aynı hücre ve BMS ile üret.
-- [ ] Her cihaz için ayrı sigorta, sıcaklık sensörü ve seri numarası kullan.
-- [ ] Dört cihazda AirPlay senkronu ve batarya telemetrisini birlikte test et.
-- [ ] Kabin içi batarya bölmesini akustik hacimden ayır ve dışa havalandır.
+- [ ] Her cihaz için ayrı adaptör, jak ve seri numarası kullan.
+- [ ] Dört cihazda AirPlay senkronunu birlikte test et (G7).
+- [ ] Kabin içinde amfi ve buck ısısını kapalı kabinde ölç; havalandırmayı buna göre belirle (G8).
 
 ## P5 - Buton, LED ve provisioning
 
-- [x] Proje, AirPlay, BLE, SoftAP, mDNS ve QR yüzeylerinde Harman Kardom adlandırmasını uygula. (Captive portal yüzeyi yok; aşağıya bakın.)
+- [x] Proje, AirPlay, BLE, SoftAP, mDNS ve QR yüzeylerinde Merzarkabul adlandırmasını uygula.
 - [x] Kanonik ESP32-S3 kartını seç (ADR-0010: N16R8).
 - [x] Satın alınan kartı boot testinden geçir (2026-09-08, ürün kartı bring-up kaydı).
 - [ ] Aday GPIO tablosunu satın alınan kartın şemasıyla doğrula — `accepted` için gereken bu.
@@ -84,8 +65,7 @@ Kilitli kararlar `AGENTS.md` içindedir ve yalnız supersede eden ADR ile deği�
 - [ ] Uygulamasız iOS/Android akışını test et — **önce portalın var olması gerekiyor**. Espressif'in SoftAP uygulaması ayrıca AES-GCM katmanında düşüyor (`mbedtls_gcm_auth_decrypt : -18`); ESP-IDF'in kendi istemcisi aynı cihaza bağlanıyor, yani kusur o uygulamada.
 - [ ] Özel mobil uygulama kararı verilirse iOS AccessorySetupKit ve Android Companion Device Manager prototipi hazırla.
 - [ ] Provisioning timeout, tekrar deneme, parola gizliliği ve NVS encryption testlerini yap.
-- [ ] Ayrı 24 V DC / 5 A fiziksel güç anahtarını BMS sonrası yük hattına ekle.
-- [ ] Hoparlör kapalıyken şarj; açılırken/kapanırken pop ve ESP32 reset testlerini yap.
+- [ ] Açılırken/kapanırken pop ve ESP32 reset testlerini yap.
 
 ## P6 - Firmware aşamaları
 
@@ -101,7 +81,6 @@ Ayrıntı, önkoşul ve kabul ölçütleri: [[docs/03-firmware/firmware-plan|fir
 - [ ] `F3` HPF, crossover ve limiter zinciri (G0 kapandıktan sonra).
 - [x] `F4` Wi-Fi, mDNS ve BLE/SoftAP Unified Provisioning — geliştirme kartında uçtan uca. Portal kısmı hariç (yukarıya bakın).
 - [x] `F5` buton durum makinesi ve RGB LED animatörü — 12 sn senaryosu ve LED'in ses zamanlamasına etkisi hariç.
-- [ ] `F6` NVS ayrımı, güç telemetrisi ve güvenli kapanış (G4 sonrası).
 - [ ] `F7` imzalı A/B OTA, release hattı ve recovery (G6).
 - [ ] `F8` dört cihaz senkronu ve soak (G7, G8).
 
@@ -113,7 +92,7 @@ Ayrıntı, önkoşul ve kabul ölçütleri: [[docs/03-firmware/firmware-plan|fir
 - [x] `otadata`, `ota_0`, `ota_1` ve kalibrasyon/NVS alanlarını içeren partition CSV ve size budget oluştur (iki kart için ayrı tablo, CI'da denetleniyor).
 - [x] SemVer `v*.*.*` tag ile test/build/sign/checksum/GitHub Release üreten GitHub Actions hattını kur. **Hiç sürüm yayımlanmadı.**
 - [x] Release manifest target/donanım/sürüm/hash doğrulamasını ve stable update state machine'ini geliştir (`hk_manifest`, `hk_ota`; üretici/doğrulayıcı CI'da çapraz denetimli).
-- [x] Idle audio, batarya, NTC ve Wi-Fi koşullarına bağlı OTA erteleme kapılarını uygula (`hk_gate`, `hk_sched`). Batarya eşiği hâlâ G3/G4'ten gelecek.
+- [x] Ses çalarken, Wi-Fi yokken ve eşzamanlı güncellemede OTA erteleme kapılarını uygula (`hk_gate`, `hk_sched`).
 - [ ] İlk-boot health check, A/B rollback, canary/stable dağıtım ve güç kesintisi G6 testlerini tamamla.
 - [x] Wi-Fi parolası/PoP/anahtarların loglarda görünmediğini otomatik taramayla doğrula (`tools/check_no_credential_logs.py`, CI'da).
 - [x] USB/UART recovery ve boot prosedürünü saha servis dokümanına ekle ([[docs/03-firmware/usb-recovery|usb-recovery]]). Donanımda çalıştırılmadı.
@@ -127,4 +106,4 @@ Ayrıntı, önkoşul ve kabul ölçütleri: [[docs/03-firmware/firmware-plan|fir
 - [x] Birleşme öncesi doğrulamayı tekrarlanabilir hâle getir (`scripts/check_docs.py`).
 - [ ] Her birleşme öncesi `python3 scripts/check_docs.py` ve `git diff --check` çalıştır.
 - [ ] Geliştirme kartında açıklanmayan ~14 s'lik ilk birleşme düşüşünü ürün kartında tekrar incele; sebep kodunu kaydet.
-- [ ] KiCad kurulu bir makinede `generate_harman_kardom.py --validate` ile ERC/PDF doğrulamasını tamamla.
+- [ ] KiCad kurulu bir makinede `generate_merzarkabul.py --validate` ile ERC/PDF doğrulamasını tamamla ve paftayı üret.

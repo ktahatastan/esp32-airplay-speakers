@@ -88,8 +88,7 @@ esp_err_t hk_ota_client_run(const hk_ota_request_t *request)
 
     /* Gates first: they are free, and a blocked device should not even open a
      * socket. */
-    const hk_gate_result_t gate =
-        hk_gate_evaluate(&request->gate_inputs, request->gate_limits);
+    const hk_gate_result_t gate = hk_gate_evaluate(&request->gate_inputs);
     if (gate != HK_GATE_GO) {
         ESP_LOGI(TAG, "not now: %s", hk_gate_result_name(gate));
         return ESP_ERR_INVALID_STATE;

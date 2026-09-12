@@ -54,7 +54,6 @@ hk_health_verdict_t hk_health_evaluate(const hk_health_inputs_t *inputs,
         {inputs->storage,   HK_HEALTH_REASON_STORAGE_FAILED,   HK_HEALTH_REASON_STORAGE_SILENT},
         {inputs->network,   HK_HEALTH_REASON_NETWORK_FAILED,   HK_HEALTH_REASON_NETWORK_SILENT},
         {inputs->audio,     HK_HEALTH_REASON_AUDIO_FAILED,     HK_HEALTH_REASON_AUDIO_SILENT},
-        {inputs->telemetry, HK_HEALTH_REASON_TELEMETRY_FAILED, HK_HEALTH_REASON_TELEMETRY_SILENT},
     };
     const size_t count = sizeof(criteria) / sizeof(criteria[0]);
 
@@ -115,11 +114,9 @@ const char *hk_health_reason_name(hk_health_reason_t reason)
     case HK_HEALTH_REASON_STORAGE_FAILED:    return "STORAGE_FAILED";
     case HK_HEALTH_REASON_NETWORK_FAILED:    return "NETWORK_FAILED";
     case HK_HEALTH_REASON_AUDIO_FAILED:      return "AUDIO_FAILED";
-    case HK_HEALTH_REASON_TELEMETRY_FAILED:  return "TELEMETRY_FAILED";
     case HK_HEALTH_REASON_STORAGE_SILENT:    return "STORAGE_SILENT";
     case HK_HEALTH_REASON_NETWORK_SILENT:    return "NETWORK_SILENT";
     case HK_HEALTH_REASON_AUDIO_SILENT:      return "AUDIO_SILENT";
-    case HK_HEALTH_REASON_TELEMETRY_SILENT:  return "TELEMETRY_SILENT";
     case HK_HEALTH_REASON_SETTLING:          return "SETTLING";
     case HK_HEALTH_REASON_INCOMPLETE:        return "INCOMPLETE";
     }

@@ -90,10 +90,9 @@
 #include <stdlib.h>
 
 /* This project's own modules. The DSP is the reason this backend exists; the
- * other three are what it takes to hand the DSP an honest chain. */
+ * other two are what it takes to hand the DSP an honest chain. */
 #include "hk_dsp.h"
 #include "hk_eq.h"
-#include "hk_power.h"
 #include "hk_profile.h"
 #include "hk_storage.h"
 
@@ -146,28 +145,27 @@
 static hk_dsp_t s_dsp;
 
 /**
- * The pack terminal voltage a limiter ceiling has to be translated to.
+ * The supply voltage a limiter ceiling has to be translated to.
  *
- * There is no ADC driver yet -- that is F6 -- so the honest answer is the
- * project's own sentinel for a reading nobody took. It is not a placeholder to
- * be replaced by a guess: hk_profile_build() refuses a non-positive pack
- * voltage (hk_profile.c:118-120), so an uncalibrated device declines to build a
- * chain instead of protecting the drivers at a voltage it invented.
+ * The amplifier runs from a fixed DC adapter (ADR-0020), and the firmware has
+ * no way to measure it, so the supply the ceilings are scaled to is the
+ * configured nominal: CONFIG_HK_SUPPLY_MV, 19 V by default. That is a
+ * statement about the adapter the wiring plan names, not a reading, and it is
+ * stated once in Kconfig so that a different adapter is a one-line change
+ * rather than a hunt through the source.
  *
- * Refusing is also the only safe direction. A ceiling measured at 16.8 V and
- * applied to a pack that is actually at 12 V would be needlessly quiet, which
- * costs nothing; applied the other way round it would be a ceiling that lets
- * through more volts than the tweeter was measured to survive. Guessing is only
- * ever wrong in one of those two ways, and nothing here can tell which.
- *
- * When F6 lands this becomes a read of hk_power's telemetry and nothing else in
- * this file changes.
+ * Scaling to the nominal matters in one direction. A ceiling listened to at
+ * 12 V on a bench supply and replayed unscaled on a 19 V adapter would let
+ * through more volts than the tweeter was heard to take; scaled by 12/19 it
+ * lands below the bench level, which costs a little loudness and nothing else.
+ * A 24 V adapter plugged in by mistake scales it further down still. The
+ * mechanism is one field and one multiply, and that is what it buys.
  */
-#if CONFIG_HK_BENCH_PROVISIONAL_PROFILE
-static float pack_mv_now(void);
+static float supply_mv_now(void);
 
-/** The pack voltage the bench ceilings are written against. */
-#define HK_BENCH_REFERENCE_PACK_MV 12000
+#if CONFIG_HK_BENCH_PROVISIONAL_PROFILE
+/** The supply voltage the bench ceilings were listened to at. */
+#define HK_BENCH_REFERENCE_SUPPLY_MV 12000
 
 /**
  * A profile nobody measured, so the speaker can be LISTENED to.
@@ -224,7 +222,10 @@ static float pack_mv_now(void);
  *
  * ceilings 0.7 and 0.35. A tweeter takes a small fraction of a woofer's power,
  * and neither driver's power handling is known. Conservative, and the tweeter's
- * far more so.
+ * far more so. They were listened to with the amplifier on a 12 V bench
+ * supply, which is what HK_BENCH_REFERENCE_SUPPLY_MV records; on the 19 V
+ * adapter hk_profile_build() scales both down by 12/19, so the volts at the
+ * driver stay what the bench heard rather than what the adapter allows.
  */
 static bool bench_provisional_chain(hk_profile_chain_t *out)
 {
@@ -239,7 +240,7 @@ static bool bench_provisional_chain(hk_profile_chain_t *out)
         .crossover_hz       = 2800.0f,
         .woofer_gain        = 0.25f,
         .tweeter_gain       = 0.18f,
-        .reference_pack_mv  = (float)HK_BENCH_REFERENCE_PACK_MV,
+        .reference_supply_mv = (float)HK_BENCH_REFERENCE_SUPPLY_MV,
         .woofer_ceiling     = 0.70f,
         .tweeter_ceiling    = 0.35f,
         .release_ms         = 150u,
@@ -247,7 +248,7 @@ static bool bench_provisional_chain(hk_profile_chain_t *out)
     };
 
     const hk_profile_verdict_t built =
-        hk_profile_build(&provisional, (float)OUTPUT_RATE, pack_mv_now(), out);
+        hk_profile_build(&provisional, (float)OUTPUT_RATE, supply_mv_now(), out);
     if (built != HK_PROFILE_OK) {
         ESP_LOGE(TAG, "the provisional bench profile does not even build: %s",
                  hk_profile_verdict_name(built));
@@ -268,17 +269,9 @@ static bool bench_provisional_chain(hk_profile_chain_t *out)
 }
 #endif /* CONFIG_HK_BENCH_PROVISIONAL_PROFILE */
 
-static float pack_mv_now(void)
+static float supply_mv_now(void)
 {
-#if CONFIG_HK_BENCH_PROVISIONAL_PROFILE
-    /* The reference the ceiling was written against, so hk_profile_ceiling_at()
-     * is an identity and the ceiling is used exactly as written. That is the
-     * honest bench answer: there is no telemetry, so the number is not scaled
-     * rather than being scaled by a guess. */
-    return (float)HK_BENCH_REFERENCE_PACK_MV;
-#else
-    return (float)HK_POWER_MV_UNKNOWN;
-#endif
+    return (float)CONFIG_HK_SUPPLY_MV;
 }
 
 /** Adapter so hk_eq_settings_load() can read the user store. */
@@ -322,7 +315,7 @@ static bool load_chain(hk_profile_chain_t *out)
     }
 
     const hk_profile_verdict_t built =
-        hk_profile_build(&profile, (float)OUTPUT_RATE, pack_mv_now(), out);
+        hk_profile_build(&profile, (float)OUTPUT_RATE, supply_mv_now(), out);
     if (built != HK_PROFILE_OK) {
         ESP_LOGE(TAG, "calibration would not build at %u Hz: %s",
                  (unsigned int)OUTPUT_RATE, hk_profile_verdict_name(built));

@@ -60,7 +60,7 @@ python3 firmware/tools/recover.py --dry-run
 İmzalı bir sürüm asset'i yazacaksanız:
 
 ```bash
-python3 firmware/tools/recover.py --port ... --build build-release --image harman-kardom-signed.bin
+python3 firmware/tools/recover.py --port ... --build build-release --image merzarkabul-airplay-speakers-esp32s3-n16r8-v0.1.0.bin
 ```
 
 ### 4. Doğrulayın

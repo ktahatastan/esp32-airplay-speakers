@@ -54,7 +54,7 @@ Bu, bizim donanımımızda çalışacağının kanıtı değil; protokol düzeyi
 
 ## G7 eşikleri kilitlendi
 
-Ölçümün **elektriksel** olması gerektiği kararlaştırıldı. Akustik ölçüm yapılmıyor: sesin yayılma gecikmesi `1 ms ≈ 34 cm` ve mikrofon yerleşimi hatası ölçülecek büyüklüğü aşıyor. Yöntem: iki cihazın `TP14` DAC çıkışından eşzamanlı iki kanallı kayıt, çapraz korelasyonla `Δt`, 2 saat boyunca 5 dakikada bir.
+Ölçümün **elektriksel** olması gerektiği kararlaştırıldı. Akustik ölçüm yapılmıyor: sesin yayılma gecikmesi `1 ms ≈ 34 cm` ve mikrofon yerleşimi hatası ölçülecek büyüklüğü aşıyor. Yöntem: iki cihazın DAC çıkışı test noktasından eşzamanlı iki kanallı kayıt, çapraz korelasyonla `Δt`, 2 saat boyunca 5 dakikada bir.
 
 | Ölçüm | Eşik |
 |---|---|

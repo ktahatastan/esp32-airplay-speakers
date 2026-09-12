@@ -13,9 +13,9 @@ What is passed in is checked FOR agreement instead: the git tag must match the
 version compiled into the image, so a v0.3.0 tag cannot publish a 0.2.0 build.
 
 Usage:
-    make_manifest.py --image build/harman-kardom.bin \
+    make_manifest.py --image build/merzarkabul-airplay-speakers.bin \
                      --tag v0.2.0 \
-                     --asset-url https://github.com/o/r/releases/download/v0.2.0/hk.bin \
+                     --asset-url https://github.com/o/r/releases/download/v0.2.0/merzarkabul-airplay-speakers-esp32s3-n16r8-v0.2.0.bin \
                      --channel stable \
                      --hw-revision prototype-n16r8 \
                      --slot-size 0x6e0000

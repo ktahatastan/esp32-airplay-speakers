@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Detect a KiCad sheet that no longer matches the generator that produced it.
 
-hardware/kicad/generated/harman-kardom.kicad_sch is generated output, not a
+hardware/kicad/generated/merzarkabul.kicad_sch is generated output, not a
 source file. Regenerating it needs KiCad's symbol libraries installed, which is
 not true of every machine that can edit the generator — so the generator can be
 changed, committed and pushed while the sheet silently keeps describing the
@@ -11,7 +11,10 @@ That is worse than having no sheet at all. A schematic nobody can tell is stale
 is a schematic someone will solder from.
 
 So the generator's hash is recorded beside its output. If they disagree, the
-sheet is stale and this says so, with the command that fixes it.
+sheet is stale and this says so, with the command that fixes it. When no sheet
+is committed there is nothing to be stale, and the check passes with a notice
+saying how to produce one: the sheet exists only once a machine with KiCad has
+regenerated it.
 
 Usage:
     check_generated_kicad.py            # report, non-zero if stale
@@ -25,9 +28,10 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-GENERATOR = ROOT / "hardware/kicad/generate_harman_kardom.py"
-SHEET = ROOT / "hardware/kicad/generated/harman-kardom.kicad_sch"
+GENERATOR = ROOT / "hardware/kicad/generate_merzarkabul.py"
+SHEET = ROOT / "hardware/kicad/generated/merzarkabul.kicad_sch"
 STAMP = ROOT / "hardware/kicad/generated/.generator-sha256"
+REGENERATE = f"hardware/kicad/.venv/bin/python {GENERATOR.relative_to(ROOT)}"
 
 
 def generator_hash() -> str:
@@ -55,7 +59,9 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if not SHEET.exists():
-        print("check_generated_kicad: no generated sheet, nothing to be stale")
+        print("check_generated_kicad: no generated sheet; regenerate on a machine with KiCad:")
+        print(f"  {REGENERATE}")
+        print("  python3 scripts/check_generated_kicad.py --record")
         return 0
 
     if not STAMP.exists():
@@ -71,7 +77,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  generator now : {current[:12]}")
         print(f"  sheet built by: {recorded[:12]}\n")
         print("Regenerate it on a machine with KiCad's symbol libraries:")
-        print("  hardware/kicad/.venv/bin/python hardware/kicad/generate_harman_kardom.py")
+        print(f"  {REGENERATE}")
         print("  python3 scripts/check_generated_kicad.py --record")
         print("\ncheck_generated_kicad: 1 problem")
         return 1

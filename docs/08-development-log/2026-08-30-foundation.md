@@ -9,7 +9,7 @@ tags: [development-log, foundation]
 
 ## Yapılanlar
 
-- Ürün kimliği, güç/batarya ve provisioning planları kaydedildi.
+- Ürün kimliği, güç ve provisioning planları kaydedildi.
 - Obsidian MOC, ADR, günlük, test ve handoff yapısı eklendi.
 - Codex/Claude/Cursor için tek orkestratör sözleşmesi kuruldu.
 - Repo skill'leri ve alt çalışan rolleri tanımlandı.
@@ -19,7 +19,7 @@ tags: [development-log, foundation]
 
 - Sürücü ohm/empedans değerleri ölçülmedi.
 - AirPlay multiroom senkron fizibilitesi doğrulanmadı.
-- Kesin ESP32-S3 kart/pin ve final batarya kapasitesi seçilmedi.
+- Kesin ESP32-S3 kart/pin seçilmedi.
 
 ## Doğrulama
 

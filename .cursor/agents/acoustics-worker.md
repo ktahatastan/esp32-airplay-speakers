@@ -1,6 +1,6 @@
 ---
 name: acoustics-worker
-description: Bounded worker for Harman Kardom driver measurement, crossover, limiter and DSP profile tasks.
+description: Bounded worker for Merzarkabul Airplay Speakers driver measurement, crossover, limiter and DSP profile tasks.
 model: inherit
 readonly: false
 is_background: false

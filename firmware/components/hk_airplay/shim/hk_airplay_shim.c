@@ -54,8 +54,8 @@ void wifi_get_mac_str(char *mac_str, size_t len)
  * Audio samples offered to upstream's LED, for its VU meter mode.
  *
  * Dropped. The LED has one owner in this firmware -- hk_ui, which arbitrates
- * between boot, provisioning, network, fault and charge states under a
- * documented precedence -- and a second writer pushing an audio level into it
+ * between boot, provisioning, network and fault states under a documented
+ * precedence -- and a second writer pushing an audio level into it
  * would not be a nicer LED, it would be a status indicator that sometimes lies
  * about faults. Whether AirPlay should be one of the states hk_ui arbitrates
  * is a UI decision, and it belongs in hk_ui rather than here.

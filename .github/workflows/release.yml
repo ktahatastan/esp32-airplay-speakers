@@ -1,4 +1,4 @@
-# Harman Kardom release pipeline.
+# Merzarkabul Airplay Speakers release pipeline.
 #
 # Publishes a signed firmware image and the manifest that describes it, from a
 # SemVer tag. ADR-0008 is the decision; docs/03-firmware/ota-and-release-plan.md
@@ -151,13 +151,13 @@ jobs:
         shell: bash
         run: |
           python3 firmware/tools/check_partitions.py \
-            --app-size firmware/build-release/harman-kardom.bin
+            --app-size firmware/build-release/merzarkabul-airplay-speakers.bin
       - uses: actions/upload-artifact@v4
         with:
           name: unsigned-release-build
           path: |
-            firmware/build-release/harman-kardom.bin
-            firmware/build-release/harman-kardom.elf
+            firmware/build-release/merzarkabul-airplay-speakers.bin
+            firmware/build-release/merzarkabul-airplay-speakers.elf
             firmware/build-release/bootloader/bootloader.bin
             firmware/build-release/partition_table/partition-table.bin
           retention-days: 90
@@ -198,6 +198,11 @@ jobs:
                exit 1 ;;
           esac
           echo "value=$RAW_TAG" >> "$GITHUB_OUTPUT"
+          # The published asset carries the product, the target and the
+          # version in its name, so a downloaded file says what it is. Named
+          # once here; promote.yml derives the same name from the same tag and
+          # fetches by it, so the two workflows cannot drift apart silently.
+          echo "asset=merzarkabul-airplay-speakers-esp32s3-n16r8-$RAW_TAG.bin" >> "$GITHUB_OUTPUT"
 
       - name: install esptool
         run: pip install --disable-pip-version-check 'esptool==4.12.0'
@@ -257,8 +262,8 @@ jobs:
           }
 
           espsecure.py sign_data --version 2 --keyfile signing_key.pem \
-            --output harman-kardom-signed.bin \
-            artifacts/harman-kardom.bin
+            --output merzarkabul-signed.bin \
+            artifacts/merzarkabul-airplay-speakers.bin
 
       - name: wipe the key
         # Its own step, and always: a failed sign or a failed comparison above
@@ -275,9 +280,9 @@ jobs:
           # signature sector, so a manifest built from the unsigned binary would
           # carry the wrong size and digest and every device would refuse it.
           python3 firmware/tools/make_manifest.py \
-            --image harman-kardom-signed.bin \
+            --image merzarkabul-signed.bin \
             --tag "${{ steps.tag.outputs.value }}" \
-            --asset-url "https://github.com/${{ github.repository }}/releases/download/${{ steps.tag.outputs.value }}/harman-kardom.bin" \
+            --asset-url "https://github.com/${{ github.repository }}/releases/download/${{ steps.tag.outputs.value }}/${{ steps.tag.outputs.asset }}" \
             --channel canary \
             --out manifest.json
           cat manifest.json
@@ -291,7 +296,7 @@ jobs:
           python3 - <<'PY'
           import hashlib, json, pathlib, sys
           manifest = json.loads(pathlib.Path("manifest.json").read_text())
-          blob = pathlib.Path("harman-kardom-signed.bin").read_bytes()
+          blob = pathlib.Path("merzarkabul-signed.bin").read_bytes()
           problems = []
           if manifest["sha256"] != hashlib.sha256(blob).hexdigest():
               problems.append("sha256 does not match the signed image")
@@ -308,7 +313,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp harman-kardom-signed.bin harman-kardom.bin
+          cp merzarkabul-signed.bin "${{ steps.tag.outputs.asset }}"
           # A new release is a CANDIDATE. Nothing reaches the other three
           # speakers until one of them has run it and someone promoted it —
           # that is the canary step, and defaulting the other way would make it
@@ -319,7 +324,7 @@ jobs:
             --generate-notes \
             --verify-tag \
             --prerelease \
-            harman-kardom.bin manifest.json \
+            "${{ steps.tag.outputs.asset }}" manifest.json \
             artifacts/bootloader/bootloader.bin \
             artifacts/partition_table/partition-table.bin
 

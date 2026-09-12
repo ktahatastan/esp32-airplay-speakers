@@ -15,10 +15,10 @@ Kanonik kurallar depo kökündeki `AGENTS.md` dosyasındadır. Araçlara özel d
 Kullanıcı
    `-> Orkestratör: kapsam, sahiplik, karar, birleşim, rapor
         |-> explorer            (read-only)  mevcut durumu haritalar
-        |-> hardware-worker     (write)      güç, batarya, devre, şema, BOM
+        |-> hardware-worker     (write)      güç, devre, şema, BOM
         |-> firmware-worker     (write)      ESP32-S3 firmware
         |-> acoustics-worker    (write)      sürücü ölçümü, crossover, limiter, DSP
-        |-> hardware-reviewer   (read-only)  G0-G5 güvenlik incelemesi
+        |-> hardware-reviewer   (read-only)  G0-G2 güvenlik incelemesi
         `-> verifier            (read-only)  bağımsız kabul doğrulaması
 ```
 

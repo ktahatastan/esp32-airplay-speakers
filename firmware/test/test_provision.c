@@ -111,7 +111,7 @@ void test_provision(void)
     HK_CHECK(!hk_prov_confirm_pending(&prov, t + HK_PROV_CONFIRM_MS - 1u));
 
     /* An arm nobody confirms expires by itself, and the next tick clears the
-     * prompt with it rather than leaving a stale "press again" on the screen. */
+     * prompt with it rather than leaving a stale "press again" in the log. */
     hk_prov_init(&prov, true, false, t);
     hk_prov_handle(&prov, HK_PROV_EV_CONNECT_OK, t);
     hk_prov_handle(&prov, HK_PROV_EV_BUTTON_SHORT, t);

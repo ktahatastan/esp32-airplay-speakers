@@ -10,7 +10,7 @@ tags: [firmware, ota, github-actions, releases, semver, recovery]
 
 ## Hedef
 
-Harman Kardom cihazları, kararlı bir firmware GitHub Release olarak yayımlandıktan sonra güncellemeyi internet üzerinden otomatik olarak bulur, güvenli koşullarda indirir, kullanılmayan OTA slotuna yazar, yeniden başlatır ve açılış öz-testinden sonra sürümü onaylar. Başarısız açılışta önceki çalışan imaja geri döner.
+Merzarkabul Airplay Speakers cihazları, kararlı bir firmware GitHub Release olarak yayımlandıktan sonra güncellemeyi internet üzerinden otomatik olarak bulur, güvenli koşullarda indirir, kullanılmayan OTA slotuna yazar, yeniden başlatır ve açılış öz-testinden sonra sürümü onaylar. Başarısız açılışta önceki çalışan imaja geri döner.
 
 F7 aşamasında manifest doğrulayıcı, güncelleme kapıları, OTA istemcisi, imzalama profili ve etiket/yayın hattı yazıldı ve ana makinede doğrulandı. Durum yine de `planned`: **hiçbiri cihaz üzerinde çalıştırılmadı**, donanım henüz elde değil ve otomatik güncelleme G6 kanıtı olmadan tamamlanmış sayılmaz. Bu belgede "yazıldı" ile "kanıtlandı" ayrı tutulur.
 
@@ -24,7 +24,7 @@ flowchart LR
     SIGN --> REL[GitHub Release]
     REL --> BIN[İmzalı app.bin]
     REL --> MAN[Manifest + SHA-256 + build metadata]
-    DEV[Harman Kardom cihazı] -->|HTTPS sürüm kontrolü| REL
+    DEV[Merzarkabul cihazı] -->|HTTPS sürüm kontrolü| REL
     DEV -->|uygun koşulda indir| SLOT[Pasif ota_0 / ota_1 slotu]
     SLOT --> BOOT[Yeniden başlat + pending verify]
     BOOT -->|öz-test PASS| VALID[Sürümü geçerli işaretle]
@@ -37,7 +37,7 @@ flowchart LR
 - Normal cihazlar yalnız yayımlanmış, prerelease olmayan ve kendi donanım kimliğiyle eşleşen daha yeni sürüme geçer.
 - Güncelleme kontrolü Wi-Fi hazır olduktan sonra rastgele gecikmeyle ve ardından en fazla günde bir yapılır; dört cihazın aynı anda GitHub'a ve Wi-Fi ağına yük bindirmesi önlenir.
 - Oynatma sırasında indirme/yazma başlatılmaz. Aktif ses bittiğinde uygun pencereye ertelenir.
-- Düşük batarya, yüksek sıcaklık, kararsız Wi-Fi veya başka OTA devam ediyorsa güncelleme ertelenir.
+- Kararsız Wi-Fi veya başka bir OTA devam ediyorsa güncelleme ertelenir.
 - OTA boyunca RGB LED camgöbeği yanıp söner; hata halinde hızlı kırmızı, başarılı yeniden açılışta üç saniye yeşil gösterir.
 - Kullanıcı ayarları ve `factory_cal` app slotlarından ayrı NVS bölümlerinde tutulur; şema göçleri geriye uyumlu ve testli olur.
 - İlk sürümde bootloader ve partition table uzaktan güncellenmez; yalnız uygulama imajı OTA edilir.
@@ -48,14 +48,10 @@ flowchart LR
 | Kontrol | Başlangıç politikası | Kesinleşme |
 |---|---|---|
 | Ses durumu | AirPlay/audio durmuş ve buffer boş | Firmware entegrasyon testi |
-| Batarya | `OTA_MIN_PACK_MV` üstü; değer G3/G4 ölçümüyle belirlenecek | Güç kalibrasyonu |
-| Sıcaklık | NTC güvenli aralıkta | BMS/NTC modeli ve G4 |
 | Dosya boyutu | Pasif OTA slotuna sığıyor | CI size gate |
 | Donanım | Manifest `target` ve `hw_revision` eşleşiyor | Kart seçimi |
 | Sürüm | Uzak SemVer yerelden büyük | Birim testi |
 | Güvenlik | HTTPS sertifika doğrulaması ve imzalı image geçerli | G6 |
-
-Batarya yüzdesi yalnız paket geriliminden kesinmiş gibi hesaplanmaz. İlk eşik, dinlenmiş paket gerilimi/yük telemetrisi ölçümleriyle belirlenir; ölçüm yoksa OTA başlamaz.
 
 ## ESP32-S3 partition ve rollback taslağı
 
@@ -74,8 +70,7 @@ Yeni image ilk açılışta `pending verify` kabul edilir. Aşağıdakiler geçm
 1. NVS sürümü ve migration doğrulaması.
 2. Wi-Fi başlatma ve kayıtlı ağa bağlanma veya kontrollü provisioning fallback.
 3. I2S/DAC/audio task başlatma ve watchdog sağlığı.
-4. Güç/NTC telemetrisinin geçerli aralıkta okunması.
-5. En az 30 saniyelik kritik hata/reset olmadan çalışma.
+4. En az 30 saniyelik kritik hata/reset olmadan çalışma.
 
 Kritik öz-test hatasında `esp_ota_mark_app_invalid_rollback_and_reboot()` kullanılır. Enerji kesintisi; indirme, flash yazma, `otadata` değişimi ve ilk açılışın her aşamasında G6 kapsamında fiziksel olarak test edilir.
 
@@ -125,7 +120,7 @@ Manifest'in imzalı dosyadan üretilmesi zorunludur: imzalama görüntüyü sekt
 `v0.1.0` release içeriği:
 
 ```text
-harman-kardom.bin          imzalı uygulama imajı
+merzarkabul-airplay-speakers-esp32s3-n16r8-v0.1.0.bin   imzalı uygulama imajı
 manifest.json              cihazın okuduğu sürüm tanımı
 bootloader.bin             yalnız USB kurtarma için; OTA ile gönderilmez
 partition-table.bin        yalnız USB kurtarma için; OTA ile gönderilmez
@@ -137,11 +132,11 @@ Gerçek çıktı (0.1.0 sürüm profili derlemesinden, 2026-08-31):
 
 ```json
 {
-  "asset": "https://github.com/OWNER/REPO/releases/download/v0.1.0/harman-kardom.bin",
+  "asset": "https://github.com/OWNER/REPO/releases/download/v0.1.0/merzarkabul-airplay-speakers-esp32s3-n16r8-v0.1.0.bin",
   "channel": "stable",
   "hw_revision": "prototype-n16r8",
   "min_updater_version": "0.1.0",
-  "product": "harman-kardom",
+  "product": "merzarkabul-airplay-speakers",
   "secure_version": 0,
   "sha256": "6092fad9b8ae75e2e5fe819fefc2b0f924870e64efee68f27b216dc04c9dc24b",
   "size": 1126400,
@@ -150,7 +145,7 @@ Gerçek çıktı (0.1.0 sürüm profili derlemesinden, 2026-08-31):
 }
 ```
 
-`product` alanı ikilinin `project_name`'idir, yani `harman-kardom` — ürün adının insan okur biçimi (`Harman Kardom`) değil. Cihaz bu ikisini karşılaştırdığı için biçim serbest değildir.
+`product` alanı ikilinin `project_name`'idir, yani `merzarkabul-airplay-speakers` — ürün adının insan okur biçimi (`Merzarkabul Airplay Speakers`) değil. Cihaz bu ikisini karşılaştırdığı için biçim serbest değildir.
 
 OTA istemcisi dosya adı yerine manifestteki `target`/`hw_revision` alanlarını doğrular. `size`, `sha256` ve `secure_version` CI tarafından üretilir; elde düzenlenmez.
 
@@ -175,7 +170,7 @@ G6 kabul matrisinin dört satırı kütüphanenin çekirdeği yeniden yazılmada
 | Modül | Ne yapar | Nerede test edilir |
 |---|---|---|
 | `hk_manifest` | Manifest'i **tek bayt indirmeden** yargılar: ürün, hedef, donanım, kanal, SemVer, kesin yenilik, sha256 biçimi, boyut ≤ yuva | Ana makine |
-| `hk_gate` | Güncellemenin şimdi başlayabilir mi olduğunu söyler. Kalibrasyon yoksa `HK_GATE_NO_LIMITS` ile engeller | Ana makine |
+| `hk_gate` | Güncellemenin şimdi başlayabilir mi olduğunu söyler: ses çalıyorsa, Wi-Fi yoksa veya başka bir güncelleme sürüyorsa engeller; durum verilmezse `HK_GATE_NO_INPUTS` ile reddeder | Ana makine |
 | `hk_ota` (saf C) | İnen görüntünün tanımlayıcısını manifest'in vaadiyle karşılaştırır; varlık URL'sini denetler | Ana makine |
 | `hk_health` (saf C) | İlk açılışta imajın onaylanıp onaylanmayacağına karar verir: onayla, geri al, ya da bekle | Ana makine |
 | `hk_ota_client` | HTTPS, JSON, `esp_https_ota` döngüsü. Yukarıdakileri doğru sırayla çağırır | Yalnız derleme; çalışma G6'yı bekler |
@@ -200,7 +195,6 @@ Sıralama tasarımın kendisidir: manifest **indirmeden önce**, kapılar **soke
 | Aynı/eski SemVer | Güncelleme yok |
 | Yanlış target/hardware | Asset reddedilir |
 | Bozuk hash veya imza | Image boot seçimine alınmaz |
-| Düşük batarya / yüksek sıcaklık | Ertele, cihaz çalışmaya devam eder |
 | Oynatma aktif | Ertele; audio kesilmez |
 | İndirme/flash sırasında enerji kesintisi | Önceki image açılır |
 | İlk boot öz-test hatası/reset | Otomatik rollback |
@@ -229,7 +223,7 @@ Yazıldı ve ana makinede doğrulandı:
 - [x] OTA partition CSV ve size budget.
 - [x] Firmware version/build metadata modülü (`hk_version`).
 - [x] Manifest parser ve donanım eşleme testleri (`hk_manifest`).
-- [x] Güç/thermal/audio update gate state machine (`hk_gate`).
+- [x] Ses / Wi-Fi / eşzamanlı güncelleme kapısı durum makinesi (`hk_gate`).
 - [x] İnen görüntünün manifest ile karşılaştırılması (`hk_ota`).
 - [x] HTTPS indirme istemcisi (`hk_ota_client`) — derleniyor, çalıştırılmadı.
 - [x] GitHub Actions PR CI.
@@ -241,7 +235,7 @@ Açık:
 - [x] Kanal saklanan bir ayar (`channel`: 0 stable, 1 canary), yani canary adımı **tek** hoparlörü aday kanala alabilir. Ona farklı bir imaj derlemek, canary'nin diğerlerinin alacağı sürümü test etmemesi demek olurdu.
 - [x] Geri alma sayacı (`rollbacks`) NVS'de tutuluyor ve üç ardışık geri almadan sonra otomatik güncelleme duruyor. Geri alma yeniden başlatıyor, o yüzden sayaç açılışı aşmak zorunda.
 - [x] Kanal başına sabit adres: `channel-stable` ve `channel-canary` işaretçi sürümleri. Cihazın adresi değişmiyor, etiketin taşıdığı değişiyor.
-- [x] İlk-boot health check ve `esp_ota_mark_app_valid_cancel_rollback()` çağrısı (`hk_health_monitor`); rollback bayrağı aynı değişiklikte açıldı. Ses ve telemetri, sürücüleri olmadığı için `SKIP` ile geçiliyor — "bu yapıya uygulanmaz" ile "henüz cevap vermedi" arasındaki fark, ilki imajı onaylatır ikincisi geri aldırır.
+- [x] İlk-boot health check ve `esp_ota_mark_app_valid_cancel_rollback()` çağrısı (`hk_health_monitor`); rollback bayrağı aynı değişiklikte açıldı. Ses, sürücüsü olmadığı için `SKIP` ile geçiliyor — "bu yapıya uygulanmaz" ile "henüz cevap vermedi" arasındaki fark, ilki imajı onaylatır ikincisi geri aldırır.
 - [x] Güncelleme zamanlayıcısı (`hk_sched`): rastgele ilk gecikme, günlük aralık + jitter, ikiye katlanan ve tavanlanan backoff. Rastgelelik **enjekte**, üretici çağrılmıyor; 32-bit milisaniye sarması işaretli farkla ele alınıyor.
 - [x] Terfi akışı (`promote.yml`): yayımlanmış ikiliyi indirir, manifest'i ondan `stable` ile yeniden üretir, yalnız manifest'i yayımlar ve prerelease etiketini kaldırır. Yeniden derleme yok — ölçüldü, iki manifest arasında yalnız `channel` farklı.
 - [x] USB/UART kurtarma prosedürü ve betiği ([[usb-recovery]], `firmware/tools/recover.py`). Tam silme yerine cerrahi yazma: ofsetler `partitions.csv`'den okunuyor ve korunan bölüme taşma denetleniyor. Cihazda **çalıştırılmadı**; `G6`'nın son satırı.

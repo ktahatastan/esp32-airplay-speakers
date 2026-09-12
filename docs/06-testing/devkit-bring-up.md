@@ -10,7 +10,7 @@ tags: [testing, devkit, bring-up, firmware, wifi, evidence]
 
 Bu, deponun firmware'inin **ilk kez gerçek silikonda çalıştığı** kayıt. Kart, [[../07-decisions/ADR-0012-n8r2-bringup-target|ADR-0012]]'nin tanımladığı N8R2 sınıfı geliştirme kartıdır — ürün kartı değildir.
 
-> Buradaki hiçbir satır bir fiziksel kapı (`G0`-`G8`) açmaz. Kartta sürücü, amfi, DAC ve batarya yoktur; ölçülen tek şey işlemci, bellek ve ağdır.
+> Buradaki hiçbir satır bir fiziksel kapı (`G0`-`G8`) açmaz. Kartta sürücü, amfi, DAC yoktur; ölçülen tek şey işlemci, bellek ve ağdır.
 
 ## Kart kimliği
 
@@ -28,7 +28,7 @@ Flash type set in eFuse: quad (4 data lines), voltage 3.3V
 
 ## Karta gelmeden önce üzerinde ne vardı
 
-Kart boş değildi. Üzerinde başka bir oturumda üretilmiş, **kaynağı bu depoda bulunmayan** bir yapı vardı: `harman-kardom` 0.1.0, derleme zamanı `Sep 3 2026 14:38:01`, `ESP-IDF: GIT-NOTFOUND`. 8 MB'lık bir bölüm tablosu, `gpio48` üzerinde bir WS2812 aynası ve `hk_airplay` / `mdns_airplay` bileşenleri taşıyordu. İmajdan çıkarılan diziler `fp-setup`, `pair-setup`, `pair-verify`, `SETPEERS`, `SETRATEANCHORTIME`, `FPLY`, `ptp`, `srp`, `ALAC`, `_airplay._tcp` ve `_raop._tcp` içeriyordu — yani [[../07-decisions/ADR-0007-airplay-stack|ADR-0007]]'nin gerçek yığını vendor edilmişti.
+Kart boş değildi. Üzerinde başka bir oturumda üretilmiş, **kaynağı bu depoda bulunmayan** bir yapı vardı: `merzarkabul-airplay-speakers` 0.1.0, derleme zamanı `Sep 3 2026 14:38:01`, `ESP-IDF: GIT-NOTFOUND`. 8 MB'lık bir bölüm tablosu, `gpio48` üzerinde bir WS2812 aynası ve `hk_airplay` / `mdns_airplay` bileşenleri taşıyordu. İmajdan çıkarılan diziler `fp-setup`, `pair-setup`, `pair-verify`, `SETPEERS`, `SETRATEANCHORTIME`, `FPLY`, `ptp`, `srp`, `ALAC`, `_airplay._tcp` ve `_raop._tcp` içeriyordu — yani [[../07-decisions/ADR-0007-airplay-stack|ADR-0007]]'nin gerçek yığını vendor edilmişti.
 
 Kaynağı ne depoda ne de bu makinede bulundu. Silmeden önce **tüm flash yedeklendi**:
 
@@ -44,7 +44,7 @@ Yedek depo dışında tutuluyor (8 MB ikili, ve içinde kullanıcının Wi-Fi ki
 Depodan derlenen geliştirme profili:
 
 ```text
-harman-kardom.bin   1.307.008 bayt
+merzarkabul-airplay-speakers.bin   1.307.008 bayt
 0x2e0000 slotta 1.707.648 bayt bos (%56,6)
 ```
 
@@ -85,7 +85,7 @@ Bölüm tablosu bootloader tarafından okunduğu gibi `partitions-devkit.csv` il
 | `hk_storage` kalibrasyon yokluğunda `fail_safe`'e düşüyor | **PASS** |
 | Ses yolu susturulmuş kalıyor | **PASS** — `audio NOT permitted`, `i2s=0 dac=0 amp=0` |
 | Wi-Fi birleşmesi ve DHCP | **PASS** — WPA3-SAE, RSSI −44 dBm, `192.168.68.74` |
-| mDNS başlıyor | **PASS** — `harman-kardom-06c4.local` |
+| mDNS başlıyor | **PASS** — `merzarkabul-06c4.local` |
 
 ## Ölçülen bellek bütçesi
 
@@ -115,7 +115,7 @@ Bu satır burada, "aralıklı" diye geçiştirilmesin diye duruyor. Ürün kart�
 Yığın [[../07-decisions/ADR-0013-airplay-integration-shape|ADR-0013]]'e göre vendor edildi ve **depodan derlenen imaj** kartta çalıştı:
 
 ```text
-mdns_airplay: mDNS hostname: Harman-Kardom-06C4.local (device name: Harman Kardom 06C4)
+mdns_airplay: mDNS hostname: Merzarkabul-06C4.local (device name: Merzarkabul 06C4)
 rtsp_server: RTSP server listening on port 7000
 hk_airplay: receiver ready; I2S is clocked from here on, the DAC and amplifier stay muted
 ```
@@ -150,7 +150,7 @@ Kart bu yüzden saklanan kimlik bilgileri silinip provisioning'e alındı; ana a
 
 Kart provisioning ile ana ağa katıldıktan sonra aynı `dns-sd` sorgusu bu kez cevap verdi, ve arkasından gerçek bir oturum kuruldu. Bu ölçümler fizibiliteyi değiştirdikleri için özet olarak [[../01-architecture/audio-network-feasibility#Tek kartta ölçülen (2026-09-05)|fizibilite sayfasında]] duruyor; kısaca:
 
-- `_airplay._tcp` altında `Harman Kardom 06C4`, `_raop._tcp` altında `A4CB8F9B06C4@Harman Kardom 06C4` bulundu ve `Harman-Kardom-06C4.local:7000`'e çözüldü. TXT: `model=AudioAccessory5,1`, `features=0x405C4A00,0x1C340`, `srcvers=377.40.00`.
+- `_airplay._tcp` altında `Merzarkabul 06C4`, `_raop._tcp` altında `A4CB8F9B06C4@Merzarkabul 06C4` bulundu ve `Merzarkabul-06C4.local:7000`'e çözüldü. TXT: `model=AudioAccessory5,1`, `features=0x405C4A00,0x1C340`, `srcvers=377.40.00`.
 - RTSP `OPTIONS` → `RTSP/1.0 200 OK`, `Server: AirTunes/377.40.00`; `Public` listesinde `SETPEERS`, `SETRATEANCHORTIME`, `FLUSHBUFFERED`.
 - Sahibinin iPhone'undan müzik çalındı, DMAP meta verisi geldi, `ptp_clock: LOCKED` `dev=973672 ns` `samples=62`.
 
@@ -162,7 +162,7 @@ Kart provisioning ile ana ağa katıldıktan sonra aynı `dns-sd` sorgusu bu kez
 
 ```text
 hk_net: provisioning credentials loaded: salt 16 B, verifier 384 B
-wifi_prov_mgr: Provisioning started with service name : HarmanKardom-Setup-06C4
+wifi_prov_mgr: Provisioning started with service name : Merzarkabul-Setup-06C4
 hk_net: provisioning open over softap
 ```
 
@@ -187,10 +187,10 @@ wifi_prov_scheme_ble: BT memory released
 BLE_INIT: BT controller compile version [2edb0b0]
 protocomm_nimble: BLE Host Task Started
 NimBLE: GAP procedure initiated: advertise;
-wifi_prov_mgr: Provisioning started with service name : HarmanKardom-06C4
+wifi_prov_mgr: Provisioning started with service name : Merzarkabul-06C4
 ```
 
-Aynı turda ikinci bir kusur: `wifi_prov_mgr_start_provisioning` her iki taşımada da SoftAP adını geçiyordu. BLE `HarmanKardom-Setup-06C4` diye yayın yaparken QR `HarmanKardom-06C4` arıyordu — yani QR'lı kurulum hiçbir zaman eşleşemezdi. Taşımaya göre doğru ad geçiliyor artık.
+Aynı turda ikinci bir kusur: `wifi_prov_mgr_start_provisioning` her iki taşımada da SoftAP adını geçiyordu. BLE `Merzarkabul-Setup-06C4` diye yayın yaparken QR `Merzarkabul-06C4` arıyordu — yani QR'lı kurulum hiçbir zaman eşleşemezdi. Taşımaya göre doğru ad geçiliyor artık.
 
 **Bir Apple cihazının bu yayına bağlandığı hâlâ doğrulanmadı.** Kanıtlanan, yayının var olduğu.
 
@@ -243,7 +243,7 @@ Kartta buton yok. `GPIO7` dahili pull-up'lı ve firmware basışı LOW okuduğu 
 
 | Senaryo | Sonuç |
 |---|---|
-| Kısa basış (~0,3 sn) | **PASS** — `button: opening provisioning` → `BLE_INIT` → `protocomm_nimble: BLE Host Task Started` → `NimBLE: advertise` → `Provisioning started with service name : HarmanKardom-06C4`. Panik, `Guru Meditation` veya yığın uyarısı yok. |
+| Kısa basış (~0,3 sn) | **PASS** — `button: opening provisioning` → `BLE_INIT` → `protocomm_nimble: BLE Host Task Started` → `NimBLE: advertise` → `Provisioning started with service name : Merzarkabul-06C4`. Panik, `Guru Meditation` veya yığın uyarısı yok. |
 | 5 sn basılı | **PASS** — `button: forgetting Wi-Fi credentials` → `hk_net: forgetting stored Wi-Fi credentials`, ardından `provisioning is already open; leaving it alone`. Açık pencereyi bozmama koruması çalıştı. |
 | 12 sn basılı | **YAPILMADI** — basış olay üretmedi, muhtemelen köprü teması kesilip debounce sayacı sıfırlandı. Tekrar denenecek. |
 
