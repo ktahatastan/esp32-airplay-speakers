@@ -5,4 +5,23 @@
 #
 # The repository is public and its owner commits straight to main, so there is
 # no review step between a mistake and the internet. This is that step.
-exec python3 "$(git rev-parse --show-toplevel)/scripts/check_no_private_keys.py" --staged
+#
+# Two checks, both against the index (what is about to be committed, not what
+# is on disk), and both run before the verdict so one commit attempt shows
+# every problem at once:
+#
+#   check_no_private_keys.py     the hard gate. A key in a public history can
+#                                never be taken back (docs/credentials/README.md).
+#   check_vendor_output_shadow.py
+#                                the DSP output backend is the product's since
+#                                ADR-0022, and it is a SHADOW of the vendored
+#                                audio_output.c. An upstream copy that changes
+#                                the vendored file must trigger the review the
+#                                script describes; the script hashes the
+#                                vendored file, so editing the shadow itself
+#                                never needs --record.
+TOP="$(git rev-parse --show-toplevel)"
+status=0
+python3 "$TOP/scripts/check_no_private_keys.py" --staged || status=1
+python3 "$TOP/scripts/check_vendor_output_shadow.py" --staged || status=1
+exit $status

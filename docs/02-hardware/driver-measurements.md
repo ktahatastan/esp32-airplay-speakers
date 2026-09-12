@@ -1,7 +1,7 @@
 ---
 status: pending
 owner: acoustics-engineer
-updated: 2026-09-08
+updated: 2026-09-12
 tags: [drivers, measurements, gate]
 ---
 
@@ -41,6 +41,14 @@ Aynı programı aynı kutuda çalacakları için dört woofer birbirine, dört t
 birbirine karşı da eşleştirilir: `Re` ve `Fs` farkı kaydedilir, ve sınıf dışı
 kalan bir sürücü kabine girmeden önce bilinir.
 
+Firmware'in tezgâh profili 2026-09-12'ye kadar tweeter için **3,7 Ω** taşıyordu
+(`hk_airplay_output_i2s.c`, "measured" notuyla); bu kayıt 3,5 der. İki sayının
+hangisinin tweeter'ın okuması olduğunu yalnız operatör söyleyebilir. Kayıt kazandı
+ve firmware 3,5'e çekildi; **operatör tweeter'ın `Re`'sini yeniden okuyup prob
+direncinin çıkarılıp çıkarılmadığıyla birlikte buraya yazana kadar** bu satır bir
+teyit beklemektedir. Profil bu değerle hiçbir hesap yapmaz, yalnız taşır; yani
+yanlışsa koruma değil kaynak kaydı yanlıştır.
+
 Kural: `Re` genelde nominal empedansın 0,75–0,85 katıdır. 4 Ω'luk bir sürücü
 tipik olarak 3,0–3,6 Ω okur, 6 Ω'luk 4,4–5,0 Ω. Woofer'ın 4,0'ı iki aralığın
 sınırında duruyor; **prob direnci çıkarılmadıysa** gerçek değer ~3,7 Ω olur ve
@@ -48,9 +56,19 @@ tereddüt kalmaz. Tweeter'ın 3,5'i zaten net biçimde 4 Ω sınıfı.
 
 ### Bu neyi açıyor, neyi açmıyor
 
-**Açtığı:** her iki sürücü de 4 Ω sınıfı. TPA3110 BTL için tipik asgari yük
-4 Ω'dur, yani zincir sınırın içinde — ama sınırın *üstünde* değil, tam üstünde.
-Bu, güvenli amfi seviyesi ve termal bütçe için ilk somut girdi.
+**Açtığı:** her iki sürücü de 4 Ω sınıfı. Bu, güvenli amfi seviyesi ve termal
+bütçe için ilk somut girdi — ve bir soruyu da açtı. Bu paragraf 2026-09-12'ye
+kadar "TPA3110 BTL için tipik asgari yük 4 Ω" diyordu; veri sayfası öyle demiyor.
+SLOS528F'in Mutlak Azami Değerleri (§7.1) BTL için asgari yükü `PVCC ≤ 15 V`'ta
+3,2 Ω, `PVCC > 15 V`'ta **4,8 Ω** verir, ve 4 Ω'luk karakterizasyon eğrileri 16 V'ta
+biter (24 V / 4 Ω için yayımlanmış çıkış gücü yoktur). Ürün beslemesi 24 V'tur
+([[../07-decisions/ADR-0020-dc-adapter-power|ADR-0020]]); yani 4 Ω sınıfı Nova
+sürücüleri o beslemede veri sayfasının asgari yükünün **altında** durur ve amfi bu
+çalışma noktasında karakterize edilmemiştir. Bu bir ölçüm değil, veri sayfası
+okumasıdır; ADR-0020'nin sahibine açık bir donanım sorusudur ve
+[[../01-planning/risk-register|risk kaydında]] `Kritik` satırdır. `G0`'ın
+ölçeceği `Z_min` ve `G1`'in 24 V'ta 4 Ω sınıfı dummy-load'a alacağı termal ve
+koruma (kısa devre kilidi) kaydı olmadan hiçbir sürücü 24 V'ta bağlanmaz.
 
 **Açmadığı:** `Re` bir sayıdır, empedans eğrisi değildir. Hâlâ eksik olanlar:
 
@@ -80,11 +98,17 @@ yapılacak ve bu bölüm silinecek.
 
 ### Bunlardan türeyen provisional ayarlar
 
+Bu tablo tezgâh yapısının **derlediği** yer tutucuları yazar (`hk_airplay_output_i2s.c`,
+`bench_provisional_chain()`); 2026-09-12'ye kadar burada 3500 Hz / 50 Hz yazıyordu,
+kodda 2800 / 55 vardı ve test fikstürü 4000 kullanıyordu. Kayıt bir yer tutucuyu
+taşır, üçünü değil: sahibin dinlediği sayı kodda olandır ve tablo ona çekildi.
+
 | parametre | değer | neden |
 |---|---:|---|
-| `crossover_hz` | 3500 | Tahmini tweeter `Fs`'sinin 1,6 katı. LR4 orada 16 dB, `C_SAFE` 5 dB daha → toplam ~21 dB. 4000 yerine 3500: 60 mm koni 3,5 kHz'de biter, 4'te zorlanır. |
-| `woofer_hpf_hz` | 50 | Tahmini `Fs`'nin çok altında, yani gerçek hiçbir çıkışı kesmiyor. Operatörün itirazı yerindeydi: subsonic filtre bası kısmaz, sese dönüşmeyen eksürsiyonu atar — ama nereye konacağını `Fs` belirler, ve o henüz ölçülmedi. |
-| kanal kazançları | tweeter −3 dB | Hassasiyet ölçümü yok. Hata payı tweeter'ı korumak yönünde. |
+| `crossover_hz` | 2800 | Tezgâh dinlemesinin yer tutucusu. Yukarıdaki ~2200 Hz tweeter `Fs` tahmininin **1,27 katı**, yani bu belgenin kendi "en az 2 × `Fs`" kuralının **altında**; kural 2200 için 4400 ister. Tezgâhta kısa, düşük seviyeli dinleme için kabul edilmiş bir yer tutucudur, `Fs` ölçülene kadar; sahibi yükseltebilir. Kalıcı bir kararı ancak ince tarama verir. |
+| `woofer_hpf_hz` | 55 | Pasif radyatör akordunun hemen altı (aşağıdaki kabin bölümü: 50 → 55). Tahmini `Fs`'nin çok altında, yani gerçek hiçbir çıkışı kesmiyor. Operatörün itirazı yerindeydi: subsonic filtre bası kısmaz, sese dönüşmeyen eksürsiyonu atar — ama nereye konacağını `Fb` belirler, ve o henüz ölçülmedi. Filtre dördüncü derecedir (aşağıya bakın). |
+| kanal kazançları | woofer 0,25, tweeter 0,18 | Tweeter woofer'ın ~3 dB altında; hassasiyet ölçümü yok, hata payı tweeter'ı korumak yönünde. İkisi de mutlak olarak düşük, çünkü amfinin kazanç strap'i okunmadı (`C3`) ve tezgâhta zincir amfinin istediğinden ~26 dB sıcaktı (36 dB varsayımıyla). |
+| `supply_budget_sq` / pencere | 1,0 / 100 ms | Bir tam ölçekli dalın ortalama-karesi, doğrulayıcı sınırının (2,0) yarısı; `G1` S7'nin dolduracağı yer tutucu. Bu kazançlarla (0,25² + 0,18² ≈ 0,095) ancak kullanıcı EQ'su yükseltirse devreye girebilir. |
 | EQ | düz | Akustik ölçüm olmadan voicing uydurmak tahmindir. Bantlar açık, kulakla ayarlanacak. |
 
 ## Kabin: pasif radyatör kullanılacak (2026-09-08)
@@ -116,13 +140,17 @@ dört woofer'ın tamamı takılıyken tek bir eğri alınır; ayrı hacimlere gi
 her hacim kendi eğrisini verir. Kabin bittiğinde 10 dakikalık bir ölçüm,
 subsonic frekansını tahminden çıkarır.
 
-### Sonraki tur için not
+### Sonraki tur için not — kodda kapandı (2026-09-12)
 
-Profil formatındaki subsonic filtre şu an **ikinci derece** (12 dB/oktav):
-`hk_profile_chain_t.woofer_hpf` tek bir `hk_biquad_coeffs_t`. Kaynaklar PR'lı
-sistem için **24 dB/oktav** (LR4 veya Butterworth) öneriyor ve bu doğrudur —
-`Fb` altında eksürsiyon çok hızlı artar, 12 dB/oktav geç kalır. İkinci bir
-biquad eklemek gerekiyor. İlk dinleme için 12 yeterli, ama bu açık bir madde.
+Bu bölüm subsonic filtrenin **ikinci derece** (12 dB/oktav) olduğunu ve PR'lı
+sistem için **24 dB/oktav** gerektiğini yazıyordu — `Fb` altında eksürsiyon çok
+hızlı artar, 12 dB/oktav geç kalır. Kod tarafı kapandı: `hk_profile_chain_t.woofer_hpf`
+artık iki bölümlük bir dördüncü derece **Butterworth**'tur (`Q` 0,5412 ve 1,3066,
+aynı köşede; `hk_butterworth4_highpass()`), LR4 değil — LR4 köşeyi −6 dB'ye
+koyardı, Butterworth `woofer_hpf_hz`'nin **−3 dB** anlamını korur, ve bu anlam
+korunduğu için değişiklik şema 2'ye girdi. Host testi 24 dB/oktav eğimi ve
+köşedeki −3 dB'yi doğruluyor. Köşenin kendisi hâlâ `G0`'ındır: kabin içi
+empedansın iki tepesi arasındaki `Fb` ölçülene kadar 55 Hz bir yer tutucudur.
 
 ## Tweeter seri kondansatörü `C_SAFE` (2026-09-08)
 
@@ -146,12 +174,24 @@ yaklaşır, ve orada seri kondansatör koruma sağlamaz — empedans tepesiyle b
 rezonans devresi kurar ve yanıtı tepelendirir, yani korumak istediği yerde
 eksürsiyonu artırır.
 
-**Bedeli:** 3,5 kHz'de −3,6 dB, yani DSP kesimiyle üst üste biniyor ve akustik
-geçiş noktasını yukarı itiyor. `Fs` ölçülene kadar bu kabul ediliyor: DSP
-crossover'ının köşesi tahmini bir `Fs`'den türetilmiş bir yer tutucu, yani
-firmware doğru yüklenmediğinde ya da köşe yanlış tahmin edildiğinde bu
-kondansatör tweeter'ın tek koruması, ve bilinmeyen bir `Fs`'ye karşı sağlamlık
-geçiş bandındaki 3 dB'den önce gelir.
+**Bedeli:** bu satır −3,6 dB'yi 3,5 kHz için yazmıştı; tezgâhın derlediği köşe
+2800 Hz ve orada 10 µF'lik kondansatör 4 Ω'a **yaklaşık −4,8 dB ve +55°**
+(el hesabı: birinci derece köşe 3980 Hz, `f/fc` = 0,70). Yani DSP'nin LR4'ü ile
+kondansatör üst üste biniyor, LR4'ün düz-toplam özelliği geçiş bandında
+tutmuyor (tweeter dalı köşede ~−11 dB, iki dalın toplamı ~−3 dB) ve akustik
+geçiş noktası yukarı kayıyor. Bu bir hesaptır, ölçüm değil; ne kadar olduğu
+`G2`'de ölçülür ve karar orada verilir: köşeyi kondansatörünkine yaklaştırmak,
+`Fs` ölçülünce kondansatörü değiştirmek ya da DSP'de telafi etmek. `Fs`
+ölçülene kadar bu kabul ediliyor: DSP crossover'ının köşesi tahmini bir `Fs`'den
+türetilmiş bir yer tutucu, yani firmware doğru yüklenmediğinde ya da köşe yanlış
+tahmin edildiğinde bu kondansatör tweeter'ın tek koruması **olur** — takılıysa.
+
+> **Operatöre soru:** tezgâhta bugün tweeter'ın önünde bir `C_SAFE` takılı mı,
+> takılıysa hangi değer? Firmware'in kendi notu daha önceki 7 µF parçanın arızalı
+> çıktığını ve **takılı olmadığını** söylüyor; 10 µF'in takıldığına dair bir kayıt
+> yok. Takılı değilse tweeter'ın önündeki tek şey LR4'tür ve bu, yukarıdaki
+> "tek koruma" cümlesinin bugün için geçerli olmadığı anlamına gelir.
+> **Sonuç:** _(yazılacak)_
 
 **Kutupsuz olması şart, sebebi BTL:** amfi köprülü çıkışlı, hoparlörün eksi ucu
 toprak değil, o da salınıyor. Kutuplu bir kondansatör orada ters gerilim görür.

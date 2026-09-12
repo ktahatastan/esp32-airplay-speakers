@@ -136,11 +136,20 @@ typedef struct {
  * These are ::hk_setting_def_t rows and they obey every rule
  * hk_settings_table_check() enforces -- key length, uniqueness, a default
  * inside its own range. They are declared HERE rather than appended to
- * `hk_settings_table[]` for one reason: that table is another file with
- * another owner, and this project's contract is one writer per file. Splicing
- * these rows in is a one-line change for whoever owns hk_settings.c, and
- * test_dsp checks that no key in this table collides with one in that table,
- * so the splice is proven safe before it is made.
+ * `hk_settings_table[]`, and not because of file ownership: they CANNOT be
+ * spliced into that table. hk_audio REQUIRES hk_settings for this very
+ * header, so hk_settings cannot require hk_audio back without a circular
+ * component dependency. So the rows stay here, they are read through the same
+ * store by hk_eq_settings_load(), and they are listed in the boot report by
+ * hk_main, which links both components. test_dsp checks that no key in this
+ * table collides with one in that table, so a future writer that reads both
+ * tables through one store cannot be handed the same key twice.
+ *
+ * hk_dsp_set_eq() has no caller today because no user-facing settings writer
+ * -- a portal page, a receiver command -- exists yet; the rows are real, they
+ * are read at playback start, and a change to them is picked up at the next
+ * start. The runtime path is written and tested so that the first such
+ * writer has nothing to do in the audio task.
  *
  * NULL-terminated, same as `hk_settings_table[]`.
  */

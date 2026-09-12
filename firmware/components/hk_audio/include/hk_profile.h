@@ -1,18 +1,20 @@
 /**
  * @file hk_profile.h
- * @brief The calibration profile: the shape of the numbers G0 and G2 will produce.
+ * @brief The calibration profile: the shape of the numbers G0, G1 and G2 will
+ *        produce.
  *
- * The filters and the limiter are written and tested (hk_biquad, hk_limiter),
- * and both refuse to invent a frequency or a ceiling. This module is what will
- * hand them the real ones: a versioned record stored in `factory_cal`, and the
- * one function that turns it into a configured chain.
+ * The filters and the limiters are written and tested (hk_biquad, hk_limiter,
+ * hk_supply_limiter), and all of them refuse to invent a frequency, a ceiling
+ * or a budget. This module is what will hand them the real ones: a versioned
+ * record stored in `factory_cal`, and the one function that turns it into a
+ * configured chain.
  *
  * NOTHING HERE CONTAINS A DRIVER VALUE, and it cannot: the woofer's and the
  * tweeter's impedance curves and `Fs` have not been measured (`G0`; only the
  * two DC resistances have), so any number written here today would be
  * indistinguishable from a measured one tomorrow. What is defined is
  * the FORM -- which fields exist, which combinations are refused, and how a
- * ceiling measured at one supply voltage becomes a ceiling at another. When the
+ * ceiling measured at one supply voltage is carried to another. When the
  * measurements land, the work is filling a struct in, not designing one.
  *
  * Why the profile carries its own provenance
@@ -21,25 +23,51 @@
  * with them. Deriving a crossover is a bench step done by a person; the device
  * only carries the result. Recording what the result was derived FROM is what
  * makes a profile traceable to a measurement -- and a profile that cannot name
- * its measurement is exactly the guess this project refuses to run on.
+ * its measurement is exactly the guess this project refuses to run on. The
+ * amplifier's gain setting (`amp_gain_db`) is carried for the same reason and
+ * on the same terms: read off the board's straps in bench item C3, never
+ * computed with here, and zero until it has been read.
  *
- * Why a ceiling needs a voltage attached to it
- * --------------------------------------------
+ * Why a ceiling carries a voltage, and what that does NOT promise
+ * ---------------------------------------------------------------
  * A limiter ceiling is a digital number, and what reaches the driver is volts.
- * For a class-D amplifier at a fixed digital level, those volts follow the
- * supply -- and the supply here is whatever DC adapter is plugged into the
- * barrel jack: 24 V nominal (ADR-0020), feeding four XH-A232 in parallel,
- * while each XH-A232 accepts anything from 8 V to 26 V. So a single stored
- * ceiling protects the driver at exactly one supply voltage and is either
- * unsafe or needlessly quiet at every other -- and that is the product case,
- * not a hypothetical: the bench profile was listened to at 12 V, and replayed
- * unscaled on the 24 V adapter it would be too loud by half. The profile
- * stores the ceiling WITH the supply voltage it was measured at, and
- * hk_profile_ceiling_at() moves it to the configured one.
+ * The profile stores each peak ceiling WITH the supply voltage the amplifier
+ * ran from when the ceiling was chosen, and hk_profile_ceiling_at() scales it
+ * DOWN by reference/supply when the configured supply is higher -- the
+ * product case, where a profile listened to on the 12 V bench supply meets
+ * the 24 V adapter (ADR-0020) and its ceilings halve.
  *
- * The ceiling a profile stores is bounded twice on the bench: by G1's
- * supply-current budget (2.9 A with all four amplifiers driven) and by G2's
- * measured driver behaviour, whichever is lower.
+ * That scale-down errs quiet in the case it was written for, which is why it
+ * is kept. It is NOT a guarantee that the volts at the driver stay what the
+ * bench heard, and the record used to say it was. The TPA3110D2 is a
+ * fixed-gain amplifier: its output is gain x input until the rail clips, not
+ * a fraction of the rail. Its datasheet (SLOS528F, Table 3) shows the same
+ * 1 Vrms input at 20 dB gain producing 23.5 Vpp from a 12 V rail and
+ * 27.7 Vpp from 24 V -- the 12 V figure is the rail clipping, not the gain
+ * halving. Two things follow. Where the bench level did NOT clip the 12 V
+ * rail, the halved ceiling on the adapter is half the bench voltage: quieter,
+ * not the same. Where the bench level DID clip that rail -- which, at an
+ * unread gain strapping (bench item C3), a ceiling stated in full-scale
+ * units may well have -- the 24 V rail clips later, and the halved ceiling
+ * can still put more on the driver than the bench's clipped level. Which case
+ * applies is exactly what C3 and the rail's clip point decide, and what a
+ * ceiling really protects against is G2's driver limit; until both are read,
+ * a profile built for the adapter is played staged, at low level, on one
+ * pair.
+ *
+ * The scaling is ONE-DIRECTIONAL: a supply BELOW the reference never raises a
+ * ceiling above its stored value. For a fixed-gain amplifier a lower rail does
+ * not license a higher digital level -- it only moves the clip point down --
+ * and the raise would be the one unsafe direction of the old rule.
+ *
+ * Why the current budget is a separate field
+ * ------------------------------------------
+ * The adapter's 2.9 A (ADR-0020) is an AVERAGE constraint on the SUM of both
+ * branches, and a peak ceiling per branch cannot express either half of that
+ * (hk_supply_limiter.h says why). So the budget has its own fields,
+ * `supply_budget_sq` and `supply_window_ms`, measured on the adapter in G1
+ * step S7 with all four amplifiers into 4 ohm-class loads, and stored as read:
+ * it describes the adapter, so it is never scaled by supply voltage.
  */
 #ifndef HK_PROFILE_H
 #define HK_PROFILE_H
@@ -50,9 +78,22 @@
 
 #include "hk_biquad.h"
 #include "hk_limiter.h"
+#include "hk_supply_limiter.h"
 
-/** Bump when a field changes meaning. hk_schema decides what an old one does. */
-#define HK_PROFILE_SCHEMA 1u
+/**
+ * Bump when a field changes meaning. The factory store's own version
+ * (hk_schema) is unchanged by this -- its layout did not move -- so an old
+ * profile blob is refused here, by length in hk_profile_from_blob() and by
+ * schema in hk_profile_valid(), and no converter exists because none was ever
+ * written to a device.
+ *
+ * 2: per-branch limiter timing, one-branch alignment delay, tweeter polarity,
+ *    the supply budget, and the amplifier gain as provenance; and the subsonic
+ *    filter became fourth order, so `woofer_hpf_hz` now names the -3 dB corner
+ *    of a Butterworth-4 rather than of a single section (same point, steeper
+ *    skirt). A schema-1 blob (84 bytes) is refused by name.
+ */
+#define HK_PROFILE_SCHEMA 2u
 
 /** How long a measurement reference may be, including its terminator. */
 #define HK_PROFILE_SOURCE_MAX 32
@@ -67,6 +108,19 @@
 #define HK_PROFILE_SUPPLY_MV_MIN 8000.0f
 #define HK_PROFILE_SUPPLY_MV_MAX 26000.0f
 
+/**
+ * Longest alignment delay a branch may carry: 1.45 ms at 44.1 kHz.
+ *
+ * An acoustic-centre correction between a 60 mm cone and a 25 mm dome in the
+ * same baffle is a fraction of a millisecond; this is several times that, and
+ * still well inside the +/-2.9 ms jitter the timing report already absorbs.
+ * It is a bound on a correction, not a lookahead.
+ */
+#define HK_PROFILE_DELAY_MAX_SAMPLES 64u
+
+/** Largest supply budget a profile may claim: two full-scale branches. */
+#define HK_PROFILE_SUPPLY_BUDGET_MAX HK_SUPPLY_LIMITER_BUDGET_MAX
+
 /** What a validation refused, so a bad profile is diagnosable at the bench. */
 typedef enum {
     HK_PROFILE_OK = 0,
@@ -79,13 +133,20 @@ typedef enum {
     HK_PROFILE_BAD_REFERENCE,   /**< The reference supply voltage is outside what the amplifier can be fed */
     HK_PROFILE_BAD_TIMING,      /**< A release time of zero is a switch, not a release */
     HK_PROFILE_UNBUILDABLE,     /**< Valid on its own, impossible at this sample rate */
+    HK_PROFILE_BAD_DELAY,       /**< A delay is over the bound, or both branches are delayed */
+    HK_PROFILE_BAD_POLARITY,    /**< Tweeter polarity is neither 0 nor 1 */
+    HK_PROFILE_BAD_BUDGET,      /**< The supply budget or its window is absent or impossible */
+    HK_PROFILE_BAD_AMP_GAIN,    /**< An amplifier gain that is not one of the TPA3110D2's four settings */
 } hk_profile_verdict_t;
 
 /**
  * One speaker's calibration.
  *
  * Stored as a blob, so the field order is a wire format: append at the end and
- * bump ::HK_PROFILE_SCHEMA rather than reordering.
+ * bump ::HK_PROFILE_SCHEMA rather than reordering. Every field is four bytes
+ * wide or a multiple of four, so the struct has no padding and its size is the
+ * wire length; test_profile asserts the size as a literal so a reorder or an
+ * unintended padding byte is caught on the host.
  */
 typedef struct {
     uint16_t schema;              /**< ::HK_PROFILE_SCHEMA when written */
@@ -98,7 +159,7 @@ typedef struct {
     float tweeter_dcr_ohm;
 
     /* ---- What was derived from it, on a bench, by a person. ---- */
-    float woofer_hpf_hz;   /**< Subsonic filter: excursion the woofer cannot make */
+    float woofer_hpf_hz;   /**< Subsonic filter, Butterworth-4: its -3 dB corner. Excursion the woofer cannot make */
     float crossover_hz;    /**< LR4 corner: low branch to woofer, high to tweeter */
     float woofer_gain;     /**< Linear, (0, 1] */
     float tweeter_gain;    /**< Linear, (0, 1]. Level-matches the two branches */
@@ -107,19 +168,33 @@ typedef struct {
     float    reference_supply_mv;
     float    woofer_ceiling;   /**< At reference_supply_mv, linear full scale */
     float    tweeter_ceiling;  /**< At reference_supply_mv, linear full scale */
-    uint32_t release_ms;
-    uint32_t hold_ms;
+    uint32_t woofer_release_ms;   /**< Woofer peak limiter recovery (G2) */
+    uint32_t woofer_hold_ms;
+
+    /* ---- Schema 2 ---- */
+    uint32_t tweeter_release_ms;  /**< Tweeter peak limiter recovery (G2); a dome and a cone do not recover alike */
+    uint32_t tweeter_hold_ms;
+    uint32_t woofer_delay_samples;  /**< Acoustic-centre alignment (G2 step 5). At most one branch is delayed */
+    uint32_t tweeter_delay_samples; /**< <= ::HK_PROFILE_DELAY_MAX_SAMPLES */
+    uint32_t tweeter_polarity;      /**< 0 in phase, 1 inverted. Decided by the G2 sum measurement, not by LR4 theory */
+    float    supply_budget_sq;      /**< Mean of (woofer^2 + tweeter^2) the adapter allows (G1 S7). Stored as read, never scaled */
+    uint32_t supply_window_ms;      /**< The averaging window that budget was measured with (G1 S7) */
+    uint32_t amp_gain_db;           /**< 0 = not read; else 20, 26, 32 or 36 -- the TPA3110D2's four strap settings (bench item C3). Carried, never computed with */
 } hk_profile_t;
 
 /** Everything the audio task needs, built from a profile and the present state. */
 typedef struct {
-    hk_biquad_coeffs_t  woofer_hpf;   /**< Second order; the subsonic filter */
+    hk_lr4_coeffs_t     woofer_hpf;   /**< Fourth-order Butterworth; the subsonic filter */
     hk_lr4_coeffs_t     woofer_low;   /**< LR4 low branch */
-    hk_lr4_coeffs_t     tweeter_high; /**< LR4 high branch. In phase: do not invert */
+    hk_lr4_coeffs_t     tweeter_high; /**< LR4 high branch. In phase with the low branch */
     float               woofer_gain;
     float               tweeter_gain;
+    float               tweeter_sign;         /**< +1 or -1, from tweeter_polarity */
+    uint32_t            woofer_delay_samples; /**< At most one of these is non-zero */
+    uint32_t            tweeter_delay_samples;
     hk_limiter_config_t woofer_limit;
     hk_limiter_config_t tweeter_limit;
+    hk_supply_limiter_config_t supply_limit;  /**< The adapter budget, unscaled */
 } hk_profile_chain_t;
 
 /**
@@ -142,14 +217,14 @@ hk_profile_verdict_t hk_profile_from_blob(const void *blob, size_t length,
                                           hk_profile_t *out);
 
 /**
- * The ceiling that protects the driver at the supply voltage the amplifier is
- * running from.
+ * The ceiling to run with at the supply voltage the amplifier is fed from.
  *
- * What reaches the driver is (digital level x supply), so holding the volts
- * constant means moving the level the other way. A supply below the reference
- * allows a HIGHER digital ceiling for the same volts, capped at full scale --
- * past that there is no more signal to give. A supply above it, which is the
- * case when a bench profile meets the 24 V adapter, lowers the ceiling.
+ * ceiling x min(1, reference / supply). A supply above the reference -- a
+ * bench profile meeting the 24 V adapter -- lowers the ceiling by the ratio,
+ * which errs quiet. A supply below it returns the stored ceiling UNCHANGED:
+ * the amplifier's gain is fixed, so a lower rail moves the clip point, not
+ * the volts a given digital level produces, and there is no headroom to give
+ * back (see the file header for the datasheet reading behind this).
  *
  * Returns 0 when it cannot answer, which every caller must treat as "do not
  * play" rather than as silence.
@@ -166,6 +241,22 @@ float hk_profile_ceiling_at(float ceiling_at_reference, float reference_mv, floa
 hk_profile_verdict_t hk_profile_build(const hk_profile_t *profile,
                                       float fs_hz, float supply_mv,
                                       hk_profile_chain_t *out);
+
+/**
+ * The one judge: stored bytes in, verdict out, and optionally the profile and
+ * the chain that verdict was reached on.
+ *
+ * hk_profile_from_blob() then hk_profile_build(), in one call, so that the
+ * boot gate in hk_main and the output backend cannot disagree about a blob:
+ * both ask this function and get the same answer. Either output may be NULL
+ * when only the verdict is wanted. On any verdict but ::HK_PROFILE_OK both
+ * outputs are zeroed -- nothing half-read or half-built is left for a caller
+ * that ignores the return.
+ */
+hk_profile_verdict_t hk_profile_load(const void *blob, size_t length,
+                                     float fs_hz, float supply_mv,
+                                     hk_profile_t *profile_or_null,
+                                     hk_profile_chain_t *chain_or_null);
 
 /** A one-word reason, for a log line or a bench report. */
 const char *hk_profile_verdict_name(hk_profile_verdict_t verdict);

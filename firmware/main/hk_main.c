@@ -11,16 +11,22 @@
  * someone finding the time:
  *
  *   F2  the amplifiers have never been run into a dummy load; G1 decides the
- *       settle times hk_audio_hw is currently guessing, fixes the limiter
- *       ceiling against the adapter's 2.9 A budget with all four driven, and
- *       measures the adapter's no-load output before it is connected
- *   F3  the DSP chain exists -- EQ, subsonic high-pass, LR4 crossover and a
- *       limiter per branch (hk_dsp) -- and runs in the
- *       CONFIG_HK_AIRPLAY_OUTPUT_DSP backend. Its numbers are placeholders:
- *       the corners and ceilings need G0, the driver impedance measurement,
- *       and G2. The product default still selects the vendored output stage,
- *       which has none of it, so which build is running decides what sits in
- *       front of the amplifiers
+ *       settle times hk_audio_hw is currently guessing, sets the profile's
+ *       supply-budget stage (supply_budget_sq / supply_window_ms, average
+ *       power over both branches) from the adapter's 2.9 A budget with all
+ *       four driven on 4 ohm-class loads (S7) -- the peak ceilings are G2's
+ *       and stay beneath it -- and measures the adapter's no-load output
+ *       before it is connected
+ *   F3  the DSP chain -- EQ, subsonic high-pass, LR4 crossover, the
+ *       supply-budget stage and a limiter per branch (hk_dsp) -- runs in the
+ *       product's output backend, CONFIG_HK_AIRPLAY_OUTPUT_DSP (ADR-0022).
+ *       Its numbers wait on measurements: the corners on G0, the budget on
+ *       G1, the ceilings and timings on G2. Until a profile carrying them is
+ *       in factory_cal the receiver is not started and nothing clocks I2S.
+ *       A profile that is there is judged at boot, here, with the same
+ *       hk_profile_load() the backend builds its chain from, and a refused
+ *       one keeps the DAC muted by name (judge_profile). The bench build
+ *       alone compiles in a placeholder profile, and says so when it runs
  *   F7  OTA client compiles but nothing runs it; needs G6
  *
  * Most of the policy modules below are still pure logic with no driver behind
@@ -58,6 +64,7 @@
 #include "hk_tone.h"
 #endif
 #include "hk_button.h"
+#include "hk_eq.h"
 #include "hk_identity.h"
 #include "hk_led.h"
 #include "hk_network.h"
@@ -66,6 +73,7 @@
 #include "hk_ota.h"
 #include "hk_ota_client.h"
 #include "hk_pins.h"
+#include "hk_profile.h"
 #include "hk_sched.h"
 #include "hk_settings.h"
 #include "hk_provision.h"
@@ -154,17 +162,121 @@ static uint32_t now_ms(void)
 }
 
 /**
+ * What the judge said about the stored profile, for the boot report.
+ *
+ * "absent" when there is no blob; otherwise the one-word verdict of
+ * hk_profile_load() ("ok", "ceiling", "schema", ...), or, when the bytes could
+ * not even be read, the store's own reason. Set once by judge_profile() and
+ * never recomputed: the report prints what the gate was decided on.
+ */
+static const char *s_profile_verdict = "unjudged";
+
+/**
+ * Judge the stored profile, and tell storage what was decided.
+ *
+ * One judge (ADR-0022). The output backend builds its chain with
+ * hk_profile_load(); this calls the same function on the same bytes at the
+ * same output rate and supply voltage, so the boot gate and the backend cannot
+ * disagree about a blob. Until this ran, a present profile permitted audio on
+ * presence alone -- which meant a blob the backend would refuse still released
+ * the DAC mute into a chain writing digital zero. The verdict goes into
+ * hk_storage, which is where every caller of hk_storage_audio_permitted()
+ * already reads the gate: the mute sequence below and the receiver's own
+ * refusal to start.
+ *
+ * Verdict only. The chain the backend will run is built by the backend, on
+ * the playback task, from the same call; nothing built here would have
+ * anywhere to go, and two chains from one blob is one more than one owner.
+ *
+ * CONFIG_OUTPUT_SAMPLE_RATE_HZ exists only inside `if HK_AIRPLAY`, and this
+ * file supports a build without the receiver, so that build judges the blob
+ * structurally: there is no output rate to build a chain at and nothing that
+ * would clock I2S if there were.
+ */
+static void judge_profile(void)
+{
+    if (!hk_storage_profile_present()) {
+        s_profile_verdict = "absent";
+        return;
+    }
+
+    /* A store that hk_storage will not read from -- schema fail-safe -- has
+     * already shut the gate on its own; the report should say that rather
+     * than a read error dressed as a verdict. */
+    const hk_schema_action_t store = hk_storage_factory_action();
+    if (!hk_schema_audio_permitted(store)) {
+        s_profile_verdict = hk_schema_action_name(store);
+        hk_storage_profile_judged(false);
+        ESP_LOGE(TAG, "profile     present, but the calibration store is %s: not read",
+                 s_profile_verdict);
+        return;
+    }
+
+    /* Into a buffer of exactly one profile, so the read itself fails on a blob
+     * of another length rather than trusting it: hk_profile_from_blob() would
+     * refuse a wrong length by name ("schema"), and a blob too long for this
+     * buffer is refused before it, by the store, as an invalid length. */
+    uint8_t raw[sizeof(hk_profile_t)];
+    size_t  length = sizeof(raw);
+    const esp_err_t err = hk_storage_factory_get_blob(HK_STORAGE_PROFILE_KEY, raw, &length);
+    if (err != ESP_OK) {
+        s_profile_verdict = esp_err_to_name(err);
+        hk_storage_profile_judged(false);
+        ESP_LOGE(TAG, "profile     present but unreadable: %s", s_profile_verdict);
+        return;
+    }
+
+#if CONFIG_HK_AIRPLAY
+    const hk_profile_verdict_t verdict =
+        hk_profile_load(raw, length, (float)CONFIG_OUTPUT_SAMPLE_RATE_HZ,
+                        (float)CONFIG_HK_SUPPLY_MV, NULL, NULL);
+#else
+    hk_profile_t profile;
+    const hk_profile_verdict_t verdict = hk_profile_from_blob(raw, length, &profile);
+#endif
+    s_profile_verdict = hk_profile_verdict_name(verdict);
+    hk_storage_profile_judged(verdict == HK_PROFILE_OK);
+
+    if (verdict == HK_PROFILE_OK) {
+#if CONFIG_HK_AIRPLAY
+        ESP_LOGI(TAG, "profile     present, judged %s at %d Hz for a %d mV supply",
+                 s_profile_verdict, (int)CONFIG_OUTPUT_SAMPLE_RATE_HZ,
+                 (int)CONFIG_HK_SUPPLY_MV);
+#else
+        ESP_LOGI(TAG, "profile     present, judged %s (structurally: no output rate "
+                      "in this build)", s_profile_verdict);
+#endif
+    } else {
+        ESP_LOGE(TAG, "profile     present and REFUSED: %s", s_profile_verdict);
+    }
+}
+
+/**
  * Whether sound is allowed, as the whole device sees it.
  *
- * One gate: storage asks whether a measured driver-protection profile exists,
- * and the bench exception it carries is applied inside that answer. It is
- * wrapped here rather than called directly from each site because hk_audio_hw
- * is a hardware layer that drives two pins and should hold no policy, and
- * because the place the verdict is computed should be the place it is printed.
+ * One gate: storage asks whether a driver-protection profile exists and was
+ * judged valid at boot (judge_profile), and the bench exception it carries is
+ * applied inside that answer. It is wrapped here rather than called directly
+ * from each site because hk_audio_hw is a hardware layer that drives two pins
+ * and should hold no policy, and because the place the verdict is computed
+ * should be the place it is printed.
  */
 static bool audio_permitted_now(void)
 {
     return hk_storage_audio_permitted();
+}
+
+/** One row of a settings table, resolved the way its reader will resolve it. */
+static void report_setting(const hk_setting_def_t *def)
+{
+    uint32_t stored = 0;
+    const bool present = hk_storage_user_read_u32(def->key, &stored);
+    hk_setting_origin_t origin;
+    const uint32_t value = hk_settings_resolve(def, stored, present, &origin);
+    const char *source = (origin == HK_SETTING_STORED) ? "stored"
+                       : (origin == HK_SETTING_OUT_OF_RANGE) ? "OUT OF RANGE -> default"
+                       : "default";
+    ESP_LOGI(TAG, "  %-12s %-6" PRIu32 " %s", def->key, value, source);
 }
 
 /**
@@ -181,24 +293,31 @@ static void report_policies(void)
 {
     ESP_LOGI(TAG, "settings (defaults until a value is stored)");
     for (size_t i = 0; i < hk_settings_count(); i++) {
-        const hk_setting_def_t *def = &hk_settings_table[i];
-        uint32_t stored = 0;
-        const bool present = hk_storage_user_read_u32(def->key, &stored);
-        hk_setting_origin_t origin;
-        const uint32_t value = hk_settings_resolve(def, stored, present, &origin);
-        const char *source = (origin == HK_SETTING_STORED) ? "stored"
-                           : (origin == HK_SETTING_OUT_OF_RANGE) ? "OUT OF RANGE -> default"
-                           : "default";
-        ESP_LOGI(TAG, "  %-12s %-6" PRIu32 " %s", def->key, value, source);
+        report_setting(&hk_settings_table[i]);
+    }
+    /* The equaliser's rows are settings of the same kind, read from the same
+     * store by the same rules, and they are listed here rather than in the
+     * table above because they cannot be spliced into it: hk_audio requires
+     * hk_settings for the row type, so hk_settings cannot require hk_audio
+     * back (hk_eq.h). This file links both, so this is where the two tables
+     * meet. Every row at its default is a flat equaliser: the chain runs
+     * bit-exact passthrough, and the row still deserves a line, because a
+     * stored value that made the sound change overnight would be found here. */
+    ESP_LOGI(TAG, "eq settings (tonal; flat until a value is stored, read at playback start)");
+    for (size_t i = 0; i < hk_eq_settings_count(); i++) {
+        report_setting(&hk_eq_settings_table[i]);
     }
 
-    /* The gate and the verdict, side by side. The gate is whether a measured
-     * driver-protection profile exists; the verdict is what hk_audio_hw is
-     * actually being told, and the two are not always the same: a bench
-     * exception can lift the refusal, and a report that showed only the raw
-     * gate would say REFUSES while the amplifier came up underneath it. */
-    ESP_LOGI(TAG, "audio       profile %s · verdict %s",
-             hk_storage_profile_present() ? "permits" : "REFUSES",
+    /* The gate and the verdict, side by side. The gate is what the profile
+     * store holds: nothing, or a blob and the judge's one-word answer on it.
+     * The verdict is what hk_audio_hw is actually being told, and the two are
+     * not always the same: a bench exception can lift the absence refusal, and
+     * a report that showed only the raw gate would say "absent" while the
+     * amplifier came up underneath it. "present:ok" is the only gate state
+     * that permits audio on its own. */
+    ESP_LOGI(TAG, "audio       profile %s%s · verdict %s",
+             hk_storage_profile_present() ? "present:" : "",
+             s_profile_verdict,
              audio_permitted_now() ? "PERMITTED" : "muted");
 #if CONFIG_HK_BENCH_AUDIO_WITHOUT_PROFILE
     if (!hk_storage_profile_present()) {
@@ -221,18 +340,45 @@ static void report_policies(void)
                       "tone starts. The bench tone is written straight to I2S, past "
                       "hk_dsp: no crossover, no protective high-pass and no limiter in "
                       "front of them. Check what is on the speaker terminals.");
+#elif CONFIG_HK_AIRPLAY_OUTPUT_DSP && CONFIG_HK_BENCH_PROVISIONAL_PROFILE
+        /* The bench build is the one place a placeholder profile is compiled
+         * in, so it is the one place this sentence may say so. CI checks the
+         * product image for the words "placeholders until" and refuses it if
+         * they are there: on a product board they would describe a profile
+         * the board does not have. */
+        ESP_LOGW(TAG, "audio       THE DAC WILL BE UNMUTED INTO LIVE AMPLIFIERS when a "
+                      "stream arrives. The DSP chain (EQ, subsonic high-pass, LR4 "
+                      "crossover, supply-budget stage, limiter per branch) is in the "
+                      "path -- on the stored profile if this boot judged one valid, "
+                      "otherwise on the compiled-in bench profile, whose corners, "
+                      "ceilings and budget are placeholders until G0/G1/G2 and which "
+                      "announces itself when the backend starts. Check what is on the "
+                      "speaker terminals.");
 #elif CONFIG_HK_AIRPLAY_OUTPUT_DSP
         ESP_LOGW(TAG, "audio       THE DAC WILL BE UNMUTED INTO LIVE AMPLIFIERS when a "
                       "stream arrives. The DSP chain (EQ, subsonic high-pass, LR4 "
-                      "crossover, limiter per branch) is in the path, on numbers that "
-                      "are placeholders until G0/G2. Check what is on the speaker "
-                      "terminals.");
-#else
+                      "crossover, supply-budget stage, limiter per branch) is in the "
+                      "path, on the stored profile judged above. Check what is on the "
+                      "speaker terminals.");
+#elif CONFIG_HK_AIRPLAY
         ESP_LOGW(TAG, "audio       THE DAC WILL BE UNMUTED INTO LIVE AMPLIFIERS when a "
-                      "stream arrives. This build selects the vendored output stage: no "
-                      "crossover, no protective high-pass and no limiter in front of "
-                      "them (CONFIG_HK_AIRPLAY_OUTPUT_DSP is not set). Check what is on "
-                      "the speaker terminals.");
+                      "stream arrives. This build selects one of upstream's own output "
+                      "stages, not the product's DSP backend (ADR-0022): no crossover, "
+                      "no protective high-pass and no limiter in front of them. Check "
+                      "what is on the speaker terminals.");
+#else
+        /* Reachable: the receiver off and the bench exception on is a build
+         * nobody ships but the tree allows, and until this branch existed it
+         * printed the sentence above -- an output stage selected in a build
+         * that has no output stage. The sequence releases the DAC mute on
+         * permitted AND a live stream, and nothing in this build reports one,
+         * so the verdict is a permission with nothing to act on it. Still a
+         * warning: the gate is open, and the first thing that pushes a
+         * stream would find it so. */
+        ESP_LOGW(TAG, "audio       PERMITTED, but no output backend is built into this "
+                      "build: nothing writes to I2S and nothing reports a live stream, "
+                      "so the sequence has nothing to release the DAC mute on. The gate "
+                      "is open all the same. Check what is on the speaker terminals.");
 #endif
     }
 
@@ -241,13 +387,19 @@ static void report_policies(void)
      * behind it have no mute of their own.
      *
      * "Starts", not "stays", and that used to be true of the I2S clocks alone.
-     * It is now true of both lines. The receiver clocks I2S as soon as it
-     * comes up, seconds after this line is printed; and since hk_audio_hw
-     * exists, the DAC's mute line is no longer permanently asserted either --
-     * it follows the sequence, and the sequence follows the verdict printed
-     * above. The suffix says which of those applies to this
-     * build, because a line that read as a promise about the rest of the boot
-     * would be the wrong thing to leave in a log next to an amplifier.
+     * It is now true of both lines. Where the receiver runs it clocks I2S as
+     * soon as it comes up, seconds after this line is printed; and since
+     * hk_audio_hw exists, the DAC's mute line is no longer permanently
+     * asserted either -- it follows the sequence, and the sequence follows
+     * the verdict printed above. The suffix says which of those applies to
+     * this build, because a line that read as a promise about the rest of the
+     * boot would be the wrong thing to leave in a log next to an amplifier.
+     *
+     * Whether the receiver runs at all is the gate's answer again: on the
+     * bring-up devkit hk_airplay starts it regardless, because there is no
+     * DAC on those pins; on any other board hk_airplay_start() refuses on the
+     * same hk_storage_audio_permitted() this file prints, so a muted verdict
+     * means the receiver is never started and nothing clocks I2S.
      *
      * This chain is a throwaway used to name the resting state. The one that
      * drives the pins belongs to hk_audio_hw and is started further down. */
@@ -261,8 +413,11 @@ static void report_policies(void)
                  ? ", until a stream arrives and the sequence releases the DAC mute"
 #if CONFIG_HK_BENCH_TONE_INSTEAD_OF_AIRPLAY
                  : ", and the DAC stays muted; only I2S is clocked, by the bench tone"
-#elif CONFIG_HK_AIRPLAY
+#elif CONFIG_HK_AIRPLAY && CONFIG_HK_BOARD_DEVKIT_N8R2
                  : ", and the DAC stays muted; only I2S is clocked, by the receiver"
+#elif CONFIG_HK_AIRPLAY
+                 : ", and the DAC stays muted; the receiver is not started without a "
+                   "permitted profile, so nothing clocks I2S"
 #else
                  : ""
 #endif
@@ -851,6 +1006,12 @@ void app_main(void)
                      storage_err == ESP_OK ? HK_HEALTH_PASS : HK_HEALTH_FAIL);
     ESP_ERROR_CHECK(storage_err);
 
+    /* Storage knows whether a profile is there; it does not know whether it
+     * is any good, and the gate needs both. Judged here, before anything
+     * reads the gate, so the first answer hk_audio_hw and the receiver get
+     * is already the real one. */
+    judge_profile();
+
     ESP_LOGI(TAG, "%s", HK_PRODUCT_FAMILY);
     report_build();
     report_hardware();
@@ -860,9 +1021,26 @@ void app_main(void)
              hk_schema_action_name(hk_storage_user_action()),
              hk_schema_action_name(hk_storage_factory_action()));
     report_policies();
-    if (!hk_storage_audio_permitted()) {
-        ESP_LOGE(TAG, "audio is NOT permitted: this device has no trustworthy driver "
-                      "protection profile. No default profile is invented (G0/G2).");
+    if (!audio_permitted_now()) {
+        if (hk_storage_profile_present()) {
+            /* The third refusal, and the one that needs its reason printed:
+             * the board LOOKS calibrated. Nothing here can mend the blob --
+             * factory_cal is opened read-only -- so the answer is the bench
+             * that wrote it, and the verdict is what it needs to hear. "Or
+             * could not be read", because the word in the brackets is not
+             * always the judge's: when the store is fail-safe it is the
+             * store's action name, and when the blob would not fit one
+             * profile it is the read's esp_err name. judge_profile() said
+             * which a few lines up; this line has to be true on its own. */
+            ESP_LOGE(TAG, "audio is NOT permitted: the stored profile was refused or "
+                          "could not be read (%s); audio stays muted and the receiver "
+                          "is not started. The blob in factory_cal has to be rewritten "
+                          "by the bench that produced it; this firmware cannot.",
+                     s_profile_verdict);
+        } else {
+            ESP_LOGE(TAG, "audio is NOT permitted: this device has no trustworthy driver "
+                          "protection profile. No default profile is invented (G0/G2).");
+        }
     } else if (!hk_storage_profile_present()) {
         ESP_LOGW(TAG, "audio is permitted WITHOUT a profile. This is the bench exception, "
                       "not a calibration: nothing may be connected to the output.");
@@ -952,16 +1130,34 @@ void app_main(void)
                   "amplifier input before the ten second lead-in runs out. The procedure "
                   "is docs/02-hardware/driver-measurements.md.");
 #endif
-#elif CONFIG_HK_AIRPLAY && CONFIG_HK_AIRPLAY_OUTPUT_DSP
-    ESP_LOGI(TAG, "the AirPlay receiver is built in, with the DSP chain in its output: "
-                  "EQ, subsonic high-pass, LR4 crossover and a limiter per branch. Its "
-                  "corners and ceilings are placeholders until G0/G2 produce a measured "
-                  "profile. See docs/03-firmware/firmware-plan.md stage F3.");
-#elif CONFIG_HK_AIRPLAY
-    ESP_LOGW(TAG, "the AirPlay receiver is built in with a vendored output stage that has "
-                  "no DSP in it: no crossover, no protective high-pass and no limiter in "
-                  "this build. The protected path is CONFIG_HK_AIRPLAY_OUTPUT_DSP. See "
+#elif CONFIG_HK_AIRPLAY && CONFIG_HK_AIRPLAY_OUTPUT_DSP && CONFIG_HK_BENCH_PROVISIONAL_PROFILE
+    /* Bench wording, behind the bench symbol, for the reason given at the
+     * matching line in report_policies(): the product image must not carry
+     * a sentence about placeholders, and CI reads the image to make sure. */
+    ESP_LOGW(TAG, "the AirPlay receiver is built in, with the DSP chain in its output "
+                  "(ADR-0022): EQ, subsonic high-pass, LR4 crossover, supply-budget "
+                  "stage and a limiter per branch. BENCH BUILD: with no stored profile "
+                  "it runs on the compiled-in bench profile, whose corners, ceilings and "
+                  "budget are placeholders until G0/G1/G2 produce a measured one. See "
                   "docs/03-firmware/firmware-plan.md stage F3.");
+#elif CONFIG_HK_AIRPLAY && CONFIG_HK_AIRPLAY_OUTPUT_DSP
+    ESP_LOGI(TAG, "the AirPlay receiver is built in, with the DSP chain in its output "
+                  "(ADR-0022): EQ, subsonic high-pass, LR4 crossover, supply-budget "
+                  "stage and a limiter per branch. It runs only on a stored profile this "
+                  "boot judged valid; without one the receiver is not started. See "
+                  "docs/03-firmware/firmware-plan.md stage F3.");
+#elif CONFIG_HK_AIRPLAY && CONFIG_HK_AIRPLAY_OUTPUT_SPDIF
+    ESP_LOGW(TAG, "the AirPlay receiver is built in with upstream's S/PDIF output stage, "
+                  "which has no DSP in it: no crossover, no protective high-pass and no "
+                  "limiter in this build. It is the bring-up devkit's output (ADR-0012), "
+                  "one pin into an external DAC with no amplifier behind it; the "
+                  "product's output is the DSP backend (ADR-0022).");
+#elif CONFIG_HK_AIRPLAY
+    ESP_LOGW(TAG, "the AirPlay receiver is built in with upstream's passthrough output "
+                  "stage, which has no DSP in it: no crossover, no protective high-pass "
+                  "and no limiter in this build. That stage is selectable on the bring-up "
+                  "devkit or a bench-exception build only; the product's output is the "
+                  "DSP backend (ADR-0022). See docs/03-firmware/firmware-plan.md stage F3.");
 #else
     ESP_LOGW(TAG, "no audio in this build. The button, LED and provisioning policy are "
                   "live. See docs/03-firmware/firmware-plan.md for what comes next.");

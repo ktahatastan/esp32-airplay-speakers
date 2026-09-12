@@ -40,6 +40,7 @@ add_executable(hk_host_tests
     test_settings.c
     test_portal.c
     test_profile.c
+    test_supply_limiter.c
     test_dsp.c
     ${HK_COMPONENTS}/hk_pins/hk_pins.c
     ${HK_COMPONENTS}/hk_identity/hk_identity.c
@@ -54,6 +55,7 @@ add_executable(hk_host_tests
     ${HK_COMPONENTS}/hk_health/hk_health.c
     ${HK_COMPONENTS}/hk_audio/hk_audio.c
     ${HK_COMPONENTS}/hk_audio/hk_limiter.c
+    ${HK_COMPONENTS}/hk_audio/hk_supply_limiter.c
     ${HK_COMPONENTS}/hk_audio/hk_biquad.c
     ${HK_COMPONENTS}/hk_audio/hk_profile.c
     ${HK_COMPONENTS}/hk_audio/hk_dsp.c
@@ -122,5 +124,5 @@ endif()
 enable_testing()
 add_test(NAME hk_host_tests COMMAND hk_host_tests)
 
-# libm for the limiter's exponential recovery.
+# libm for the limiters' exponential recovery and the supply stage's square root.
 target_link_libraries(hk_host_tests PRIVATE m)

@@ -54,23 +54,58 @@ hk_schema_action_t hk_storage_user_action(void);
  *
  * Presence, not validity: this module cannot judge a profile without pulling in
  * the audio component, and the layering is worth more than the extra check.
- * hk_profile_valid() is the judge, and hk_main runs it.
+ * hk_main judges the blob with hk_profile_load() -- the same function the
+ * output backend builds its chain from -- at the build's output rate and
+ * supply voltage, and reports the verdict here through
+ * hk_storage_profile_judged(). Until it does, a present profile does not
+ * permit audio.
  */
 bool hk_storage_profile_present(void);
 
 /**
+ * Record the judge's verdict on the profile blob that is present.
+ *
+ * This module stores the verdict; it does not compute one. hk_main calls this
+ * once, right after hk_storage_init(), with the answer hk_profile_load() gave
+ * for the stored bytes at CONFIG_OUTPUT_SAMPLE_RATE_HZ and CONFIG_HK_SUPPLY_MV.
+ * In a build without the receiver the judgement is hk_profile_from_blob(),
+ * structural only, because that rate does not exist there; and when the store
+ * is fail-safe or the blob cannot be read into one profile, false is reported
+ * without a judge call at all. False is the value assumed until then, and
+ * hk_storage_init() resets it to false: a verdict belongs to the bytes it was
+ * reached on, and a store brought up again has to be judged again.
+ */
+void hk_storage_profile_judged(bool valid);
+
+/** What was last reported through hk_storage_profile_judged(); false until then. */
+bool hk_storage_profile_valid(void);
+
+/**
  * Whether a trustworthy calibration profile is available.
  *
- * False means this device has never been calibrated, or its profile is
- * unreadable. The audio path must stay in its safe state: no default profile
- * is invented, because an invented one would look exactly like a measured one
- * while driving unprotected drivers.
+ * False means this device has never been calibrated, its profile is
+ * unreadable, or the profile it carries was refused by the judge. The audio
+ * path must stay in its safe state: no default profile is invented, because an
+ * invented one would look exactly like a measured one while driving
+ * unprotected drivers.
  *
- * A matching schema version is NOT sufficient and used to be treated as if it
- * were. The provisioning credential generator writes a schema version into this
- * same namespace, so every provisioned device claimed to be calibrated -- on
- * two real boards, unnoticed, because a second gate happened to be holding the
- * door. Presence of the profile itself is now required.
+ * Three things are required, and each was added because its absence was found
+ * to open the gate. A matching schema version alone used to be treated as
+ * enough: the provisioning credential generator writes a schema version into
+ * this same namespace, so every provisioned device claimed to be calibrated --
+ * on two real boards, unnoticed, because a second gate happened to be holding
+ * the door. Presence of the profile itself was required from 2026-09-08. A
+ * present blob that the judge refuses is the third case (ADR-0022): the DSP
+ * backend refuses such a blob and writes digital zero, and a gate that read
+ * presence alone would have released the DAC mute into that -- silence into
+ * live amplifiers, the state the backend's own comment said could not occur.
+ * So the verdict hk_main reports is required too.
+ *
+ * The bench exception (CONFIG_HK_BENCH_AUDIO_WITHOUT_PROFILE) lifts the
+ * ABSENCE refusal only. A present profile the judge refused stays refused on
+ * the bench as well, for the reason above: the backend would then be running
+ * with no chain, and an unmuted DAC in front of a chain that writes zeros is
+ * not what the exception was written to allow.
  */
 bool hk_storage_audio_permitted(void);
 

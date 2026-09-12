@@ -20,9 +20,11 @@ bir testi geçmiş sayamaz, operatör kaydeder.
 > **Her ölçümden önce:** hoparlör terminallerinde ne olduğuna bak. Nova
 > sürücülerinin DC direnci ölçüldü ama empedans eğrisi ve `Fs` ölçülmedi (`G0`,
 > açık `Kritik`); yüksek geçiren filtre ile limiter yer tutucu tezgâh
-> profiliyle çalışıyor, ölçülmüş değerle değil (`F3`). Tweeter bağlıyken uzun
-> süre ses verme. Tezgâhta tek amfi ve tek woofer/tweeter çifti vardır; öteki üç
-> amfi sürücülere `G0`-`G2` o çiftte geçmeden bağlanmaz.
+> profiliyle çalışıyor, ölçülmüş değerle değil (`F3`). Amfinin kazanç strap'i
+> okunmadı (`C3`): **24 V'ta sürücüde dinleme yok**, tezgâh profili 12 V'ta
+> dinlendi ve amfi sabit kazançlıdır. Tweeter bağlıyken uzun süre ses verme.
+> Tezgâhta tek amfi ve tek woofer/tweeter çifti vardır; öteki üç amfi sürücülere
+> `G0`-`G2` o çiftte geçmeden bağlanmaz.
 
 ---
 
@@ -137,6 +139,26 @@ DAC'ın gürültü tabanı da aynı kazançla büyür.
 | 36 dB | 20 veya 26 dB'ye al. Fısıltı doğrudan 10–16 dB düşer. |
 | 20–26 dB | Kazanç sorun değil; gürültü başka yerden. |
 
+Bu ölçümün sonucu iki yere gider ve bir kapıyı tutar:
+
+- **Profile.** Şema 2'nin `amp_gain_db` alanı (20/26/32/36; 0 = okunmadı). Firmware
+  bu sayıyla hesap yapmaz, taşır — kaynağı adlandırmak için. Dört kartta aynı
+  değilse profil değil kartlar düzeltilir.
+- **24 V dinleme kapısına.** Amfi sabit kazançlıdır: çıkış, ray kırpana kadar
+  kazanç × giriştir. Firmware'in kendi notuna göre (`hk_airplay_output_i2s.c`,
+  tezgâh profili) 2026-09-08 dinlemesi 12 V tezgâh kaynağında yapıldı ve
+  kaydırıcının ~%80'inde amfi bitti, yani seviye rayla sınırlıydı, kazançla değil.
+  DSP'nin tavan ölçeklemesi 24 V'ta dijital tavanı yarıya indirir. Tezgâh 12 V
+  rayını kırpmadıysa bu sürücüdeki voltu da yarıya indirir; kırptıysa — yukarıdaki
+  not öyle diyor — 24 V rayı daha geç kırpar ve yarıya inen tavan sürücüye
+  tezgâhın duyduğundan fazlasını verebilir, aynı kaydırıcı konumunda iki katına
+  kadar ([[../04-acoustics/measurement-and-dsp-plan|DSP planı]]). Hangisinin
+  geçerli olduğunu, ve fazlasının ne kadar olduğunu, bu satır — `C3` — söyler.
+  Bu satır doldurulmadan **hiçbir sürücü 24 V'ta
+  dinlenmez**; dolduktan sonra da kademeli, tek çift, düşük seviye (`AGENTS.md`).
+  Tezgâh yapısı ürün beslemesinde (`CONFIG_HK_SUPPLY_MV` = 24000, tezgâh
+  referansı 12000) derlendiğinde açılışta bunu ayrıca söyler.
+
 **Sonuç:** _(yazılacak)_
 
 ---
@@ -183,6 +205,26 @@ ediyordu. "Ses yok" hem susturulmuş bir DAC hem de referanssız bir DAC demekti
 "gürültü var" hem toprak ilmeği hem de kazanç fazlalığı demekti. Tek tek
 ayırmadan hiçbiri çözülmüyordu.
 
+### Açık soru — o gün hangi yapı çaldı? (operatöre, 2026-09-12)
+
+Bu bölüm sesin geldiğini yazıyor ama **hangi çıkış arka ucunun** derli olduğunu
+yazmıyor. Kayıt bu konuda ikiye ayrılıyor: `firmware/README.md` o günkü tezgâh
+yapısının amfinin önünde DSP zinciriyle çaldığını söylüyor, firmware planı ise
+zincirin ürün kartında çaldığının tek kaydının `86f629c` commit mesajı olduğunu.
+İkisi de kanıt değil; bunu yalnız o gün tezgâhta olan söyleyebilir. 2026-09-12'den
+beri DSP zinciri ürünün çıkış arka ucudur ([[../07-decisions/ADR-0022-dsp-product-output-backend|ADR-0022]])
+ve açılış raporu arka ucu adıyla basar, yani bundan sonraki her dinleme kaydı bu
+satırı kendisi taşır.
+
+| soru | cevap |
+|---|---|
+| Hangi commit ve hangi `SDKCONFIG_DEFAULTS` parçaları (`sdkconfig.bench`? yerel parça?) | _(yazılacak)_ |
+| Açılış raporunun arka uç satırı ne diyordu (DSP zinciri mi, vendor düz geçişi mi) | _(yazılacak)_ |
+| Tezgâh profili uyarısı ("provisional", "not measured") basıldı mı | _(yazılacak)_ |
+| Tweeter'ın önünde kondansatör var mıydı, hangi değer | _(yazılacak)_ |
+
+**Sonuç:** _(yazılacak)_
+
 ---
 
 ## D — Yıldız topraklama
@@ -222,5 +264,9 @@ kaydedilmiş kurulumla ölçülür; ancak o zaman "geçti" yazılır.
 
 Bu ölçümler kapandıkça:
 
-- `C3` 36 dB gösterirse: kazanç düşürülür ve EQ bunun üstüne kurulur.
+- `C3` 36 dB gösterirse: kazanç düşürülür ve EQ bunun üstüne kurulur. Ne gösterirse
+  göstersin: `C3` dolmadan 24 V'ta sürücüde dinleme yok.
+- Ürün kartında DSP arka ucuyla uzun bir akış: `dsp block max ... us mean ... us of ... us`
+  satırları (üründe 60 s'de bir, tezgâh yapısında 10 s'de bir; sınır 7981 µs) ve
+  underrun sayacı ([[test-strategy|test stratejisi]], firmware ölçümleri).
 - Hepsi kapandıktan sonra `G1` (tek amfi kukla yükte; sonra dört amfi birden sürülürken `VIN` akım bütçesi) ve amfi çıkışı test noktalarının osiloskop kaydı.

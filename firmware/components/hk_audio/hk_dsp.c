@@ -4,8 +4,8 @@
 #include <math.h>
 #include <string.h>
 
-/** Sections that always run: the subsonic filter plus two per LR4 branch. */
-#define HK_DSP_PROTECTIVE_BIQUADS 5u
+/** Sections that always run: two in the subsonic filter, two per LR4 branch. */
+#define HK_DSP_PROTECTIVE_BIQUADS 6u
 
 /**
  * Push a state word that has decayed into the subnormal range to zero.
@@ -33,8 +33,8 @@
  * Flushing is safe in the way that matters for this module: FLT_MIN is far
  * below one LSB of the int16 output, so no sample can change value. It is done
  * once per block rather than per sample, which bounds the subnormal arithmetic
- * to at most one block per silence episode and costs 16 compares per 352
- * frames.
+ * to at most one block per silence episode and costs 19 compares per 352
+ * frames (six protective sections, three tonal ones, the supply detector).
  */
 static void flush_subnormal(float *value)
 {
@@ -49,17 +49,26 @@ static void flush_state(hk_biquad_state_t *state)
     flush_subnormal(&state->z2);
 }
 
-/** Every filter memory in the path, protective and tonal alike. */
+/**
+ * Every recursive memory in the path, protective and tonal alike.
+ *
+ * The supply detector is a one-pole recurrence too: during silence it decays
+ * geometrically towards zero and would sit in the subnormal range for the
+ * same reason the filters did. The delay rings are not flushed -- they hold
+ * signal samples, not a recurrence, and a subnormal that enters one leaves it
+ * a few samples later unchanged.
+ */
 static void flush_denormals(hk_dsp_t *dsp)
 {
-    flush_state(&dsp->hpf_state);
     for (size_t i = 0; i < 2u; i++) {
+        flush_state(&dsp->hpf_state.section[i]);
         flush_state(&dsp->low_state.section[i]);
         flush_state(&dsp->high_state.section[i]);
     }
     for (size_t b = 0; b < (size_t)HK_EQ_BANDS; b++) {
         flush_state(&dsp->eq.stage[b].state);
     }
+    flush_subnormal(&dsp->supply_limit.mean_sq);
 }
 
 /** Finite and strictly positive. NaN fails every comparison, so ask directly. */
@@ -107,19 +116,49 @@ static int16_t to_i16(float value)
     return (int16_t)((scaled >= 0.0f) ? (scaled + 0.5f) : (scaled - 0.5f));
 }
 
-/** Both poles of every protective section inside the unit circle. */
+/** Every protective section: finite coefficients, both poles inside the unit circle. */
 static bool chain_filters_stable(const hk_profile_chain_t *chain)
 {
-    if (!hk_biquad_stable(&chain->woofer_hpf)) {
-        return false;
-    }
     for (size_t i = 0; i < 2u; i++) {
-        if (!hk_biquad_stable(&chain->woofer_low.section[i]) ||
+        if (!hk_biquad_stable(&chain->woofer_hpf.section[i]) ||
+            !hk_biquad_stable(&chain->woofer_low.section[i]) ||
             !hk_biquad_stable(&chain->tweeter_high.section[i])) {
             return false;
         }
     }
     return true;
+}
+
+/**
+ * One sample through a branch's alignment ring.
+ *
+ * A ring of exactly @p delay entries: what comes out is what went in @p delay
+ * samples ago. Zero delay is a bypass and never touches the ring, so a
+ * profile with no correction costs nothing here.
+ */
+static float delay_step(float *ring, uint32_t *index, uint32_t delay, float sample)
+{
+    if (delay == 0u) {
+        return sample;
+    }
+    const float out = ring[*index];
+    ring[*index] = sample;
+    *index = (*index + 1u) % delay;
+    return out;
+}
+
+/** The delay pair the profile validator already refused; checked again here
+ * because a chain is a plain struct and could have come from anywhere. */
+static bool delays_valid(const hk_profile_chain_t *chain)
+{
+    if (chain->woofer_delay_samples > HK_PROFILE_DELAY_MAX_SAMPLES ||
+        chain->tweeter_delay_samples > HK_PROFILE_DELAY_MAX_SAMPLES) {
+        return false;
+    }
+    /* One branch relative to the other. Both delayed is a latency wearing a
+     * correction's name, and it would also make the latency paragraph in
+     * hk_dsp.h false. */
+    return chain->woofer_delay_samples == 0u || chain->tweeter_delay_samples == 0u;
 }
 
 static bool fail(hk_dsp_t *dsp, hk_dsp_refusal_t why)
@@ -159,14 +198,24 @@ bool hk_dsp_init(hk_dsp_t *dsp, const hk_profile_chain_t *chain,
     if (!unit_range(chain->woofer_gain) || !unit_range(chain->tweeter_gain)) {
         return fail(dsp, HK_DSP_BAD_GAIN);
     }
+    /* Exactly +1 or -1: a polarity is not a gain, and a sign of 0.5 or NaN
+     * would be a level change hiding in a field that is only allowed to flip. */
+    if (chain->tweeter_sign != 1.0f && chain->tweeter_sign != -1.0f) {
+        return fail(dsp, HK_DSP_BAD_GAIN);
+    }
+    if (!delays_valid(chain)) {
+        return fail(dsp, HK_DSP_BAD_DELAY);
+    }
 
     /* A chain built at another sample rate is not merely mistuned. Its
-     * limiters' release and hold times were converted to SAMPLE COUNTS using
-     * that other rate, so running it here would give recovery times wrong by
-     * the ratio -- silently, since nothing downstream can tell. */
+     * limiters' release and hold times, and the supply detector's window,
+     * were converted to SAMPLE COUNTS using that other rate, so running it
+     * here would give recovery times wrong by the ratio -- silently, since
+     * nothing downstream can tell. */
     const uint32_t rate = (uint32_t)sample_rate_hz;
     if (chain->woofer_limit.sample_rate != rate ||
-        chain->tweeter_limit.sample_rate != rate) {
+        chain->tweeter_limit.sample_rate != rate ||
+        chain->supply_limit.sample_rate != rate) {
         return fail(dsp, HK_DSP_BAD_RATE);
     }
 
@@ -176,6 +225,9 @@ bool hk_dsp_init(hk_dsp_t *dsp, const hk_profile_chain_t *chain,
     if (!hk_limiter_init(&dsp->woofer_limit, &dsp->chain.woofer_limit) ||
         !hk_limiter_init(&dsp->tweeter_limit, &dsp->chain.tweeter_limit)) {
         return fail(dsp, HK_DSP_BAD_LIMITER);
+    }
+    if (!hk_supply_limiter_init(&dsp->supply_limit, &dsp->chain.supply_limit)) {
+        return fail(dsp, HK_DSP_BAD_SUPPLY);
     }
 
     /* Tonal settings come last and cannot change the verdict above. NULL is
@@ -253,13 +305,19 @@ void hk_dsp_reset(hk_dsp_t *dsp)
     memset(&dsp->hpf_state, 0, sizeof(dsp->hpf_state));
     memset(&dsp->low_state, 0, sizeof(dsp->low_state));
     memset(&dsp->high_state, 0, sizeof(dsp->high_state));
+    memset(dsp->woofer_delay, 0, sizeof(dsp->woofer_delay));
+    memset(dsp->tweeter_delay, 0, sizeof(dsp->tweeter_delay));
+    dsp->woofer_delay_index = 0u;
+    dsp->tweeter_delay_index = 0u;
     hk_eq_reset(&dsp->eq);
 
     /* Re-init rather than poking gain back to 1: it re-derives release_coeff
      * and hold_samples from the stored config, so a reset cannot leave a
-     * limiter half-configured. */
+     * limiter half-configured. The supply stage keeps its config and coeff
+     * and only forgets the signal, which its own reset does. */
     (void)hk_limiter_init(&dsp->woofer_limit, &dsp->chain.woofer_limit);
     (void)hk_limiter_init(&dsp->tweeter_limit, &dsp->chain.tweeter_limit);
+    hk_supply_limiter_reset(&dsp->supply_limit);
 }
 
 bool hk_dsp_process(hk_dsp_t *dsp, int16_t *stereo, size_t frames)
@@ -268,20 +326,25 @@ bool hk_dsp_process(hk_dsp_t *dsp, int16_t *stereo, size_t frames)
         return false;
     }
 
-    /* Both conditions checked once per block, not once per sample.
+    /* Every condition checked once per block, not once per sample.
      *
-     * The limiter check is not redundant with `ready`. Below, the inner loop
-     * calls hk_limiter_step() directly rather than hk_limiter_process(),
-     * because the branches are interleaved in one buffer and there is no
-     * contiguous run to hand a block function. hk_limiter_process() refuses
-     * when a limiter is not ready; hk_limiter_step() returns a gain of 1.0 --
-     * which is exactly the full-level passthrough this whole module exists to
-     * prevent. So the refusal that the block function would have made is made
-     * here instead, at the same granularity, before a single sample moves. */
-    if (!dsp->ready || !dsp->woofer_limit.ready || !dsp->tweeter_limit.ready) {
+     * The limiter checks are not redundant with `ready`. Below, the inner
+     * loop calls hk_limiter_step() and hk_supply_limiter_step() directly
+     * rather than a block function, because the branches are interleaved in
+     * one buffer and there is no contiguous run to hand one. A block function
+     * refuses when its stage is not ready; the step functions return a gain of
+     * 1.0 -- which is exactly the full-level passthrough this whole module
+     * exists to prevent. So the refusal that the block function would have
+     * made is made here instead, at the same granularity, before a single
+     * sample moves. */
+    if (!dsp->ready || !dsp->woofer_limit.ready || !dsp->tweeter_limit.ready ||
+        !dsp->supply_limit.ready) {
         memset(stereo, 0, frames * 2u * sizeof(int16_t));
         return false;
     }
+
+    /* The supply stage's one square root per block, before a sample moves. */
+    hk_supply_limiter_block_begin(&dsp->supply_limit, frames);
 
     for (size_t i = 0; i < frames; i++) {
         const size_t left = 2u * i;
@@ -294,16 +357,32 @@ bool hk_dsp_process(hk_dsp_t *dsp, int16_t *stereo, size_t frames)
          *    boost still has to get past the subsonic filter. */
         mono = hk_eq_process_one(&dsp->eq, mono);
 
-        /* 3. Subsonic: content the woofer would turn into excursion, not sound. */
-        mono = hk_biquad_process_one(&dsp->chain.woofer_hpf, &dsp->hpf_state, mono);
+        /* 3. Subsonic: content the woofer would turn into excursion, not
+         *    sound. Fourth order, two sections. */
+        mono = hk_lr4_process_one(&dsp->chain.woofer_hpf, &dsp->hpf_state, mono);
 
-        /* 4. The split. In phase -- neither branch is inverted (hk_biquad.h). */
+        /* 4. The split. In phase -- neither branch is inverted here (hk_biquad.h). */
         float woofer = hk_lr4_process_one(&dsp->chain.woofer_low, &dsp->low_state, mono);
         float tweeter = hk_lr4_process_one(&dsp->chain.tweeter_high, &dsp->high_state, mono);
 
         /* 5. Level-match the two drivers. */
         woofer *= dsp->chain.woofer_gain;
         tweeter *= dsp->chain.tweeter_gain;
+
+        /* 5b. Acoustic-centre alignment: at most one of these is not a bypass. */
+        woofer = delay_step(dsp->woofer_delay, &dsp->woofer_delay_index,
+                            dsp->chain.woofer_delay_samples, woofer);
+        tweeter = delay_step(dsp->tweeter_delay, &dsp->tweeter_delay_index,
+                             dsp->chain.tweeter_delay_samples, tweeter);
+
+        /* 5c. Polarity, as the G2 sum measurement decided it. */
+        tweeter *= dsp->chain.tweeter_sign;
+
+        /* 5d. The adapter budget: one gain over both branches, so the
+         *     crossover sum keeps its shape while the rail is spared. */
+        const float supply_gain = hk_supply_limiter_step(&dsp->supply_limit, woofer, tweeter);
+        woofer *= supply_gain;
+        tweeter *= supply_gain;
 
         /* 6. Protection, last. |out| <= ceiling is a property of this multiply
          *    alone, so no earlier stage -- EQ included -- can reach past it. */
@@ -341,6 +420,8 @@ const char *hk_dsp_refusal_name(hk_dsp_refusal_t refusal)
     case HK_DSP_BAD_FILTER:  return "filter";
     case HK_DSP_BAD_GAIN:    return "gain";
     case HK_DSP_BAD_LIMITER: return "limiter";
+    case HK_DSP_BAD_DELAY:   return "delay";
+    case HK_DSP_BAD_SUPPLY:  return "supply";
     default:                 return "unknown";
     }
 }

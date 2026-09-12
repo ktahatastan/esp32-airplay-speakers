@@ -1,7 +1,7 @@
 ---
 status: active
 owner: orchestrator
-updated: 2026-09-08
+updated: 2026-09-12
 tags: [adr, decisions, moc]
 ---
 
@@ -24,3 +24,4 @@ Durumlar: `proposed`, `accepted`, `superseded`, `rejected`. Boş numaralar (0003
 - [[ADR-0016-simultaneous-dual-transport|ADR-0016 — İki taşıma aynı anda]]
 - [[ADR-0020-dc-adapter-power|ADR-0020 — 24 V DC adaptörle besleme]]
 - [[ADR-0021-single-cabinet|ADR-0021 — Tek kabin, sekiz sürücü, tek program]]
+- [[ADR-0022-dsp-product-output-backend|ADR-0022 — DSP zinciri ürünün çıkış arka ucudur]]

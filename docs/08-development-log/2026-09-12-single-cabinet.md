@@ -61,6 +61,6 @@ Doğrulama: üç yapı derleniyor; host testleri 540 620 kontrol, 0 hata (sıral
 
 - `G0` hâlâ açık: empedans eğrisi ve `Fs`. Crossover köşesi, limiter tavanı ve kabin hacmi bunu bekliyor.
 - `G1`'e giren yeni satır: amfinin kendi açılış/kapanış pop'u, DAC susturuluyken, adaptör takılıp çekilirken; ve kapanışta `XSMT`'nin `BCLK` durmadan önce düştüğünün kaydı (`TP6` ↔ `TP33`).
-- Ürün yapısı `CONFIG_HK_AIRPLAY_OUTPUT_I2S` ile derleniyor, DSP zinciri yalnız tezgâh yapısında. Ürün profili `G0` olmadan sesi zaten reddettiği için bugün bir güvenlik açığı değil; ama `G0` kapandığında ürün varsayılanının DSP arka ucuna çekilmesi gerekir. Karar sahibindir.
+- ~~Ürün yapısı `CONFIG_HK_AIRPLAY_OUTPUT_I2S` ile derleniyor, DSP zinciri yalnız tezgâh yapısında. Ürün profili `G0` olmadan sesi zaten reddettiği için bugün bir güvenlik açığı değil; ama `G0` kapandığında ürün varsayılanının DSP arka ucuna çekilmesi gerekir. Karar sahibindir.~~ (aynı gün karar verildi: [[2026-09-12-dsp-product-output|günlük]], [[../07-decisions/ADR-0022-dsp-product-output-backend|ADR-0022]])
 - KiCad olan bir makinede `generate_merzarkabul.py --validate` ve `check_generated_kicad.py --record`.
 - Kabin mekaniği: sahibi ölçüleri ve fotoğrafları verdiğinde parametrik, 3D yazıcıya uygun bir kabin çizimi (`hardware/cabinet/`).

@@ -31,17 +31,23 @@
 #   idf.py -C firmware -B firmware/build-bench \
 #     -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.bench" \
 #     -D SDKCONFIG="$PWD/firmware/build-bench/sdkconfig" build
+#   grep -qx CONFIG_HK_AIRPLAY_OUTPUT_DSP=y firmware/build-bench/sdkconfig
+# The grep is the one CI runs on a fresh checkout. It matters more on a bench
+# machine: the first symbol below makes the vendored passthrough selectable, so
+# a generated sdkconfig in build-bench that once named it is honoured, not
+# corrected -- unlike the product's, where that member is invisible.
 CONFIG_HK_BENCH_AUDIO_WITHOUT_PROFILE=y
 
 # Lets the DSP chain run without a manufactured calibration. Two of its numbers
-# are measured (the DC resistances); the rest are reasoned. See the Kconfig help.
+# are measured (the DC resistances); the rest are reasoned, and since schema 2
+# that includes a supply-budget placeholder G1 S7 replaces. See the Kconfig help.
 CONFIG_HK_BENCH_PROVISIONAL_PROFILE=y
 
-# The DSP output backend: mono downmix, EQ, subsonic, LR4 crossover into the two
-# DAC channels, each paralleled into four amplifiers, and a per-branch limiter
-# last. Left = woofer, right = tweeter, which is the bi-amp mapping ADR-0002
-# fixed.
-CONFIG_HK_AIRPLAY_OUTPUT_DSP=y
+# No output backend is named here. The DSP backend is the product default
+# (ADR-0022) and this fragment inherits it; all it does is lift the gate and
+# supply the provisional profile above. It used to select
+# CONFIG_HK_AIRPLAY_OUTPUT_DSP=y itself, which read as though the bench were
+# the only DSP build.
 
 # NOT set: the bench board's crossed leads were fixed in the harness instead.
 # The switch stays in the tree because the failure it catches is real and was

@@ -2,7 +2,7 @@
 status: active
 owner: firmware-engineer
 reviewers: [orchestrator, qa-engineer]
-updated: 2026-09-08
+updated: 2026-09-12
 tags: [firmware, plan, roadmap, esp32]
 ---
 
@@ -25,6 +25,7 @@ Bu belge firmware'in **ne olduğunu** ve **hangi sırayla yapıldığını** bir
 | Dağıtım | SemVer tag -> GitHub Releases -> imzalı A/B OTA | [[../07-decisions/ADR-0008-github-releases-ota\|ADR-0008]] |
 | Besleme | 24 V / 2,9 A DC adaptör, barrel jak; `CONFIG_HK_SUPPLY_MV` varsayılan 24000 (8-26 V), tezgâh referansı `HK_BENCH_REFERENCE_SUPPLY_MV` 12000 | [[../07-decisions/ADR-0020-dc-adapter-power\|ADR-0020]] |
 | AirPlay yığını | `rbouteiller/airplay-esp32`, `38027441ff43`'e vendor edildi | [[../07-decisions/ADR-0007-airplay-stack\|ADR-0007]], [[../07-decisions/ADR-0013-airplay-integration-shape\|ADR-0013]] |
+| Çıkış arka ucu | DSP zinciri (`hk_airplay/output/hk_airplay_output_i2s.c`) ürün ve release imajında; vendor edilen düz geçiş yalnız geliştirme kartında ve tezgâh istisnasında, release onu reddeder; S/PDIF yalnız geliştirme kartında | [[../07-decisions/ADR-0022-dsp-product-output-backend\|ADR-0022]] |
 
 `F1` spike'ının araştırma yarısı tamamlandı, `ADR-0007` kabul edildi ve yığın tek kartta gerçekten çalıştı; ölçüm yarısından geriye akış sırasındaki kaynak ölçümü kaldı. Yığının lisansı **ticari olmayan** kullanımla sınırlıdır ve bu tüm projeyi bağlar.
 
@@ -99,7 +100,7 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
 - **Önkoşul:** F1 kabul. Donanım tarafında `G1` (amfi + dummy-load) geçmiş olmalı.
 - **Not (2026-09-05):** geliştirme kartında bir **tezgâh** çıkışı var — vendor edilen yığının S/PDIF çıkışı `GPIO6`'dan, üç pasif parçayla operatörün kendi DAC'ına. Bu F2 değildir ve hiçbir kapıya dokunmaz: o gün ürünün I2S/PCM5102A yolu susturuluydu ve dönüşümü başka bir cihaz yapıyordu.
 - **Not (2026-09-08):** ürün kartında zincir ilk kez çaldı — AirPlay → I²S → PCM5102A → XH-A232 → ses, mono ve temiz ([[../06-testing/bench-measurement-order#KAPANDI — ses zinciri uçtan uca çalışıyor (2026-09-08)|tezgâh kaydı]]). Bu bir dinleme kaydıdır; aşağıdaki ölçütlerin osiloskop ve dummy-load yarısı açık.
-- **Çıktı:** I2S sürücü, PCM5102A 3-wire yapılandırma, mono programın iki DSP yoluna ayrılması, test sinyali üreteci, boot/mute sıralaması.
+- **Çıktı:** I2S sürücü, PCM5102A 3-wire yapılandırma, mono programın iki DSP yoluna ayrılması (yazıldı: `hk_dsp`, host'ta testli — ölçüm yarısı aşağıda açık), test sinyali üreteci, boot/mute sıralaması.
 - **Kabul ölçütü:**
   - I2S test noktalarında beklenen saatler osiloskopla doğrulandı.
   - DAC çıkış test noktalarında iki kanal bağımsız sürülebiliyor; kanal eşlemesi (sol=woofer, sağ=tweeter) kanıtlandı.
@@ -110,19 +111,21 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
 
 ### F3 — DSP koruma zinciri
 
-- **Önkoşul:** F2. Donanım tarafında `G0` (sürücü empedansı) **kapanmış** olmalı.
-- **Çıktı:** woofer HPF, aktif crossover, kanal gain/delay, RMS ve tepe limiter, clipping davranışı, `factory_cal` profil formatı.
+- **Önkoşul:** F2. Kodun kendisi için donanım önkoşulu yok: zincir üründe derlidir ve profil yokken susar. **Sayılar** için önkoşul `G0`'dır — hiçbir köşe ya da tavan `G0` (sürücü empedansı) kapanmadan `factory_cal`'a yazılmaz; o güne kadar tek dinleme yolu tezgâh yapısıdır ve sürücüde dinleme kademeli ve düşük seviyededir (`AGENTS.md`).
+- **Çıktı:** woofer HPF, aktif crossover, kanal gain/delay/polarite, besleme bütçesi katı ve tepe limiter, clipping davranışı, `factory_cal` profil formatı. Sürücü başına termal (RMS) limiter bu aşamanın açık maddesidir: eşiği ve zaman sabiti `G2`'nin sürücü ölçümünü bekler.
 - **Durum (2026-09-08):** zincir çalışıyor, sayılar bekliyor. `hk_dsp` (mono toplam, kullanıcı EQ'su, subsonic yüksek-geçiren, LR4 ayrımı, dal başına kazanç ve limiter), `hk_biquad` (LR4, DF2T), `hk_limiter` (attack'sız tepe limiter) ve `hk_profile` (profilin kendisi, doğrulaması, zincire dönüşmesi) host'ta testli; tezgâh profili yer tutucu köşelerle (55 Hz subsonic, 2800 Hz crossover) tezgâh yapısına derleniyor ve her açılışta ölçülmediğini söylüyor; zincirin ürün kartında çaldığının tek kaydı `86f629c` commit mesajıdır, `docs/06-testing/` altında tezgâh kaydı yoktur. Hiçbirinde ölçülmüş sürücü değeri yok; `G0` kapandığında yapılacak iş bir struct doldurmaktır. Zincir bitmiş değildir: bilinen boşluklar sonraya bırakıldı. Ayrıntı: [[../04-acoustics/measurement-and-dsp-plan#Profil: biçim yazıldı, sayılar bekliyor|ölçüm ve DSP planı]].
+- **Durum (2026-09-12):** zincir artık **ürünün çıkış arka ucudur** ([[../07-decisions/ADR-0022-dsp-product-output-backend|ADR-0022]]): ürün ve release imajı DSP arka ucunu derler, vendor edilen düz geçiş yalnız geliştirme kartında ve tezgâh istisnasında seçilebilir. Aynı gün kodda kapananlar: subsonic yüksek-geçiren dördüncü derece (Butterworth, köşede −3 dB, 24 dB/oktav); limiter release/hold dal başına; hizalama gecikmesi (tek dalda, en çok 64 örnek) ve tweeter polaritesi alanları; besleme bütçesi katı (`supply_budget_sq`, `supply_window_ms` — iki dalın toplamı üzerinde ortalama, tepe limiter'lardan önce ortak kazanç); profilin geçerliliği açılışta `hk_main` tarafından `hk_profile_load()` ile yargılanıyor ve `hk_storage` kararı ses izni için istiyor; ses görevinde blok süresi ve besleme dedektörü telemetrisi (`dsp block max ... us mean ... us of ... us` satırı; üründe 60 s'de bir, tezgâh yapısında 10 s'de bir). Şema 2'dir. **Her sayı hâlâ yer tutucudur** ve profil yokken ürün susar; tweeter DC direnci kayıtta 3,5 Ω, firmware'in tezgâh profili 3,7 Ω taşıyordu, kayıt kazandı ve operatörün teyidi bekleniyor. Amfinin kazanç strap'i okunmadı (`C3`, [[../06-testing/bench-measurement-order|tezgâh sırası]]); okunmadan sürücüde 24 V dinleme yok. F3 açık kalır: kapatan şey `G0`/`G1`/`G2` sayılarıdır, kod değil.
 - **Kabul ölçütü:**
   - Filtre katsayıları ölçülmüş sürücü empedansından türetildi; tahmin yok.
   - Tweeter yolu HPF'i ölçümle doğrulandı; `C_SAFE` değeri G2 raporundan geldi.
-  - Tavan ölçüldüğü besleme gerilimiyle saklanır ve yapılandırılan beslemeye (`CONFIG_HK_SUPPLY_MV`, varsayılan 24 V) ölçeklenir. Firmware tarafı hazır: `hk_profile_ceiling_at()` bunu yapıyor ve iki gerilimde inşa edilen zincirde yalnız tavanlar değişiyor. Profil tezgâhta 12 V referansta (`HK_BENCH_REFERENCE_SUPPLY_MV`) ölçülür ve 24 V'a ölçeklenir. Limiter 24 V adaptör beslemesinde dummy-load üzerinde doğrulanacak; tavan, dört amfi birden sürülürken 2,9 A adaptör bütçesinden türetilir ve `VIN` çökmesiyle sınanır (`G1` satırı). Ölçüm hâlâ gerekli.
+  - Tepe tavanları ölçüldükleri besleme gerilimiyle saklanır ve yapılandırılan beslemeye (`CONFIG_HK_SUPPLY_MV`, varsayılan 24 V) yalnız **aşağı** ölçeklenir: `hk_profile_ceiling_at()` çarpanı `min(1, referans / besleme)`'dir, referansın altındaki bir besleme tavanı yükseltmez. Aşağı ölçekleme dijital tavanı yarıya indirir; **sürücüdeki voltun garantisi değildir**, çünkü TPA3110D2 sabit kazançlıdır — çıkış, ray kırpana kadar kazanç × giriştir (SLOS528F, Tablo 3), besleme ile ölçeklenmez. Tezgâh profili 12 V'ta (`HK_BENCH_REFERENCE_SUPPLY_MV`) dinlendi: tezgâh 12 V rayını kırpmadıysa yarıya inen tavan sürücüdeki voltu da yarıya indirir; kırptıysa 24 V rayı daha geç kırpar ve yarıya inen tavan sürücüye tezgâhın duyduğundan fazlasını verebilir (aynı kaydırıcı konumunda iki katına kadar) — hangisinin geçerli olduğunu `C3` (amfinin kazanç strap'i) söyler. `G2` tavanı kullanılacağı beslemede kaydeder ve `C3` ondan önce okunur.
+  - 2,9 A adaptör bütçesi tepe tavanlarında değil, kendi alanında taşınır: `supply_budget_sq` ve `supply_window_ms`, `G1` S7'de dört amfi birlikte **4 Ω sınıfı** dummy-load'a sürülürken adaptörün 2,9 A noktasında ölçülür (`VIN` çökmesi ve dedektörün log'daki en yüksek ortalama-karesi), ölçeklenmeden saklanır ve `VIN` çökmesiyle sınanır (`G1` satırı). Tepe tavanları `G2`'nin sürücü koruma sayılarıdır, bütçenin altında kalır ve onu taşımaz. Ölçüm hâlâ gerekli; tezgâh yer tutucusu (1,0) bir tam ölçekli dalın ortalama-karesidir — doğrulayıcı sınırının (2,0) yarısı — ve tezgâh kazançlarıyla (0,25 / 0,18, en çok ≈ 0,095) ancak kullanıcı EQ'su yükseltirse devreye girer; açılışta bunu söyler.
   - Kullanıcı reseti koruma profilini silmiyor (otomatik test).
-  - DSP zinciri ses görevinde deterministik süre içinde bitiyor.
+  - DSP zinciri ses görevinde deterministik süre içinde bitiyor. Kanıt: ürün kartında en az 30 dakikalık bir akış boyunca ses görevinin bastığı `dsp block max ... us mean ... us of ... us` satırı (üründe 60 s'de bir, tezgâh yapısında 10 s'de bir) — `max`, blok süresi 7981 µs'nin (log satırındaki `of ... us`; ölçülen süre 352 karelik bloğa normalize edilir, kaynak hızından bağımsız) altında ve alıcının underrun sayacı sıfır (`under=0`); operatör kaydı `docs/06-testing/` altına girer ([[../06-testing/test-strategy|test stratejisi]]). Aracı kodda; sayı yok.
 - **Gate:** `G2` zorunlu.
 
-> [!danger] G0 kapanmadan F3'e başlanmaz
-> Ölçülmemiş empedansla türetilen bir crossover veya limiter, tweeter'ı kalıcı olarak bozabilir.
+> [!danger] G0 kapanmadan hiçbir köşe veya tavan yazılmaz
+> Ölçülmemiş empedansla türetilen bir crossover veya limiter, tweeter'ı kalıcı olarak bozabilir. Kural kodun var olmasını değil sayının yazılmasını yasaklar: zincir üründe derlidir ve `factory_cal`'da geçerli bir profil yokken ürün **susar** (ADR-0022); tek dinleme yolu tezgâh yapısıdır, sürücüde dinleme kademeli ve düşük seviyededir, ve amfi kazancı (`C3`) okunmadan 24 V'ta sürücüde dinleme yoktur.
 
 ### F4 — Ağ ve provisioning
 
@@ -184,7 +187,7 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
 ### F8 — Dayanıklılık
 
 - **Önkoşul:** F1'den F7'ye kadar tümü. Donanım tarafında `G0`-`G2` geçmiş kabin.
-- **Çıktı:** 24 saat soak, Wi-Fi kopması ve yeniden bağlanma, besleme kaybında pop'suz kapanış.
+- **Çıktı:** 24 saat soak, Wi-Fi kopması ve yeniden bağlanma, besleme kaybında kapanış kaydı: amfinin kendi geçişi kaydedilir ve kararlaştırılmış bir seviyeye göre yargılanır — amfi susturması olmadığı için firmware "pop yok" vaat edemez ([[../07-decisions/ADR-0011-audio-side-gpio-reservation|ADR-0011]]; adaylar [[../02-hardware/circuit-and-wiring-plan#3.4 Kanal ve sürücü kuralları|kablolama planı §3.4]]).
 - **Kabul ölçütü:** `G8` soak testi geçti.
 - **Gate:** `G8`.
 
@@ -218,8 +221,9 @@ firmware/
     hk_pins/           GPIO ataması; kısıtları derleyici zorlar             [F0 · var]
     hk_identity/       MAC'ten türetilen tüm yüzey adları                   [F0 · var]
     hk_version/        SemVer ayrıştırma ve OTA güncelleme kararı           [F0 · var]
-    hk_audio/          I2S, DSP, limiter                                    [F2-F3]
-    hk_airplay/        rbouteiller/airplay-esp32 sarmalayıcısı              [F1 · vendor]
+    hk_audio/          susturma sırası, DSP zinciri, profil, limiter (saf, testli) [F2-F3 · var]
+    hk_airplay/        rbouteiller/airplay-esp32 sarmalayıcısı; S/PDIF (geliştirme kartı) ve düz geçiş (yalnız geliştirme kartı / tezgâh istisnası) vendor/audio/ altında [F1 · vendor]
+      output/          DSP zinciri, ürünün çıkış arka ucu (`hk_airplay_output_i2s.c`, vendor `audio_output.c`'nin gölgesi) [F1-F3 · var]
     hk_provision/      provisioning politikası (saf, testli)               [F4 · var]
     hk_network/        Wi-Fi, mDNS, provisioning transport                  [F4 · var]
     hk_button/         buton durum makinesi (saf, testli)                  [F5 · var]
@@ -231,7 +235,6 @@ firmware/
     hk_gate/           güncelleme şimdi başlayabilir mi (saf, testli)       [F7 · var]
     hk_ota/            inen görüntü manifest ile uyuşuyor mu + istemci      [F7 · var]
     hk_health/         ilk açılış imajı onaylanmalı mı (saf, testli)        [F7 · var]
-    hk_audio/          susturma sırası, limiter, biquad/LR4 (saf, testli)   [F2-F3 · var]
     hk_sched/          güncelleme zamanlaması ve backoff (saf, testli)      [F7 · var]
     hk_settings/       kullanıcı ayarı tablosu, varsayılan ve aralık        [F0 · var]
   test/                host tarafı birim testleri                           [F0 · var]

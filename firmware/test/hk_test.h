@@ -75,6 +75,7 @@ void test_sched(void);
 void test_settings(void);
 void test_portal(void);
 void test_profile(void);
+void test_supply_limiter(void);
 void test_dsp(void);
 #ifdef HK_HAVE_CJSON
 void test_manifest_json(void);

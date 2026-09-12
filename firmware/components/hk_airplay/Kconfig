@@ -7,11 +7,12 @@ config HK_AIRPLAY
         Compile and link the AirPlay receiver vendored under
         components/hk_airplay/vendor at the commit ADR-0007 pins.
 
-        Off by default. The receiver drives I2S, and on the product board that
-        is not allowed until the driver-protection gates (G0/G2) have produced
-        a calibration profile -- hk_airplay_start() refuses in that case anyway,
-        but leaving the code out entirely keeps the product image and its size
-        budget unchanged until the decision is actually made.
+        On in sdkconfig.defaults since 2026-09-08; the Kconfig default stays n
+        so a build that does not name it is silent. The receiver drives I2S,
+        and on the product board that is not allowed until the driver-protection
+        gates (G0/G2) have produced a calibration profile -- hk_airplay_start()
+        refuses in that case, so compiling the receiver in does not open the
+        audio path. It only decides what the image carries.
 
         The upstream licence is non-commercial. Enabling this binds the whole
         firmware to those terms; see ADR-0007.
@@ -51,33 +52,63 @@ config I2S_GND_IO
         This design powers the DAC from its own 5 V buck (buck B, ADR-0020),
         so both are -1.
 
+# Sending the product back to the passthrough is TWO lines here, not one: the
+# `default` below AND the passthrough member's `depends on`. Flipping the
+# default alone changes nothing on a product build, because Kconfig skips a
+# default it cannot see and takes the first visible member -- which is the DSP
+# backend. CI is the alarm either way: firmware-ci.yml and release.yml both
+# assert CONFIG_HK_AIRPLAY_OUTPUT_DSP=y in the generated sdkconfig (ADR-0022).
 choice HK_AIRPLAY_OUTPUT
     prompt "Where the receiver sends audio"
-    default HK_AIRPLAY_OUTPUT_I2S
+    default HK_AIRPLAY_OUTPUT_DSP
 
 config HK_AIRPLAY_OUTPUT_I2S
-    bool "I2S to the PCM5102A (the product's output, ADR-0002)"
+    bool "I2S to the PCM5102A with NO DSP (upstream's stage; devkit and bench only)"
+    depends on HK_BOARD_DEVKIT_N8R2 || HK_BENCH_AUDIO_WITHOUT_PROFILE
+    help
+        Upstream's own I2S output stage, vendor/audio/audio_output.c, exactly
+        as vendored: no crossover, no protective high-pass, no limiter. It
+        stays in the tree because it is the file the DSP backend below is
+        reviewed against, and it stays selectable because it is the one way
+        to take this project's code out of the audio path on a bench: when a
+        stream misbehaves through the shadow, building upstream's stage in
+        its place says whether the fault is ours.
+
+        It is also the one setting that puts FULL-BAND PROGRAMME ON THE TWEETER
+        BRANCH: the DAC's right line is paralleled into four amplifiers whose
+        right outputs drive the four tweeters (ADR-0002), and nothing in this
+        stage keeps bass out of them. So it can only be chosen on the bring-up
+        devkit, which has no DAC and no amplifier on those pins, or on a
+        bench-exception build that has already declared it runs without driver
+        protection. A product build cannot select it; a release refuses it
+        (release.yml); and until ADR-0022 it was the product's default.
 
 config HK_AIRPLAY_OUTPUT_DSP
     bool "I2S to the PCM5102A, through the crossover and driver protection"
     help
         The same I2S output as above, with this project's DSP in it: the mono
-        downmix, the LR4 crossover, the woofer's subsonic high-pass and the two
-        limiters. Left carries the WOOFER and right the TWEETER (ADR-0002), and
-        each DAC line is paralleled into the matching input of all four
-        amplifiers. This is not a stereo pair, and selecting it on a box wired
-        as one sends a low-passed signal to one driver and a high-passed signal
-        to the other.
+        downmix, the user EQ, the woofer's fourth-order subsonic high-pass, the
+        LR4 crossover, the branch gains, the supply-budget stage that holds the
+        two branches together inside the adapter's average-power budget, and a
+        peak limiter per branch, last. Left carries the WOOFER and right the
+        TWEETER (ADR-0002), and each DAC line is paralleled into the matching
+        input of all four amplifiers. This is not a stereo pair, and selecting
+        it on a box wired as one sends a low-passed signal to one driver and a
+        high-passed signal to the other.
 
-        OFF BY DEFAULT, and it needs a calibration profile to do anything.
-        The crossover corner, the subsonic corner, the branch gains and both
-        limiter ceilings all come from a stored `factory_cal` profile produced
-        at G0 and G2 (hk_profile.h). WITHOUT ONE THIS BACKEND OUTPUTS DIGITAL
-        ZERO: the receiver runs, mDNS advertises, I2S is clocked, and nothing is
-        audible. That is deliberate. The alternative -- passing audio through
-        with the crossover bypassed -- would put full-range programme with no
-        protective high-pass and no ceiling on a tweeter whose Fs has not been
-        measured, which is the one failure the profile exists to prevent.
+        THE PRODUCT'S OUTPUT (ADR-0022). It needs a calibration profile to do
+        anything. The crossover corner, the subsonic corner, the branch gains,
+        the limiter ceilings and timings, the alignment delay, the tweeter
+        polarity and the supply budget all come from a stored `factory_cal`
+        profile produced at G0, G1 and G2 (hk_profile.h). WITHOUT ONE THIS
+        BACKEND OUTPUTS DIGITAL ZERO: the receiver runs, mDNS advertises, I2S
+        is clocked, and nothing is audible. That is deliberate. The
+        alternative -- passing audio through with the crossover bypassed --
+        would put full-range programme with no protective high-pass and no
+        ceiling on a tweeter whose Fs has not been measured, which is the one
+        failure the profile exists to prevent. On a product board without a
+        profile hk_airplay_start() refuses before this backend is even
+        initialised, so the zero path is a second wall, not the first.
 
         So a silent speaker on this setting is the setting working. Check the
         boot log: the backend says plainly which of the two it is doing.
@@ -86,7 +117,9 @@ config HK_AIRPLAY_OUTPUT_DSP
         vendor/audio/audio_output.c -- same DMA geometry, same playout cursor,
         same latency reporting, same task priority -- because ADR-0013 forbids
         editing the vendored tree. The two are kept in step by review, enforced
-        by scripts/check_vendor_output_shadow.py.
+        by scripts/check_vendor_output_shadow.py, which hashes the VENDORED
+        file: editing the shadow never needs `--record`, an upstream copy that
+        changes audio_output.c does.
 
 config HK_OUTPUT_SWAP_BRANCHES
     bool "The woofer is on the RIGHT analogue channel, not the left"

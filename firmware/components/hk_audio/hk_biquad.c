@@ -75,7 +75,14 @@ bool hk_biquad_stable(const hk_biquad_coeffs_t *coeffs)
     if (coeffs == NULL) {
         return false;
     }
-    if (isnan(coeffs->a1) || isnan(coeffs->a2)) {
+    /* All five, not just the poles. This used to test isnan on a1 and a2
+     * alone, which let a NaN or infinite b0 through: Jury's criterion is a
+     * statement about the denominator and says nothing about the numerator,
+     * so a section whose feed-forward path was garbage counted as stable,
+     * ran, and turned every sample into NaN that the output stage clamped to
+     * zero -- silence with no refusal to name it. */
+    if (!isfinite(coeffs->b0) || !isfinite(coeffs->b1) || !isfinite(coeffs->b2) ||
+        !isfinite(coeffs->a1) || !isfinite(coeffs->a2)) {
         return false;
     }
     /* Jury's criterion for a second-order section: both poles inside the unit
@@ -130,6 +137,31 @@ bool hk_lr4_highpass(hk_lr4_coeffs_t *filter, float fc_hz, float fs_hz)
         return false;
     }
     filter->section[1] = filter->section[0];
+    return true;
+}
+
+bool hk_butterworth4_highpass(hk_lr4_coeffs_t *filter, float fc_hz, float fs_hz)
+{
+    if (filter == NULL) {
+        return false;
+    }
+    /* Two sections at the same corner and DIFFERENT Qs. Cascading a pair of
+     * Q = 0.7071 sections gives LR4, whose response at fc is -6 dB; the
+     * fourth-order Butterworth's poles lie on the unit circle at 22.5 and
+     * 67.5 degrees from the negative real axis, and those pairs are
+     * Q = 1/(2 cos 22.5) = 0.5412 and Q = 1/(2 cos 67.5) = 1.3066. Their
+     * product is 0.7071, which is what puts the cascade back at -3 dB at fc.
+     * Both requests share one corner, so if the first is refused the second
+     * would be too; the order of the two calls is only which section's
+     * memory holds the peakier transient. */
+    if (!hk_biquad_highpass(&filter->section[0], fc_hz, fs_hz,
+                            HK_BIQUAD_Q_BUTTERWORTH4_A)) {
+        return false;
+    }
+    if (!hk_biquad_highpass(&filter->section[1], fc_hz, fs_hz,
+                            HK_BIQUAD_Q_BUTTERWORTH4_B)) {
+        return false;
+    }
     return true;
 }
 

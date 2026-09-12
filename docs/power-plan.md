@@ -18,12 +18,12 @@ Kanonik kararlar: [[07-decisions/ADR-0020-dc-adapter-power|ADR-0020 (24 V DC ada
 - `VIN`, dört XH-A232 / TPA3110 amfiyi **doğrudan** besler. Kartın giriş aralığı 8-26 V'tur; 24 V bu pencerenin içindedir ve 26 V tavanına 2 V kalır. Arada regülatör yoktur.
 - Lojik tarafını iki MP1584EN sınıfı buck besler, ikisinin de girişi `VIN`, çıkışı yüksüz `5,10 V`'a ayarlanır: **buck A** (`U3`) ESP32-S3'ü, **buck B** (`U4`) PCM5102A'yı. Ayrı olmalarının sebebi tezgâhta duyulan bir şeydir: paylaşılan tek buck DAC'a duyulur hışırtı verdi (sahibin gözlemi, 2026-09-12; düzenek ayrıntısı kaydedilmedi, bu bir kapı geçişi değildir). Buck B'de USB geri besleme jumperı yoktur; `JP1` yalnız buck A'nın ESP geliştirme kartı tarafındadır.
 - **V1'de güç anahtarı yoktur.** Cihaz adaptörü çekilerek kapatılır; boşta beklemeyi firmware'in idle standby'ı (`standby_min`) karşılar.
-- Firmware nominal beslemeyi tek bir yerden bilir: `CONFIG_HK_SUPPLY_MV`, varsayılan `24000`, aralık `8000-26000`. Ses profilindeki limiter tavanı, ölçüldüğü besleme gerilimiyle birlikte saklanır ve bu değere ölçeklenir. Tezgâh referansı `HK_BENCH_REFERENCE_SUPPLY_MV = 12000`'dir; 24 V'ta tavanın aşağı inmesi doğru yöndür. Etiketi 24 V olan ama yüksüz 26 V'a çıkan bir adaptörü ürünün dışında tutan şey ise aşağıdaki yüksüz ölçüm kuralıdır, çarpım değil.
+- Firmware nominal beslemeyi tek bir yerden bilir: `CONFIG_HK_SUPPLY_MV`, varsayılan `24000`, aralık `8000-26000`. Ses profilindeki tepe limiter tavanları, dinlendikleri besleme gerilimiyle (`reference_supply_mv`) birlikte saklanır ve bu değere **tek yönlü** ölçeklenir: besleme referansın üstündeyse tavan `referans / besleme` oranında iner, altındaysa olduğu gibi kalır, yükselmez. Tezgâh referansı `HK_BENCH_REFERENCE_SUPPLY_MV = 12000`'dir; 24 V bunun iki katıdır ve dijital tavanı yarıya indirir. Bunun sürücüde ne anlama geldiğini ölçekleme değil amfi söyler: 12 V tezgâh kendi rayını kırpmadıysa yarıya inen tavan sürücüdeki voltu da yarıya indirir; kırptıysa 24 V rayı daha geç kırpar ve yarıya inen tavan tezgâhın duyduğunu yine aşabilir — hangisi olduğunu `C3` (amfinin kazanç köprüsü) söyler ([[07-decisions/ADR-0022-dsp-product-output-backend|ADR-0022]]). Etiketi 24 V olan ama yüksüz 26 V'a çıkan bir adaptörü ürünün dışında tutan şey ise aşağıdaki yüksüz ölçüm kuralıdır, çarpım değil.
 
 İki `G1` kuralı adaptörün kendisine aittir:
 
 - **Yüksüz çıkış, bağlanmadan önce ölçülür:** `< 25,5 V` değilse adaptör bağlanmaz, derate edilmez, reddedilir.
-- **Limiter tavanı 2,9 A bütçesinden türetilir:** sekiz BTL kanal 70 W'ın çok üstünü çekebilir ve çöken `VIN` ESP32-S3'ü şarkı ortasında sıfırlar. Tavan, dört amfi birlikte sürülürken 2,9 A'yı aşmayacak biçimde belirlenir ve `G1`'de tam yükte `VIN` çöküşüyle doğrulanır.
+- **Besleme bütçesi katı 2,9 A bütçesinden alınır:** sekiz BTL kanal 70 W'ın çok üstünü çekebilir ve çöken `VIN` ESP32-S3'ü şarkı ortasında sıfırlar. Bütçeyi taşıyan şey tepe limiter tavanları değil, profilin besleme bütçesi alanıdır (`supply_budget_sq` / `supply_window_ms`: iki dalın toplamı üzerinden ortalama güç, [[07-decisions/ADR-0022-dsp-product-output-backend|ADR-0022]]); iki sayısı `G1`'in `S7` adımında, dört amfi birlikte **4 Ω sınıfı** dummy-load'a sürülürken adaptörün 2,9 A noktasında `VIN` çöküşüyle birlikte alınır. Tepe tavanları `G2`'nin sürücü koruma sayılarıdır ve bu bütçenin altında kalır.
 
 Çalışma noktası veri sayfasından değil ölçümden gelir: TPA3110D2'nin 24 V'ta 4 Ω sınıfı Nova sürücülere vereceği güç `G1`'de dummy-load üzerinde kaydedilir. Seviye tavanını `G1`/`G2` ölçümleri ve limiter belirler; sürücülerin empedans eğrisi ve `Fs` ölçülmeden amfi seviyesi ve limiter kilitlenmez.
 
@@ -61,13 +61,13 @@ Adaptör beslemesinin `G1`'e (amfi + dummy-load) eklediği ölçümler:
 | Adaptör yüksüz çıkışı | Adaptör ucu, bağlamadan önce, DMM | `< 25,5 V`, kayıtlı; değilse adaptör reddedilir |
 | Jak polaritesi | TP0/TP2, enerjisiz adaptör ucu | Merkez pozitif, kayıtlı |
 | `D2` düşümü ve ısısı | TP0 − TP1, 2,9 A'ya yakın yükte | Kabul/ret kararı kayıtlı; ret ise 0 Ω köprü |
-| Besleme bütçesi ve çöküşü | TP1, dört amfi limiter tavanında birlikte sürülürken; TP3/TP4 Wi-Fi sıçramasında | Toplam akım 2,9 A'yı aşmıyor; `VIN` çökmüyor, ESP reset yok; iki 5 V hattı da 4,75 V altına düşmüyor |
+| Besleme bütçesi ve çöküşü | TP1, dört amfi birlikte 4 Ω sınıfı dummy-load'a sürülürken adaptörün 2,9 A noktasında (`G1` S7); TP3/TP4 Wi-Fi sıçramasında | 2,9 A noktası bulunup kaydedilir: DSP dedektörünün o noktadaki ortalama karesi `supply_budget_sq`, `VIN` çöküşünün zaman sabiti `supply_window_ms` olur; o noktada `VIN` çökmüyor, ESP reset yok; iki 5 V hattı da 4,75 V altına düşmüyor |
 | Brownout | TP5 | Reset üreten çökme yok |
 | Buck gürültüsü | TP4 ve DAC çıkışı (TP9/TP10), amfi girişleri (TP11/TP12) | DAC hattında hışırtı yok; lab kaynağıyla alınan tabana göre fark kayıtlı |
 | Açma/kapama pop | TP1 + TP33 + TP6 + TP9/TP10 single-shot | Kapanış adaptör çekilerek kaydedilir; `XSMT` açılış penceresi boyunca LOW ve kapanışta `BCLK` durmadan önce düşüyor; amfinin kendi pop'u (susturma girişi yok) olduğu gibi kaydedilir |
 | Adaptör gürültüsü | Dip gürültü, cızırtı, ground-loop; adaptör bağlıyken | Lab kaynağıyla alınan tabana göre fark kayıtlı |
 
-Adaptörün akım değeri sabittir: 2,9 A. Ondan türeyen şey limiter tavanıdır, tersi değil; `G1` bütçe satırı tavanın o akıma sığdığını gösterir.
+Adaptörün akım değeri sabittir: 2,9 A. Ondan türeyen şey profilin besleme bütçesidir (`supply_budget_sq` / `supply_window_ms`), tersi değil; `G1` bütçe satırı o bütçenin o akıma sığdığını gösterir. Tepe tavanları `G2`'nindir ve bütçenin altında kalır.
 
 ## Güç BOM'u
 

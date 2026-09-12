@@ -60,22 +60,42 @@ config HK_SUPPLY_MV
         must read below 25.5 V) before the adapter is ever connected.
 
         This is the single place the supply voltage is stated. The firmware
-        cannot measure it; it is a declaration about the adapter, and its one
-        consumer is the limiter: every ceiling in a driver-protection profile
-        is stored with the supply it was measured at, and hk_profile_build()
-        scales it to this value. The error cases are not symmetric. A LOWER
-        adapter left unconfigured errs quiet: a profile measured at 12 V is
-        already scaled DOWN to 24 V, and a smaller supply only lowers the volts
-        further. A HIGHER adapter is the danger, because the ceiling would be
-        scaled for fewer volts than the driver receives -- and that is the case
-        the no-load measurement exists to catch before it is plugged in.
+        cannot measure it; it is a declaration about the adapter, and what
+        consumes it is hk_profile_build(): the two PEAK ceilings in a
+        driver-protection profile are stored with the supply they were set at,
+        and each is scaled by min(1, reference / supply) to this value. That
+        scaling is ONE-DIRECTIONAL and it errs quiet: a ceiling set at 12 V is
+        halved for a 24 V build, and a supply below the reference never raises
+        a ceiling above its stored value. What it halves is the DIGITAL
+        ceiling, and what that means at the driver has two cases. The
+        TPA3110D2 is a fixed-gain amplifier whose output follows gain x input
+        until the rail clips (SLOS528F, Table 3), and the branch gains are not
+        scaled. Where the 12 V bench did not clip its rail, half the ceiling
+        is half the driver voltage. Where it did, the 24 V rail clips later
+        and the halved ceiling can still exceed what the bench heard -- a
+        driver the 12 V rail was clipping can see up to twice that voltage
+        from a 24 V rail at the same slider. Which case applies is bench item
+        C3, the amplifier's gain strapping, and it is unread. The scale-down
+        lowers where the ceiling sits; it is not a promise about what the
+        driver sees.
 
-        The ceiling a profile stores is set on the bench in G1 against the
-        2.9 A budget with all four amplifiers driven, because eight channels
-        can ask for far more than 70 W, and a VIN that sags under the load
-        can drop buck A out and reset the ESP32 mid-song — which is what
-        G1's sag measurement checks. G2 lowers it further where the drivers
-        demand; whichever is lower is what the profile carries.
+        The error cases are still not symmetric. A LOWER adapter left
+        unconfigured is the quiet error: the ceiling is scaled for more volts
+        than the rail can deliver, and the rail clips first. A HIGHER adapter
+        is the danger, because the ceiling would be scaled for fewer volts
+        than the driver receives -- and that is the case the no-load
+        measurement exists to catch before it is plugged in.
+
+        The 2.9 A budget is NOT expressed through these ceilings. Eight BTL
+        channels can ask for far more than 70 W, a VIN that sags under the
+        load can drop buck A out and reset the ESP32 mid-song, and a peak
+        ceiling per branch cannot say anything about the average current of
+        both branches summed. That is the profile's supply-budget field
+        (supply_budget_sq, supply_window_ms): measured on the adapter in G1
+        with all four amplifiers driven into 4 ohm-class loads, stored
+        UNSCALED, and enforced by the DSP's supply-budget stage. The peak
+        ceilings are G2's driver-protection numbers: they stay beneath that
+        budget, and they do not carry it.
 
 config HK_BENCH_PROVISIONAL_PROFILE
     bool "Use a compiled-in provisional profile when factory_cal has none"
@@ -86,20 +106,34 @@ config HK_BENCH_PROVISIONAL_PROFILE
         FEEDS it a profile nobody measured, so everything downstream behaves as
         though the speaker were calibrated.
 
-        What it supplies: a crossover corner, a subsonic corner, branch gains
-        and limiter ceilings, derived on a bench from exactly two measurements
-        -- the two drivers' DC resistances. The tweeter's Fs was never located,
-        so the corner that protects it is an argument rather than evidence.
+        What it supplies: a crossover corner, a subsonic corner, branch gains,
+        limiter ceilings and timings, derived on a bench from exactly two
+        measurements -- the two drivers' DC resistances -- and, since profile
+        schema 2, a supply-budget placeholder: one full-scale branch's worth
+        of mean square (1.0), half the validator's bound of 2.0, which is a
+        number G1 S7 replaces, not a budget anyone measured. With the bench
+        gains (0.25 and 0.18, so at most about 0.095 of summed mean square) it
+        engages only if the user EQ boosts. The tweeter's Fs was never
+        located, so the corner that protects it is an argument rather than
+        evidence.
 
         It exists because the alternative is not listening at all. hk_dsp
         refuses to run without a profile, correctly, and writing a real one into
         factory_cal is a manufacturing step. This is the bench shortcut, and the
         boot log says so in as many words every time it is used.
 
-        Its ceilings are stored against the supply voltage they were listened
-        to at, 12 V on the bench, and hk_profile_build() scales them to
-        HK_SUPPLY_MV like any other profile's. On the 24 V adapter that is a
-        scale-down (12/24): the volts at the driver stay what the bench heard.
+        Its peak ceilings are stored against the supply voltage they were
+        listened to at, 12 V on the bench, and hk_profile_build() scales them
+        to HK_SUPPLY_MV like any other profile's. On the 24 V adapter that
+        halves the digital ceiling, and the scale-down errs quiet; it cannot
+        promise the driver sees what the 12 V bench heard, because the
+        amplifier is fixed-gain (see HK_SUPPLY_MV): where the bench did not
+        clip its 12 V rail the driver voltage halves with the ceiling, where
+        it did the 24 V rail clips later and the halved ceiling can still
+        exceed what the bench heard, and bench item C3 -- the gain strapping,
+        unread -- says which. Listening at 24 V is a staged, low-level
+        exercise on one amplifier and one pair, and the backend logs that at
+        boot whenever HK_SUPPLY_MV is not the 12 V the bench listened at.
 
         Off for any build that leaves the bench.
 
@@ -113,9 +147,19 @@ config HK_BENCH_AUDIO_WITHOUT_PROFILE
         The gate this bypasses is the one that keeps an unmeasured tweeter
         alive: without a profile from G0/G2 the DSP chain has no crossover
         corner, no protective high-pass corner and no limiter ceiling to run
-        on, and hk_audio refuses rather than inventing them. On a bench board
-        with no DAC, no amplifier and no driver the risk is absent, and the
-        receiver cannot be exercised at all while the gate is shut.
+        on, and hk_audio refuses rather than inventing them. The gate has two
+        refusals and this lifts only the first: a profile that is absent. A
+        profile that is present but refused by the judgement hk_main passes on
+        it at boot with hk_profile_load() -- the same judge the DSP backend
+        uses -- stays refused on the bench too, so a blob the backend would
+        refuse can never unmute the DAC (ADR-0022, hk_storage.c). On a bench
+        board with no DAC, no amplifier and no driver the risk is absent, and
+        the receiver cannot be exercised at all while the gate is shut.
+
+        It also makes upstream's passthrough output stage selectable in the
+        hk_airplay component's output choice, for the same reason: a build that
+        has declared it runs without driver protection may also run without
+        the DSP. The product cannot select that stage (ADR-0022).
 
         It exists so that exception is written down and visible in the boot
         report, rather than being obtained by accident. Until 2026-09-08 the

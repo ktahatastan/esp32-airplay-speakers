@@ -2,7 +2,7 @@
 status: proposed
 owner: hardware-engineer
 reviewers: [orchestrator, qa-engineer]
-updated: 2026-09-08
+updated: 2026-09-12
 tags: [hardware, wiring, schematic, power, audio]
 ---
 
@@ -77,7 +77,7 @@ Besleme topolojisi [[../07-decisions/ADR-0020-dc-adapter-power|ADR-0020]] ile ki
 - **Yüksüz çıkış, bağlanmadan önce ölçülür.** Adaptörün ucu kabine takılmadan DMM ile okunur; `25,5 V`'un altında değilse bağlanmaz. 2 V'luk pay tolerans ve yüksüz yükselmeye gider; sınırı aşan adaptör derate edilmez, reddedilir.
 - **Merkez pozitiflik** satın alınan adaptör ve jak üzerinde ölçü aletiyle doğrulanır.
 
-Adaptör `2,9 A` ile verilidir; tahmin edilecek olan onun akımı değil, ona sığacak seviyedir. Sekiz BTL kanal 70 W'ın çok üstünü çekebilir ve çöken `VIN` ESP32-S3'ü şarkı ortasında sıfırlar; bu yüzden **limiter tavanı bu bütçeden türetilir** ve `G1`, dört amfi birlikte limiter tavanında sürülürken toplam akımı ve `VIN` çöküşünü ölçer. İlk enerjilendirme yine adaptörle değil, akım sınırlı laboratuvar kaynağıyla yapılır.
+Adaptör `2,9 A` ile verilidir; tahmin edilecek olan onun akımı değil, ona sığacak seviyedir. Sekiz BTL kanal 70 W'ın çok üstünü çekebilir ve çöken `VIN` ESP32-S3'ü şarkı ortasında sıfırlar; bu yüzden bütçe DSP'de kendi katını taşır — **besleme bütçesi katı** (`supply_budget_sq`, `supply_window_ms`; iki dalın toplamı üzerinde ortalama, tepe limiter'lardan önce ortak kazanç, [[../04-acoustics/measurement-and-dsp-plan|ölçüm ve DSP planı]]) — ve iki sayısı `G1` S7'de dört amfi birlikte **4 Ω sınıfı** dummy-load'a sürülürken adaptörün 2,9 A noktasında ölçülür: toplam akım, `VIN` çöküşü ve DSP'nin log'a bastığı dedektör okuması. Tepe tavanları `G2`'nin sürücü koruma sayılarıdır, bütçenin altında kalır ve onu taşımaz. İlk enerjilendirme yine adaptörle değil, akım sınırlı laboratuvar kaynağıyla yapılır.
 
 ### 2.1 Ana güç dağıtımı
 
@@ -218,9 +218,9 @@ PCM5102A çipi harici SCK olmadan BCK PLL ile çalışabilir. Ancak modülün al
 
 ### 3.4 Kanal ve sürücü kuralları
 
-- Firmware sol dijital kanalı `woofer` bandı, sağ dijital kanalı `tweeter` bandı olarak üretir; DSP zinciri (mono L+R toplamı, bant başına EQ, subsonic yüksek geçiren, LR4 crossover, dal başına limiter) çalışır, sayıları `G0`/`G2` ölçümlerini bekler. Tek program vardır, stereo yoktur (ADR-0021).
-- Dört amfi aynı hat seviyesi sinyali paralel alır: `LOUT` dördünün `L IN`'ine, `ROUT` dördünün `R IN`'ine. XH-A232 girişi 10 kΩ sınıfıdır; dördü paralel yaklaşık 2,5 kΩ eder, PCM5102A'nın hat çıkışı için rahat bir yüktür. Bu bir aritmetiktir; `G1` dört giriş bağlıyken DAC çıkış seviyesini ve bozulmayı kaydeder.
-- Dört amfi özdeştir ve kazançları `G1`'de eşleştirilir: TPA3110'un kazanç seçimi dört kartta da okunur ve aynı olduğu yazılır; aynı kabinde kazanç farkı duyulur.
+- Firmware sol dijital kanalı `woofer` bandı, sağ dijital kanalı `tweeter` bandı olarak üretir. DSP zinciri **ürünün çıkış arka ucudur** ([[../07-decisions/ADR-0022-dsp-product-output-backend|ADR-0022]]): mono L+R toplamı, kullanıcı EQ'su, dördüncü derece subsonic yüksek geçiren, LR4 crossover, dal başına kazanç, tek dalda hizalama gecikmesi, tweeter polaritesi, besleme bütçesi katı, dal başına tepe limiter. `factory_cal`'da geçerli bir profil yokken ürün susar; sayıları `G0`/`G1`/`G2` ölçümlerini bekler. Tek program vardır, stereo yoktur (ADR-0021).
+- Dört amfi aynı hat seviyesi sinyali paralel alır: `LOUT` dördünün `L IN`'ine, `ROUT` dördünün `R IN`'ine. TPA3110D2'nin giriş empedansı kazanç seçimine bağlıdır (veri sayfası Tablo 2: 20/26/32/36 dB için tipik 60/30/15/9 kΩ, ±%20, mutlak asgari 7,2 kΩ); bu belgenin eski "10 kΩ sınıfı, dördü paralel ~2,5 kΩ" aritmetiği yalnız 36 dB ayarında tutar — 36 dB'de dördü paralel ~2,25 kΩ (en kötü 1,8 kΩ), 20 dB'de ~15 kΩ. PCM5102A'nın hat çıkışı için asgari yük 1 kΩ'dur, yani her ayarda rahat. Bu bir aritmetiktir ve kazanç okunana kadar (`C3`) öyle kalır; `G1` dört giriş bağlıyken DAC çıkış seviyesini ve bozulmayı kaydeder.
+- Dört amfi özdeştir ve kazançları `G1`'de eşleştirilir: TPA3110'un kazanç seçimi (`GAIN0`/`GAIN1` strap'i) dört kartta da okunur ve aynı olduğu yazılır; aynı kabinde kazanç farkı duyulur. Bu okuma (`C3`, [[../06-testing/bench-measurement-order|tezgâh sırası]]) **24 V'ta sürücüde her dinlemeden önce gelir**: amfi sabit kazançlıdır ve DSP'nin tavan ölçeklemesi 24 V'ta dijital tavanı yarıya indirmekten fazlasını yapmaz — tezgâh 12 V rayını kırpmadıysa bu sürücüdeki voltu da yarıya indirir, kırptıysa (firmware'in notuna göre tezgâh seviyesi ray kırpmasıyla sınırlıydı) 24 V rayı daha geç kırpar ve yarıya inen tavan sürücüye tezgâhın duyduğundan fazlasını verebilir, aynı kaydırıcı konumunda iki katına kadar; hangisi olduğunu bu okuma söyler. Okunan değer profilin `amp_gain_db` alanına yazılır; firmware onunla hesap yapmaz, taşır.
 - XH-A232 `L+ / L-` ve `R+ / R-` çıkışları BTL'dir. Hiçbir `-` hoparlör ucu GND/şaseye bağlanmaz.
 - `C_SAFE` tek başına crossover değildir; DSP HPF ve limiter'a karşı son savunma katmanıdır. Dört adet, her tweeter'a kendi `C_SAFE`'i (`C2`-`C5`).
 - `C_SAFE` ilk değeri **10 µF kutupsuz film, ≥ 50 V** olarak seçildi ([[driver-measurements|sürücü ölçüm planı]], 2026-09-08): `C = 1 / (2π × R_tweeter × f_safe)` ile 4 Ω'da yaklaşık 4 kHz köşe. Tweeter `Fs` ölçülene kadar adaydır; kesin değer G2 test raporuna girer.
@@ -230,6 +230,27 @@ PCM5102A çipi harici SCK olmadan BCK PLL ile çalışabilir. Ancak modülün al
 > XH-A232 kartında güç girişi, ses girişi ve hoparlör çıkışları dışında hiçbir bağlantı yoktur (sahibin kart üzerindeki tespiti, 2026-09-12). TPA3110'un `SD` bacağı kart üzerinde dışarı çıkarılmamıştır; bu yüzden firmware kontrollü bir amfi susturması **yoktur** ve olmayacaktır. Tek katman DAC `XSMT`'dir: sinyali keser, ama TPA3110'un kendi açılış/kapanış geçişini kesmez. `hk_audio` sıralaması bu yüzden iki hat sürer — I2S saati ve `XSMT` — ve amfi için bir adım içermez.
 >
 > Bunun bedeli iki ölçüm satırıdır. Adaptör takılırken ve çekilirken dört amfinin kendi pop'u `G1`'de kaydedilir (§7); DAC susturuluyken bile duyulan bir pop amfinin kendisinindir ve firmware'in yapabileceği bir şey yoktur. Duyulur bir pop, `VIN` tarafında bir donanım önlemi isterse o ayrı bir ADR'dir; bugün böyle bir önlem yoktur.
+>
+> Veri sayfaları ne diyor (2026-09-12'de okundu; SLOS528F, SLAS859C, MP1584 Rev. 1.0):
+>
+> - **TPA3110D2.** Pop'suz kapanış için veri sayfasının tarifi "güç kesilmeden önce amfiyi shutdown'a al"dır (§9.4.1) ve açılışta `SD`'yi girişler oturana kadar düşük tutmaktır (§9.3.8); ikisi de `SD` ister ve kart onu dışarı çıkarmaz. Açılış süresi tipik 14 ms, kapanış 2 µs. Blok şemasında bir `UVLO/OVLO` bloku var ama **sayısal bir UVLO eşiği yayımlanmamıştır**; 8 V önerilen asgari besleme, bir kilit eşiği değil. Girişler dahili 3 V'a öngerilimli; giriş RC'si 1 ms'nin üstündeyse kondansatörler 14 ms'de dolamaz ve eşleşmeyen giriş parçaları pop üretebilir (§9.3.3).
+> - **PCM5102A.** Çıkış şarj pompasıyla **toprak merkezlidir** (2,1 Vrms, DC kesme kondansatörü yok): susturulmuş DAC amfinin girişine bir DC adımı vermez. `XSMT` düşünce örnek başına −1 dB'lik yumuşak rampa 104 örnekte biter; tam susturma (dijital rampa + sert analog susturma) 150 örnek + 0,2 ms sürer, 44,1 kHz'de yaklaşık 3,6 ms. Çipin kendi "harici güç algılama" modu da vardır (§11.3): `XSMT`'ye bir sistem rayından ≥ 6 ms'de düşen bir bölücü bağlanırsa ~2 V'ta yumuşak, ~1,2 V'ta analog susturma kendiliğinden devreye girer — veri sayfası bu mod için örnek olarak 24 V'luk bir rayı adlandırır ve pinin bir GPIO ile paralel kullanılabileceğini söyler, ama o kablolamayı çizmez.
+> - **MP1584.** Giriş penceresi 4,5-28 V, UVLO 2,6 V'ta düşer; 5,1 V çıkışı hangi `VIN`'e kadar tuttuğu (dropout) veri sayfasında yok, ~5,5-6 V bir tahmindir.
+>
+> Fiziksel olarak bu şu demek: takılırken `R6` `XSMT`'yi düşük tutar, amfiler sessiz ve toprak merkezli bir girişe açılır, kalan geçiş çipin kendisinindir. Çekilirken `VIN` `C_A`'dan çöker (boşta ~0,15-0,25 A'da onlarca ms; el hesabı, ölçüm değil); amfilerin daha yüksek eşikte **önce** düşmesi, bucks'ların DAC ve ESP'yi hâlâ ayakta tutması beklenir — yani DAC çalarken amfi UVLO ile kapanır, veri sayfasının tarifinin tersi, ve bu geçişin büyüklüğü veri sayfasında yoktur. Bu sıra olası ama **kanıtlanmamış**, çünkü amfinin UVLO sayısı yayımlanmamış. Firmware `VIN`'i ölçmez; "amfi ölmeden DAC'ı sustur" yeni donanım olmadan mümkün değildir.
+>
+> Adaylar — **karar değil**, hepsi `G1` kaydından sonra ve gerektiğinde ADR ile:
+>
+> | aday | ne çözer | ne çözmez | bedel | ADR |
+> |---|---|---|---|---|
+> | (a)+(b) **şimdi:** hiçbir şey ekleme; `G1` takma ve çekme geçişini kaydeder ve çekmede doğal UVLO-önce sırasına güvenilir | İki bilinmeyeni sayıya çevirir; gerçek sürücüde duyulmuyorsa başka bir şey gerekmez | Pop'u değiştirmez; sıra olası, kanıtlanmamış | Sıfır donanım | hayır |
+> | (g1) `VIN` erken uyarısı: `VIN`'den bir direnç bölücü (+ küçük kondansatör) ESP32-S3'ün bir ADC pinine, firmware `VIN` düşerken DAC'ı `C_A`'nın verdiği pencere içinde, amfiler UVLO'ya varmadan susturur | Çekme durumunu veri sayfasının "sessiz giriş" durumuna çevirir; PRD-007 için brownout uyarısı da verir | Takma geçişine ve amfinin kendi UVLO geçişine dokunmaz | İki direnç, bir kondansatör, bir GPIO (`GPIO14-17` havuzu), `hk_audio`'da bir yol ve testi, yeni bir `G1` satırı | **evet** |
+> | (c) `VIN`'den dört amfiye firmware kontrollü yüksek taraf anahtarı (P-MOSFET + seviye kaydırıcı, yavaş kapı RC'si) | Temiz açılış sırası (amfiler DAC susturulup oturduktan sonra enerjilenir) ve standby'da amfi kapatma (~130-200 mA boşta akım) | Çekmede etkisiz: firmware çekmeyi kendi rayı ölürken öğrenir, amfiler zaten UVLO'dadır; tek 24 V yolunda yeni bir arıza noktası ve seri düşüm | ~5-10 parça, bir GPIO, `hk_audio`'da yeni durum, ADR-0020 topolojisi ve ADR-0011 sırası değişir | **evet** |
+> | (d) daha büyük `C_A` | Çekme ile UVLO arasındaki süreyi uzatır — **yalnız (g1) ile birlikte** işe yarar | Tek başına hiçbir şey: DAC yine amfi UVLO'ya kadar çalar, sadece daha geç; takmada daha büyük inrush | Bir kondansatör, 35 V sınıfında kalır (ADR-0020) | hayır (470-1000 µF bandında BOM değeri) |
+> | (e) dört kartta TPA3110D2 `SD` pinine (HTSSOP-28, **pin 1**, köşe) tel lehimlemek, 100 kΩ seri ile tek GPIO'dan sürmek | Veri sayfasının tarifini iki kenarda da uygulayan tek aday; kapanış 2 µs | Kartın `SD`'yi nasıl yüksek tuttuğu bilinmiyor (pull-up mı, sert bağ mı; izi kesmek gerekebilir); pin 2 `FAULT` hemen yanında ve **24 V `PVCCL` pinleri 27/28 aynı paket ucunda** — bir köprü ESP GPIO'suna 24 V verir; dört ince tel lehimi kabin içinde mekanik olarak kırılgan; "dört özdeş, değiştirilmemiş kart" varsayımı bozulur | Parça ucuz, risk ve tekrarlanabilirlik pahalı: büyüteç altında mikro lehim, enerji vermeden pin 1↔2 ve pin 1↔28 süreklilik kontrolü, `hk_audio`'da üçüncü hat | **evet** — **`G1` zorlamadıkça reddedildi** |
+> | (f) sekiz hoparlör hattında röle | Takma geçişinden sürücüleri yalıtır; tezgâh için sert "kapalı" | Çekmede işe yaramaz (röle amfi UVLO'dan sonra bırakır); 4 Ω sürücüyle seri kontak direnci, sekiz yeni arıza noktası, bobin akımı, kontak açılırken kendi geçişi | 4-8 röle, sürücüler, diyotlar, 1-2 GPIO, kabin hacmi | **evet** — **`G1` zorlamadıkça reddedildi** (en çok parça, en az kazanç) |
+>
+> `G1` kaydı ilk sırada, çünkü (a) dışındaki her satırın gerekçesi o kayıtta ya var ya yok.
 >
 > Dört kart aynı revizyon olmak zorundadır: aynı kabinde kazanç farkı duyulur.
 
@@ -349,7 +370,7 @@ PCB veya kablo dağıtım kartında test noktaları iğne probla erişilebilir, 
 | TP | Konum | Referans | Beklenen değer / dalga | Araç ve ilk kontrol |
 |---|---|---|---|---|
 | TP0 | DC jak `+` / `DC_IN` | TP2 | 24 V DC nominal; adaptör etiketi ± %5; yüksüz çıkış bağlanmadan önce < 25,5 V ölçülmüş | DMM; **ilk enerjilendirmeden önce** polarite: merkez pozitif |
-| TP1 | `VIN` (`D2` sonrası) | TP2 | TP0 eksi `D2` ileri düşümü; köprüyse TP0 ile aynı | DMM yükte; `TP0-TP1` mV düşüm ve `D2` ısısı G1 kaydına; dört amfi limiter tavanında sürülürken çöküş kaydı |
+| TP1 | `VIN` (`D2` sonrası) | TP2 | TP0 eksi `D2` ileri düşümü; köprüyse TP0 ile aynı | DMM yükte; `TP0-TP1` mV düşüm ve `D2` ısısı G1 kaydına; dört amfi 4 Ω sınıfı yüke sürülürken adaptörün 2,9 A noktasında çöküş kaydı (besleme bütçesi katının iki sayısı buradan) |
 | TP2 | DC jak `−` / `POWER_GND` | TP2 | 0 V yük referansı | DMM/scope ground referansı |
 | TP3 | `U3` buck A 5 V çıkışı (ESP32-S3) | TPG | 5.10 V ayar; hedef 5.00-5.20 V | DMM + scope; yükte droop/ripple |
 | TP4 | `U4` buck B 5 V çıkışı (PCM5102A) | TPG | 5.10 V ayar; hedef 5.00-5.20 V | DMM + scope; yükte droop/ripple; DAC hattında hışırtı |
@@ -451,7 +472,7 @@ TP1/TP3/TP4 besleme ripple ölçümü:
 - `20 MHz bandwidth limit` aç; önce DC coupling ile seviye, sonra AC coupling ile ripple gözle.
 - TP3 ve TP4 için ilk taslak hedef: normal yükte `≤50 mVpp`, Wi-Fi akım sıçramasında hiçbir `5 V` hattı `4.75 V` altına düşmemeli. Bunlar modül datasheet garantisi değil, G1 proje kabul hedefidir.
 - TP5 için brownout/reset oluşturan çökme olmamalı; minimum değer kesin ESP32 kart ve brownout ayarıyla test raporunda kilitlenir.
-- TP1 için adaptörle çalışırken bas tepesinde besleme çöküşü kaydedilir; dört amfi ve iki buck birlikte çektiğinde adaptörün 2,9 A sınırına girip girmediği bu kayıttan okunur. Limiter tavanı bu kayıtla doğrulanır.
+- TP1 için adaptörle çalışırken bas tepesinde besleme çöküşü kaydedilir; dört amfi ve iki buck birlikte çektiğinde adaptörün 2,9 A sınırına girip girmediği bu kayıttan okunur. Besleme bütçesi katının iki sayısı bu kayıttan gelir: 2,9 A noktasında DSP'nin log'a bastığı en yüksek ortalama-kare `supply_budget_sq`, `VIN` çöküşünün zaman sabiti `supply_window_ms`.
 
 ### 7.4 Ses dalga şekli testi
 
@@ -462,12 +483,12 @@ Başlangıç test sinyali: `1 kHz`, önce `-40 dBFS`, ardından `-20 dBFS`. Twee
 | A | XH girişsiz | Her amfide `L+`-`L-` ve `R+`-`R-` (TP13-TP28) | Anormal DC/fault/ısınma yok |
 | B | 8 Ω / en az 50 W non-inductive dummy-load | Diferansiyel 1 kHz çıkış | Önce 1.0 Vrms; temiz ve kararlı |
 | C | 8 Ω dummy-load | Diferansiyel 2.83 Vrms | Yaklaşık 1 W; clipping yok; dört amfi arasında kazanç eşleşmesi kaydedilir |
-| D | 8 Ω dummy-load | Kademeli Vrms + sıcaklık | Clipping ve termal sınır kaydedilir; sürücü yok |
+| D | **4 Ω sınıfı** (ya da `G0`'ın ölçtüğü `Z_min`) non-inductive dummy-load, **24 V**'ta | Kademeli Vrms + sıcaklık + koruma davranışı | Clipping, termal sınır ve korumanın (kısa devre / DC algılama kilidi) davranışı kaydedilir; sürücü yok. Bu satır ürünün çalışma noktasıdır ve veri sayfası onu karakterize etmez: mutlak azami asgari BTL yükü `PVCC > 15 V`'ta 4,8 Ω (SLOS528F §7.1), 4 Ω eğrileri 16 V'ta biter. 8 Ω'da alınan bir geçiş bunun yerine geçmez |
 | E | Bir woofer, düşük seviye (yalnız amfi 1) | Diferansiyel + akustik | G2 woofer koruması |
 | F | Bir tweeter + `C_SAFE1`, çok düşük seviye (yalnız amfi 1) | TP10 ve diferansiyel R çıkışı | HPF/limiter ölçümle doğrulanmış |
-| G | Dört amfi dummy-load'da birlikte, limiter tavanında | TP1 çöküşü, toplam akım, sıcaklık | 2,9 A aşılmıyor; ESP reset yok (G1 bütçe satırı) |
+| G | Dört amfi **4 Ω sınıfı** dummy-load'da birlikte, adaptörün 2,9 A noktasına kadar | TP1 çöküşü, toplam akım, sıcaklık, DSP'nin besleme dedektörü log satırı | 2,9 A noktası bulunur ve kaydedilir: dedektörün en yüksek ortalama-karesi `supply_budget_sq`, `VIN` çöküşünün zaman sabiti `supply_window_ms` olarak profile yazılır (ölçeklenmeden); o noktada ESP reset yok (G1 bütçe satırı). 8 Ω'da alınamaz: 8 Ω gerçek akımın yaklaşık yarısını çeker |
 
-Dummy-load gücü `P = V_RMS² / R` ile hesaplanır. Osiloskop PWM'li ham BTL çıkışta yanlış RMS gösterebilir; diferansiyel prob, bant sınırı/filtre ve mümkünse true-RMS ölçüm veya audio analyzer ile çapraz kontrol edilir. TPA3110D2 tipik anahtarlama frekansı yaklaşık `310 kHz` olup veri sayfası aralığı `250-350 kHz`'dir; bu bileşen audio sinyali sanılmaz.
+B ve C kademeleri 8 Ω'da kalır: ilk temiz sinüs veri sayfasının karakterize ettiği yükte alınır. D ve G, sürücülerin sınıfında ve ürün beslemesindedir, çünkü kayda değer olan sayı oradadır. Dummy-load gücü `P = V_RMS² / R` ile hesaplanır. Osiloskop PWM'li ham BTL çıkışta yanlış RMS gösterebilir; diferansiyel prob, bant sınırı/filtre ve mümkünse true-RMS ölçüm veya audio analyzer ile çapraz kontrol edilir. TPA3110D2 tipik anahtarlama frekansı yaklaşık `310 kHz` olup veri sayfası aralığı `250-350 kHz`'dir; bu bileşen audio sinyali sanılmaz.
 
 ### 7.5 Güç açma/kapatma kaydı
 
@@ -480,7 +501,7 @@ Scope single-shot kaydı için kanallar:
 
 Susturma hattı için **ayrı ve zorunlu** bir single-shot kayıt alınır: CH1 `TP1`, CH2 `TP33` (`XSMT`), CH3 `TP6` (`BCLK`), CH4 `TP9`/`TP10`. Tetik reset kenarındadır ve kaydın kapsaması gereken şey açılış penceresinin tamamıdır — ROM, bootloader ve uygulama başlangıcı. Beklenen: `XSMT` bu pencere boyunca LOW; DAC analog çıkışında adım yok; susturma yalnız firmware bıraktığında ve `BCLK` oturduktan sonra kalkıyor. Aynı dört kanalla bir de kapanış kaydı alınır: akış durduğunda `XSMT`'nin `BCLK` durmadan **önce** düştüğü ve DAC çıkışının saat kesilmeden önce sıfıra indiği görülmelidir; tersi, yumuşak susturma rampasının yarıda kesildiği anlamına gelir ve `mute_settle_ms` o kayda göre yükseltilir.
 
-Kapanış V1'de adaptörün çekilmesidir; bu yüzden kapanış kaydı da adaptör çekilerek alınır, lab kaynağının çıkış düğmesiyle değil. Firmware `VIN`'i ölçmez ve çöküşü önceden göremez. Sıralamayı veren şey iki giriş penceresinin farkıdır: TPA3110 8 V'un altında kendi düşük gerilim kilidiyle susar, iki MP1584 ise 4,5 V girişe kadar 5 V vermeye devam eder; yani `VIN` çökerken dört amfi, DAC ve ESP hâlâ ayaktayken kapanır. Bu kayıt, o sıralamanın gerçekten böyle gerçekleşip gerçekleşmediğini ve pop olup olmadığını gösterir; besleme kaybında pop'suz kapanış G8'in kabul ölçütüdür.
+Kapanış V1'de adaptörün çekilmesidir; bu yüzden kapanış kaydı da adaptör çekilerek alınır, lab kaynağının çıkış düğmesiyle değil. Firmware `VIN`'i ölçmez ve çöküşü önceden göremez. Sıralamayı vermesi **beklenen** şey iki giriş penceresinin farkıdır: TPA3110D2'nin 8 V önerilen asgari beslemesi ile MP1584'ün 4,5 V giriş tabanı; yani `VIN` çökerken dört amfinin, DAC ve ESP hâlâ ayaktayken kapanması beklenir. Bu cümle 2026-09-12'ye kadar amfinin "8 V'un altında kendi düşük gerilim kilidiyle sustuğunu" söylüyordu; veri sayfası sayısal bir UVLO eşiği vermez (§3.4), 8 V önerilen asgaridir, dolayısıyla sıra olası ama **doğrulanmamıştır**. Bu kayıt tam olarak bunu gösterir: sıra böyle mi gerçekleşiyor ve geçiş ne kadar. `G8`'in kabul ölçütü "pop yok" değildir — amfi susturması olmadan firmware bunu vaat edemez — kapanış geçişinin kaydedilmesi ve kararlaştırılmış bir seviyeye göre yargılanmasıdır ([[../06-testing/test-strategy|test stratejisi]]).
 
 Bu kayıt olmadan `G1` için "pop yok" denemez: pop'un olmaması, susturmanın çalıştığını değil yalnız o denemede duyulmadığını gösterir. Açılış/kapanışta DAC pop, amfi pop, ESP brownout ve rail sıralaması ayrıca kaydedilir. TPA3110D2 için en iyi power-off pop davranışı güç kesilmeden önce shutdown uygulanmasıdır; XH-A232 o bacağı dışarı çıkarmadığından bu yol yoktur (§3.4) ve amfinin adaptör takılıp çekilirken ürettiği pop, DAC susturuluyken, olduğu gibi kaydedilir.
 
@@ -495,7 +516,7 @@ Bu kayıt olmadan `G1` için "pop yok" denemez: pop'un olmaması, susturmanın �
 | S4 | Bir woofer, düşük seviye | Lab kaynağı | Woofer HPF/limiter güvenli |
 | S5 | Bir tweeter + `C_SAFE`, çok düşük seviye | Lab kaynağı | G2 crossover/limiter doğrulandı |
 | S6 | Tek amfi + sürücü çifti | 24 V adaptör | G1 adaptörle tekrar: yüksüz çıkış < 25,5 V, jak polaritesi, besleme çöküşü, pop, gürültü |
-| S7 | Dört amfi `VIN`'de, dummy-load / sürücüler | 24 V adaptör | Limiter tavanında toplam akım ≤ 2,9 A, `VIN` çöküşü, termal (G1 bütçe satırı); dört amfi kazanç eşleşmesi |
+| S7 | Dört amfi `VIN`'de, **4 Ω sınıfı** dummy-load (sürücüler ancak S6 ve G0 `Z_min` sonrası) | 24 V adaptör | Adaptörün 2,9 A noktası bulunur: toplam akım, `VIN` çöküşü, termal ve DSP dedektör okuması → `supply_budget_sq` / `supply_window_ms` (G1 bütçe satırı); dört amfi kazanç eşleşmesi ve `C3` okuması |
 | S8 | Tam kabin soak | 24 V adaptör | G8 kapalı kabin termal ve dayanıklılık |
 
 Her adım için [[../templates/test-report|test raporu]] oluşturulur. Fiziksel ölçüm kaydı olmadan gate `PASS` yapılmaz. Dört amfi G0-G2 geçmeden birlikte sürülmez; diğer üç amfi sürücülere ancak S6'dan sonra bağlanır.
@@ -503,7 +524,10 @@ Her adım için [[../templates/test-report|test raporu]] oluşturulur. Fiziksel 
 ## 9. Açık kararlar
 
 - [ ] Nova woofer ve tweeter empedans eğrisi ve `Fs` (DC dirençler ölçüldü: woofer 4,0 Ω, tweeter 3,5 Ω, ikisi de 4 Ω sınıfı).
-- [ ] `C_SAFE` kesin değeri (ilk seçim 10 µF; tweeter `Fs` ile yeniden bakılır).
+- [ ] `C_SAFE` kesin değeri (ilk seçim 10 µF; tweeter `Fs` ile yeniden bakılır). Tezgâhta bugün bir kondansatörün takılı olup olmadığı kayıtlı değil: operatör sorusu [[driver-measurements|sürücü ölçüm planında]].
+- [ ] **TPA3110D2 24 V'ta 4 Ω sınıfı yükle:** veri sayfasının mutlak azami asgari BTL yükü `PVCC > 15 V`'ta 4,8 Ω, iki Nova sürücüsü de 4 Ω sınıfı; amfi bu çalışma noktasında karakterize edilmemiş. `G0` `Z_min`'i, `G1` D/S1 kademesi 24 V'ta 4 Ω sınıfı yüke termal ve koruma davranışını kaydeder; karar ADR-0020 sahibinindir (risk kaydı, `Kritik`). O kayıt olmadan hiçbir sürücü 24 V'ta bağlanmaz.
+- [ ] XH-A232 kazanç strap'i (`C3`): dört kartta okunur, profilin `amp_gain_db` alanına yazılır; 24 V'ta sürücüde dinlemeden **önce**.
+- [ ] Kapanış pop'u için `VIN` tarafı önlem adayları (§3.4 tablosu): karar `G1` takma/çekme kaydından sonra, gerekiyorsa ADR ile. Bugün hiçbiri seçilmedi.
 - [ ] Kesin ESP32-S3 kartı ve aday GPIO tablosunun boot/I2S doğrulaması.
 - [ ] XH-A232 kartların dört fiziksel revizyonunun aynı olup olmadığı; aynı kabinde kazanç farkı duyulur.
 - [ ] DAC `LOUT`/`ROUT`'un dört amfiye fan-out topolojisi: ekran, fan-out noktası ve dört giriş paralelken DAC çıkış seviyesi (G1).
@@ -516,11 +540,11 @@ Her adım için [[../templates/test-report|test raporu]] oluşturulur. Fiziksel 
 
 ## 10. Teknik kaynaklar
 
-- [TI PCM5102A veri sayfası](https://www.ti.com/lit/ds/symlink/pcm5102a.pdf): 3-wire I2S/BCK PLL, kontrol pinleri ve analog çıkış.
-- [TI TPA3110D2 veri sayfası](https://www.ti.com/lit/ds/symlink/tpa3110d2.pdf): BTL çıkış, 8-26 V besleme, shutdown ve decoupling/layout.
+- [TI PCM5102A veri sayfası](https://www.ti.com/lit/ds/symlink/pcm5102a.pdf) (SLAS859C, 2026-09-12'de okundu): 3-wire I2S/BCK PLL, kontrol pinleri, toprak merkezli analog çıkış, `XSMT` yumuşak susturma süreleri ve harici güç algılama modu (§11.3), hat çıkışı yük aralığı.
+- [TI TPA3110D2 veri sayfası](https://www.ti.com/lit/ds/symlink/tpa3110d2.pdf) (SLOS528F, 2026-09-12'de okundu): BTL çıkış, 8-26 V besleme, Mutlak Azami Değerler'deki asgari yük (§7.1: `PVCC > 15 V`'ta 4,8 Ω), kazanç ve giriş empedansı tablosu (Tablo 2), `SD` ile açılış/kapanış ve pop tarifi (§9.3.8, §9.4.1), decoupling/layout. Sayısal UVLO eşiği yoktur.
 - [XH-A232 modül referansı](https://www.taydaelectronics.com/tpa3110-xh-a232-digital-stereo-audio-power-amplifier-board.html): kart sınıfı, 8-26 V ve 4-8 Ω satıcı bilgisi; güç etiketi ölçüm yerine geçmez.
 - [Seçilen PCM5102A satın alma kaynağı](https://www.aletler.com.tr/urun/pcm5102a-dac-modul): fiziksel modül revizyonu teslim alınınca karşılaştırılır.
-- [Monolithic Power MP1584 veri sayfası](https://www.monolithicpower.com/en/documentview/productdocument/index/version/2/document_type/Datasheet/lang/en/sku/MP1584/document_id/204/): 4,5-28 V giriş penceresi; modül kalitesi ayrıca ölçülür.
+- [Monolithic Power MP1584 veri sayfası](https://www.monolithicpower.com/en/documentview/productdocument/index/version/2/document_type/Datasheet/lang/en/sku/MP1584/document_id/204/): 4,5-28 V giriş penceresi, UVLO 2,6 V'ta düşer, dropout verilmez; modül kalitesi ayrıca ölçülür. 2026-09-12'de MPS sitesi bot denetimi sundu ve metin bir aynadan (Rev. 1.0) okundu; sayılar bağımsız özetlerle uyuşuyor, MPS aslı okunmadı.
 
 ## 11. İlgili belgeler
 

@@ -283,8 +283,9 @@ def draw_dc_input(builder: Builder) -> None:
                  "Reading the adapter label is not a measurement.", (30, 58), bold=True)
     builder.text("MEASURE THE ADAPTER'S NO-LOAD OUTPUT BEFORE CONNECTING IT: below 25.5 V or it is refused. 24 V sits "
                  "2 V under the TPA3110's 26 V maximum (G1). 24 V is inside both windows: TPA3110 8-26 V, MP1584 4.5-28 V.", (30, 62), bold=True)
-    builder.text("The adapter is given: 24 V / 2.9 A (about 70 W). The limiter ceiling is derived from that budget with all four "
-                 "amps driven and verified by VIN sag in G1. No power switch in V1: unplug the adapter to turn off.", (30, 66))
+    builder.text("The adapter is given: 24 V / 2.9 A (about 70 W). The DSP's supply-budget stage is set from that budget in G1 S7 with all "
+                 "four amps driven into 4 ohm-class loads and verified by VIN sag; the peak ceilings are G2's and stay beneath it. "
+                 "No power switch in V1: unplug the adapter to turn off.", (30, 66))
     builder.text("First energisation from a current-limited lab supply, not the adapter. C_A is one part at the jack; "
                  "per-amp bulk only if the G1 ripple measurement asks for it. D2 at 2.9 A dissipates about 1 W or more.", (30, 69))
 

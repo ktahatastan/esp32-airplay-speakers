@@ -13,21 +13,29 @@ Kilitli kararlar `AGENTS.md` içindedir ve yalnız supersede eden ADR ile deği�
 
 - [ ] 24 V adaptörün boşta çıkışını bağlamadan önce ölç (25,5 V'un altında olmalı); 2,9 A yükte gerilimini ölç; jak polaritesini (merkez artı) ilk güç vermeden önce ölçerek doğrula.
 - [ ] `VIN` üzerindeki seri Schottky/ideal diyot adayına karar ver: gerilim düşümünü ve ısısını ölç (2,9 A'da yaklaşık 1 W veya üstü beklenir), reddedilirse 0 Ω köprüle (ADR-0020).
-- [ ] Bir XH-A232'yi 12 V ve 24 V'ta dummy-load ile test et; sonra dördünü birlikte 24 V'ta sürerken `VIN` çökmesini kaydet.
+- [ ] Bir XH-A232'yi 12 V ve 24 V'ta dummy-load ile test et — D kademesi **4 Ω sınıfı** (ya da G0'ın ölçtüğü `Z_min`) yükte, 24 V'ta: termal ve koruma davranışı, çünkü veri sayfasının mutlak azami asgari BTL yükü 15 V üstünde 4,8 Ω ve amfi bu noktada karakterize edilmemiş (risk kaydı, `Kritik`). Sonra dördünü birlikte 24 V'ta 4 Ω sınıfı yüke sürerken adaptörün 2,9 A noktasını bul: `VIN` çökmesi, DSP dedektör okuması → `supply_budget_sq` / `supply_window_ms`.
 - [ ] İki MP1584'ü (A: ESP32-S3, B: DAC) 5,10 V'a ayarla; ESP32 Wi-Fi akım sıçramalarında brownout testi yap.
 - [ ] PCM5102A'da (kendi buck'ı B ile) ve dört amfi girişinde buck kaynaklı gürültüyü ölç.
-- [ ] Dört amfi girişinin paralel yükünü (yaklaşık 2,5 kΩ) DAC çıkışında ölç; seviye düşümü ve bozulma kaydı G1'e girer.
-- [ ] Açılış ve kapanışta hoparlör çıkışında pop ölç; susturma sıralaması G1'de doğrulanır.
+- [ ] Dört amfi girişinin paralel yükünü DAC çıkışında ölç (kazanç ayarına bağlı: veri sayfası 36 dB'de ~9 kΩ, 20 dB'de ~60 kΩ giriş verir, yani dördü paralel ~2,25-15 kΩ; eski "~2,5 kΩ" yalnız 36 dB'de tutar); seviye düşümü ve bozulma kaydı G1'e girer.
+- [ ] Açılış ve kapanışta hoparlör çıkışında amfinin kendi geçişini kaydet (`VIN`, 5 V raylar, `XSMT`, bir amfi çıkışı tek kayıtta); "pop yok" vaadi yok, kararlaştırılmış bir seviyeye göre yargılanır; çekmede amfilerin DAC'tan önce düşüp düşmediği yazılır. `VIN` tarafı önlem adayları kablolama planı §3.4'te; karar bu kayıttan sonra, ADR ile.
+- [ ] XH-A232 kazanç strap'ini (`GAIN0`/`GAIN1`) dört kartta oku (`C3`), profilin `amp_gain_db` alanına yaz; **24 V'ta sürücüde dinlemeden önce** — amfi sabit kazançlı, tezgâh seviyesi 12 V'ta rayla sınırlıydı.
 
 ## P2 - Ses koruması
 
 - [x] **G0 kapısındaki deliği kapat:** ses izni artık `factory_cal` içindeki `profile` blob'unun varlığını istiyor, şema sürümünü değil.
-- [ ] Profilin **geçerliliğini** de denetle: `hk_profile_valid()` çağrısını `hk_main`'e ekle (G0 verisi gelince).
+- [x] Profilin **geçerliliğini** de denetle: `hk_main` açılışta blob'u `hk_profile_load()` ile — arka ucun kullandığı aynı yargıçla — yargılıyor, `hk_storage` ses izni için kararı istiyor; reddedilen profil adıyla loglanır ve ses susturulu kalır (2026-09-12, ADR-0022).
 - [ ] Tezgâh istisnasını kaldır: `G0`/`G2` profil ürettiğinde `sdkconfig.bench` gereksiz kalmalı.
-- [ ] Ölçülen sürücü empedansına göre güvenli amfi seviyesini onayla; 24 V'ta XH-A232 4 Ω sınıfı sürücülere önemli güç verir, tavanı limiter belirler.
-- [ ] Woofer HPF, aktif crossover ve tweeter limiter başlangıç değerlerini belirle. **Firmware tarafı hazır:** `hk_profile` profilin biçimini, doğrulamasını ve zincire dönüşmesini taşıyor; kalan iş ölçülen sayıları doldurmak.
-- [ ] Limiter tavanının besleme gerilimiyle ölçeklenmesini 12 V tezgâh referansı ve 24 V ürün beslemesinde doğrula (`HK_BENCH_REFERENCE_SUPPLY_MV`, `CONFIG_HK_SUPPLY_MV`).
-- [ ] Limiter tavanını 2,9 A adaptör bütçesinden, dört amfi birlikte sürülürken türet ve G1'de `VIN` çökmesiyle doğrula (ADR-0020).
+- [ ] Ölçülen sürücü empedansına göre güvenli amfi seviyesini onayla; 24 V'ta XH-A232 4 Ω sınıfı sürücülere önemli güç verir, tavanı limiter belirler. Önce `C3` (amfi kazancı) ve G1'in 24 V / 4 Ω sınıfı kaydı: veri sayfası 15 V üstünde 4,8 Ω asgari yük verir, amfi bu noktada karakterize edilmemiş (risk kaydı, `Kritik`; karar ADR-0020 sahibinin).
+- [ ] Woofer HPF, aktif crossover ve tweeter limiter başlangıç değerlerini belirle. **Firmware tarafı hazır:** `hk_profile` (şema 2) profilin biçimini, doğrulamasını ve zincire dönüşmesini taşıyor; kalan iş ölçülen sayıları doldurmak — G0: iki `Re`, subsonic köşe (`Fb`), crossover köşe (≥ 2 × tweeter `Fs`); G2: dal kazançları, tavanlar ve kaydedildikleri besleme, dal başına release/hold, tek dalda hizalama gecikmesi, tweeter polaritesi.
+- [ ] Tepe tavanı ölçeklemesi artık tek yönlü (`min(1, referans/besleme)`) ve 24 V'ta dijital tavanı yarıya indirir; tezgâh 12 V rayını kırpmadıysa bu sürücüdeki voltu da yarıya indirir, kırptıysa 24 V rayı daha geç kırpar ve yarıya inen tavan sürücüye tezgâhın duyduğundan fazlasını verebilir — hangisi olduğunu `C3` söyler (TPA3110D2 sabit kazançlı). G2'de tavanları kullanılacakları beslemede (`reference_supply_mv` = 24000) kaydet; ölçekleme modelinin kendisi `C3` sayısıyla birlikte ADR maddesi (risk kaydı).
+- [ ] Besleme bütçesi katının iki sayısını (`supply_budget_sq`, `supply_window_ms`) G1 S7'de dört amfi birlikte **4 Ω sınıfı** yüke sürülürken adaptörün 2,9 A noktasında ölç ve profile ölçeklenmeden yaz (ADR-0020, ADR-0022). Tezgâh yer tutucusu (1,0 / 100 ms) bir tam ölçekli dalın ortalama-karesi, doğrulayıcı sınırının (2,0) yarısı; tezgâh kazançlarıyla ancak kullanıcı EQ'su yükseltirse devreye girer.
+- [ ] Tweeter `Re`'sini teyit et: kayıt 3,5 Ω, firmware'in tezgâh profili 2026-09-12'ye kadar 3,7 taşıyordu; kayıt kazandı, operatör prob direnciyle birlikte yeniden okur.
+- [ ] Tezgâhta tweeter'ın önünde bugün bir `C_SAFE` takılı mı, hangi değer? Firmware'in notu 7 µF parçanın arızalı çıktığını ve takılı olmadığını söylüyor; 10 µF'in takıldığına dair kayıt yok (sürücü ölçüm planı, operatör sorusu).
+- [ ] 2026-09-08'de hangi yapı çaldı (commit, `SDKCONFIG_DEFAULTS` parçaları, açılış raporunun arka uç satırı)? Kayıt ikiye ayrılıyor; yalnız operatör söyleyebilir (tezgâh ölçüm sırası, açık soru).
+- [ ] Ürün kartında DSP arka ucuyla ≥ 30 dk akış: `dsp block max ... us mean ... us of ... us` satırları (üründe 60 s'de bir, tezgâh yapısında 10 s'de bir; max < 7981 µs, ölçüm 352 karelik bloğa normalize) ve underrun sayacı; sonuç `docs/06-testing/` altına (F3 kabul ölçütü, test stratejisi "Firmware ölçümleri").
+- [ ] Sürücü başına termal (RMS) limiter — G2'nin güç dayanımı / termal zaman sabiti ölçümünü bekler; dedektör mekanizması `hk_supply_limiter`'da hazır, dal başına örneklenir.
+- [ ] 24 bit I2S çıkış + dither ve AirPlay ses seviyesi çarpımının float alana taşınması — kalite işi, koruma değil; gölgenin I2S yapılandırmasını ve vendor ses rampasını değiştirdiği için ayrı, gölge incelemesi yeniden kaydedilen bir değişiklik.
+- [ ] Çalışma zamanında EQ değişikliği: bir ayar yazıcısı (portal/alıcı) var olduğunda `hk_dsp_set_eq` için çalma görevine posta kutusu; bugün EQ satırları çalma başında okunur ve açılış raporunda listelenir.
 
 ## P4 - Kabin
 
@@ -76,7 +84,7 @@ Ayrıntı, önkoşul ve kabul ölçütleri: [[docs/03-firmware/firmware-plan|fir
 - [x] `F1` ölçüm yarısı: yığın vendor edildi, karta yüklendi, bir Apple cihazı bağlandı, PTP kilitlendi, ses duyuldu.
 - [ ] `F1` kalan: **akış sırasındaki** kaynak kullanımını (PSRAM, CPU) ölç.
 - [ ] `F2` I2S/DAC/bi-amp ses yolu bring-up (G1 sonrası).
-- [ ] `F3` HPF, crossover ve limiter zinciri: kod çalışıyor (mono toplam, bant EQ, 55 Hz subsonic, LR4 bölme, dal başına limiter); sayılar G0 kapanana kadar yer tutucu, bilinen boşluklar sonra kapatılacak.
+- [ ] `F3` HPF, crossover ve limiter zinciri: ürün çıkış arka ucu (ADR-0022); dördüncü derece subsonic, dal başına limiter zamanlaması, delay/polarite alanları ve besleme bütçesi katı kodda (şema 2), profil açılışta yargılanıyor, blok süresi telemetrisi var; sayılar G0/G1/G2 — her biri yer tutucu, profil yokken ürün susar.
 - [x] `F4` Wi-Fi, mDNS ve BLE/SoftAP Unified Provisioning — geliştirme kartında uçtan uca. Portal kısmı hariç (yukarıya bakın).
 - [x] `F5` buton durum makinesi ve RGB LED animatörü — 12 sn senaryosu ve LED'in ses zamanlamasına etkisi hariç.
 - [ ] `F7` imzalı A/B OTA, release hattı ve recovery (G6).

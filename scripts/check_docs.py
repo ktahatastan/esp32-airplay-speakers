@@ -187,13 +187,61 @@ DRIFT_RULES = (
               "ADR-0020's rejected options."),
         scope="repo",
     ),
+    Drift(
+        label="passthrough-backend",
+        # The symbol of upstream's output stage, the one with no crossover and
+        # no limiter in it. It is matched by name because the way it comes
+        # back is a tracked sdkconfig fragment that sets it, or a note that
+        # still calls it the product's output. The generated sdkconfig is
+        # skipped (SKIP_FILES): a stale one is a reason to reconfigure, not a
+        # finding about the record. The dated logs keep the history; the
+        # Kconfig that defines it, the CMake that compiles it, the workflows
+        # that refuse it and the README that explains the three backends are
+        # where the name belongs.
+        pattern=r"HK_AIRPLAY_OUTPUT_I2S\b",
+        allowed=(
+            "firmware/components/hk_airplay/Kconfig",
+            "firmware/components/hk_airplay/CMakeLists.txt",
+            ".github/workflows/",
+            "docs/08-development-log/",
+            "docs/07-decisions/ADR-0022-dsp-product-output-backend.md",
+            "firmware/README.md",
+            "scripts/check_docs.py",
+        ),
+        hint=("The product's output backend is the DSP chain (ADR-0022): the "
+              "passthrough is upstream's stage, selectable only on the devkit or a "
+              "bench-exception build, and no tracked sdkconfig fragment may select "
+              "it. Write 'the vendored passthrough' where the stage is meant."),
+        scope="repo",
+    ),
 )
 
 # Claims the contract forbids stating as fact.
+#
+# Applied case-insensitively to every vault note. Each row is a regex and the
+# reason it is forbidden; a hit is an error, so a row has to be tight enough
+# that the honest sentence stays writable -- the second row's negative
+# lookahead exists for exactly that: 'kesin değildir' is the phrasing the
+# record uses for a placeholder, 'kesin olmayan', 'kesin olmaktan uzak' and
+# 'kesin sayılmaz' are its neighbours, and none of them may trip the rule
+# against calling one certain.
 FORBIDDEN_CLAIMS = (
     (r"(woofer|tweeter)[^.\n]{0,40}\b8\s*(ohm|Ω)\b[^.\n]{0,20}(olduğu|doğrulandı|kesin)",
      "The driver impedance curve and Fs are not measured (G0); the measured DC "
      "resistance puts both Nova drivers in the 4 ohm class, not 8."),
+    # The provisional profile's numbers -- crossover 2800 Hz, subsonic 55 Hz,
+    # ceilings 0.70 and 0.35 -- are placeholders until G0/G2, and the likeliest
+    # new false claim is one of them written as measured. The middle group
+    # keeps the number whole (`\b` on both sides), the last group takes the
+    # past-tense and perfect forms of 'measured', 'verified' and 'certain',
+    # and the lookahead on `kesin` lets the honest negations through: 'kesin
+    # değil(dir)', 'kesin olmayan', 'kesin olmaktan uzak', 'kesin sayılmaz'.
+    (r"(crossover|subsonic|tavan|köşe)[^.\n]{0,40}\b(2800|55|0[.,]70|0[.,]35)\b[^.\n]{0,40}"
+     r"\b(ölçüldü|ölçülmüş(?:tür)?|doğrulandı|doğrulanmış(?:tır)?|"
+     r"kesin(?!\s+(?:değil|olmayan|olmaktan|sayılm))(?:dir|leşti|leşmiş(?:tir)?)?)\b",
+     "The provisional crossover and subsonic corners and the limiter ceilings "
+     "are placeholders until G0/G2 produce measured values; none of them was "
+     "measured or verified, and the record may not say so."),
 )
 
 

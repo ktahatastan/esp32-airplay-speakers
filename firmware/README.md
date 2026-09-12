@@ -11,12 +11,24 @@ receiver: on 2026-09-05 an iPhone streamed to it and the audio was heard.
 
 The product's own audio path has played too. On 2026-09-08 the bench build (the
 product profile plus `sdkconfig.bench`) carried AirPlay → I2S → PCM5102A →
-XH-A232 → sound, mono and clean, with a DSP chain in front of the amplifier: mono
-sum, per-band EQ, subsonic high-pass, LR4 crossover, a limiter per branch. That
-chain is not finished and its numbers are placeholders: two are measured (the
-drivers' DC resistances), the rest are reasoned from an impedance sweep that located
-neither driver's `Fs`, so the product profile still refuses audio until a
-measured calibration profile exists in `factory_cal` (`G0`). The bench record is
+XH-A232 → sound, mono and clean. Which output backend that build compiled is an
+open question for the operator (the bench record asks it); this file used to
+assert the DSP chain was in the path that day, and the firmware plan says the
+only record of that is a commit message, so neither is cited as evidence.
+
+Since 2026-09-12 the DSP chain is the **product's output backend** (ADR-0022):
+the product and release images compile it, and upstream's passthrough is
+selectable only on the devkit or a bench-exception build. The chain is mono sum,
+per-band EQ, fourth-order subsonic high-pass, LR4 crossover, per-branch gain,
+one-branch alignment delay, tweeter polarity, a supply-budget stage, and a peak
+limiter per branch. It is not finished and its numbers are placeholders: two are
+measured (the drivers' DC resistances — the tweeter's is 3.5 ohm in the operator
+record, this firmware carried 3.7 until 2026-09-12 and now follows the record,
+with the operator asked to confirm), the rest are reasoned from an impedance
+sweep that located neither driver's `Fs`. So the product refuses audio until a
+valid calibration profile exists in `factory_cal` (`G0`): a missing profile
+keeps the DAC muted, and a present-but-refused one is named in the boot report
+and keeps it muted too. The bench record is
 [docs/06-testing/bench-measurement-order.md](../docs/06-testing/bench-measurement-order.md);
 what comes next, in order and with acceptance criteria, is in
 [docs/03-firmware/firmware-plan.md](../docs/03-firmware/firmware-plan.md).
@@ -31,6 +43,7 @@ what comes next, in order and with acceptance criteria, is in
 | Supply | 24 V / 2.9 A DC adapter on VIN; `CONFIG_HK_SUPPLY_MV` defaults to 24000 | ADR-0020 |
 | Distribution | SemVer tag, GitHub Releases, signed A/B OTA | ADR-0008 |
 | AirPlay stack | `rbouteiller/airplay-esp32`, vendored at `38027441ff43` | ADR-0007, ADR-0013 |
+| Output backend | the DSP chain, in the product and release images; the passthrough only on the devkit or a bench-exception build, refused in a release | ADR-0022 |
 
 The GPIO assignment is a *candidate*, not accepted: it holds until the purchased
 board's own schematic and a boot test confirm it.
@@ -55,6 +68,25 @@ idf.py -C firmware -p /dev/tty.usbmodem* flash monitor
 > keeps the old settings and silently omits whatever you just enabled. Delete
 > `firmware/sdkconfig` and rebuild after editing the defaults. CI is immune,
 > since it starts from a fresh checkout.
+>
+> The same trap applies to a Kconfig *default*, with one exception worth
+> knowing. On 2026-09-12 the output backend's choice default moved to the DSP
+> chain (ADR-0022). On a **product** configuration the passthrough is not
+> selectable at all (its `depends on` is unmet), so a stale `firmware/sdkconfig`
+> that still says `CONFIG_HK_AIRPLAY_OUTPUT_I2S=y` cannot keep it: kconfgen
+> drops the invisible line and the next reconfigure writes
+> `CONFIG_HK_AIRPLAY_OUTPUT_DSP=y` (verified by `idf.py reconfigure` on such a
+> file). On the **devkit** and on a **bench-exception** build the passthrough
+> is still selectable, so a `firmware/build-devkit/sdkconfig` or
+> `firmware/build-bench/sdkconfig` generated before ADR-0022 keeps
+> `CONFIG_HK_AIRPLAY_OUTPUT_I2S=y` through a reconfigure (also verified) — and
+> the bench build is the one that reaches the amplifiers. CI cannot catch that,
+> since it starts from a fresh checkout; the grep in the bench build recipe
+> below is what does. After pulling that change, delete
+> `firmware/build-bench/sdkconfig` (and `firmware/build-devkit/sdkconfig`),
+> configure again, and check
+> `grep -x CONFIG_HK_AIRPLAY_OUTPUT_DSP=y firmware/build-bench/sdkconfig`
+> before flashing a bench build.
 
 `PROJECT_VER` comes from `version.txt`. It must stay strict SemVer, because the
 OTA client compares it numerically and the release pipeline checks it against the
@@ -119,15 +151,22 @@ the audio path until a driver-protection profile exists in `factory_cal`. Until
 `G0` has been measured no such profile can be written, so on the product path
 the receiver could never be exercised.
 
-`sdkconfig.bench` lifts that gate and runs the DSP backend on a provisional
-profile that says on every boot that it was not measured:
+`sdkconfig.bench` lifts that gate — the *absence* refusal only: a profile that
+is present in `factory_cal` but refused stays refused on the bench too — and
+supplies a provisional profile that says on every boot that it was not
+measured; the backend it plays through is the product's own DSP chain, not a
+bench-only one:
 
 ```bash
 idf.py -C firmware -B firmware/build-bench \
   -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.bench" \
   -D SDKCONFIG="$PWD/firmware/build-bench/sdkconfig" \
   build
+grep -qx CONFIG_HK_AIRPLAY_OUTPUT_DSP=y firmware/build-bench/sdkconfig
 ```
+
+The grep is the one CI runs on a fresh checkout; on a bench machine it is the
+only thing that catches a stale `build-bench/sdkconfig` (see the trap above).
 
 It announces itself twice in the boot report, because an exception nobody can
 see is indistinguishable from a defect — which is how this one started life:
@@ -137,6 +176,19 @@ calibration namespace, and that alone was read as "calibrated".
 **Look at what is wired to the amplifier output before flashing this build.** It
 is defensible into a dummy load, a scope or nothing; the staging rule in
 `AGENTS.md` says when one amplifier, one woofer and one tweeter may follow.
+
+The provisional profile was listened to with the amplifier on a 12 V bench
+supply. A bench build at the product's `CONFIG_HK_SUPPLY_MV` (24000) says so at
+boot, and the warning is not decoration. The scale-down halves the digital
+ceiling, and what that does at the driver depends on the bench: where the 12 V
+bench did not clip its rail, halving the ceiling halves the driver voltage;
+where it did — and by the firmware's own note the 2026-09-08 listening ran the
+amplifier into its rail at about 80 % of the slider — the 24 V rail clips later, and the halved ceiling
+can still put more on the driver than the bench heard. The TPA3110D2 is
+fixed-gain, so which case applies is a question about the gain strapping
+(bench item `C3`), not about the profile. Read the strapping first — no
+listening on drivers at 24 V before that, and then staged, low level, one
+pair.
 
 ## ESP-IDF traps
 
@@ -275,9 +327,12 @@ firmware/
     hk_portal/          the app-less captive-portal setup path (ADR-0015)
     hk_ui/              button GPIO and RGB PWM, on its own low-priority task
     hk_network/         Wi-Fi, mDNS and the provisioning transport
-    hk_airplay/         the vendored AirPlay 2 receiver and its output backends
-                        (I2S passthrough, the DSP chain, S/PDIF for the bench)
-    hk_audio/           the mute sequence: I2S clocks and the DAC's XSMT, in order
+    hk_airplay/         the vendored AirPlay 2 receiver and its output backends:
+                        the DSP chain (product), S/PDIF (devkit bench), upstream's
+                        passthrough (devkit / bench-exception only)
+    hk_audio/           the mute sequence (I2S clocks and the DAC's XSMT, in order)
+                        and the pure DSP: profile schema, biquads, LR4, limiters,
+                        the supply-budget stage
     hk_settings/        what the user may change, and its stored bounds
     hk_schema/          what to do when stored data does not match this build
     hk_storage/         the two stores, and the wall between them
@@ -317,6 +372,13 @@ impedance has not been measured. Until the relevant gate passes:
 
 - no code path may raise output level on a real driver (G0, G2)
 - the tweeter path stays muted without a verified high-pass and limiter
+- no profile, no audio: the product refuses to drive the DAC until a valid
+  profile is stored, and judges the stored one at boot with the same
+  `hk_profile_load()` the backend uses (ADR-0022)
+- the amplifier's gain strapping is unread (bench item `C3`): no listening on
+  drivers at 24 V before it is. The ceiling scale-down halves the digital
+  ceiling; whether that halves the driver voltage or, after a rail-clipped
+  bench, still exceeds what the bench heard is what `C3` says
 - a user reset must never erase `factory_cal`: enforced by a partition boundary,
   a read-only open, and `tools/check_storage_isolation.py` in CI
 - OTA must not start during playback or without Wi-Fi

@@ -1,13 +1,13 @@
-# hk_audio.c, hk_limiter.c, hk_biquad.c, hk_profile.c, hk_dsp.c and hk_eq.c are
-# pure C and are compiled unchanged by firmware/test on a machine that has never
-# seen ESP-IDF. hk_audio_hw.c is the opposite: it is the board layer that drives
-# the two mute GPIOs, and it is the only file here that needs a driver. Keeping
-# both in one component keeps the sequence and the pins it moves in one place;
-# the host tests name the pure files individually, so this addition does not
-# reach them.
+# hk_audio.c, hk_limiter.c, hk_supply_limiter.c, hk_biquad.c, hk_profile.c,
+# hk_dsp.c and hk_eq.c are pure C and are compiled unchanged by firmware/test on
+# a machine that has never seen ESP-IDF. hk_audio_hw.c is the opposite: it is
+# the board layer that drives the DAC's mute GPIO, and it is the only file here
+# that needs a driver. Keeping both in one component keeps the sequence and the
+# pin it moves in one place; the host tests name the pure files individually,
+# so this addition does not reach them.
 set(HK_AUDIO_SRCS
-    "hk_audio.c" "hk_audio_hw.c" "hk_limiter.c" "hk_biquad.c" "hk_profile.c"
-    "hk_dsp.c" "hk_eq.c")
+    "hk_audio.c" "hk_audio_hw.c" "hk_limiter.c" "hk_supply_limiter.c"
+    "hk_biquad.c" "hk_profile.c" "hk_dsp.c" "hk_eq.c")
 
 # hk_tone.c is a bench diagnostic, not a product feature, so the SOURCE is left
 # out of an image that did not ask for it -- the same arrangement hk_airplay

@@ -33,7 +33,7 @@ static void section_response(const hk_biquad_coeffs_t *c, float w,
     *im = (ni * dr - nr * di) / den;
 }
 
-/** Two identical cascaded sections: H^2. */
+/** Two cascaded sections: H0 x H1 (identical for LR4, unequal for Butterworth-4). */
 static void lr4_response(const hk_lr4_coeffs_t *f, float w, float *re, float *im)
 {
     float r, i;
@@ -310,6 +310,72 @@ void test_biquad(void)
         HK_CHECK(fabsf(y) < 1e-2f);   /* DC is removed */
     }
 
+    /* ===== fourth-order Butterworth: the subsonic filter's shape =====
+     * Two sections at the same corner and different Qs, and the number that
+     * separates it from the LR4 pair above: -3 dB at the corner, not -6. The
+     * corner is what a stored woofer_hpf_hz names, so this is the check that
+     * the field means what hk_profile.h says it means. */
+    {
+        hk_lr4_coeffs_t b4;
+        HK_CHECK(hk_butterworth4_highpass(&b4, FC, FS));
+        HK_CHECK(!hk_butterworth4_highpass(NULL, FC, FS));
+        HK_CHECK(!hk_butterworth4_highpass(&b4, FS, FS));       /* same refusals */
+        HK_CHECK(!hk_butterworth4_highpass(&b4, 1.0f, 192000.0f));
+        HK_CHECK(hk_butterworth4_highpass(&b4, FC, FS));
+
+        /* The sections are NOT identical -- that is the whole difference. */
+        HK_CHECK(b4.section[0].a1 != b4.section[1].a1);
+        HK_CHECK(hk_biquad_stable(&b4.section[0]));
+        HK_CHECK(hk_biquad_stable(&b4.section[1]));
+
+        float re, im;
+        const float w_c = 2.0f * (float)M_PI * FC / FS;
+
+        /* -3 dB at the corner: 0.7071 within 0.3 dB. */
+        lr4_response(&b4, w_c, &re, &im);
+        const float at_fc = 20.0f * log10f(magnitude(re, im));
+        HK_CHECK(fabsf(at_fc + 3.0f) < 0.3f);
+
+        /* 24 dB/octave: one octave below is about -24 dB, two octaves below
+         * about -48 dB, and the difference between them is the slope. */
+        lr4_response(&b4, w_c / 2.0f, &re, &im);
+        const float one_octave = 20.0f * log10f(magnitude(re, im));
+        lr4_response(&b4, w_c / 4.0f, &re, &im);
+        const float two_octaves = 20.0f * log10f(magnitude(re, im));
+        HK_CHECK(fabsf(one_octave + 24.1f) < 1.0f);
+        HK_CHECK(fabsf(two_octaves + 48.2f) < 1.0f);
+        HK_CHECK(fabsf((one_octave - two_octaves) - 24.0f) < 1.0f);
+
+        /* Maximally flat: two octaves above the corner it is within 0.2 dB. */
+        lr4_response(&b4, w_c * 4.0f, &re, &im);
+        HK_CHECK(fabsf(20.0f * log10f(magnitude(re, im))) < 0.2f);
+
+        /* Both sections stable at both rates this product could run at, for
+         * a corner where a subsonic filter would live. */
+        HK_CHECK(hk_butterworth4_highpass(&b4, 55.0f, 44100.0f));
+        HK_CHECK(hk_biquad_stable(&b4.section[0]) && hk_biquad_stable(&b4.section[1]));
+        HK_CHECK(hk_butterworth4_highpass(&b4, 55.0f, 48000.0f));
+        HK_CHECK(hk_biquad_stable(&b4.section[0]) && hk_biquad_stable(&b4.section[1]));
+
+        /* And the slope through the filter that will actually run, the same
+         * way the LR4 branches are checked above: a sine two octaves below the
+         * corner, through hk_lr4_process_one(). About -48 dB, roughly 0.004;
+         * running only one section would leave 20-30 dB. */
+        HK_CHECK(hk_butterworth4_highpass(&b4, FC, FS));
+        const float w = 2.0f * (float)M_PI * (FC / 4.0f) / FS;
+        hk_lr4_state_t st = {{{0.0f, 0.0f}, {0.0f, 0.0f}}};
+        float peak = 0.0f;
+        for (int i = 0; i < 60000; i++) {
+            const float x = sinf(w * (float)i);
+            const float y = hk_lr4_process_one(&b4, &st, x);
+            if (i > 30000 && fabsf(y) > peak) {
+                peak = fabsf(y);
+            }
+        }
+        HK_CHECK(peak < 0.008f);
+        HK_CHECK(peak > 0.002f);
+    }
+
     /* ===== instability is recognised ===== */
     {
         hk_biquad_coeffs_t bad = {1.0f, 0.0f, 0.0f, 0.0f, 1.5f};  /* |a2| > 1 */
@@ -319,6 +385,33 @@ void test_biquad(void)
         bad.a1 = NAN;
         HK_CHECK(!hk_biquad_stable(&bad));
         HK_CHECK(!hk_biquad_stable(NULL));
+    }
+
+    /* ===== a non-finite NUMERATOR is refused too =====
+     * Jury's criterion is about the poles, and a NaN in the feed-forward path
+     * leaves the poles exactly where they were: a section that passed the old
+     * check, ran, and turned every sample into NaN that the output stage
+     * clamped to silence -- with no refusal to say so. */
+    {
+        hk_biquad_coeffs_t good;
+        HK_CHECK(hk_biquad_highpass(&good, 55.0f, 44100.0f, HK_BIQUAD_Q_BUTTERWORTH));
+        HK_CHECK(hk_biquad_stable(&good));
+
+        hk_biquad_coeffs_t bad = good;
+        bad.b0 = NAN;
+        HK_CHECK(!hk_biquad_stable(&bad));
+        bad = good;
+        bad.b1 = INFINITY;
+        HK_CHECK(!hk_biquad_stable(&bad));
+        bad = good;
+        bad.b2 = INFINITY;
+        HK_CHECK(!hk_biquad_stable(&bad));
+        bad = good;
+        bad.a1 = -INFINITY;
+        HK_CHECK(!hk_biquad_stable(&bad));
+        bad = good;
+        bad.a2 = INFINITY;
+        HK_CHECK(!hk_biquad_stable(&bad));
     }
 
     /* ===== degenerate calls do not crash ===== */

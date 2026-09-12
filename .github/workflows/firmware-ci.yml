@@ -32,6 +32,13 @@ jobs:
           python-version: '3.11'
       - name: check_docs
         run: python3 scripts/check_docs.py
+      - name: the DSP output backend has been reviewed against its vendored original
+        # The product's output stage (ADR-0022) is a shadow of the vendored
+        # audio_output.c, which ADR-0013 forbids editing. The script compares
+        # the vendored file's hash with the one recorded when the shadow was
+        # last reviewed; an upstream copy that moves the original without
+        # that review fails here, before it fails on a bench as timing drift.
+        run: python3 scripts/check_vendor_output_shadow.py
       - name: no private key material anywhere in the tree
         # Content-based, not name-based. The .gitignore names the files a key
         # is likely to be called; this catches one called anything at all.
@@ -147,6 +154,31 @@ jobs:
         run: |
           . $IDF_PATH/export.sh
           idf.py -C firmware build
+      - name: the product build carries the DSP output backend (ADR-0022)
+        shell: bash
+        run: |
+          # Kconfig's default is what selects it, so nothing in a tracked
+          # fragment names it and nothing but this grep would notice a
+          # default that quietly moved back to the vendored passthrough --
+          # the stage with no crossover and no limiter in front of four
+          # tweeters. A checkout with a stale generated sdkconfig cannot fool
+          # this job: the runner starts with none. That file is written next
+          # to the project (firmware/sdkconfig), not into the build tree; the
+          # build tree only gets the derived sdkconfig.h.
+          grep -qx 'CONFIG_HK_AIRPLAY_OUTPUT_DSP=y' firmware/sdkconfig \
+            || { echo "the product build did not select the DSP output backend"; exit 1; }
+          # The bench-only wording in hk_main's boot lines ("placeholders
+          # until G0/G2") is behind CONFIG_HK_BENCH_PROVISIONAL_PROFILE. A
+          # product image that contains it would print, on a product board, a
+          # sentence about a profile it does not have. grep -a reads the raw
+          # image as text, which is the same test as `strings | grep` without
+          # depending on binutils being in the container. A negated grep
+          # passes on a file that is not there (grep exits 2, `!` turns that
+          # into success), so the image is required before it is searched.
+          BIN=firmware/build/merzarkabul-airplay-speakers.bin
+          test -f "$BIN" || { echo "no product image to inspect"; exit 1; }
+          ! grep -qa 'placeholders until' "$BIN" \
+            || { echo "the product image carries the bench-only 'placeholders until' wording"; exit 1; }
       - name: partition layout and size gate
         shell: bash
         run: |
@@ -172,6 +204,36 @@ jobs:
           python3 firmware/tools/check_partitions.py \
             --csv firmware/partitions-devkit.csv --flash-size 8MB \
             --app-size firmware/build-devkit/merzarkabul-airplay-speakers.bin
+      # The bench fragment is the only build that plays through the DSP chain
+      # today: it lifts the profile gate and supplies the provisional profile,
+      # and the code behind those two symbols (the compiled-in profile, the
+      # boot warnings that name it) is compiled by nothing else. Until this
+      # step existed no job compiled it, so a break there surfaced at a bench.
+      # It builds for the product board with the product's output backend,
+      # which is asserted rather than assumed; the fragment no longer names it.
+      - name: build the bench profile
+        shell: bash
+        run: |
+          . $IDF_PATH/export.sh
+          idf.py -C firmware -B firmware/build-bench \
+            -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.bench" \
+            -D SDKCONFIG="$PWD/firmware/build-bench/sdkconfig" \
+            build
+          SDKCONFIG=firmware/build-bench/sdkconfig
+          grep -qx 'CONFIG_HK_AIRPLAY_OUTPUT_DSP=y' "$SDKCONFIG" \
+            || { echo "the bench profile did not inherit the DSP output backend"; exit 1; }
+          grep -qx 'CONFIG_HK_BENCH_AUDIO_WITHOUT_PROFILE=y' "$SDKCONFIG" \
+            || { echo "the bench profile did not lift the profile gate"; exit 1; }
+          grep -qx 'CONFIG_HK_BENCH_PROVISIONAL_PROFILE=y' "$SDKCONFIG" \
+            || { echo "the bench profile did not select the provisional profile"; exit 1; }
+          # The other half of the product job's wording check: the bench image
+          # must still say its numbers are placeholders. If this fails the
+          # sentence was deleted rather than gated, and the product check
+          # above has nothing left to catch.
+          grep -qa 'placeholders until' firmware/build-bench/merzarkabul-airplay-speakers.bin \
+            || { echo "the bench image no longer says its profile is a placeholder"; exit 1; }
+          python3 firmware/tools/check_partitions.py \
+            --app-size firmware/build-bench/merzarkabul-airplay-speakers.bin
       # The host suite again, this time with ESP-IDF present so cJSON exists
       # and the manifest parser plus the generator/validator bridge actually
       # run. Without this the parser would be tested nowhere.

@@ -67,19 +67,36 @@ set(HK_OWN_SRCS hk_airplay.c shim/hk_airplay_shim.c)
 # audio_output_common.c carries weak defaults and exactly one backend supplies
 # the rest. There are three to choose from and exactly one may be listed.
 #
+#   output/hk_airplay_output_i2s.c
+#                             ours, and THE PRODUCT'S (ADR-0022): the Kconfig
+#                             default, so a product build, a release build and
+#                             a bench build all compile this one. The same I2S
+#                             stage as upstream's with this project's crossover,
+#                             protective filters, supply-budget stage and
+#                             limiters in it. It SHADOWS audio_output.c rather
+#                             than patching it, because ADR-0013 forbids
+#                             touching vendor/ -- so the two have to be kept in
+#                             step by review, and
+#                             scripts/check_vendor_output_shadow.py is what
+#                             forces that review to happen. The script hashes
+#                             the VENDORED file, not this one: editing the
+#                             shadow never needs `--record`; an upstream copy
+#                             that changes audio_output.c does.
 #   audio_output.c            upstream's I2S stage. No crossover, no limiter:
 #                             whatever arrives is what the amplifiers get.
+#                             Compiled only when CONFIG_HK_AIRPLAY_OUTPUT_I2S
+#                             is selected explicitly, which Kconfig permits on
+#                             the bring-up devkit or a bench-exception build
+#                             and on nothing else.
 #   audio_output_spdif.c      a bench output that lets the audio path be heard
 #                             before the product's DAC exists; see Kconfig for
-#                             the circuit it needs.
-#   output/hk_airplay_output_i2s.c
-#                             ours. The same I2S stage with this project's
-#                             crossover, protective filters and limiter in it.
-#                             It SHADOWS audio_output.c rather than patching it,
-#                             because ADR-0013 forbids touching vendor/ -- so
-#                             the two have to be kept in step by review, and
-#                             scripts/check_vendor_output_shadow.py is what
-#                             forces that review to happen.
+#                             the circuit it needs. sdkconfig.devkit selects it.
+#
+# The `else()` below is the passthrough, not a silent fallback: with the choice
+# defaulting to the DSP backend it is only reached when the passthrough was
+# named -- or in a build without the receiver at all, where the list is
+# emptied just below -- and CI asserts the product's generated sdkconfig says
+# CONFIG_HK_AIRPLAY_OUTPUT_DSP=y.
 if(CONFIG_HK_AIRPLAY_OUTPUT_SPDIF)
     list(APPEND VENDOR_SRCS vendor/audio/audio_output_spdif.c)
 elseif(CONFIG_HK_AIRPLAY_OUTPUT_DSP)

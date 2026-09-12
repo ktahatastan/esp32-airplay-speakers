@@ -3,7 +3,7 @@ status: accepted
 decision: accepted
 owner: firmware-engineer
 reviewers: [orchestrator, verifier]
-updated: 2026-09-05
+updated: 2026-09-12
 tags: [adr, airplay, vendoring, licence, firmware]
 ---
 
@@ -33,7 +33,7 @@ Bu ADR'nin dayandığı sayılar tahmin değil:
 | Vendor edilen | **81 dosya, 776 KB** |
 | Alınmayan dosyaların bıraktığı bağ | **iki fonksiyon** |
 | Uygulama imajı (geliştirme kartı) | 1.642.880 B; `0x2e0000` slotun **%45,5'i boş** |
-| Ürün imajına etkisi | **sıfır** — `CONFIG_HK_AIRPLAY=n`, ikilide tek AirPlay dizesi yok |
+| Ürün imajına etkisi | **sıfır** — `CONFIG_HK_AIRPLAY=n`, ikilide tek AirPlay dizesi yok. *Bu ölçüm 2026-09-05 için geçerlidir: 2026-09-08'den beri (`7f2df34`) `sdkconfig.defaults` alıcıyı ürün profilinde açar ve [[ADR-0022-dsp-product-output-backend\|ADR-0022]] ile ürün çıkışı DSP gölgesidir; ürün imajı artık yığını taşır* |
 | Boş PSRAM (ağa katıldıktan sonra, ölçüm) | 2.094.848 B |
 | Yığının jitter tamponu (kaynaktan) | 1.416.000 B — boşun %67,6'sı |
 
@@ -50,9 +50,9 @@ O not 2026-08-31'de, kaynağı okumadan önce yazılmış üç şeyi fazla karam
 ## Sonuçlar
 
 - **Lisans tüm projeyi bağlar.** Yukarı akış ticari olmayan kullanım lisanslı. Bu firmware satılamaz. Lisans metni kapsadığı kodun yanında, `vendor/LICENSE`'ta duruyor.
-- **Vendor ağacı yamalanmadığı için yukarı akış güncellemesi bir kopyalama işidir**, birleştirme değil. Bunun bedeli, ayarların bizim tarafta ayrı bir `Kconfig`'de durması.
+- **Vendor ağacı yamalanmadığı için yukarı akış güncellemesi bir kopyalama işidir**, birleştirme değil — artı bir gölge incelemesi: ürünün çıkış arka ucu vendor'un `audio/audio_output.c` dosyasının gölgesidir ([[ADR-0022-dsp-product-output-backend|ADR-0022]]) ve `scripts/check_vendor_output_shadow.py` vendor dosyasının özetini gölgenin yanında saklar; özet değişmişse gölge okunmadan güncelleme bitmiş sayılmaz. Bunun bedeli, ayarların bizim tarafta ayrı bir `Kconfig`'de durması.
 - **`hk_airplay_start()` ses izni olmayan bir üründe başlamayı reddeder.** Alıcının çıkış katı gerçek pinleri saatler; ürün kartında bunu `G0`/`G2` öncesi yapmak tam olarak o kapıların engellediği şeydir. Geliştirme kartında izin fiziksel: üzerinde DAC de amfi de yok.
-- **Ürün yapısı değişmedi.** `CONFIG_HK_AIRPLAY` varsayılan kapalı; açmak ayrı bir adımdır ve kapılara bağlıdır.
+- **Ürün yapısı 2026-09-05'te değişmemişti; sonra değişti.** Bu satır o gün "`CONFIG_HK_AIRPLAY` varsayılan kapalı; açmak ayrı bir adımdır ve kapılara bağlıdır" diyordu ve 2026-09-08'e kadar doğruydu. O gün `7f2df34` `sdkconfig.defaults`'a `CONFIG_HK_AIRPLAY=y` yazdı — kapı değişmedi, alıcı ses izni olmadan yine başlamaz — ve 2026-09-12'de [[ADR-0022-dsp-product-output-backend|ADR-0022]] ürün çıkışını vendor'un geçiş katından bu projenin DSP zincirine çekti. Vendor ağacı ve `hk_airplay_start()`'ın biçimi değişmedi; bu ADR'nin konusu olan entegrasyon biçimi olduğu gibi durur.
 - I2S pinleri iki yerde adlandığı için derleyiciye anlattırıldı: `hk_airplay.c` içindeki `_Static_assert`'ler `CONFIG_I2S_*` ile `hk_pins.h`'nin aynı pinleri söylediğini zorunlu kılar.
 
 ## Kanıtlanmamış olanlar

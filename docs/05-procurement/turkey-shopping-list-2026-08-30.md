@@ -22,7 +22,7 @@ Bu liste tek Merzarkabul kabini içindir ([[../07-decisions/ADR-0021-single-cabi
 
 `24 V / 2,9 A masaüstü DC adaptör -> 5,5 × 2,1 mm merkez pozitif jak -> VIN -> 4 × XH-A232 (8-26 V) ve 2 × MP1584 5,10 V (A: ESP32-S3, B: PCM5102A)`
 
-Adaptör kabinin dışındadır ve dört amfiyi doğrudan besler; kabinin içindeki güç parçaları jak, bulk kondansatör ve iki buck'tır. Adaptör 24 V / 2,9 A ile verilidir; yüksüz çıkışı bağlanmadan önce ölçülür ve 25,5 V'un altında olmalıdır, limiter tavanı bu bütçeden türetilir ([[../07-decisions/ADR-0020-dc-adapter-power|ADR-0020]]).
+Adaptör kabinin dışındadır ve dört amfiyi doğrudan besler; kabinin içindeki güç parçaları jak, bulk kondansatör ve iki buck'tır. Adaptör 24 V / 2,9 A ile verilidir; yüksüz çıkışı bağlanmadan önce ölçülür ve 25,5 V'un altında olmalıdır ([[../07-decisions/ADR-0020-dc-adapter-power|ADR-0020]]). Bu bütçeden alınan şey DSP'nin besleme bütçesi katıdır (`supply_budget_sq` / `supply_window_ms`, iki dalın toplamı üzerinden ortalama güç), `G1` S7'de 4 Ω sınıfı yükte; tepe limiter tavanları `G2`'nindir ve onun altında kalır ([[../07-decisions/ADR-0022-dsp-product-output-backend|ADR-0022]]).
 
 ## Kabine alınacak parçalar
 

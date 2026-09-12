@@ -1,7 +1,9 @@
 /**
  * @file hk_airplay_output_i2s.c
  * @brief The third output backend: I2S to the PCM5102A, through this project's
- *        crossover, protective filters and limiter.
+ *        crossover, protective filters and limiters. The product's output
+ *        backend since ADR-0022; the vendored passthrough is for the
+ *        development card and the bench exception only.
  *
  * This is a SHADOW of vendor/audio/audio_output.c, at the commit ADR-0007 pins
  * (rbouteiller/airplay-esp32 @ 38027441ff4327611d26153a8e8b06636cdf009f,
@@ -51,18 +53,35 @@
  *
  * WHAT THIS BACKEND WILL AND WILL NOT DO
  * ======================================
- * The DSP holds the crossover, the subsonic filter and the two limiters. It is
- * ready only when a calibration profile has been read and built (hk_profile).
- * Until then this backend clocks I2S, drains the receiver and writes DIGITAL
- * ZERO. It does not fall back to passing audio through: an unfiltered
- * full-range signal on the tweeter branch is precisely the damage the profile
- * exists to prevent. hk_dsp.h makes the same refusal for the same reason, and
- * says the thing worth repeating here -- writing zeros to a live amplifier is
- * not the answer to "do not play". It is not the answer here either, and it
- * does not have to be: hk_storage_audio_permitted() is already false in exactly
- * this state, so hk_audio_step() has already driven the mute sequence and the
- * amplifier is already shut down. This backend agreeing with that gate costs
- * nothing; disagreeing with it would be the bug.
+ * The DSP holds the crossover, the subsonic filter, the alignment delay and
+ * polarity, the supply-budget stage and the two peak limiters, in the order
+ * hk_dsp.h gives. It is ready only when a calibration profile has been read
+ * AND built, and one function does both: hk_profile_load(). Until then this
+ * backend clocks I2S, drains the receiver and writes DIGITAL ZERO. It does not
+ * fall back to passing audio through: an unfiltered full-range signal on the
+ * tweeter branch is precisely the damage the profile exists to prevent.
+ * hk_dsp.h makes the same refusal for the same reason, and says the thing
+ * worth repeating here -- writing zeros to a live amplifier is not the answer
+ * to "do not play". It is not the answer here either, and it does not have to
+ * be: hk_storage_audio_permitted() is already false in exactly this state, so
+ * hk_audio_step() has already driven the mute sequence and the DAC's XSMT is
+ * already held down. That is true of BOTH ways of arriving here -- no profile
+ * stored, and a profile stored but refused -- because hk_main judges the
+ * stored blob at boot with the same hk_profile_load() this file calls and
+ * pushes the verdict into hk_storage. A blob this backend would refuse is a
+ * blob the gate has already refused, so the two cannot disagree about it
+ * (ADR-0022). This backend agreeing with that gate costs nothing; disagreeing
+ * with it would be the bug. The one build that can arrive here with the DAC
+ * live is the bench exception (CONFIG_HK_BENCH_AUDIO_WITHOUT_PROFILE) without
+ * the provisional profile, which lifts the absence refusal by declaration --
+ * and only that one: a profile that is present but refused stays refused on
+ * the bench too (hk_storage.c). See its Kconfig help; nothing tracked builds
+ * that way.
+ *
+ * The gate is the protection, not the zeros. The XH-A232 has no mute input,
+ * so the amplifiers are live whenever VIN is; what the gate holds is the DAC
+ * (hk_audio_hw.c), and digital zero through a muted DAC is the quietest thing
+ * this firmware can produce.
  *
  * See the Kconfig help text, which says the same thing where somebody selecting
  * this backend will read it.
@@ -154,14 +173,28 @@ static hk_dsp_t s_dsp;
  * stated once in Kconfig so that a different adapter is a one-line change
  * rather than a hunt through the source.
  *
- * Scaling to the nominal matters in one direction. A ceiling listened to at
- * 12 V on a bench supply and replayed unscaled on the 24 V adapter would let
- * through more volts than the tweeter was heard to take; scaled by 12/24 it
- * lands below the bench level, which costs a little loudness and nothing else.
- * The error cases are not symmetric: a lower adapter left unconfigured errs
- * quiet, a higher one is the danger -- which is why G1 measures the adapter's
- * no-load output against the amplifier's 26 V maximum before it is connected.
- * The mechanism is one field and one multiply, and that is what it buys.
+ * What the scaling does, and what it does not. hk_profile_ceiling_at()
+ * multiplies each peak ceiling by min(1, reference / supply): a ceiling
+ * listened to at 12 V on the bench is halved for this 24 V build, and a
+ * supply below the reference never raises one. That errs quiet where it was
+ * written for, and it is all it does. This file used to say the halving keeps
+ * "the volts at the driver what the bench heard", and that is withdrawn: the
+ * TPA3110D2 is a fixed-gain amplifier whose output is gain x input until the
+ * rail clips (SLOS528F, Table 3 -- the same 1 Vrms in gives 23.5 Vpp from
+ * 12 V and 27.7 Vpp from 24 V, the 12 V figure being the rail clipping), and
+ * the branch gains are not scaled at all. So where the bench level did not
+ * clip the 12 V rail, the halved ceiling is half the bench voltage; where it
+ * did -- possible at an unread gain strapping, bench item C3 -- the 24 V rail
+ * clips later and the driver can see more than the bench's clipped level at
+ * the same slider. Which case applies is what C3 decides, and until it is
+ * read a profile built for the adapter is played staged, at low level, on one
+ * amplifier and one pair (AGENTS.md).
+ *
+ * The error cases in the CONFIGURED value are still not symmetric: a lower
+ * adapter left unconfigured errs quiet (the rail clips first), a higher one is
+ * the danger -- which is why G1 measures the adapter's no-load output against
+ * the amplifier's 26 V maximum before it is connected. The mechanism is one
+ * field and one multiply, and that is what it buys.
  */
 static float supply_mv_now(void);
 
@@ -174,11 +207,17 @@ static float supply_mv_now(void);
  *
  * Two of these numbers are measurements and the rest are not, and the
  * difference is the whole reason this function is behind its own Kconfig
- * symbol rather than being a default. Measured on 2026-09-08: the woofer's DC
- * resistance is 4.0 ohm and the tweeter's 3.7 ohm, both 4 ohm class. Everything
- * else below is a choice derived from two facts -- that the woofer's impedance
- * peaks at or below 100 Hz, and that the tweeter shows no peak above about
- * 5 ohm anywhere between 500 Hz and 3150 Hz.
+ * symbol rather than being a default. Measured on 2026-09-08, per the operator
+ * record (docs/02-hardware/driver-measurements.md): the woofer's DC resistance
+ * is 4.0 ohm and the tweeter's 3.5 ohm, both 4 ohm class. This file carried
+ * 3.7 for the tweeter until 2026-09-12; the record says 3.5, the record is the
+ * source, so the record wins -- and only the operator can say which reading
+ * was the tweeter's, so the line waits on a re-read. The profile carries the
+ * value and never computes with it, which is why a wrong one is a wrong
+ * source record rather than a wrong protection. Everything else below is a
+ * choice derived from two facts -- that the woofer's impedance peaks at or
+ * below 100 Hz, and that the tweeter shows no peak above about 5 ohm anywhere
+ * between 500 Hz and 3150 Hz.
  *
  * WHY EACH NUMBER IS WHAT IT IS:
  *
@@ -228,8 +267,38 @@ static float supply_mv_now(void);
  * and neither driver's power handling is known. Conservative, and the tweeter's
  * far more so. They were listened to with the amplifier on a 12 V bench
  * supply, which is what HK_BENCH_REFERENCE_SUPPLY_MV records; on the 24 V
- * adapter hk_profile_build() scales both down by 12/24, so the volts at the
- * driver stay what the bench heard rather than what the adapter allows.
+ * adapter hk_profile_build() halves both. That halving errs quiet and promises
+ * nothing about the volts at the driver -- see supply_mv_now() above for the
+ * datasheet reason -- so a 24 V build of this profile logs a warning of its
+ * own and is listened to staged, at low level, on one pair.
+ *
+ * limiter timing 150 ms release, 20 ms hold, on BOTH branches. Schema 2 lets
+ * the tweeter recover on its own clock (a dome and a cone do not recover
+ * alike), and G2 will set the two; until then the tweeter's numbers are the
+ * woofer's, copied, so the chain behaves exactly as it did when it was
+ * listened to.
+ *
+ * delays 0 and 0, polarity 0. The acoustic-centre offset between the cone and
+ * the dome and the sign that makes their sum add at the crossover are G2's
+ * sum measurement, not a bench guess: a delay chosen by ear would be a number
+ * as unmeasured as Fs, and a wrong polarity is a notch at the corner. Zero is
+ * "not measured", which is the truth.
+ *
+ * supply budget 1.0 over 100 ms. NOT A BUDGET ANYONE MEASURED. 1.0 is one
+ * full-scale branch's worth of mean square -- half the validator's bound of
+ * 2.0 (HK_PROFILE_SUPPLY_BUDGET_MAX), and about ten times anything these
+ * gains can make -- and it is here so the stage RUNS: its detector is what
+ * G1 step S7 reads off the telemetry line while raising the level into
+ * 4 ohm-class loads on the adapter, and that reading replaces this number.
+ * With the bench gains above and a flat EQ the summed mean square after the
+ * gains cannot exceed 0.25^2 + 0.18^2 = 0.095, so 1.0 can never engage on
+ * the programme alone; the user EQ sits ahead of the gains and can boost up
+ * to +12 dB per band, and with enough of that the stage does engage, in its
+ * only direction (quieter). The 100 ms window is a placeholder of the same
+ * kind: G1 sets it from VIN's hold-up, not from here.
+ *
+ * amp_gain_db 0: not read. The amplifier's gain straps are bench item C3, and
+ * this field is provenance for that reading; zero is what an unread strap is.
  */
 static bool bench_provisional_chain(hk_profile_chain_t *out)
 {
@@ -238,8 +307,8 @@ static bool bench_provisional_chain(hk_profile_chain_t *out)
         .reserved           = 0,
         .measured_yyyymmdd  = 20260908u,
         .source             = "provisional-not-measured",
-        .woofer_dcr_ohm     = 4.0f,    /* measured */
-        .tweeter_dcr_ohm    = 3.7f,    /* measured */
+        .woofer_dcr_ohm     = 4.0f,    /* measured, operator record */
+        .tweeter_dcr_ohm    = 3.5f,    /* operator record 2026-09-08; re-read pending, see above */
         .woofer_hpf_hz      = 55.0f,
         .crossover_hz       = 2800.0f,
         .woofer_gain        = 0.25f,
@@ -247,8 +316,16 @@ static bool bench_provisional_chain(hk_profile_chain_t *out)
         .reference_supply_mv = (float)HK_BENCH_REFERENCE_SUPPLY_MV,
         .woofer_ceiling     = 0.70f,
         .tweeter_ceiling    = 0.35f,
-        .release_ms         = 150u,
-        .hold_ms            = 20u,
+        .woofer_release_ms  = 150u,
+        .woofer_hold_ms     = 20u,
+        .tweeter_release_ms = 150u,    /* the woofer's, copied; G2 sets its own */
+        .tweeter_hold_ms    = 20u,
+        .woofer_delay_samples  = 0u,   /* not measured (G2) */
+        .tweeter_delay_samples = 0u,
+        .tweeter_polarity   = 0u,      /* not measured (G2) */
+        .supply_budget_sq   = 1.0f,    /* PLACEHOLDER, not a budget; G1 S7 replaces it */
+        .supply_window_ms   = 100u,    /* PLACEHOLDER; G1 sets it from VIN hold-up */
+        .amp_gain_db        = 0u,      /* not read (bench item C3) */
     };
 
     const hk_profile_verdict_t built =
@@ -261,14 +338,45 @@ static bool bench_provisional_chain(hk_profile_chain_t *out)
 
     ESP_LOGW(TAG, "BENCH PROFILE IN USE AND IT WAS NOT MEASURED "
                   "(CONFIG_HK_BENCH_PROVISIONAL_PROFILE). crossover %.0f Hz, "
-                  "subsonic %.0f Hz, gains %.2f/%.2f, ceilings %.2f/%.2f. Only "
-                  "the two DC resistances are measurements; the rest are choices "
-                  "derived from them. This protects a driver by argument, not by "
-                  "evidence -- it is not a G0/G2 calibration and must never be "
-                  "mistaken for one.",
+                  "subsonic %.0f Hz, gains %.2f/%.2f, ceilings %.2f/%.2f, "
+                  "release/hold %u/%u ms on both branches, no delay, no "
+                  "inversion. Only the two DC resistances are measurements; the "
+                  "rest are choices derived from them. This protects a driver "
+                  "by argument, not by evidence -- it is not a G0/G2 calibration "
+                  "and must never be mistaken for one.",
              (double)provisional.crossover_hz, (double)provisional.woofer_hpf_hz,
              (double)provisional.woofer_gain, (double)provisional.tweeter_gain,
-             (double)provisional.woofer_ceiling, (double)provisional.tweeter_ceiling);
+             (double)provisional.woofer_ceiling, (double)provisional.tweeter_ceiling,
+             (unsigned int)provisional.woofer_release_ms,
+             (unsigned int)provisional.woofer_hold_ms);
+    ESP_LOGW(TAG, "supply budget %.2f over %u ms is a PLACEHOLDER, not the "
+                  "adapter's 2.9 A: it is one full-scale branch's mean square, "
+                  "far above what these gains can make from the programme, so "
+                  "the stage runs but cannot engage (only under an EQ boost). "
+                  "G1 step S7 replaces it with what the telemetry line reads at "
+                  "the rail's sag point. Amplifier gain strapping: unread "
+                  "(bench item C3).",
+             (double)provisional.supply_budget_sq,
+             (unsigned int)provisional.supply_window_ms);
+#if CONFIG_HK_SUPPLY_MV != HK_BENCH_REFERENCE_SUPPLY_MV
+    /* The bench listened at 12 V. This build is not at 12 V, so the ceilings
+     * above are scaled -- and scaling is all that happens: the amplifier's
+     * gain is fixed and its strapping unread, so the same slider can put up
+     * to twice the bench voltage on a driver from a 24 V rail (the datasheet
+     * reading is at supply_mv_now()). Said at boot, every boot, because the
+     * staging rule is the only protection until C3 and G1 are read. */
+    ESP_LOGW(TAG, "this profile was listened to at %u mV; this build is at "
+                  "%u mV. The ceilings are scaled by min(1, %u/%u), which "
+                  "errs quiet and promises nothing about driver volts: the "
+                  "amplifier's gain strapping is unread (bench item C3), so the "
+                  "driver may see up to twice the bench voltage at the same "
+                  "slider -- staged, low level, one amplifier, one pair "
+                  "(AGENTS.md).",
+             (unsigned int)HK_BENCH_REFERENCE_SUPPLY_MV,
+             (unsigned int)CONFIG_HK_SUPPLY_MV,
+             (unsigned int)HK_BENCH_REFERENCE_SUPPLY_MV,
+             (unsigned int)CONFIG_HK_SUPPLY_MV);
+#endif
     return true;
 }
 #endif /* CONFIG_HK_BENCH_PROVISIONAL_PROFILE */
@@ -293,6 +401,13 @@ static bool read_user_u32(const char *key, uint32_t *out, void *ctx)
  * to put it that does not also invent a way to hand a struct across a component
  * boundary. It uses nothing but existing public API -- hk_storage's read-only
  * window onto factory_cal, and hk_profile's own judgement of what it read.
+ *
+ * The judgement is hk_profile_load(), and it is the same call hk_main makes
+ * at boot with NULL outputs to decide whether audio is permitted at all. One
+ * judge, two callers: the gate cannot permit a blob this function refuses,
+ * and this function cannot build a blob the gate refused, because both
+ * arguments that could differ -- the sample rate and the configured supply --
+ * are the same compile-time constants in both places.
  */
 static bool load_chain(hk_profile_chain_t *out)
 {
@@ -312,23 +427,35 @@ static bool load_chain(hk_profile_chain_t *out)
     }
 
     hk_profile_t               profile;
-    const hk_profile_verdict_t read = hk_profile_from_blob(raw, length, &profile);
-    if (read != HK_PROFILE_OK) {
-        ESP_LOGE(TAG, "stored calibration refused: %s", hk_profile_verdict_name(read));
+    const hk_profile_verdict_t verdict = hk_profile_load(raw, length, (float)OUTPUT_RATE,
+                                                         supply_mv_now(), &profile, out);
+    if (verdict != HK_PROFILE_OK) {
+        /* Both outputs are zeroed by the callee on any refusal, so `out` holds
+         * nothing half-built for the caller to run on by mistake. */
+        ESP_LOGE(TAG, "stored calibration refused (%s) at %u Hz, %u mV; the boot "
+                      "gate reached the same verdict and audio stays muted",
+                 hk_profile_verdict_name(verdict), (unsigned int)OUTPUT_RATE,
+                 (unsigned int)CONFIG_HK_SUPPLY_MV);
         return false;
     }
 
-    const hk_profile_verdict_t built =
-        hk_profile_build(&profile, (float)OUTPUT_RATE, supply_mv_now(), out);
-    if (built != HK_PROFILE_OK) {
-        ESP_LOGE(TAG, "calibration would not build at %u Hz: %s",
-                 (unsigned int)OUTPUT_RATE, hk_profile_verdict_name(built));
-        return false;
-    }
-
-    ESP_LOGI(TAG, "calibration %u from '%s': crossover %.0f Hz, subsonic %.0f Hz",
+    ESP_LOGI(TAG, "calibration %u from '%s': crossover %.0f Hz, subsonic %.0f Hz, "
+                  "release/hold %u/%u and %u/%u ms, delay %u/%u samples, tweeter %s, "
+                  "supply budget %.3f over %u ms, amplifier gain %s",
              (unsigned int)profile.measured_yyyymmdd, profile.source,
-             (double)profile.crossover_hz, (double)profile.woofer_hpf_hz);
+             (double)profile.crossover_hz, (double)profile.woofer_hpf_hz,
+             (unsigned int)profile.woofer_release_ms, (unsigned int)profile.woofer_hold_ms,
+             (unsigned int)profile.tweeter_release_ms, (unsigned int)profile.tweeter_hold_ms,
+             (unsigned int)profile.woofer_delay_samples,
+             (unsigned int)profile.tweeter_delay_samples,
+             profile.tweeter_polarity ? "inverted" : "in phase",
+             (double)profile.supply_budget_sq, (unsigned int)profile.supply_window_ms,
+             profile.amp_gain_db ? "read" : "unread (bench item C3)");
+    if (profile.amp_gain_db) {
+        ESP_LOGI(TAG, "amplifier gain strapping recorded as %u dB; carried, not "
+                      "computed with",
+                 (unsigned int)profile.amp_gain_db);
+    }
     return true;
 }
 
@@ -483,10 +610,145 @@ static void apply_volume(int16_t *buf, size_t n)
 #endif
 }
 
+/* ==========================================================================
+ * DSP telemetry -- ours; the vendored file has nothing to measure here
+ * ========================================================================== */
+
+/**
+ * How long the chain takes, and what the supply detector saw.
+ *
+ * Two numbers the record asks for and nowhere holds. The firmware plan's F3
+ * acceptance wants the DSP's task time at 240 MHz as a MEASURED figure, and
+ * G1 step S7 needs the supply detector's mean square at the point where the
+ * adapter's rail sags, to write into the profile as supply_budget_sq.
+ * Neither exists on paper: the first depends on the compiler and the cache,
+ * the second on the amplifier's gain strapping and on the load. So the
+ * playback task brackets hk_dsp_process() with esp_timer_get_time(), keeps
+ * the worst and the mean block time over an interval of PLAYED programme,
+ * tracks the detector's maximum and the common gain's minimum over the same
+ * interval, and logs one line per interval:
+ *
+ *   dsp block max M us mean m us of D us (...); supply mean_sq max S gain min g
+ *
+ * M and m against D is the deadline question the F3 criterion asks. S is the
+ * number G1 reads while raising the level; g says whether the supply stage
+ * engaged at all (1.000 means it never did). Both are read from the DSP the
+ * playback task owns, after the block it just ran -- the same task, so there
+ * is nothing to race.
+ *
+ * Programme only. Silence frames run the chain too (so the filters ring out),
+ * and only part of their cost is the same per frame: the supply stage's
+ * per-sample cost is data-independent (one square root per block), but the
+ * two peak limiters branch on the signal and divide while engaged
+ * (hk_limiter.c), which is why the line reports both the worst block and the
+ * mean rather than one number. What excludes silence is the detector: on
+ * silence it decays to zero, and a mean over an idle receiver says nothing
+ * about a playing one. The interval is counted in output frames, not wall
+ * time, so "60 s of playback" (10 s on the bench build) means what it says.
+ *
+ * D is the duration of a FRAME_SAMPLES block, and M and m are NORMALISED to
+ * that block before they are kept: a resampled source (48 kHz in) yields
+ * shorter blocks -- about 323 output frames instead of 352 -- and each
+ * block's measured time is scaled by FRAME_SAMPLES / frames before it enters
+ * the maximum and the sum, so M and m are always "per 352-frame block" and D
+ * is always the deadline to read them against. Without that, a 48 kHz stream
+ * whose 323-frame blocks took 7500 us would have printed as met against
+ * 7981 us when a 323-frame block's own deadline is 7324 us. The line prints
+ * the blocks' observed mean length beside the block the figures are
+ * normalised to, so the scaling is visible rather than assumed. A block of
+ * zero output frames (the resampler can return one while it buffers) timed
+ * nothing and is not counted.
+ *
+ * The block time is the chain's alone: the volume ramp, the LED feed, the
+ * resampler and the I2S write are all outside the brackets. Two clock reads
+ * per block at 125 Hz is cheap enough not to disturb what it measures.
+ *
+ * Nothing here is an operator measurement until an operator records the line
+ * in docs/06-testing/ against a named build and a named stream; until then it
+ * is instrumentation, and the F3 figure is still open.
+ */
+typedef struct {
+    uint32_t frames;      /**< Programme frames in the interval so far */
+    uint32_t blocks;      /**< Programme blocks timed */
+    uint64_t sum_us;      /**< Sum of block times, for the mean */
+    uint32_t max_us;      /**< Worst block */
+    float    mean_sq_max; /**< The supply detector's highest reading */
+    float    gain_min;    /**< The supply stage's lowest common gain */
+} dsp_telemetry_t;
+
+#if CONFIG_HK_BENCH_PROVISIONAL_PROFILE
+/* G1 reads the detector while stepping the level up, and a minute per
+ * reading is an afternoon per curve. Bench build only. */
+#define DSP_TELEMETRY_INTERVAL_S 10u
+#else
+#define DSP_TELEMETRY_INTERVAL_S 60u
+#endif
+#define DSP_TELEMETRY_INTERVAL_FRAMES ((uint32_t)OUTPUT_RATE * DSP_TELEMETRY_INTERVAL_S)
+
+/** The deadline: one FRAME_SAMPLES block's duration at the output rate. */
+#define DSP_BLOCK_PERIOD_US \
+    ((uint32_t)(((uint64_t)FRAME_SAMPLES * 1000000ULL) / (uint64_t)OUTPUT_RATE))
+
+static void dsp_telemetry_reset(dsp_telemetry_t *t)
+{
+    *t = (dsp_telemetry_t){ .gain_min = 1.0f };
+}
+
+static void dsp_telemetry_note(dsp_telemetry_t *t, int64_t block_us, size_t frames)
+{
+    /* Nothing to normalise a zero-frame block to, and nothing it measured:
+     * the resampler can hand back no output frames while it buffers. */
+    if (frames == 0u) {
+        return;
+    }
+
+    /* Normalised to a FRAME_SAMPLES block before it is kept, so the maximum
+     * and the mean are always "per 352-frame block" and DSP_BLOCK_PERIOD_US
+     * is always their deadline, whatever the source rate made of this block's
+     * length. Integer, in 64 bits: the product overflows only past 1600 years
+     * of block time. The clock is monotonic and a block is milliseconds, so
+     * neither clamp should ever act; they are here so a wrapped or negative
+     * reading cannot become a nonsense maximum. */
+    uint64_t took_us = (block_us < 0) ? 0u : (uint64_t)block_us;
+    took_us          = (took_us * (uint64_t)FRAME_SAMPLES) / (uint64_t)frames;
+    const uint32_t took =
+        (took_us > (uint64_t)UINT32_MAX) ? UINT32_MAX : (uint32_t)took_us;
+
+    t->frames += (uint32_t)frames;
+    t->blocks += 1u;
+    t->sum_us += took;
+    if (took > t->max_us) {
+        t->max_us = took;
+    }
+    if (s_dsp.supply_limit.mean_sq > t->mean_sq_max) {
+        t->mean_sq_max = s_dsp.supply_limit.mean_sq;
+    }
+    if (s_dsp.supply_limit.gain < t->gain_min) {
+        t->gain_min = s_dsp.supply_limit.gain;
+    }
+
+    if (t->frames < DSP_TELEMETRY_INTERVAL_FRAMES) {
+        return;
+    }
+    ESP_LOGI(TAG, "dsp block max %u us mean %u us of %u us (per %u-frame block, "
+                  "normalised; %u blocks of %u frames on average at %u Hz, "
+                  "%u biquads); supply mean_sq max %.4f gain min %.3f",
+             (unsigned int)t->max_us,
+             (unsigned int)(t->sum_us / t->blocks),
+             (unsigned int)DSP_BLOCK_PERIOD_US,
+             (unsigned int)FRAME_SAMPLES,
+             (unsigned int)t->blocks,
+             (unsigned int)(t->frames / t->blocks),
+             (unsigned int)OUTPUT_RATE,
+             (unsigned int)hk_dsp_biquads_per_frame(&s_dsp),
+             (double)t->mean_sq_max, (double)t->gain_min);
+    dsp_telemetry_reset(t);
+}
+
 /* --- The playback task ----------------------------------------------------
  *
  * Structurally the vendored playback_task (vendor/audio/audio_output.c:201-267)
- * with three changes, all of them the point of the file:
+ * with four changes, the first three of them the point of the file:
  *
  *   1. The silence buffer is re-zeroed on every frame that uses it. Upstream
  *      zeroes it once at allocation and then relies on nobody writing to it,
@@ -501,6 +763,10 @@ static void apply_volume(int16_t *buf, size_t n)
  *      outputs are a left speaker and a right speaker, and ours are a woofer
  *      band and a tweeter band (ADR-0002). The DSP's stage 1 sums the pair,
  *      and mono is the only programme this product has (ADR-0021).
+ *
+ *   4. That call is bracketed by the clock, for the telemetry line above.
+ *      Upstream has nothing to time there; this file has a chain whose cost
+ *      the record wants as a measured number.
  */
 static void playback_task(void *arg)
 {
@@ -526,6 +792,11 @@ static void playback_task(void *arg)
      * line at 125 Hz. */
     bool announced_refusal = false;
 
+    /* Ours: the block-time and supply-detector line, once per interval of
+     * played programme. Task-local, because the task is its only writer. */
+    dsp_telemetry_t telemetry;
+    dsp_telemetry_reset(&telemetry);
+
     size_t written;
     while (playback_running) {
         if (resample_reinit_needed) {
@@ -542,13 +813,16 @@ static void playback_task(void *arg)
              * audio_output_flush(), so the branch below does NOT cover this
              * one. Without this call the previous stream's filter memory and
              * the limiters' reduced gain ring out over the first frames of the
-             * new one. Measured on the built chain (70 Hz subsonic, 4 kHz LR4)
-             * by feeding an all-zero frame into a path left by a loud 300 Hz
+             * new one. Measured on the host, on the chain as it then was (70 Hz
+             * second-order subsonic, 4 kHz LR4; the subsonic filter has since
+             * become fourth order and the figures were not re-taken), by
+             * feeding an all-zero frame into a path left by a loud 300 Hz
              * passage: the retained state alone produces a woofer peak of 8598
              * and a TWEETER peak of 5268 (-15.9 dBFS) out of digital silence,
              * and the tweeter branch's ceiling does not prevent it -- a limiter
              * caps a level, it does not remove a discontinuity. With the reset
-             * both peaks are 0.
+             * both peaks are 0. The delay rings and the supply detector are
+             * state of the same kind and the same reset clears them.
              *
              * The resampler is already re-initialised on the line above; this
              * is the same statement about the stage after it. */
@@ -616,20 +890,33 @@ static void playback_task(void *arg)
          * freezing mid-decay, so the first frame after an underrun continues
          * the tail rather than stepping off it. When the path is not ready it
          * zeroes the buffer and says no, which is why the buffer written below
-         * is safe in every branch. */
-        if (!hk_dsp_process(&s_dsp, play_buf, play_samples)) {
+         * is safe in every branch.
+         *
+         * Bracketed by the clock for the telemetry line (dsp_telemetry_note);
+         * the brackets hold the chain and nothing else. */
+        const int64_t dsp_began_us = esp_timer_get_time();
+        const bool    processed    = hk_dsp_process(&s_dsp, play_buf, play_samples);
+        const int64_t dsp_took_us  = esp_timer_get_time() - dsp_began_us;
+
+        if (!processed) {
             if (!announced_refusal) {
                 announced_refusal = true;
                 ESP_LOGW(TAG, "no DSP chain (%s): writing digital zero. The "
                               "receiver runs and I2S is clocked, but nothing is "
                               "audible until a calibration profile exists "
-                              "(G0/G2). The amplifier should already be muted "
-                              "by the same gate.",
+                              "(G0/G2). The DAC should already be muted by the "
+                              "same gate; the amplifiers have no mute of their "
+                              "own.",
                          hk_dsp_refusal_name(hk_dsp_refusal(&s_dsp)));
             }
-        } else if (announced_refusal) {
-            announced_refusal = false;
-            ESP_LOGI(TAG, "DSP chain available; audio is being processed again");
+        } else {
+            if (announced_refusal) {
+                announced_refusal = false;
+                ESP_LOGI(TAG, "DSP chain available; audio is being processed again");
+            }
+            if (play_buf != silence) {
+                dsp_telemetry_note(&telemetry, dsp_took_us, play_samples);
+            }
         }
 
 #if CONFIG_HK_OUTPUT_SWAP_BRANCHES
@@ -818,11 +1105,20 @@ esp_err_t audio_output_init(void)
                       "a calibration profile exists (G0/G2).",
                  hk_dsp_refusal_name(hk_dsp_refusal(&s_dsp)));
     } else {
-        ESP_LOGI(TAG, "DSP path built at %u Hz, %u biquads per frame. "
+        /* The biquad count comes from the chain, not from a literal here, so
+         * this line cannot drift from what hk_dsp actually runs. */
+        ESP_LOGI(TAG, "DSP path built at %u Hz: %u biquads per frame "
+                      "(protective plus whatever EQ is on), alignment delay "
+                      "%u/%u samples, tweeter %s, supply-budget stage, two peak "
+                      "limiters. "
                       "Left = WOOFER, right = TWEETER (ADR-0002); this is not a "
-                      "stereo pair.",
+                      "stereo pair. Block time is logged every %u s of playback.",
                  (unsigned int)OUTPUT_RATE,
-                 (unsigned int)hk_dsp_biquads_per_frame(&s_dsp));
+                 (unsigned int)hk_dsp_biquads_per_frame(&s_dsp),
+                 (unsigned int)s_dsp.chain.woofer_delay_samples,
+                 (unsigned int)s_dsp.chain.tweeter_delay_samples,
+                 (s_dsp.chain.tweeter_sign < 0.0f) ? "inverted" : "in phase",
+                 (unsigned int)DSP_TELEMETRY_INTERVAL_S);
     }
 
     return ESP_OK;
@@ -855,7 +1151,8 @@ void audio_output_start(void)
      * stop() is defined in this file on the argument that "a start with no stop
      * leaves the task and its buffers alive with no way to reclaim them"; the
      * day something calls it, the restart must not resume on the old stream's
-     * filter memory. Costs ten floats and two limiter re-inits, once. */
+     * filter memory. Costs the filter states, two 64-float delay rings, two
+     * limiter re-inits and the supply detector, once. */
     hk_dsp_reset(&s_dsp);
     xTaskCreatePinnedToCore(playback_task, "audio_play", 4096, NULL,
                             AUDIO_PLAYBACK_TASK_PRIORITY, &playback_task_handle,
@@ -916,11 +1213,16 @@ uint32_t audio_output_get_hardware_latency_us(void)
      *   The residual +/-2.9 ms swing is real jitter that the drift servo in
      *   audio_timing.c absorbs; only the constant bias is removed here.
      *
-     * The DSP adds no latency to model. hk_dsp.h states it: every stage is a
-     * recursive filter or a memoryless multiply, and the limiter has no
-     * lookahead by deliberate design (hk_limiter.h), precisely so this number
-     * would stay true and the pipeline model the timing engine is calibrated
-     * against unchanged. */
+     * The DSP adds no samples to the pipeline this models. hk_dsp.h states
+     * it: no frame waits for a later one -- every stage is a recursive filter
+     * or a memoryless multiply, the peak limiter has no lookahead by
+     * deliberate design (hk_limiter.h), and the supply stage decides its gain
+     * from samples it has already seen. The one stage that buffers, the
+     * alignment delay, delays ONE branch relative to the other by at most 64
+     * samples (1.45 ms here) and the undelayed branch still leaves in the
+     * frame it arrived in, so the pipeline depth is unchanged and this number
+     * stays true; the offset is inside the +/-2.9 ms swing the paragraph above
+     * already hands to the drift servo. */
     return (uint32_t)((((uint64_t)(2 * I2S_DMA_DESC_NUM - 1) * I2S_DMA_FRAME_NUM *
                         1000000ULL) /
                        2) /

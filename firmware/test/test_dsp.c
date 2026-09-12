@@ -50,6 +50,10 @@
  *   tweeter gain -3 dB A 25 mm dome is usually more sensitive than a small
  *                      cone. There is no sensitivity measurement, so the error
  *                      is deliberately left on the side of less tweeter.
+ *
+ * The bench build compiles a different placeholder (2800 Hz, 55 Hz, in the
+ * output backend); this fixture is deliberately at the C_SAFE corner and is
+ * not the record's placeholder. Neither number is a measurement.
  * ------------------------------------------------------------------ */
 #define PROVISIONAL_CROSSOVER_HZ 4000.0f
 #define PROVISIONAL_SUBSONIC_HZ  70.0f
@@ -69,8 +73,13 @@ static hk_profile_t fixture_profile(void)
     /* A profile must name what it was derived from, and this one is honest
      * about being a fixture rather than borrowing a real record's name. */
     strncpy(p.source, "test-fixture", sizeof(p.source) - 1u);
+    /* The two DC resistances the operator read on 2026-09-08
+     * (docs/02-hardware/driver-measurements.md): woofer 4.0, tweeter 3.5.
+     * The firmware carried 3.7 for the tweeter before today; the record is
+     * the source, and the operator should confirm the reading. Carried, never
+     * computed with, so the tests do not depend on either value. */
     p.woofer_dcr_ohm = 4.0f;
-    p.tweeter_dcr_ohm = 3.7f;
+    p.tweeter_dcr_ohm = 3.5f;
     p.woofer_hpf_hz = PROVISIONAL_SUBSONIC_HZ;
     p.crossover_hz = PROVISIONAL_CROSSOVER_HZ;
     p.woofer_gain = 1.0f;
@@ -78,8 +87,20 @@ static hk_profile_t fixture_profile(void)
     p.reference_supply_mv = SUPPLY_MV;
     p.woofer_ceiling = 1.0f;
     p.tweeter_ceiling = 1.0f;
-    p.release_ms = 100u;
-    p.hold_ms = 10u;
+    p.woofer_release_ms = 100u;
+    p.woofer_hold_ms = 10u;
+    /* Schema 2. Same timing on both branches here so the existing limiter
+     * tests measure what they measured before; no delay, no inversion, and a
+     * budget at the validator's maximum so the supply stage cannot engage
+     * unless a test lowers it on purpose. The window is a fixture value. */
+    p.tweeter_release_ms = 100u;
+    p.tweeter_hold_ms = 10u;
+    p.woofer_delay_samples = 0u;
+    p.tweeter_delay_samples = 0u;
+    p.tweeter_polarity = 0u;
+    p.supply_budget_sq = HK_PROFILE_SUPPLY_BUDGET_MAX;
+    p.supply_window_ms = 100u;
+    p.amp_gain_db = 0u;
     return p;
 }
 
@@ -364,6 +385,64 @@ static void dsp_refuses_a_corrupt_chain(void)
     no_release.tweeter_limit.release_ms = 0u;
     HK_CHECK(!hk_dsp_init(&dsp, &no_release, NULL, FS_HZ));
     HK_CHECK_EQ_INT(hk_dsp_refusal(&dsp), HK_DSP_BAD_LIMITER);
+
+    /* A NaN in a NUMERATOR leaves the poles where they were, so the pole test
+     * alone passed it and the section played silence with no refusal. Now it
+     * is refused by name, in every protective cascade. */
+    hk_profile_chain_t nan_b0 = chain;
+    nan_b0.woofer_hpf.section[0].b0 = NAN;
+    HK_CHECK(!hk_dsp_init(&dsp, &nan_b0, NULL, FS_HZ));
+    HK_CHECK_EQ_INT(hk_dsp_refusal(&dsp), HK_DSP_BAD_FILTER);
+    nan_b0 = chain;
+    nan_b0.woofer_hpf.section[1].b2 = INFINITY;
+    HK_CHECK(!hk_dsp_init(&dsp, &nan_b0, NULL, FS_HZ));
+    HK_CHECK_EQ_INT(hk_dsp_refusal(&dsp), HK_DSP_BAD_FILTER);
+    nan_b0 = chain;
+    nan_b0.woofer_low.section[1].b1 = NAN;
+    HK_CHECK(!hk_dsp_init(&dsp, &nan_b0, NULL, FS_HZ));
+    HK_CHECK_EQ_INT(hk_dsp_refusal(&dsp), HK_DSP_BAD_FILTER);
+
+    /* A polarity that is not a polarity is a gain in disguise. */
+    hk_profile_chain_t half_sign = chain;
+    half_sign.tweeter_sign = 0.5f;
+    HK_CHECK(!hk_dsp_init(&dsp, &half_sign, NULL, FS_HZ));
+    HK_CHECK_EQ_INT(hk_dsp_refusal(&dsp), HK_DSP_BAD_GAIN);
+    half_sign.tweeter_sign = -1.0f;
+    HK_CHECK(hk_dsp_init(&dsp, &half_sign, NULL, FS_HZ));
+
+    /* Delay: over the bound, or both branches -- defence in depth over the
+     * profile validator, because a chain could have come from anywhere. */
+    hk_profile_chain_t far = chain;
+    far.tweeter_delay_samples = HK_PROFILE_DELAY_MAX_SAMPLES + 1u;
+    HK_CHECK(!hk_dsp_init(&dsp, &far, NULL, FS_HZ));
+    HK_CHECK_EQ_INT(hk_dsp_refusal(&dsp), HK_DSP_BAD_DELAY);
+    HK_CHECK_EQ_STR(hk_dsp_refusal_name(hk_dsp_refusal(&dsp)), "delay");
+    far = chain;
+    far.woofer_delay_samples = 3u;
+    far.tweeter_delay_samples = 3u;
+    HK_CHECK(!hk_dsp_init(&dsp, &far, NULL, FS_HZ));
+    HK_CHECK_EQ_INT(hk_dsp_refusal(&dsp), HK_DSP_BAD_DELAY);
+    far = chain;
+    far.woofer_delay_samples = HK_PROFILE_DELAY_MAX_SAMPLES; /* the edge is legal */
+    HK_CHECK(hk_dsp_init(&dsp, &far, NULL, FS_HZ));
+
+    /* The supply stage refuses its configuration and the chain with it. */
+    hk_profile_chain_t no_budget = chain;
+    no_budget.supply_limit.budget_sq = 0.0f;
+    HK_CHECK(!hk_dsp_init(&dsp, &no_budget, NULL, FS_HZ));
+    HK_CHECK_EQ_INT(hk_dsp_refusal(&dsp), HK_DSP_BAD_SUPPLY);
+    HK_CHECK_EQ_STR(hk_dsp_refusal_name(hk_dsp_refusal(&dsp)), "supply");
+    no_budget = chain;
+    no_budget.supply_limit.window_ms = 0u;
+    HK_CHECK(!hk_dsp_init(&dsp, &no_budget, NULL, FS_HZ));
+    HK_CHECK_EQ_INT(hk_dsp_refusal(&dsp), HK_DSP_BAD_SUPPLY);
+
+    /* And a supply window converted at another rate is a rate mismatch, the
+     * same as a limiter's release time would be. */
+    hk_profile_chain_t other_rate = chain;
+    other_rate.supply_limit.sample_rate = 48000u;
+    HK_CHECK(!hk_dsp_init(&dsp, &other_rate, NULL, FS_HZ));
+    HK_CHECK_EQ_INT(hk_dsp_refusal(&dsp), HK_DSP_BAD_RATE);
 }
 
 /**
@@ -395,6 +474,19 @@ static void dsp_limiter_cannot_be_bypassed(void)
     for (size_t i = 0; i < BLOCK * 2u; i++) {
         HK_CHECK_EQ_INT(buf[i], 0);
     }
+
+    /* The supply stage is guarded the same way: its step function returns
+     * unity when unready, which is the passthrough the block guard exists to
+     * catch. */
+    HK_CHECK(build(&dsp, &p, NULL));
+    dsp.supply_limit.ready = false;
+    for (size_t i = 0; i < BLOCK * 2u; i++) {
+        buf[i] = 24000;
+    }
+    HK_CHECK(!hk_dsp_process(&dsp, buf, BLOCK));
+    for (size_t i = 0; i < BLOCK * 2u; i++) {
+        HK_CHECK_EQ_INT(buf[i], 0);
+    }
 }
 
 /** Whatever the EQ asks for, the ceiling is what leaves. */
@@ -411,7 +503,7 @@ static void dsp_ceiling_holds_under_a_boost(void)
 
     hk_dsp_t dsp;
     HK_CHECK(build(&dsp, &p, &eq));
-    HK_CHECK_EQ_INT(hk_dsp_biquads_per_frame(&dsp), 8);
+    HK_CHECK_EQ_INT(hk_dsp_biquads_per_frame(&dsp), 9);
 
     /* Full-scale programme across the band, plus every boost available. */
     const int16_t woofer_max = (int16_t)(0.25f * 32767.0f + 2.0f);
@@ -437,6 +529,36 @@ static void dsp_ceiling_holds_under_a_boost(void)
             HK_CHECK(t <= tweeter_max);
         }
     }
+
+    /* And with the supply stage ACTIVE -- a budget small enough that it is
+     * engaged for most of the sweep -- the ceilings still hold, because the
+     * peak limiters run after it and a gain in (0, 1] cannot lift a sample. */
+    p.supply_budget_sq = 0.005f;
+    p.supply_window_ms = 10u;
+    HK_CHECK(build(&dsp, &p, &eq));
+    phase = 0.0;
+    size_t engaged_blocks = 0u;
+    for (size_t b = 0; b < 200u; b++) {
+        for (size_t i = 0; i < BLOCK; i++) {
+            const double hz = 40.0 + 15000.0 * ((double)b / 200.0);
+            phase += 2.0 * M_PI * hz / (double)FS_HZ;
+            const int16_t v = (int16_t)(32000.0 * sin(phase));
+            buf[2u * i] = v;
+            buf[2u * i + 1u] = v;
+        }
+        HK_CHECK(hk_dsp_process(&dsp, buf, BLOCK));
+        if (dsp.supply_limit.gain < 1.0f) {
+            engaged_blocks++;
+        }
+        for (size_t i = 0; i < BLOCK; i++) {
+            const int16_t w = (int16_t)((buf[2u * i] < 0) ? -buf[2u * i] : buf[2u * i]);
+            const int16_t t = (int16_t)((buf[2u * i + 1u] < 0) ? -buf[2u * i + 1u]
+                                                              : buf[2u * i + 1u]);
+            HK_CHECK(w <= woofer_max);
+            HK_CHECK(t <= tweeter_max);
+        }
+    }
+    HK_CHECK(engaged_blocks > 100u);
 }
 
 /** Tonal settings cannot reach a protective number. Byte for byte. */
@@ -542,12 +664,23 @@ static void dsp_response_matches_the_profile(void)
         HK_CHECK(fabsf(s) < 0.4f);
     }
 
-    /* The subsonic filter is where the profile put it: second order, so 3 dB
-     * down at its own corner and about 12 dB down an octave below. */
+    /* The subsonic filter is where the profile put it: fourth-order
+     * Butterworth, so 3 dB down at its own corner -- the point the stored
+     * field names, unchanged from the second-order section it replaced --
+     * and about 24 dB down an octave below, where the old section left 12.
+     * Two octaves below is the slope check: another 24 dB. */
     measure(&dsp, PROVISIONAL_SUBSONIC_HZ, 0.5f, &w, &t, &s);
     HK_CHECK(fabsf(w + 3.0f) < 0.6f);
-    measure(&dsp, PROVISIONAL_SUBSONIC_HZ / 2.0f, 0.5f, &w, &t, &s);
-    HK_CHECK(w < -10.0f && w > -14.0f);
+    float one_octave;
+    measure(&dsp, PROVISIONAL_SUBSONIC_HZ / 2.0f, 0.5f, &one_octave, &t, &s);
+    HK_CHECK(one_octave < -22.0f && one_octave > -26.5f);
+    float two_octaves;
+    measure(&dsp, PROVISIONAL_SUBSONIC_HZ / 4.0f, 0.5f, &two_octaves, &t, &s);
+    HK_CHECK(fabsf((one_octave - two_octaves) - 24.0f) < 1.5f);
+    /* And flat two octaves above it, where a 4 kHz LR4 low branch is also
+     * still flat: the subsonic filter is maximally flat, not a shelf. */
+    measure(&dsp, PROVISIONAL_SUBSONIC_HZ * 4.0f, 0.5f, &w, &t, &s);
+    HK_CHECK(fabsf(w) < 0.4f);
 
     /* And the tweeter branch really is 24 dB/octave: an octave below 4 kHz. */
     measure(&dsp, PROVISIONAL_CROSSOVER_HZ / 2.0f, 0.5f, &w, &t, &s);
@@ -583,7 +716,7 @@ static void dsp_eq_does_what_it_says(void)
 
     hk_dsp_t dsp;
     HK_CHECK(build(&dsp, &p, &eq));
-    HK_CHECK_EQ_INT(hk_dsp_biquads_per_frame(&dsp), 6);
+    HK_CHECK_EQ_INT(hk_dsp_biquads_per_frame(&dsp), 7);
 
     float w, t, s;
     measure(&dsp, 1000.0f, 0.25f, &w, &t, &s);
@@ -599,7 +732,7 @@ static void dsp_eq_does_what_it_says(void)
     hk_eq_settings_t trimmed = hk_eq_defaults();
     trimmed.trim_db = -6.0f;
     HK_CHECK(hk_dsp_set_eq(&dsp, &trimmed));
-    HK_CHECK_EQ_INT(hk_dsp_biquads_per_frame(&dsp), 5);
+    HK_CHECK_EQ_INT(hk_dsp_biquads_per_frame(&dsp), 6);
     measure(&dsp, 500.0f, 0.25f, &w, &t, &s);
     HK_CHECK(fabsf(w + 6.0f) < 0.3f);
     measure(&dsp, 12000.0f, 0.25f, &w, &t, &s);
@@ -620,9 +753,13 @@ static void dsp_reset_clears_state(void)
     HK_CHECK(hk_dsp_process(&dsp, loud, BLOCK));
 
     hk_dsp_reset(&dsp);
-    HK_CHECK(dsp.hpf_state.z1 == 0.0f && dsp.hpf_state.z2 == 0.0f);
+    HK_CHECK(dsp.hpf_state.section[0].z1 == 0.0f && dsp.hpf_state.section[0].z2 == 0.0f);
+    HK_CHECK(dsp.hpf_state.section[1].z1 == 0.0f && dsp.hpf_state.section[1].z2 == 0.0f);
     HK_CHECK(dsp.woofer_limit.gain == 1.0f);
     HK_CHECK(dsp.woofer_limit.ready);
+    HK_CHECK(dsp.supply_limit.gain == 1.0f);
+    HK_CHECK(dsp.supply_limit.mean_sq == 0.0f);
+    HK_CHECK(dsp.supply_limit.ready);
 
     int16_t quiet[BLOCK * 2u];
     memset(quiet, 0, sizeof(quiet));
@@ -766,14 +903,16 @@ static void dsp_state_never_sits_subnormal(void)
         memset(buf, 0, sizeof(buf));
         HK_CHECK(hk_dsp_process(&dsp, buf, BLOCK));
 
-        const float z[10] = {
-            dsp.hpf_state.z1,             dsp.hpf_state.z2,
+        const float z[13] = {
+            dsp.hpf_state.section[0].z1,  dsp.hpf_state.section[0].z2,
+            dsp.hpf_state.section[1].z1,  dsp.hpf_state.section[1].z2,
             dsp.low_state.section[0].z1,  dsp.low_state.section[1].z1,
             dsp.high_state.section[0].z1, dsp.high_state.section[1].z1,
             dsp.eq.stage[0].state.z1,     dsp.eq.stage[1].state.z1,
             dsp.eq.stage[2].state.z1,     dsp.low_state.section[0].z2,
+            dsp.supply_limit.mean_sq,
         };
-        for (size_t k = 0; k < 10u; k++) {
+        for (size_t k = 0; k < 13u; k++) {
             const float magnitude = fabsf(z[k]);
             HK_CHECK(magnitude == 0.0f || magnitude >= FLT_MIN);
         }
@@ -810,6 +949,263 @@ static void dsp_survives_extremes(void)
     HK_CHECK_EQ_STR(hk_dsp_refusal_name(HK_DSP_OK), "ok");
 }
 
+/**
+ * Run @p blocks blocks of a fixed two-tone programme through @p dsp and
+ * collect the output, so two instances can be compared sample by sample.
+ *
+ * Two tones, one either side of the crossover, so both branches carry
+ * something; amplitude well under full scale so no peak limiter engages and
+ * the comparison is about the stages under test rather than about gain
+ * reduction that happens to fall differently.
+ */
+static void run_two_tone(hk_dsp_t *dsp, int16_t *out, size_t blocks)
+{
+    double phase_a = 0.0;
+    double phase_b = 0.0;
+    int16_t buf[BLOCK * 2u];
+    for (size_t b = 0; b < blocks; b++) {
+        for (size_t i = 0; i < BLOCK; i++) {
+            const double v = 0.25 * sin(phase_a) + 0.25 * sin(phase_b);
+            phase_a += 2.0 * M_PI * 300.0 / (double)FS_HZ;
+            phase_b += 2.0 * M_PI * 9000.0 / (double)FS_HZ;
+            const int16_t s = (int16_t)(v * 32767.0);
+            buf[2u * i] = s;
+            buf[2u * i + 1u] = s;
+        }
+        HK_CHECK(hk_dsp_process(dsp, buf, BLOCK));
+        memcpy(out + b * BLOCK * 2u, buf, sizeof(buf));
+    }
+}
+
+#define RUN_BLOCKS 24u
+#define RUN_FRAMES (RUN_BLOCKS * BLOCK)
+
+/**
+ * The alignment delay is sample-exact and touches one branch only.
+ *
+ * With tweeter_delay_samples = N, the tweeter output is the N = 0 run shifted
+ * by exactly N samples -- not approximately, since a ring of floats holds the
+ * pre-rounded value -- and the woofer output is bit-identical. Then the same
+ * with the woofer delayed, since the two rings are separate code paths.
+ */
+static void dsp_delay_is_sample_exact(void)
+{
+    static int16_t reference[RUN_FRAMES * 2u];
+    static int16_t delayed[RUN_FRAMES * 2u];
+    const uint32_t n = 17u;
+
+    hk_profile_t p = fixture_profile();
+    hk_dsp_t base;
+    HK_CHECK(build(&base, &p, NULL));
+    run_two_tone(&base, reference, RUN_BLOCKS);
+
+    p.tweeter_delay_samples = n;
+    hk_dsp_t shifted;
+    HK_CHECK(build(&shifted, &p, NULL));
+    HK_CHECK(shifted.chain.tweeter_delay_samples == n);
+    run_two_tone(&shifted, delayed, RUN_BLOCKS);
+
+    size_t woofer_mismatch = 0u;
+    size_t tweeter_mismatch = 0u;
+    for (size_t i = 0; i < RUN_FRAMES; i++) {
+        if (delayed[2u * i] != reference[2u * i]) {
+            woofer_mismatch++;
+        }
+        const int16_t expect = (i < n) ? 0 : reference[2u * (i - n) + 1u];
+        if (delayed[2u * i + 1u] != expect) {
+            tweeter_mismatch++;
+        }
+    }
+    HK_CHECK_EQ_INT(woofer_mismatch, 0);
+    HK_CHECK_EQ_INT(tweeter_mismatch, 0);
+
+    /* The other ring, the other way round. */
+    p = fixture_profile();
+    p.woofer_delay_samples = n;
+    HK_CHECK(build(&shifted, &p, NULL));
+    run_two_tone(&shifted, delayed, RUN_BLOCKS);
+    woofer_mismatch = 0u;
+    tweeter_mismatch = 0u;
+    for (size_t i = 0; i < RUN_FRAMES; i++) {
+        const int16_t expect = (i < n) ? 0 : reference[2u * (i - n)];
+        if (delayed[2u * i] != expect) {
+            woofer_mismatch++;
+        }
+        if (delayed[2u * i + 1u] != reference[2u * i + 1u]) {
+            tweeter_mismatch++;
+        }
+    }
+    HK_CHECK_EQ_INT(woofer_mismatch, 0);
+    HK_CHECK_EQ_INT(tweeter_mismatch, 0);
+
+    /* The bound itself works, and it is where the header says it is. */
+    p = fixture_profile();
+    p.tweeter_delay_samples = HK_PROFILE_DELAY_MAX_SAMPLES;
+    HK_CHECK(build(&shifted, &p, NULL));
+    run_two_tone(&shifted, delayed, RUN_BLOCKS);
+    tweeter_mismatch = 0u;
+    for (size_t i = 0; i < RUN_FRAMES; i++) {
+        const int16_t expect = (i < HK_PROFILE_DELAY_MAX_SAMPLES)
+                                   ? 0
+                                   : reference[2u * (i - HK_PROFILE_DELAY_MAX_SAMPLES) + 1u];
+        if (delayed[2u * i + 1u] != expect) {
+            tweeter_mismatch++;
+        }
+    }
+    HK_CHECK_EQ_INT(tweeter_mismatch, 0);
+    HK_CHECK_EQ_INT(HK_PROFILE_DELAY_MAX_SAMPLES, 64);
+
+    /* Reset clears the ring: an impulse after a reset arrives at N, not at N
+     * plus whatever the ring still held from the run before. */
+    HK_CHECK(shifted.tweeter_delay_index != 0u || shifted.tweeter_delay[1] != 0.0f);
+    hk_dsp_reset(&shifted);
+    for (size_t i = 0; i < HK_PROFILE_DELAY_MAX_SAMPLES; i++) {
+        HK_CHECK(shifted.tweeter_delay[i] == 0.0f);
+    }
+    HK_CHECK(shifted.tweeter_delay_index == 0u);
+    int16_t buf[BLOCK * 2u];
+    memset(buf, 0, sizeof(buf));
+    HK_CHECK(hk_dsp_process(&shifted, buf, BLOCK));
+    for (size_t i = 0; i < BLOCK * 2u; i++) {
+        HK_CHECK_EQ_INT(buf[i], 0);
+    }
+}
+
+/** Polarity 1 is the exact negation of polarity 0, on the tweeter only. */
+static void dsp_polarity_negates_the_tweeter(void)
+{
+    static int16_t reference[RUN_FRAMES * 2u];
+    static int16_t inverted[RUN_FRAMES * 2u];
+
+    hk_profile_t p = fixture_profile();
+    hk_dsp_t base;
+    HK_CHECK(build(&base, &p, NULL));
+    run_two_tone(&base, reference, RUN_BLOCKS);
+
+    p.tweeter_polarity = 1u;
+    hk_dsp_t flipped;
+    HK_CHECK(build(&flipped, &p, NULL));
+    HK_CHECK(flipped.chain.tweeter_sign == -1.0f);
+    run_two_tone(&flipped, inverted, RUN_BLOCKS);
+
+    size_t woofer_mismatch = 0u;
+    size_t tweeter_mismatch = 0u;
+    size_t nonzero = 0u;
+    for (size_t i = 0; i < RUN_FRAMES; i++) {
+        if (inverted[2u * i] != reference[2u * i]) {
+            woofer_mismatch++;
+        }
+        /* to_i16 rounds symmetrically about zero, so -x maps to -(x) exactly
+         * short of full scale, and the programme sits well short of it. */
+        if (inverted[2u * i + 1u] != (int16_t)-reference[2u * i + 1u]) {
+            tweeter_mismatch++;
+        }
+        if (reference[2u * i + 1u] != 0) {
+            nonzero++;
+        }
+    }
+    HK_CHECK_EQ_INT(woofer_mismatch, 0);
+    HK_CHECK_EQ_INT(tweeter_mismatch, 0);
+    HK_CHECK(nonzero > RUN_FRAMES / 2u); /* the tweeter branch carried signal */
+
+    /* And the sum measurement sees it: the coherent sum at the corner is a
+     * notch, which is exactly the wiring mistake hk_biquad.h warns about --
+     * now a stored choice the bench can make, rather than a mistake. */
+    hk_profile_t equal = fixture_profile_equal_gains();
+    equal.tweeter_polarity = 1u;
+    HK_CHECK(build(&flipped, &equal, NULL));
+    float w, t, sum;
+    measure(&flipped, PROVISIONAL_CROSSOVER_HZ, 0.5f, &w, &t, &sum);
+    HK_CHECK(sum < -20.0f);
+}
+
+/**
+ * The supply stage engages on a loud two-tone and not on a quiet one, and
+ * when it engages the output's mean square lands on the budget while the
+ * woofer/tweeter ratio is preserved.
+ */
+static void dsp_supply_stage_holds_the_budget(void)
+{
+    hk_profile_t p = fixture_profile_equal_gains();
+    p.supply_budget_sq = 0.02f;
+    p.supply_window_ms = 20u;
+
+    hk_dsp_t dsp;
+    HK_CHECK(build(&dsp, &p, NULL));
+
+    /* Quiet: two tones at 0.05 each, mean square 2 x 0.05^2/2 = 0.0025,
+     * an eighth of the budget. Unity on every block, exactly. The branch
+     * ratio the crossover alone produces is measured here, for the loud run
+     * to be compared against. */
+    int16_t buf[BLOCK * 2u];
+    double phase_a = 0.0;
+    double phase_b = 0.0;
+    double quiet_w_sq = 0.0;
+    double quiet_t_sq = 0.0;
+    for (size_t b = 0; b < 60u; b++) {
+        for (size_t i = 0; i < BLOCK; i++) {
+            const double v = 0.05 * sin(phase_a) + 0.05 * sin(phase_b);
+            phase_a += 2.0 * M_PI * 300.0 / (double)FS_HZ;
+            phase_b += 2.0 * M_PI * 9000.0 / (double)FS_HZ;
+            buf[2u * i] = (int16_t)(v * 32767.0);
+            buf[2u * i + 1u] = buf[2u * i];
+        }
+        HK_CHECK(hk_dsp_process(&dsp, buf, BLOCK));
+        HK_CHECK(dsp.supply_limit.gain == 1.0f);
+        if (b >= 50u) {
+            for (size_t i = 0; i < BLOCK; i++) {
+                const double w = (double)buf[2u * i] / 32768.0;
+                const double t = (double)buf[2u * i + 1u] / 32768.0;
+                quiet_w_sq += w * w;
+                quiet_t_sq += t * t;
+            }
+        }
+    }
+
+    /* Loud: 0.4 each, mean square 2 x 0.4^2/2 = 0.16 at the input, about
+     * eight times the budget once the crossover has taken its fraction of a
+     * dB off the upper tone. The stage engages and the OUTPUT mean square,
+     * measured over the last blocks once the detector has settled, is the
+     * budget within 5%. */
+    hk_dsp_reset(&dsp);
+    double out_sq = 0.0;
+    double w_sq = 0.0;
+    double t_sq = 0.0;
+    size_t n = 0u;
+    for (size_t b = 0; b < 60u; b++) {
+        for (size_t i = 0; i < BLOCK; i++) {
+            const double v = 0.4 * sin(phase_a) + 0.4 * sin(phase_b);
+            phase_a += 2.0 * M_PI * 300.0 / (double)FS_HZ;
+            phase_b += 2.0 * M_PI * 9000.0 / (double)FS_HZ;
+            buf[2u * i] = (int16_t)(v * 32767.0);
+            buf[2u * i + 1u] = buf[2u * i];
+        }
+        HK_CHECK(hk_dsp_process(&dsp, buf, BLOCK));
+        if (b >= 50u) {
+            HK_CHECK(dsp.supply_limit.gain < 0.5f);
+            for (size_t i = 0; i < BLOCK; i++) {
+                const double w = (double)buf[2u * i] / 32768.0;
+                const double t = (double)buf[2u * i + 1u] / 32768.0;
+                out_sq += w * w + t * t;
+                w_sq += w * w;
+                t_sq += t * t;
+                n++;
+            }
+        }
+    }
+    out_sq /= (double)n;
+    HK_CHECK(fabs(out_sq - 0.02) < 0.02 * 0.05);
+
+    /* A COMMON gain leaves the two branches in the ratio the crossover gave
+     * them: the loud run's woofer/tweeter ratio equals the quiet run's. This
+     * is what a per-branch stage would get wrong. */
+    HK_CHECK(fabs((w_sq / t_sq) / (quiet_w_sq / quiet_t_sq) - 1.0) < 0.02);
+
+    /* The gain it settled at is about the one the law predicts, sqrt(1/8);
+     * a little above it because the crossover trimmed the upper tone. */
+    HK_CHECK(dsp.supply_limit.gain > 0.33f && dsp.supply_limit.gain < 0.40f);
+}
+
 void test_dsp(void)
 {
     eq_defaults_are_flat();
@@ -832,4 +1228,7 @@ void test_dsp(void)
     dsp_set_eq_does_not_click_the_other_bands();
     dsp_state_never_sits_subnormal();
     dsp_survives_extremes();
+    dsp_delay_is_sample_exact();
+    dsp_polarity_negates_the_tweeter();
+    dsp_supply_stage_holds_the_budget();
 }

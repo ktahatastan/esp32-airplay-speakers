@@ -24,6 +24,17 @@
  * standing trap, because inverting one anyway produces a deep notch at the
  * crossover that measures as "a crossover problem" rather than as a wiring
  * mistake.
+ *
+ * A FOURTH-ORDER BUTTERWORTH is the other cascade in this file, and it is
+ * here for a filter that crosses nothing over: the woofer's subsonic
+ * high-pass. There is no second branch to sum with below that corner, so
+ * LR4's flat-sum property buys nothing there, and LR4 would quietly move the
+ * corner's meaning: an LR4 pair is -6 dB at fc, a Butterworth is -3 dB, and
+ * the -3 dB point is what a stored `woofer_hpf_hz` has always named. The two
+ * sections are NOT identical -- Q = 0.5411961 and 1.3065630, the pole pairs
+ * of a fourth-order Butterworth split into two second-order sections -- which
+ * is why it has its own designer instead of borrowing hk_lr4_highpass().
+ * Same slope as LR4, 24 dB/octave; different corner definition.
  */
 #ifndef HK_BIQUAD_H
 #define HK_BIQUAD_H
@@ -90,18 +101,31 @@ void hk_biquad_process(const hk_biquad_coeffs_t *coeffs,
  * Whether a set of coefficients describes a stable filter.
  *
  * Both poles must sit inside the unit circle, which for a normalised biquad is
- * |a2| < 1 and |a1| < 1 + a2. Designed sections always pass; this exists for
- * coefficients that arrive from the calibration store, where nothing has
- * guaranteed anything.
+ * |a2| < 1 and |a1| < 1 + a2 -- and every one of the five coefficients must be
+ * finite. A NaN or infinite NUMERATOR does not move a pole, so the pole test
+ * alone passes it, and the section then turns every sample into NaN, which the
+ * output stage clamps to silence: a chain that plays nothing and reports no
+ * refusal. Designed sections always pass; this exists for coefficients that
+ * arrive from the calibration store, where nothing has guaranteed anything.
  */
 bool hk_biquad_stable(const hk_biquad_coeffs_t *coeffs);
 
-/** A 4th-order Linkwitz-Riley branch: two identical Butterworth sections. */
+/**
+ * Two cascaded second-order sections: any fourth-order filter this file builds.
+ *
+ * Named for the Linkwitz-Riley pair it was written for, but the type says
+ * nothing about the sections being identical -- it is two coefficient sets
+ * run in series -- so hk_butterworth4_highpass() fills the same struct with
+ * its two unequal-Q sections and hk_lr4_process_one() runs it unchanged. The
+ * name is kept rather than generalised because every caller that holds one
+ * already spells it this way and a rename would be churn with no behaviour
+ * behind it.
+ */
 typedef struct {
     hk_biquad_coeffs_t section[2];
 } hk_lr4_coeffs_t;
 
-/** State for one ::hk_lr4_coeffs_t branch. */
+/** State for one ::hk_lr4_coeffs_t cascade, whichever design filled it. */
 typedef struct {
     hk_biquad_state_t section[2];
 } hk_lr4_state_t;
@@ -111,6 +135,21 @@ bool hk_lr4_lowpass(hk_lr4_coeffs_t *filter, float fc_hz, float fs_hz);
 
 /** Design the high branch. In phase with the low branch: do not invert it. */
 bool hk_lr4_highpass(hk_lr4_coeffs_t *filter, float fc_hz, float fs_hz);
+
+/** Butterworth pole Qs for a fourth-order filter split into two sections. */
+#define HK_BIQUAD_Q_BUTTERWORTH4_A 0.5411961f
+#define HK_BIQUAD_Q_BUTTERWORTH4_B 1.3065630f
+
+/**
+ * Design a fourth-order Butterworth high-pass at @p fc_hz: -3 dB at the
+ * corner, 24 dB/octave below it, maximally flat above it.
+ *
+ * Section 0 takes ::HK_BIQUAD_Q_BUTTERWORTH4_A and section 1
+ * ::HK_BIQUAD_Q_BUTTERWORTH4_B; the order does not change the response, only
+ * which section's memory carries the lower-Q transient. Same refusals as
+ * hk_biquad_highpass().
+ */
+bool hk_butterworth4_highpass(hk_lr4_coeffs_t *filter, float fc_hz, float fs_hz);
 
 /** One sample through both sections. */
 float hk_lr4_process_one(const hk_lr4_coeffs_t *filter,

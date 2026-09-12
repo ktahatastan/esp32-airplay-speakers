@@ -45,17 +45,37 @@
  *   2. user EQ + trim      Before the protective filters, never after. A low
  *                          shelf boosting 40 Hz has to meet the subsonic
  *                          high-pass on its way out; run the other way round,
- *                          the boost would put back exactly the sub-70 Hz
- *                          content stage 3 removed, and turn a protection
- *                          filter into a suggestion.
+ *                          the boost would put back exactly the content stage
+ *                          3 removed, and turn a protection filter into a
+ *                          suggestion.
  *   3. woofer subsonic HPF Below its resonance a driver makes excursion and no
- *                          sound. Ahead of the split so both branches are
- *                          spared content neither can use.
+ *                          sound. Fourth-order Butterworth, two sections,
+ *                          24 dB/octave. Ahead of the split so both branches
+ *                          are spared content neither can use.
  *   4. LR4 split           Low branch to the woofer, high branch to the
- *                          tweeter. In phase; neither is inverted.
+ *                          tweeter. In phase; neither is inverted here.
  *   5. per-branch gain     Level-matching the two drivers.
+ *   5b. alignment delay    One branch, at most 64 samples, from the profile:
+ *                          an acoustic-centre correction between a cone and a
+ *                          dome in one baffle, measured in G2. Bypassed when
+ *                          zero. The UNDELAYED branch still defines the
+ *                          pipeline depth, so the latency paragraph below is
+ *                          still true.
+ *   5c. tweeter polarity   +1 or -1 from the profile, decided by G2's sum
+ *                          measurement rather than by LR4 theory, since the
+ *                          drivers have an acoustic polarity of their own.
+ *                          Placed here because the two stages after it are
+ *                          sign-blind (a square, a magnitude), so the
+ *                          inversion is exact and changes nothing they do.
+ *   5d. supply budget      ONE common gain over both branches, from
+ *                          hk_supply_limiter: the adapter's 2.9 A budget as a
+ *                          mean-square constraint on woofer^2 + tweeter^2.
+ *                          Common, so the crossover sum is preserved; before
+ *                          the peak limiters, so it cannot lift a branch past
+ *                          its ceiling.
  *   6. per-branch limiter  LAST, so that nothing downstream of it inside this
- *                          module can undo it.
+ *                          module can undo it. Zero attack, no lookahead
+ *                          (hk_limiter.h); unchanged.
  *
  * WHY THE EQ CANNOT DEFEAT THE PROTECTION
  * ---------------------------------------
@@ -64,7 +84,9 @@
  * (a) ORDER. The final operation applied to each branch is the limiter's
  *     `sample *= ceiling / |sample|`. |output| <= ceiling is a property of
  *     that last multiply alone and holds whatever the earlier stages did. An
- *     EQ boost cannot reach past a stage that runs after it.
+ *     EQ boost cannot reach past a stage that runs after it -- and neither
+ *     can the supply stage, which only ever multiplies by a gain in (0, 1]
+ *     and runs before it anyway.
  *
  * (b) SEPARATION. The protective numbers live in ::hk_profile_chain_t, which
  *     hk_dsp_init() copies BY VALUE into ::hk_dsp_t and which no function in
@@ -117,24 +139,36 @@
  * that cannot be honoured stops everything; tonal data that cannot be honoured
  * stops one tone control.
  *
- * LATENCY: ZERO ADDED SAMPLES, WHICH IS NOT THE SAME AS ZERO DELAY. Nothing
- * here buffers: every stage is a recursive filter or a memoryless multiply, and
- * the limiter has no lookahead by deliberate design (hk_limiter.h). So no frame
- * waits for a later frame, and the pipeline depth the timing engine models is
- * unchanged.
+ * LATENCY: ZERO ADDED SAMPLES ON THE PIPELINE, WHICH IS NOT THE SAME AS ZERO
+ * DELAY. No frame waits for a later frame: every stage is a recursive filter
+ * or a memoryless multiply, the peak limiter has no lookahead by deliberate
+ * design (hk_limiter.h), and the supply stage decides its gain from samples
+ * it has already seen. So the pipeline depth the timing engine models is
+ * unchanged, and the backend's latency report, which is a constant it owns,
+ * stays true.
+ *
+ * The one stage that does buffer is the alignment delay (5b), and it does not
+ * change that sentence: it delays ONE branch relative to the other by at most
+ * 64 samples (1.45 ms at 44.1 kHz), the undelayed branch still leaves in the
+ * frame it arrived in, and the offset is smaller than the +/-2.9 ms jitter the
+ * report already absorbs. It is an acoustic-centre correction between two
+ * drivers in one baffle, not a lookahead, and it is refused above the bound.
  *
  * The filters still have GROUP DELAY, because a minimum-phase filter does.
- * Measured off this code on the woofer branch with a 70 Hz subsonic corner:
- * 3.84 ms at 50 Hz, 3.35 ms at 70 Hz, 1.93 ms at 100 Hz, 0.52 ms at 200 Hz,
- * and under 0.2 ms above 500 Hz. Moving the corner from 70 Hz to 50 Hz shifts
- * the low end by 0.57 ms; the crossover corner is cheap by comparison, 4000 ->
- * 2000 Hz moves it by 0.15 ms.
+ * Measured off this code on the woofer branch with a 70 Hz SECOND-ORDER
+ * subsonic corner, before the filter became fourth order: 3.84 ms at 50 Hz,
+ * 3.35 ms at 70 Hz, 1.93 ms at 100 Hz, 0.52 ms at 200 Hz, and under 0.2 ms
+ * above 500 Hz. Moving that corner from 70 Hz to 50 Hz shifted the low end by
+ * 0.57 ms; the crossover corner is cheap by comparison, 4000 -> 2000 Hz moves
+ * it by 0.15 ms. The fourth-order section roughly doubles the low-end figures
+ * near its corner; the numbers have not been re-measured off this code and are
+ * kept as the order of magnitude, not as the current figure.
  *
  * With one cabinet playing one programme there is no second device for that
  * delay to be measured against, so none of those figures is a synchronisation
  * error -- they are the frequency-dependent delay of one loudspeaker, the same
- * kind a passive crossover has. What matters is the sentence above: the chain
- * adds no samples, so the pipeline depth the timing engine models is
+ * kind a passive crossover has. What matters is the paragraph above: the chain
+ * adds no samples to the pipeline, so the depth the timing engine models is
  * unchanged and every frame's early/late decision against the sender's
  * presentation timestamp stays true.
  */
@@ -149,6 +183,7 @@
 #include "hk_eq.h"
 #include "hk_limiter.h"
 #include "hk_profile.h"
+#include "hk_supply_limiter.h"
 
 /** Why a chain was refused, so a bench report can say which number. */
 typedef enum {
@@ -156,8 +191,10 @@ typedef enum {
     HK_DSP_NO_CHAIN,    /**< No chain was supplied; the device is uncalibrated */
     HK_DSP_BAD_RATE,    /**< Sample rate absent, or not the one the chain was built at */
     HK_DSP_BAD_FILTER,  /**< A protective section does not describe a stable filter */
-    HK_DSP_BAD_GAIN,    /**< A branch gain is outside (0, 1] */
-    HK_DSP_BAD_LIMITER, /**< A limiter refused its configuration */
+    HK_DSP_BAD_GAIN,    /**< A branch gain is outside (0, 1], or the tweeter sign is not +/-1 */
+    HK_DSP_BAD_LIMITER, /**< A peak limiter refused its configuration */
+    HK_DSP_BAD_DELAY,   /**< An alignment delay is over the bound, or both branches carry one */
+    HK_DSP_BAD_SUPPLY,  /**< The supply limiter refused its configuration */
 } hk_dsp_refusal_t;
 
 /**
@@ -177,9 +214,19 @@ typedef struct {
 
     hk_eq_t            eq;         /**< Tonal. May be replaced while playing */
 
-    hk_biquad_state_t  hpf_state;
+    hk_lr4_state_t     hpf_state;  /**< Both sections of the subsonic filter */
     hk_lr4_state_t     low_state;
     hk_lr4_state_t     high_state;
+
+    /* One ring per branch, sized for the bound rather than for the profile's
+     * value, so the struct's size does not depend on a stored number. Only
+     * the first chain.*_delay_samples entries of a ring are ever touched. */
+    float              woofer_delay[HK_PROFILE_DELAY_MAX_SAMPLES];
+    float              tweeter_delay[HK_PROFILE_DELAY_MAX_SAMPLES];
+    uint32_t           woofer_delay_index;
+    uint32_t           tweeter_delay_index;
+
+    hk_supply_limiter_t supply_limit; /**< Common gain, stage 5d */
     hk_limiter_t       woofer_limit;
     hk_limiter_t       tweeter_limit;
 } hk_dsp_t;
@@ -241,7 +288,8 @@ bool hk_dsp_process(hk_dsp_t *dsp, int16_t *stereo, size_t frames);
 bool hk_dsp_set_eq(hk_dsp_t *dsp, const hk_eq_settings_t *eq);
 
 /**
- * Clear every filter's memory and let the limiters back to unity gain.
+ * Clear every filter's and delay line's memory and let every limiter back to
+ * unity gain.
  *
  * For a stream flush or a rate change, where the samples that follow have no
  * relationship to the ones before and the filter state is describing music
@@ -261,10 +309,12 @@ const char *hk_dsp_refusal_name(hk_dsp_refusal_t refusal);
 /**
  * How many biquad sections a frame passes through right now.
  *
- * Five are protective and always run (one subsonic section, two per LR4
+ * Six are protective and always run (two subsonic sections, two per LR4
  * branch); the rest are whatever the owner has turned on. Exposed so the cost
  * of the chain is a number the firmware can report rather than one that has to
- * be counted by hand from the source.
+ * be counted by hand from the source. The delay lines, the polarity multiply,
+ * the supply stage and the peak limiters are not biquads and are not counted;
+ * their cost is fixed per frame.
  */
 size_t hk_dsp_biquads_per_frame(const hk_dsp_t *dsp);
 

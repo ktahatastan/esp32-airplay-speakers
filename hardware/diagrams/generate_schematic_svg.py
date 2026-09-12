@@ -25,7 +25,7 @@ from xml.sax.saxutils import escape
 from schematic_lib import Sheet
 
 W, H = 2720, 2860
-REV = "P4"
+REV = "P5"
 DATE = "2026-09-12"
 
 
@@ -215,16 +215,17 @@ def build() -> Sheet:
     sheet.netlabel(100, 470, "D2 takılmazsa yerine 0 Ω köprü gelir; DC_IN ile VIN o zaman tek nettir. C_A tektir ve jak girişindedir.", "start", 0)
     sheet.netlabel(100, 494, "V1'de güç anahtarı yok: cihaz adaptör çekilerek kapanır, boşta bekleme firmware'in idle standby'ıdır.", "start", 0)
 
-    sheet.panel(1000, 180, 1620, panel_height(9), "GÜÇ GİRİŞİ KURALLARI — ADR-0020")
+    sheet.panel(1000, 180, 1620, panel_height(10), "GÜÇ GİRİŞİ KURALLARI — ADR-0020")
     sheet.panel_body(1000, 180, [
         ("ADAPTÖRÜN YÜKSÜZ ÇIKIŞI BAĞLANMADAN ÖNCE DMM İLE ÖLÇÜLÜR: < 25,5 V değilse bağlanmaz. 24 V, TPA3110'un 26 V tavanının 2 V altındadır (G1 satırı).", "panel-warn"),
         ("JAK POLARİTESİ İLK ENERJİLENDİRMEDEN ÖNCE ÖLÇÜ ALETİYLE DOĞRULANIR: merkez pozitif. Etiket okumak ölçüm değildir (G1 satırı).", "panel-warn"),
         "24 V iki giriş penceresinin de içindedir: TPA3110 8–26 V, MP1584 4,5–28 V. VIN dört amfiyi doğrudan besler; arada regülatör yoktur.",
-        "Adaptör 24 V / 2,9 A (≈70 W) ile verilidir; limiter tavanı bu bütçeden türetilir. Sekiz BTL kanal 70 W'ın çok üstünü çekebilir ve çöken VIN ESP32'yi şarkı ortasında sıfırlar.",
-        "G1, dört amfi limiter tavanında sürülürken toplam akımı ve VIN çöküşünü ölçer. İlk enerjilendirme adaptörle değil, akım sınırlı laboratuvar kaynağıyla yapılır.",
+        "Adaptör 24 V / 2,9 A (≈70 W) ile verilidir; sekiz BTL kanal 70 W'ın çok üstünü çekebilir ve çöken VIN ESP32'yi şarkı ortasında sıfırlar. Bütçeyi tepe limiter tavanları taşımaz:",
+        "onu DSP'nin besleme bütçesi katı taşır (supply_budget_sq / supply_window_ms, iki dalın toplamı üzerinden ortalama güç; ADR-0022). Tepe tavanları G2'nindir ve onun altında kalır.",
+        "G1 S7 o katın iki sayısını verir: dört amfi 4 Ω sınıfı dummy-load'a adaptörün 2,9 A noktasına kadar sürülürken toplam akım ve VIN çöküşü. İlk enerjilendirme adaptörle değil, akım sınırlı laboratuvar kaynağıyla yapılır.",
         "D2 adaydır: Schottky, ideal-diyot modülü ya da 0 Ω köprü. 2,9 A'da bir Schottky ≈1 W veya üstü ısınır; kararı G1'de TP0−TP1 düşümü ve ısı verir.",
         "Adaptör çıkışı koruma toprağına bağlı olabilir. Adaptörle osiloskop bağlamadan önce PE/izolasyon ilişkisi ölçülür; belirsizse scope bağlanmaz.",
-        "Kapanış adaptör çekilerek olur; kapanış pop kaydı da öyle alınır. VIN çökerken amfiler 8 V altında kendi kilidiyle susar, buck'lar 4,5 V girişe kadar 5 V verir.",
+        "Kapanış adaptör çekilerek olur; kapanış pop kaydı da öyle alınır. VIN çökerken amfilerin (8 V önerilen asgari; veri sayfası sayısal UVLO eşiği vermez) buck'lardan (4,5 V giriş tabanı) önce susması beklenir; kanıtı G1 kapanış kaydıdır.",
         ("TPA3110D2'nin 24 V'ta 4 Ω sınıfı sürücülere vereceği güç veri sayfasından değil G1 dummy-load ölçümünden yazılır. Jak kontağının 2,9 A sürekli değeri tedarikçiye sorulur.", "panel-warn"),
     ])
 
@@ -428,7 +429,7 @@ def build() -> Sheet:
         ("S1 bir XH-A232 + dummy-load (lab kaynağı 8–24 V) → S2 ESP32 + buck A, DAC + buck B", "panel-mono"),
         ("→ S3 I²S zinciri + tek amfi + dummy-load → S4 bir woofer, düşük seviye", "panel-mono"),
         ("→ S5 bir tweeter + C_SAFE, çok düşük seviye → S6 tek amfi + sürücü çifti, 24 V", "panel-mono"),
-        ("adaptör → S7 dört amfi VIN'de: limiter tavanında toplam akım, VIN çöküşü, termal", "panel-mono"),
+        ("adaptör → S7 dört amfi VIN'de, 4 Ω sınıfı yükte 2,9 A noktası: akım, VIN çöküşü, termal", "panel-mono"),
         ("→ S8 tam kabin soak (G8). Diğer üç amfi sürücülere ancak S6'dan sonra bağlanır.", "panel-mono"),
         ("", "panel-text"),
         ("C_SAFE tek başına crossover değildir; DSP HPF ve limiter'a karşı son savunmadır.", "panel-text"),
@@ -524,7 +525,7 @@ def build() -> Sheet:
         baseline += Sheet.PANEL_LINE
     for line in ("",
                  "Güç açma/kapatma kaydı — CH1 TP1 · CH2 TP3 · CH3 TP5 · CH4 TP9/TP10.   Susturma kaydı — CH1 TP6 (BCLK) · CH2 TP33 (XSMT) · CH3 TP9/TP10 · CH4 TP13/TP14.",
-                 "Ripple ölçümünde 10× prob, ground-spring ve 20 MHz bant sınırı kullanılır. TP1 çöküşü dört amfi limiter tavanında sürülürken, 2,9 A bütçesine karşı kaydedilir.",
+                 "Ripple ölçümünde 10× prob, ground-spring ve 20 MHz bant sınırı kullanılır. TP1 çöküşü dört amfi 4 Ω sınıfı yüke adaptörün 2,9 A noktasına kadar sürülürken kaydedilir; besleme bütçesi katının iki sayısı (supply_budget_sq, supply_window_ms) buradan yazılır.",
                  "Beklenen değer ve geçiş şartları: docs/02-hardware/circuit-and-wiring-plan.md §7"):
         if line:
             sheet.panel_line(70 + 20, baseline, line)

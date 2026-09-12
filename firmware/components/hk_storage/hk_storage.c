@@ -14,6 +14,11 @@ static const char *TAG = "hk_store";
 static hk_schema_action_t s_user_action = HK_SCHEMA_WRITE_DEFAULTS;
 static hk_schema_action_t s_factory_action = HK_SCHEMA_FAIL_SAFE;
 static bool               s_profile_present;
+/* The judge's verdict on the present blob, as reported by hk_main. False is
+ * the only value this module ever assumes for itself: it stores a verdict, it
+ * does not reach one, because reaching one means building the chain, and the
+ * audio component is the layer that knows how. */
+static bool               s_profile_valid;
 
 /** Read a store's schema version, distinguishing absent from unreadable. */
 /**
@@ -147,7 +152,7 @@ static void init_factory_store(void)
 
     ESP_LOGI(TAG, "calibration store: %s -> %s, profile %s",
              hk_schema_found_name(found), hk_schema_action_name(s_factory_action),
-             s_profile_present ? "present" : "ABSENT");
+             s_profile_present ? "present (unjudged)" : "ABSENT");
     if (!hk_schema_audio_permitted(s_factory_action)) {
         ESP_LOGE(TAG, "no trustworthy calibration: audio must stay in its safe state");
     }
@@ -155,6 +160,12 @@ static void init_factory_store(void)
 
 esp_err_t hk_storage_init(void)
 {
+    /* A verdict belongs to the bytes it was reached on. Bringing the stores up
+     * re-reads what is there, so whatever was judged before is forgotten and
+     * hk_main has to ask the judge again; until it does, a present profile
+     * permits nothing. */
+    s_profile_valid = false;
+
     esp_err_t err = init_user_store();
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "user store: %s; running on defaults", esp_err_to_name(err));
@@ -171,19 +182,41 @@ bool hk_storage_profile_present(void)
     return s_profile_present;
 }
 
+void hk_storage_profile_judged(bool valid)
+{
+    s_profile_valid = valid;
+}
+
+bool hk_storage_profile_valid(void)
+{
+    return s_profile_valid;
+}
+
 bool hk_storage_audio_permitted(void)
 {
 #if CONFIG_HK_BENCH_AUDIO_WITHOUT_PROFILE
     /* The exception is deliberate and it announces itself. See the Kconfig help:
-     * it is only defensible on a board with nothing attached to the output. */
+     * it is only defensible on a board with nothing attached to the output.
+     *
+     * It lifts the ABSENCE refusal and nothing else. A profile that is present
+     * and refused falls through to the rule below, on the bench too: the DSP
+     * backend refuses the same blob and runs with no chain, and the exception
+     * was never a licence to unmute the DAC in front of that. */
     if (hk_schema_audio_permitted(s_factory_action) && !s_profile_present) {
         return true;
     }
 #endif
-    /* Both, and the second one is the point. A schema version alone was enough
-     * until 2026-09-08, which meant writing provisioning credentials made a
-     * never-calibrated device claim it was calibrated. */
-    return hk_schema_audio_permitted(s_factory_action) && s_profile_present;
+    /* All three, and each one was added because its absence opened the gate.
+     * A schema version alone was enough until 2026-09-08, which meant writing
+     * provisioning credentials made a never-calibrated device claim it was
+     * calibrated. Presence alone was enough until 2026-09-12, which meant a
+     * blob the backend would refuse still released the DAC mute into a chain
+     * writing zeros (ADR-0022). The verdict is hk_main's, reached with the
+     * backend's own judge, hk_profile_load(), and stored here so that every
+     * caller of this function -- hk_main's mute sequence, the receiver's
+     * start refusal -- reads one answer. */
+    return hk_schema_audio_permitted(s_factory_action) && s_profile_present &&
+           s_profile_valid;
 }
 
 esp_err_t hk_storage_user_reset(void)

@@ -83,15 +83,18 @@ _Static_assert((HK_AUDIO_HW_MUTE_MASK & HK_PIN_FORBIDDEN_MASK) == 0,
  *                    output down against its bit clock rather than cutting
  *                    it, so the clocks are held for this long after the DAC
  *                    is told to mute, and only then may the receiver stop
- *                    them. How long the ramp takes on this board has not
- *                    been measured, and this file does not quote a datasheet
- *                    figure for it; 50 ms is chosen to be longer than any
- *                    plausible soft-mute ramp by a wide margin, and a
- *                    generous value costs nothing audible because the DAC is
- *                    already ramping to silence while it is waited out. The
- *                    G1 operator should see the ramp complete on the DAC
- *                    output before BCK stops; if it does not, this is the
- *                    number to raise.
+ *                    them. The datasheet (SLAS859C) gives the figure: XSMT
+ *                    low starts a -1 dB per sample ramp that reaches -inf
+ *                    after 104 samples, and the full mute -- that digital
+ *                    ramp followed by the hard analogue mute -- takes 150
+ *                    sample times plus 0.2 ms, about 3.6 ms at 44.1 kHz. How
+ *                    long it takes on THIS board has not been measured, so
+ *                    50 ms stays: an order of magnitude over the datasheet
+ *                    figure, and a generous value costs nothing audible
+ *                    because the DAC is already at silence while it is
+ *                    waited out. The G1 operator should see the ramp complete
+ *                    on the DAC output before BCK stops; if it does not, this
+ *                    is the number to raise.
  */
 static const hk_audio_timing_t HK_AUDIO_HW_TIMING = {
     .clock_settle_ms = 200,

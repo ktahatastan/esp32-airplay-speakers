@@ -126,6 +126,28 @@ jobs:
             || { echo "the release build is configured for the bring-up devkit"; exit 1; }
           grep -qx 'CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y' "$SDKCONFIG" \
             || { echo "the release build is not configured for a 16 MB part"; exit 1; }
+
+          # The output stage. The DSP chain is the product's (ADR-0022): the
+          # crossover, the protective high-pass, the supply budget and the
+          # limiters live in it, and it is selected by a Kconfig default that
+          # no tracked fragment names. A release whose default quietly moved
+          # back to the vendored passthrough would ship four tweeters a
+          # full-band signal, and no configure-time guard reads the default.
+          grep -qx 'CONFIG_HK_AIRPLAY_OUTPUT_DSP=y' "$SDKCONFIG" \
+            || { echo "the release build does not carry the DSP output backend"; exit 1; }
+          ! grep -qx 'CONFIG_HK_AIRPLAY_OUTPUT_I2S=y' "$SDKCONFIG" \
+            || { echo "the release build selects the vendored passthrough output"; exit 1; }
+
+          # No bench exception, ever. Every HK_BENCH_ bool releases something
+          # a release must not: the profile gate, a compiled-in profile nobody
+          # measured, a tone written past the DSP, a sweep. One regex rather
+          # than a list, so a fifth bench symbol added later -- with a digit
+          # in its name or without -- is refused without editing this file;
+          # the HK_BENCH_ ints are '=NNN' and cannot match '=y'.
+          # firmware/CMakeLists.txt refuses the same combination at configure
+          # time; this is the check on the artefact.
+          ! grep -qE '^CONFIG_HK_BENCH_[A-Z0-9_]+=y$' "$SDKCONFIG" \
+            || { echo "the release build carries a bench exception (CONFIG_HK_BENCH_*=y)"; exit 1; }
       - name: rollback and its health check must be enabled together
         shell: bash
         run: |

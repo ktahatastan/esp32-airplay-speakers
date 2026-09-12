@@ -71,14 +71,16 @@ CONFIG_HK_AIRPLAY=y
 #
 # The DSP budget is what forces this. With the CONFIG_HK_AIRPLAY_OUTPUT_DSP
 # backend the playout task runs the whole protection chain per sample at
-# 44.1 kHz -- mono downmix, EQ, the subsonic high-pass, an LR4 crossover into
-# two branches and a limiter on each -- and it runs it between the receiver's
-# decode and the I2S DMA deadline, on a core it shares with Wi-Fi and the RTSP
-# session. Headroom there is what separates
-# a clean stream from an underrun that sounds like a DAC fault. The cost is a
-# little heat on a part fed from a desktop adapter, which is the right way
-# round: a speaker that is awake is already spending far more on its amplifier
-# and its radio than on its core clock. Revisit with a measured task-time
-# figure, not by reasoning.
+# 44.1 kHz -- mono downmix, EQ, the fourth-order subsonic high-pass, an LR4
+# crossover into two branches, an alignment delay line on each branch (at most
+# one of them non-zero), the supply-budget stage (a mean-square detector over
+# both branches and one common gain, its sqrt taken once per block) and a peak
+# limiter on each branch -- and it runs it between the receiver's decode and
+# the I2S DMA deadline, on a core it shares with Wi-Fi and the RTSP session.
+# Headroom there is what separates a clean stream from an underrun that sounds
+# like a DAC fault. The cost is a little heat on a part fed from a desktop
+# adapter, which is the right way round: a speaker that is awake is already
+# spending far more on its amplifier and its radio than on its core clock.
+# Revisit with a measured task-time figure, not by reasoning.
 CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y
 CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ=240

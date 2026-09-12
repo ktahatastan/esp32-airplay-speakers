@@ -24,6 +24,7 @@ int main(void)
     HK_RUN(test_settings);
     HK_RUN(test_portal);
     HK_RUN(test_profile);
+    HK_RUN(test_supply_limiter);
     HK_RUN(test_dsp);
 #ifdef HK_HAVE_CJSON
     HK_RUN(test_manifest_json);

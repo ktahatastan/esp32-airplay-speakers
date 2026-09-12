@@ -10,6 +10,9 @@
 # There is a second, non-shipping target for the N8R2 bring-up devkit. See
 # sdkconfig.devkit for the command line. The guards at the bottom of this file are
 # what keep the two from being mixed up; read them before changing either config.
+# The last guard is about the bench fragments (sdkconfig.bench, sdkconfig.sweep):
+# they build for the product board, so nothing above tells them apart from a
+# release, and the guard is what refuses to sign one.
 cmake_minimum_required(VERSION 3.16)
 
 # The second entry holds the two upstream components the vendored AirPlay stack
@@ -72,5 +75,32 @@ else()
         message(FATAL_ERROR
             "The product board has 8 MB octal PSRAM (ADR-0010) but PSRAM is not in "
             "octal mode. See the note above about HK_BOARD_DEVKIT_N8R2.")
+    endif()
+endif()
+
+# --- Bench builds are never signed ------------------------------------------------
+#
+# A bench fragment differs from the product by nothing the guards above can see:
+# same board, same flash, same partition table, and since ADR-0022 the same DSP
+# output backend. What it changes is two gate symbols -- audio permitted with no
+# driver-protection profile, and a compiled-in profile nobody measured -- plus,
+# in the sweep overlay, a tone written straight to I2S past the DSP. Each is a
+# bool under HK_BENCH_ in main/Kconfig.projbuild. A signed image is a
+# publishable image, so the combination is refused here, at configure time,
+# the way the devkit is. release.yml checks the generated sdkconfig for the
+# same symbols with one regex; this is the check that runs on every machine.
+if(CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT)
+    if(CONFIG_HK_BENCH_AUDIO_WITHOUT_PROFILE
+       OR CONFIG_HK_BENCH_PROVISIONAL_PROFILE
+       OR CONFIG_HK_BENCH_TONE_INSTEAD_OF_AIRPLAY
+       OR CONFIG_HK_BENCH_SWEEP)
+        message(FATAL_ERROR
+            "Refusing to sign a bench build: this image releases the amplifiers on "
+            "numbers nobody measured (sdkconfig.bench:1 says NEVER part of a release). "
+            "One of CONFIG_HK_BENCH_AUDIO_WITHOUT_PROFILE, "
+            "CONFIG_HK_BENCH_PROVISIONAL_PROFILE, CONFIG_HK_BENCH_TONE_INSTEAD_OF_AIRPLAY "
+            "or CONFIG_HK_BENCH_SWEEP is set together with "
+            "CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT. Drop the bench fragment from "
+            "SDKCONFIG_DEFAULTS, or drop sdkconfig.release.")
     endif()
 endif()

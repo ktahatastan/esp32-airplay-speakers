@@ -12,12 +12,20 @@
  * the gain reduction over an attack time, which sounds gentler and lets peaks
  * through while the gain is still falling; a limiter that lets peaks through
  * is not protection. The other alternative, a lookahead delay line, removes
- * the distortion but adds latency — and this DSP is reported to the receiver's
- * timing engine as ZERO added samples (audio_output_get_hardware_latency_us in
- * hk_airplay_output_i2s.c), which is what lets every frame's early/late
- * decision against the sender's presentation timestamp stay true. A delay line
- * would make that report wrong and move every one of those decisions, to make
- * a protection stage that rarely engages sound nicer while it engages.
+ * the distortion but adds latency to the pipeline — and the latency this
+ * backend reports to the receiver's timing engine
+ * (audio_output_get_hardware_latency_us in hk_airplay_output_i2s.c) is a
+ * constant that backend owns and that assumes the chain adds no samples. A
+ * lookahead would make that constant wrong and move every frame's early/late
+ * decision against the sender's presentation timestamp, to make a protection
+ * stage that rarely engages sound nicer while it engages. The choice is
+ * protection first, and it does not change when the G2 numbers arrive; only
+ * the configuration will.
+ *
+ * The per-branch ALIGNMENT delay in hk_dsp (stage 5b) is a different thing
+ * and does not reopen this: it is bounded to 64 samples, applies to one
+ * branch only, corrects an acoustic-centre offset between two drivers, and
+ * leaves the undelayed branch — and so the pipeline depth — where it was.
  *
  * The cost is honest: instantaneous gain changes are distortion. On a stage
  * that should be inaudible in normal use and only acts when something is
@@ -29,11 +37,14 @@
  * So release is exponential and a hold keeps the gain down for a stated time
  * after the last peak.
  *
- * NOTHING HERE HAS A DEFAULT CEILING. The ceiling comes off the bench: G1 sets
- * it against the adapter's 2.9 A budget with all four amplifiers driven, and
- * G2 lowers it where measured driver behaviour demands. This project does not
- * invent that kind of number. A configuration that has not been given one is
- * refused rather than run.
+ * NOTHING HERE HAS A DEFAULT CEILING. The ceiling comes off the bench: it is
+ * G2's measured driver limit for that branch and, once bench item C3 has read
+ * the amplifier's gain strapping, it is also bounded by where the rail clips.
+ * The adapter's 2.9 A budget is NOT this number and cannot be: it is an
+ * average constraint on both branches together, and it lives in the supply
+ * limiter's field (hk_supply_limiter.h), measured in G1. This project does
+ * not invent either kind of number. A configuration that has not been given
+ * one is refused rather than run.
  */
 #ifndef HK_LIMITER_H
 #define HK_LIMITER_H
