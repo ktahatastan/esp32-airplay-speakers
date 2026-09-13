@@ -577,6 +577,23 @@ düşüyorsa okumanın ne kadar güvenilir olduğunu **yalnız** metre modeli s�
 ve [[../04-acoustics/measurement-and-dsp-plan|DSP planı]] her profilin kaynak
 ölçümünü, firmware sürümünü ve tarihini taşımasını şart koşuyor.
 
+**Profil dosyası (2026-09-12 gecesi).** Bu tablonun ve yukarıdaki "provisional
+ayarlar" tablosunun sayıları artık tek bir yerde durur:
+`docs/assets/measurements/drivers/profile-2026-09-12-provisional.json`,
+`firmware/tools/write_profile.py`'nin `factory_cal` profil blob'una çevirdiği
+dosya ([[../04-acoustics/measurement-and-dsp-plan#Profili yazmak — değerler dosyası, araç, flaş|DSP planı]];
+flaş sahibinin işidir, araç yalnız komutu basar). Dosya **geçicidir** ve her
+alanının yanında bunu söyler. Ölçülmüş olan yalnız iki DC direnç (woofer 4,0 Ω,
+tweeter 3,5 Ω — tweeter'ınki prob direnciyle yeniden okunacak); gerisi bekliyor:
+`crossover_hz` (3500) tweeter `Fs`'sinin **noktasını** — ince tarama ya da oran
+yöntemi — ve `G2`'nin `C_SAFE` kararını; `woofer_hpf_hz` (55) woofer ince
+taramasını ve kabin akordunun `Fb`'sini; dal kazançları, iki tavan, dal başına
+release/hold, hizalama gecikmesi ve tweeter polaritesi `G2`'yi;
+`supply_budget_sq` / `supply_window_ms` `G1` S7'yi; `amp_gain_db` (0, okunmadı)
+`C3`'ü. `reference_supply_mv` (12000) 8 Eylül'ün tezgâh kaynağının kaydıdır,
+ölçüm değil. Bunlardan biri ölçüldüğünde değişen yer dosyadır, sonra blob
+yeniden yazılır: bu tablo ölçümü taşır, dosya ölçümden türeyen sayıyı.
+
 Ham veriler ve fotoğraflar: `docs/assets/measurements/drivers/`.
 
 ### 12. Bu neyi kapatmıyor

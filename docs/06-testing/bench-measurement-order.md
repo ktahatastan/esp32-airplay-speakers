@@ -20,7 +20,8 @@ bir testi geçmiş sayamaz, operatör kaydeder.
 > **Her ölçümden önce:** hoparlör terminallerinde ne olduğuna bak. Nova
 > sürücülerinin DC direnci ölçüldü ama empedans eğrisi ve `Fs` ölçülmedi (`G0`,
 > açık `Kritik`); yüksek geçiren filtre ile limiter yer tutucu tezgâh
-> profiliyle çalışıyor, ölçülmüş değerle değil (`F3`). Amfinin kazanç strap'i
+> profiliyle — ya da onun `factory_cal`'a yazılmış, kaynağı `provisional`
+> olan kopyasıyla (§E) — çalışıyor, ölçülmüş değerle değil (`F3`). Amfinin kazanç strap'i
 > okunmadı (`C3`): **24 V'ta sürücüde dinleme yok**, tezgâh profili 12 V'ta
 > dinlendi ve amfi sabit kazançlıdır. Tweeter bağlıyken uzun süre ses verme.
 > Tezgâhta tek amfi ve tek woofer/tweeter çifti vardır; öteki üç amfi sürücülere
@@ -290,12 +291,228 @@ ve DC `−` ↔ PE ilişkisi açık.
 
 ---
 
+## E — Oynatma testi (ürün yolu, sonraki oturum)
+
+Sahibin isteği: crossover bu değerlerle hazır olsun, sonraki oturum düzeneği
+kurup bir oynatma testiyle bitsin. Hazırlık depoda yapıldı — sayılar
+`docs/assets/measurements/drivers/profile-2026-09-12-provisional.json`
+dosyasında, `firmware/tools/write_profile.py` onları `factory_cal`'ın `profile`
+blob'una çeviriyor ([[../04-acoustics/measurement-and-dsp-plan#Profili yazmak — değerler dosyası, araç, flaş|DSP planı]]).
+Bu bölüm tezgâhta ne yapılacağını sırasıyla yazar.
+
+Bir kez daha, çünkü testin bütün anlamı burada: **bu bir dinleme testidir,
+kapı değil.** Profil `provisional` adını taşır, içindeki iki DC direnç dışında
+hiçbir sayı ölçülmüş değildir, ve yazılmış olması ürünün ses yolunu **açar** —
+`hk_main` onu `ok` bulur, `hk_storage` ses iznini verir, akış gelince DAC canlı
+amfilere bırakılır, tezgâh istisnası olmadan. O yüzden yazılma anı, kademeli
+çiftin (tek amfi, bir woofer, `C_SAFE`'li bir tweeter) tezgâhta hazır olduğu
+andır; sekiz sürücüye bağlı bir karta yazılmaz.
+
+### E1. `GPIO13 → XSMT` jumper'ını lehimle
+
+12 Eylül gecesi üç kez çıktı ([[../08-development-log/2026-09-12-fs-bench-session|günlük]]);
+8 Eylül'de aynı belirti — o gün tel hiç bağlı değildi. Çıkan tel DAC'ı sessizce susturur ve "ses yok" başka her
+arızayı taklit eder. Lehimlendikten sonra **`B1` tekrarlanır** (`XSMT` ↔ `3V3`,
+güç kapalı): lehim bir köprü yapmışsa `GPIO13` düşükken 3V3 rayına kısa devredir,
+ve `B1`'in bir güvenlik ölçümü olmasının sebebi budur.
+
+- [ ] Lehimlendi, tel çekmeye dayanıyor.
+- [ ] `B1` yeniden ölçüldü: _(değer)_
+
+### E2. `C3` — amfi kazanç strap'ini oku
+
+Yukarıdaki `C3` satırı: kullanılacak amfide, mümkünse dördünde. Sonuç iki yere
+yazılır — `C3`'ün sonuç satırına ve değerler dosyasının `amp_gain_db` alanına
+(20/26/32/36; okunmadıysa 0 kalır: doğrulayıcı sıfırı reddetmez; 24 V'ta
+sürücü dinlemesi ise `C3`'ten bağımsız kapalıdır, E4). Bu adım profil yazılmadan **önce** gelir,
+çünkü profil kaynağını taşır ve okunan kazanç oraya girer; sonradan okunursa
+dosya güncellenir, blob yeniden yazılır, `factory_cal` bir kez daha flaşlanır.
+36 dB bulunursa `C3` tablosu ne yapılacağını söyler; strap değiştirildiyse
+dosyaya değiştirilmiş hâli yazılır.
+
+- [ ] Amfi #_: `GAIN0`/`GAIN1` okuması → _ dB
+- [ ] Dört kart aynı mı: _(yazılacak)_
+
+### E3. `C_SAFE` tweeter'ın önünde mi?
+
+Sürücü ölçüm planının açık sorusu ([[../02-hardware/driver-measurements|sürücü ölçüm planı]], `C_SAFE` bölümü):
+7 µF parça arızalı çıktı ve takılı değildi, 10 µF'in takıldığına dair kayıt
+yok. Bu testte tweeter, önünde 10 µF kutupsuz film kondansatör olmadan
+**bağlanmaz**: DSP crossover'ının köşesi bir tahminden türedi ve yanlışsa
+kondansatör tweeter'ın tek korumasıdır. Kondansatör amfinin R çıkışı ile
+tweeter arasındadır ve BTL olduğu için kutupsuz olmak zorundadır. Yoksa test
+yalnız woofer'la yapılır ve öyle yazılır.
+
+- [ ] Değer ve tip: _(yazılacak)_ · takılı değilse tweeter bağlanmadı: [ ]
+
+### E4. Düzenek — tek amfi, bir çift
+
+`AGENTS.md`'nin kademeli kuralı: ilk enerjilenen yol bir amfi, bir woofer, bir
+tweeter. Öteki üç amfi sürücüye bağlanmaz; girişleri de boş kalır.
+
+| bağlantı | nereden | nereye | not |
+|---|---|---|---|
+| woofer bandı | DAC `LOUT` | amfi **L** girişi | ADR-0002: sol = woofer |
+| tweeter bandı | DAC `ROUT` | amfi **R** girişi | sağ = tweeter |
+| woofer | amfi **L** çıkışı | woofer | terminal polaritesini yaz |
+| tweeter | amfi **R** çıkışı | `C_SAFE` → tweeter | E3 |
+| toprak | ESP `GND`, DAC `GND` | ayrı tellerle yıldız noktasına | §D; birbirine değil |
+
+BTL: hoparlör eksi uçları şasi toprağı değildir; hiçbirine skop toprağı ya da
+ortak tel bağlanmaz. Çapraz kabloya dikkat: mono programda çaprazlanmış bir
+çift görünmezdir ve kendini ilk kez crossover çalışınca, tweeter'a bas
+göndererek belli eder (`86f629c`); E6 bası bu yüzden önce woofer'da arar.
+
+Dummy-load varsa çıkışlar önce ona gider: iki çıkışa 4 Ω sınıfı direnç,
+sürücüler henüz bağlı değil; yoksa E8'e "dummy-load yok" yazılır. Bu çift
+8 ve 12 Eylül'de sürücüde enerjilendiği için bu bir ilk enerjilendirme değil,
+yeniden enerjilendirmedir — kademeli kuralın "önce dummy-load" adımı burada
+varsa yapılır, şart koşulmaz. Sürücülere geçiş güç kapalıyken yapılır (E6).
+
+Besleme: **akım sınırlı tezgâh kaynağı, 12 V — her hâlde ≤ 15 V — ve `C3`
+okunmuş olsa da öyle.** Adaptörün ilk bağlantısı `G1`'in dummy-load satırıdır
+(ADR-0020); sürücüye 24 V ise `C3`'ten bağımsız olarak kapalı: risk kaydının
+Kritik satırı (TPA3110D2 15 V üstünde asgari 4,8 Ω BTL yük, iki Nova da 4 Ω
+sınıfı) `G0` `Z_min` ve `G1`'in 24 V / 4 Ω dummy-load kaydı olmadan hiçbir
+sürücünün 24 V'ta bağlanmamasını ister. `C3`'ün buradaki işi kazancı bilmek,
+24 V'un kapısını açmak değil. Kaynağın gerilimi ve akım sınırı yazılır.
+
+- [ ] Amfi #_, woofer #_, tweeter #_; kaynak _ V (≤ 15) / _ A sınır
+
+### E5. Profili yaz, kartı aç, açılış raporunu oku
+
+1. Değerler dosyasını aç, E2'nin kazancını `profile.amp_gain_db`'ye yaz,
+   `provenance.amp_gain_db.status`'u `placeholder`dan `measured`a çevir ve
+   `source`'a `C3`'ün sonuç satırını yaz; başka hiçbir alana dokunma.
+2. `python3 firmware/tools/write_profile.py <değerler.json> --device-dir <dizin>`
+   — dizin, kartın kendi kimlik-bilgisi dizinidir (`provision_credentials.py`'nin
+   o kart için yazdığı, `factory_cal.csv`'nin durduğu dizin; `IDF_PATH` gerekir).
+   Araç `profile` satırını **o** CSV'ye ekler, `factory_cal.bin`'i yeniden üretir
+   ve flaş komutunu basar. Kimlik bilgilerini yeniden üretmez: kayıtlı PoP ve
+   AP parolası olduğu gibi kalır; onları yeniden üretmek kayıttaki PoP'u
+   geçersiz kılardı. Flaşlamaz.
+3. Basılan `esptool … write_flash 0x13000 …` komutunu **sen** çalıştırırsın:
+   `factory_cal` bölümü `0x13000`'de, boyut `firmware/partitions.csv`'den
+   (`0xd000`). Flaşlamadan önce imajın tam `0xd000` bayt olduğuna bak — kısa
+   bir imaj o ofsette kimlik bilgilerini siler ve yerine hiçbir şey koymaz
+   (`firmware/README.md`). `nvs` bölümüne dokunulmaz; kartın katıldığı Wi-Fi
+   durur. Aracın bastığı ikinci çift komut — `read_flash` ve `--dump` — bölümü
+   geri okuyup cihazın yargılayacağı sayıları tablo olarak gösterir; açılış
+   raporundan önce buna bak.
+4. Yapı: ürün yapısı (`sdkconfig.defaults`), çünkü sınanan şey ürünün yazılı
+   bir profille çalmasıdır. Tezgâh yapısı (`sdkconfig.bench`) da olur — profil
+   varken istisnası bir şey yapmaz, yalnız telemetri satırı 10 s'de bir gelir.
+   Hangisi olduğu yazılır; 8 Eylül'ün açık sorusu ("hangi yapı çaldı") bu kez
+   açılış raporundan cevaplanır.
+5. Seri hatta, `hk` etiketinde, sırayla:
+
+```text
+hk: profile     present, judged ok at 44100 Hz for a 24000 mV supply
+W hk: profile     source 'provisional-2026-09-12' is PROVISIONAL: a bench listening profile, not a calibration. Staged pair only (one amplifier, one woofer, one tweeter), low level, supply at or below 15 V; nothing in it was measured except the two DC resistances.
+hk: audio       profile present:ok · verdict PERMITTED
+```
+
+ve arka uç (`hk_out_dsp`) başlarken:
+
+```text
+hk_out_dsp: calibration <yyyymmdd> from '<source>': crossover 3500 Hz, subsonic 55 Hz, release/hold 150/20 and 150/20 ms, delay 0/0 samples, tweeter in phase, supply budget 1.000 over 100 ms, amplifier gain ...
+hk_out_dsp: DSP path built at 44100 Hz: ... Left = WOOFER, right = TWEETER (ADR-0002) ...
+```
+
+`present:ok` ses iznini tek başına veren tek gate durumudur. `present:`
+sonrasında başka bir sözcük varsa (`schema`, `source`, `frequency`, `ceiling`,
+`budget`, `amp-gain`, …) profil o alan yüzünden reddedilmiştir, ses susturulu
+kalır ve `profile     present and REFUSED: <ad>` satırı da gelir: değerler
+dosyasını düzelt, yeniden yaz, dinlemeye geçme. Tezgâh yapısındaysan
+`BENCH PROFILE IN USE AND IT WAS NOT MEASURED` uyarısı artık **gelmez** —
+saklanan profil derlenmiş olanın önüne geçer — ve profilin ölçülmediğini
+söyleyen tek şey `from '<source>'` içindeki `provisional` sözcüğüdür. Satırı
+okurken bunu bil. `24000 mV` yapının beyanıdır (`CONFIG_HK_SUPPLY_MV`),
+kaynağın ölçümü değil; profilin referansı 12000 olduğu için iki tavan yarıya
+iner, sessize doğru hata.
+
+- [ ] Commit, yapı parçaları, imaj boyutu, üç satır: _(yazılacak)_
+
+### E6. Düşük seviyede çal, dinle
+
+Dummy-load varsa önce onunla: akış aç, kaydırıcı en altta, çıkışta DMM AC ya
+da skop ile sinyalin geldiği görülür, akış durdurulur, **güç kapatılır**,
+sürücüler bağlanır. Sonra telefondan, kaydırıcı en altta; yavaş yavaş yukarı.
+Üç şeye kulak:
+
+- **Crossover ayrımı duyuluyor mu.** Kulak sırayla her sürücüye: bas yalnız
+  woofer'dan, tiz yalnız tweeter'dan gelmeli. Tweeter'dan bas geliyorsa çapraz
+  kablo (E4), profil değil — akışı durdur.
+- **Boşta hışırtı var mı.** Akış dururken ve `SILENT`'a döndükten sonra
+  sessizlik tam olmalı (`A1`). Hışırtı varsa §D yıldız toprak ve `C3`; ikisi
+  de bu testte kapanmaz, yazılır.
+- **Akış başı/sonu pop.** `PLAYING -> MUTING -> SILENT` satırlarıyla birlikte;
+  amfi susturmasız olduğu için "pop yok" vaadi yok, ne duyulduğu yazılır.
+
+- [ ] Kaydırıcı konumu ve üç gözlem: _(yazılacak)_
+
+### E7. Telemetri satırını kaydet
+
+En az bir tam aralık (üründe 60 s, tezgâh yapısında 10 s) çaldıktan sonra
+`hk_out_dsp` şu satırı basar; olduğu gibi kopyala:
+
+```text
+dsp block max M us mean m us of 7981 us (per 352-frame block, normalised; ...); supply mean_sq max S gain min g
+```
+
+`M < 7981` F3 ölçütünün sorduğu sorudur, ama tek satır 30 dakikalık kanıt
+değildir. `g` 1,000 ise besleme katı hiç devreye girmemiştir — yer tutucu
+bütçeyle beklenen bu. Alıcının kendi satırındaki `under=` sayacı yanına
+yazılır.
+
+- [ ] Satır(lar): _(yazılacak)_ · `under=`: _
+
+### E8. Ne yazılır
+
+[[test-log|Test kaydına]] bir satır, "kapı değil" sonucuyla; ayrıntı buraya:
+
+| alan | değer |
+|---|---|
+| tarih, kart kimliği, commit, yapı parçaları | |
+| değerler dosyası, `source` dizesi, `amp_gain_db` | |
+| `factory_cal.bin` boyutu; flaş komutu | |
+| açılış raporu: `profile`, `audio`, `calibration` satırları | |
+| amfi #, `C3` okuması, `C_SAFE` değeri, sürücü kimlikleri, polarite | |
+| besleme: kaynak, gerilim, akım sınırı | |
+| dummy-load adımı yapıldı mı, ne görüldü | |
+| kaydırıcı konumu; ayrım / hışırtı / pop | |
+| telemetri satırı(ları), `under=` | |
+| düzenekte çıkan, kopan, değişen şeyler | |
+
+### E9. Ne iddia edilmez
+
+- **`G0` değil.** Empedans eğrisi ve iki `Fs` ölçülmedi; profil bunları
+  taşımıyor, `provisional` adı bu yüzden.
+- **`G1` değil.** Dummy-load'da skop kaydı, `VIN` çökmesi, adaptör yok;
+  besleme bütçesi yer tutucu.
+- **`G2` değil.** Tavanlar, kazançlar, gecikme ve polarite ölçülmedi; "ayrım
+  duyuldu" bir dinleme gözlemidir, crossover'ın doğru yerde olduğunun kanıtı
+  değil.
+- **`F2`/`F3` kabulü değil.** I2S test noktalarında skop yok, dummy-load'da
+  −40/−20 dBFS yok; bir telemetri satırı 30 dakika değil.
+- Profil yazılmış olmakla kalibrasyon olmaz: blob, kaynağında yazdığı gibi,
+  kayıttaki geçici sayıların taşıyıcısıdır. Öteki üç amfi bağlanmadı ve bu
+  testten sonra da bağlanmaz.
+
+---
+
 ## Sıradaki
 
 Bu ölçümler kapandıkça:
 
+- Sonraki oturum §E ile biter: jumper lehimli, `C3` okunmuş, `C_SAFE` yerinde,
+  tek amfi ve bir çift, `provisional` profil `factory_cal`'da, açılış raporunda
+  `present:ok`, telefondan düşük seviyede dinleme ve bir telemetri satırı.
+  Kapı değil; sonucu test kaydına girer.
 - `C3` 36 dB gösterirse: kazanç düşürülür ve EQ bunun üstüne kurulur. Ne gösterirse
-  göstersin: `C3` dolmadan 24 V'ta sürücüde dinleme yok.
+  göstersin, sürücüde 24 V dinleme `C3` ile açılmaz: `G0` `Z_min` ve `G1`'in
+  24 V / 4 Ω dummy-load kaydı ister (risk kaydının Kritik satırı); o güne kadar
+  kaynak ≤ 15 V.
 - Ürün kartında DSP arka ucuyla uzun bir akış: `dsp block max ... us mean ... us of ... us`
   satırları (üründe 60 s'de bir, tezgâh yapısında 10 s'de bir; sınır 7981 µs) ve
   underrun sayacı ([[test-strategy|test stratejisi]], firmware ölçümleri).

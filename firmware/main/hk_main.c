@@ -226,12 +226,12 @@ static void judge_profile(void)
         return;
     }
 
+    hk_profile_t profile;
 #if CONFIG_HK_AIRPLAY
     const hk_profile_verdict_t verdict =
         hk_profile_load(raw, length, (float)CONFIG_OUTPUT_SAMPLE_RATE_HZ,
-                        (float)CONFIG_HK_SUPPLY_MV, NULL, NULL);
+                        (float)CONFIG_HK_SUPPLY_MV, &profile, NULL);
 #else
-    hk_profile_t profile;
     const hk_profile_verdict_t verdict = hk_profile_from_blob(raw, length, &profile);
 #endif
     s_profile_verdict = hk_profile_verdict_name(verdict);
@@ -246,6 +246,21 @@ static void judge_profile(void)
         ESP_LOGI(TAG, "profile     present, judged %s (structurally: no output rate "
                       "in this build)", s_profile_verdict);
 #endif
+        /* A profile whose source name begins with "provisional" is the
+         * record's bench listening profile (docs/04-acoustics/
+         * measurement-and-dsp-plan.md): written by the owner for the staged
+         * pair, its corners and ceilings placeholders. The gate treats it
+         * like any valid profile -- that is what it is for -- so the boot
+         * report has to be the thing that says it is not a calibration.
+         * The phrase deliberately differs from the bench build's own
+         * warning, which CI asserts the product image does not contain. */
+        if (strncmp(profile.source, "provisional", 11) == 0) {
+            ESP_LOGW(TAG, "profile     source '%s' is PROVISIONAL: a bench listening profile, "
+                          "not a calibration. Staged pair only (one amplifier, one woofer, "
+                          "one tweeter), low level, supply at or below 15 V; nothing in it "
+                          "was measured except the two DC resistances.",
+                     profile.source);
+        }
     } else {
         ESP_LOGE(TAG, "profile     present and REFUSED: %s", s_profile_verdict);
     }

@@ -1,0 +1,134 @@
+{
+  "_about": [
+    "Merzarkabul Airplay Speakers — factory_cal profil değerleri, 2026-09-12 tezgâh oturumu.",
+    "firmware/tools/write_profile.py bu dosyayı okur, hk_profile_valid() kurallarıyla yargılar,",
+    "116 baytlık schema-2 blob'unu paketler ve provision_credentials.py'nin ürettiği cihaz",
+    "klasörüne birleştirir. 'profile' cihaza yazılan sayılardır; 'provenance' her sayının",
+    "nereden geldiğini söyler ve cihaza YAZILMAZ — kaydın kendisi içindir.",
+    "Bu bir G0/G2 kalibrasyonu DEĞİLDİR: yalnız iki DC direnç ölçümdür, crossover kaba",
+    "taramadan türetilmiş bir seçimdir, geri kalanı yer tutucudur. Firmware'in tezgâh",
+    "profiliyle (hk_airplay_output_i2s.c, bench_provisional_chain) aynı sayılar.",
+    "Ölçülmemiş hiçbir sayı 'measured' yazılmaz."
+  ],
+  "profile": {
+    "schema": 2,
+    "measured_yyyymmdd": 20260912,
+    "source": "provisional-2026-09-12",
+    "woofer_dcr_ohm": 4.0,
+    "tweeter_dcr_ohm": 3.5,
+    "woofer_hpf_hz": 55.0,
+    "crossover_hz": 3500.0,
+    "woofer_gain": 0.25,
+    "tweeter_gain": 0.18,
+    "reference_supply_mv": 12000.0,
+    "woofer_ceiling": 0.70,
+    "tweeter_ceiling": 0.35,
+    "woofer_release_ms": 150,
+    "woofer_hold_ms": 20,
+    "tweeter_release_ms": 150,
+    "tweeter_hold_ms": 20,
+    "woofer_delay_samples": 0,
+    "tweeter_delay_samples": 0,
+    "tweeter_polarity": 0,
+    "supply_budget_sq": 1.0,
+    "supply_window_ms": 100,
+    "amp_gain_db": 0
+  },
+  "provenance": {
+    "woofer_dcr_ohm": {
+      "status": "measured",
+      "source": "docs/02-hardware/driver-measurements.md, 'Ölçüldü — DC direnç (operatör, 2026-09-08)'",
+      "note": "Bir woofer okundu (4,0 Ω); diğer üç woofer henüz okunmadı. Prob direncinin çıkarılıp çıkarılmadığı kayıtta açık."
+    },
+    "tweeter_dcr_ohm": {
+      "status": "measured",
+      "source": "docs/02-hardware/driver-measurements.md, 'Ölçüldü — DC direnç (operatör, 2026-09-08)'",
+      "note": "Kayıt 3,5 Ω der; firmware 2026-09-12'ye kadar 3,7 taşıyordu. Operatör tweeter'ın Re'sini yeniden okuyup 3,5 mi 3,7 mi olduğunu teyit edene kadar bu satır teyit bekler."
+    },
+    "woofer_hpf_hz": {
+      "status": "placeholder",
+      "source": "docs/02-hardware/driver-measurements.md, 'Bunlardan türeyen provisional ayarlar' ve 'Kabin: pasif radyatör kullanılacak'",
+      "note": "Kabin Fb ölçülmedi. 2026-09-12 kaba taraması woofer Fs'sini ≈ 50 Hz'e koydu (±%13); 55 Hz serbest hava rezonansının hemen üstünde. Kalıcı köşeyi ince tarama ve kabin akordu belirler."
+    },
+    "crossover_hz": {
+      "status": "placeholder",
+      "source": "docs/02-hardware/driver-measurements.md, '11. Sonuç' (2026-09-12 kaba tarama) ve 'Bunlardan türeyen provisional ayarlar'",
+      "note": "Kaba tarama tweeter'da tepe çözemedi: 1–3 kHz düz, Fs aralığı 1–3 kHz. 3500 Hz sahibinin 2026-09-12 seçimidir ve belgenin '≥ 2 × Fs' kuralının bilerek altındadır. Ölçülmüş bir Fs noktası değil; ölçülen bir aralığın içinde verilmiş bir karar olduğu için 'derived' değil 'placeholder'."
+    },
+    "woofer_gain": {
+      "status": "placeholder",
+      "source": "docs/02-hardware/driver-measurements.md, 'Bunlardan türeyen provisional ayarlar' (kanal kazançları)",
+      "note": "Amfi kazanç strap'i okunmadı (tezgâh maddesi C3); hassasiyet ölçümü yok."
+    },
+    "tweeter_gain": {
+      "status": "placeholder",
+      "source": "docs/02-hardware/driver-measurements.md, 'Bunlardan türeyen provisional ayarlar' (kanal kazançları)",
+      "note": "Woofer'ın ~3 dB altı, hata payı tweeter'ı korumak yönünde. C3 okunmadı."
+    },
+    "reference_supply_mv": {
+      "status": "placeholder",
+      "source": "firmware/README.md, 'The bench profile' (12 V tezgâh dinlemesi, 2026-09-08)",
+      "note": "Tavanların dinlendiği besleme 12 V tezgâh kaynağıdır; ürün 24 V adaptörde tavanları aşağı ölçekler (ADR-0020). G2 yapılmadı."
+    },
+    "woofer_ceiling": {
+      "status": "placeholder",
+      "source": "firmware/components/hk_airplay/output/hk_airplay_output_i2s.c, bench_provisional_chain()",
+      "note": "12 V tezgâh dinlemesinden seçilmiş sayı; G2 sürücü limiti ölçülmedi."
+    },
+    "tweeter_ceiling": {
+      "status": "placeholder",
+      "source": "firmware/components/hk_airplay/output/hk_airplay_output_i2s.c, bench_provisional_chain()",
+      "note": "12 V tezgâh dinlemesinden seçilmiş sayı; G2 sürücü limiti ölçülmedi."
+    },
+    "woofer_release_ms": {
+      "status": "placeholder",
+      "source": "firmware/components/hk_airplay/output/hk_airplay_output_i2s.c, bench_provisional_chain()",
+      "note": "G2 belirler."
+    },
+    "woofer_hold_ms": {
+      "status": "placeholder",
+      "source": "firmware/components/hk_airplay/output/hk_airplay_output_i2s.c, bench_provisional_chain()",
+      "note": "G2 belirler."
+    },
+    "tweeter_release_ms": {
+      "status": "placeholder",
+      "source": "firmware/components/hk_airplay/output/hk_airplay_output_i2s.c, bench_provisional_chain()",
+      "note": "Woofer'ınki kopyalandı; G2 tweeter'a kendi değerini verir."
+    },
+    "tweeter_hold_ms": {
+      "status": "placeholder",
+      "source": "firmware/components/hk_airplay/output/hk_airplay_output_i2s.c, bench_provisional_chain()",
+      "note": "Woofer'ınki kopyalandı; G2 tweeter'a kendi değerini verir."
+    },
+    "woofer_delay_samples": {
+      "status": "placeholder",
+      "source": "docs/04-acoustics/measurement-and-dsp-plan.md, 'hangi kapı hangi alanı dolduruyor' tablosu, G2 satırı (hizalama gecikmesi)",
+      "note": "Ölçülmedi; sıfır."
+    },
+    "tweeter_delay_samples": {
+      "status": "placeholder",
+      "source": "docs/04-acoustics/measurement-and-dsp-plan.md, 'hangi kapı hangi alanı dolduruyor' tablosu, G2 satırı (hizalama gecikmesi)",
+      "note": "Ölçülmedi; sıfır."
+    },
+    "tweeter_polarity": {
+      "status": "placeholder",
+      "source": "docs/04-acoustics/measurement-and-dsp-plan.md, 'hangi kapı hangi alanı dolduruyor' tablosu, G2 satırı (tweeter polaritesi)",
+      "note": "G2 toplam ölçümü karar verir; sıfır = aynı fazda, ölçüm değil varsayım."
+    },
+    "supply_budget_sq": {
+      "status": "placeholder",
+      "source": "docs/04-acoustics/measurement-and-dsp-plan.md, 'hangi kapı hangi alanı dolduruyor' tablosu, G1 S7 satırı",
+      "note": "Bir tam ölçekli dalın ortalama-karesi; adaptörün 2,9 A'sı değil. G1 S7 telemetri satırından doldurur."
+    },
+    "supply_window_ms": {
+      "status": "placeholder",
+      "source": "docs/04-acoustics/measurement-and-dsp-plan.md, 'hangi kapı hangi alanı dolduruyor' tablosu, G1 S7 satırı",
+      "note": "G1 VIN tutma süresinden belirler."
+    },
+    "amp_gain_db": {
+      "status": "placeholder",
+      "source": "docs/06-testing/bench-measurement-order.md, C3 (amfi kazanç seçimi)",
+      "note": "0 = okunmadı. C3 strap'i okununca 20/26/32/36 yazılır; taşınır, hesaba girmez."
+    }
+  }
+}

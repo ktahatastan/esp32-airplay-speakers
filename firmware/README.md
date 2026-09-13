@@ -290,6 +290,37 @@ only copy of the password; it is written owner-only and must not be committed. T
 nothing stored, BLE from a button press on a configured device. ADR-0005
 option C, because ESP-IDF cannot run both in one session.
 
+The calibration profile shares that partition, and since 2026-09-12 it can be
+written without a recompile. `firmware/tools/write_profile.py` reads a values
+file — every `hk_profile_t` field by name, plus a provenance entry per number
+saying whether it is `measured`, `derived` or a `placeholder` and which record
+holds it — judges it with the same rules as `hk_profile_valid()` under the same
+one-word verdicts, packs the 116-byte schema-2 blob, and merges it into the
+device directory `provision_credentials.py` produced: one row appended to that
+directory's own `factory_cal.csv`, the image rebuilt through the same
+`build_image()`, then read back to confirm the credentials are still in it.
+The provenance is not packed; it is what stops a placeholder from being
+written up as a measurement. The values of the 2026-09-12 bench profile are in
+`docs/assets/measurements/drivers/profile-2026-09-12-provisional.json` (two
+numbers measured, the rest placeholders — the file says which; the 3500 Hz
+crossover is the owner's choice inside a measured range, not a derived number).
+
+```bash
+. $IDF_PATH/export.sh
+python3 firmware/tools/write_profile.py \
+  docs/assets/measurements/drivers/profile-2026-09-12-provisional.json \
+  --device-dir ~/hk-credentials/A1B2
+python3 firmware/tools/write_profile.py --dump readback.bin   # after esptool read_flash
+python3 firmware/tools/test_write_profile.py
+```
+
+The tool prints the `esptool write_flash` command and never runs it. Writing
+this partition is what makes the product build play, so it is the owner's act,
+and it comes after bench item `C3` and only on the staged pair at low level
+(Safety, below). A bare `profile.bin` is not an image: flashed at the partition
+offset it would erase the credentials and replace nothing, which is why the
+tool insists on the device directory.
+
 Verified on the PRODUCT board on 2026-09-08 — an N16R8 with 16 MB flash and
 8 MB octal PSRAM, the board ADR-0010 locks. Octal PSRAM comes up and passes its
 memory test, the 16 MB partition table loads, the identity derives from the MAC,

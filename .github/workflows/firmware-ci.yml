@@ -99,6 +99,11 @@ jobs:
         # on every field name. A mismatch there is silent everywhere else and
         # would make every device refuse every update.
         run: python3 firmware/tools/test_make_manifest.py
+      - name: test the profile writer
+        # Pins the 116-byte wire format of hk_profile_t and every refusal name
+        # the device would print; the two image-build cases skip here (no
+        # ESP-IDF in this job) and run in the firmware job below.
+        run: python3 firmware/tools/test_write_profile.py
       - name: a user reset must not reach the calibration store (PRD-008)
         run: python3 firmware/tools/check_storage_isolation.py
       - name: no log statement may print a credential
@@ -154,6 +159,14 @@ jobs:
         run: |
           . $IDF_PATH/export.sh
           idf.py -C firmware build
+      - name: the profile writer builds a real factory_cal image
+        shell: bash
+        # The two image-build cases skip without ESP-IDF; here they run for
+        # real: credentials generated into a scratch directory, the profile
+        # merged in, the image read back with both intact.
+        run: |
+          . $IDF_PATH/export.sh
+          python firmware/tools/test_write_profile.py
       - name: the product build carries the DSP output backend (ADR-0022)
         shell: bash
         run: |
