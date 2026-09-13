@@ -2,7 +2,7 @@
 status: active
 owner: firmware-engineer
 reviewers: [orchestrator, qa-engineer]
-updated: 2026-09-12
+updated: 2026-09-13
 tags: [firmware, plan, roadmap, esp32]
 ---
 
@@ -21,7 +21,7 @@ Bu belge firmware'in **ne olduğunu** ve **hangi sırayla yapıldığını** bir
 | Kart | ESP32-S3, 16 MB flash + 8 MB PSRAM | [[../07-decisions/ADR-0010-esp32-s3-n16r8-board\|ADR-0010]] |
 | Ses topolojisi | Mono program, bi-amp: DAC sol kanalı woofer bandı, sağ kanalı tweeter bandı; dört özdeş XH-A232'ye hat seviyesinde paralel | [[../07-decisions/ADR-0002-biamp-signal-chain\|ADR-0002]] |
 | Kabin | Tek kabin, pasif radyatörlü; 4 woofer + 4 tweeter, tek program, ağda tek cihaz | [[../07-decisions/ADR-0021-single-cabinet\|ADR-0021]] |
-| Provisioning | SoftAP/captive portal ve BLE, **sırayla**; transport girişten türetilir | [[../07-decisions/ADR-0005-dual-provisioning\|ADR-0005]] |
+| Provisioning | SoftAP + captive portal ve BLE **aynı anda**; yöneticiyi BLE sürer, erişim noktasını `hk_network` kaldırır. PIN yok: BLE'de protocomm Security 1 ve sahiplik kanıtı yok, kurulum ağı açık, kurulum adları `PROV_Merzarkabul-XXXX`; daha güçlü bir mod yalnız aşan ADR ile döner | [[../07-decisions/ADR-0016-simultaneous-dual-transport\|ADR-0016]], [[../07-decisions/ADR-0023-pinless-provisioning\|ADR-0023]] |
 | Dağıtım | SemVer tag -> GitHub Releases -> imzalı A/B OTA | [[../07-decisions/ADR-0008-github-releases-ota\|ADR-0008]] |
 | Besleme | 24 V / 2,9 A DC adaptör, barrel jak; `CONFIG_HK_SUPPLY_MV` varsayılan 24000 (8-26 V), tezgâh referansı `HK_BENCH_REFERENCE_SUPPLY_MV` 12000 | [[../07-decisions/ADR-0020-dc-adapter-power\|ADR-0020]] |
 | AirPlay yığını | `rbouteiller/airplay-esp32`, `38027441ff43`'e vendor edildi | [[../07-decisions/ADR-0007-airplay-stack\|ADR-0007]], [[../07-decisions/ADR-0013-airplay-integration-shape\|ADR-0013]] |
@@ -131,21 +131,23 @@ Her aşama: **önkoşul -> çıktı -> kabul ölçütü**. Kabul ölçütü öl�
 ### F4 — Ağ ve provisioning
 
 - **Önkoşul:** F0. F2'den bağımsız çalışabilir.
-- **Çıktı:** Wi-Fi istemci ve yeniden bağlanma, mDNS adı, SoftAP + captive portal, BLE Unified Provisioning (Security 2 / SRP6a, cihaz başına PoP), QR üretimi, provisioning zaman aşımı, BLE belleğinin serbest bırakılması.
+- **Çıktı:** Wi-Fi istemci ve yeniden bağlanma, mDNS adı, açık SoftAP + captive portal, BLE Unified Provisioning (protocomm Security 1, sahiplik kanıtı yok — [[../07-decisions/ADR-0023-pinless-provisioning|ADR-0023]]), sır içermeyen etiket/QR üretimi, provisioning zaman aşımı, BLE belleğinin serbest bırakılması.
 - **Kabul ölçütü:**
-  - [x] [[../controls-and-provisioning-plan#Merzarkabul Airplay Speakers ürün kimliği\|Kimlik tablosundaki]] tüm yüzey adları doğru üretiliyor (`hk_identity`, host testli).
+  - [x] [[../controls-and-provisioning-plan#Merzarkabul Airplay Speakers ürün kimliği\|Kimlik tablosundaki]] tüm yüzey adları doğru üretiliyor (`hk_identity`, host testli). 2026-09-13'ten beri BLE yayını ve kurulum ağı tek adı paylaşır: `PROV_Merzarkabul-XXXX` (ADR-0023); AirPlay ve mDNS adları değişmedi.
   - [x] Provisioning politikası saf mantık olarak yazıldı ve test edildi (`hk_provision`): ilk açılışta zaman aşımı yok, butonla açılan pencere 10 dakikada kapanır, bağlantı denemesi boyunca radyolar açık kalır, başarıdan sonra ikisi de kapanır ve BLE serbest bırakılabilir.
   - [x] Wi-Fi istasyon, yeniden bağlanma, mDNS ve SoftAP provisioning sürücü katmanı yazıldı; ESP-IDF v5.5.1 ile derleniyor.
-  - [x] BLE transport'u NimBLE ile etkinleştirildi. ADR-0005 seçenek C: transport girişten türetilir — kimlik bilgisi yoksa SoftAP, yapılandırılmış cihazda butonla BLE.
+  - [x] BLE transport'u NimBLE ile etkinleştirildi. O gün ADR-0005 seçenek C'ydi (transport girişten türetilir); 2026-09-08'den beri iki taşıma birlikte açılıyor (ADR-0016).
   - [x] Provisioning politikası artık gerçekten işletiliyor. Önceki hâlinde `hk_prov_handle` her yerde `now_ms = 0` ile çağrılıyor, `HK_PROV_EV_TICK` hiç gönderilmiyor ve `hk_prov_radios()` hiç okunmuyordu: on dakikalık sınırlı pencere hiçbir zaman dolamazdı. Ana döngü saniyede bir tick veriyor ve pencere kapandığında `hk_network_close_provisioning()` çağrılıyor.
-  - [x] iOS'ta **uygulamalı BLE** akışı uçtan uca çalıştı: QR'lı kurulum, kimlik bilgisi teslimi, katılma ve `provisioning succeeded` (2026-09-05, geliştirme kartı).
-  - [x] Uygulamasız yol **yazıldı** (ADR-0015, `hk_portal`): kurulum ağı WPA2, captive DNS her adı cihaza çözüyor, portal sayfası düz bir form ve aldığı bilgiyi `wifi_prov_mgr_configure_sta()` ile yöneticiye veriyor. Form ayrıştırıcısı saf C ve host'ta testli.
-  - [ ] Uygulamasız yol **ölçülmedi**: hiçbir telefon bu sayfayı açmadı. PRD-004 bu ölçüm olmadan kapanmaz.
+  - [ ] Politikanın bağlantı olayları hâlâ beslenmiyor: `hk_main` politikaya yalnız tick, buton kısa basış, ağ sıfırlama ve fabrika sıfırlama verir; `CONNECT_OK` / `CONNECT_FAIL` / `CREDENTIALS` olaylarını hiçbir çağıran üretmez. Üç başarısız katılımın açtığı geri dönüş penceresi bu yüzden host'ta testli ama cihazda **erişilemez** (ADR-0023 kaydı, risk kaydı). Bağlanacak ya da silinecek; ayrı bir karar.
+  - [x] iOS'ta **uygulamalı BLE** akışı uçtan uca çalıştı: QR'lı kurulum, kimlik bilgisi teslimi, katılma ve `provisioning succeeded` (2026-09-05, geliştirme kartı) — **Security 2 ile**. ADR-0023'ün Security 1 / `no_pop` yolu bu sonucun kapsamı dışındadır.
+  - [x] Uygulamasız yol **yazıldı** (ADR-0015, `hk_portal`): captive DNS her adı cihaza çözüyor, portal sayfası düz bir form ve aldığı bilgiyi `wifi_prov_mgr_configure_sta()` ile yöneticiye veriyor. Form ayrıştırıcısı saf C ve host'ta testli. Kurulum ağı o gün WPA2'ydi; 2026-09-13'ten beri **açık** ve sayfa bunu bir cümleyle söylüyor (ADR-0023).
+  - [ ] Uygulamasız yol **ölçülmedi**: hiçbir telefon bu sayfayı açmadı — ne WPA2'li, ne açık hâliyle. PRD-004 bu ölçüm olmadan kapanmaz.
   - [ ] Android'de hiçbir akış denenmedi.
+  - [ ] PIN'siz yol hiçbir kartta denenmedi: `esp_prov.py --transport ble --verbose` ile `proto-ver`'de `sec_ver 1` ve `cap [no_pop, wifi_scan]`; iki stok Espressif uygulamasının `PROV_Merzarkabul-XXXX`'i QR'sız ve önek ayarı değişmeden listelemesi; kilitsiz kurulum ağı ve sayfadaki açık-ağ cümlesi. Operatör kaydı olmadan `PASS` yok.
   - [x] Provisioning kapandığında BLE belleğinin geri verildiği ölçüldü: `BTDM memory released`, ardından `provisioning closed and its memory released`.
-  - [x] Wi-Fi parolası ve PoP'un loglarda görünmediği otomatik taramayla denetleniyor (`tools/check_no_credential_logs.py`, CI'da).
-  - [x] Cihaz başına salt/verifier üreten üretim aracı yazıldı (`tools/provision_credentials.py`), ESP-IDF'in kendi SRP6a uygulamasını kullanıyor. Firmware kimlik bilgisi yoksa provisioning'i **açmayı reddediyor**, zayıf bir güvenlik moduna düşmüyor.
-  - [x] Cihaz başına QR yükü üretiliyor; biçim ESP-IDF'in `wifi_prov_print_qr()` çıktısıyla aynı.
+  - [x] Wi-Fi parolasının loglarda görünmediği otomatik taramayla denetleniyor (`tools/check_no_credential_logs.py`, CI'da).
+  - [x] Cihaz başına Security 2 kimlik bilgisi üreten araç 2026-08-31'de yazıldı ve firmware kimlik bilgisi yoksa provisioning'i açmayı reddediyordu. **2026-09-13'te ADR-0023 ile geri alındı:** firmware kurulum için kimlik bilgisi istemez ve reddetmez; `tools/provision_credentials.py` adını korur (CI ve belgeler ona bağlı) ama artık sır üretmez — cihaz klasörüne yalnız şema satırlı `factory_cal.csv`, iki QR yükü ve etiket yazar. Daha önce kimlik bilgisi yazılmış kartlar yeniden flaşlanmaz; eski satırlar okunmaz.
+  - [x] Cihaz başına QR yükü üretiliyor ve sır taşımıyor: `{"ver":"v1","name":"PROV_Merzarkabul-XXXX","transport":"ble"|"softap","security":1}` — ESP-IDF'in `wifi_prov_print_qr()` çıktısının kanıtsız biçimi artı açık `security` alanı. QR isteğe bağlıdır; `PROV_` öneki sayesinde cihaz listeden de seçilir.
 - **Gate:** `PRD-004`. `G6` girdi.
 
 ### F5 — Kullanıcı arayüzü

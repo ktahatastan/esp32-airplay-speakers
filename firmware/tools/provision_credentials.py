@@ -1,135 +1,110 @@
 #!/usr/bin/env python3
-"""Generate the per-device provisioning credentials and the label that carries them.
+"""Write a device's setup directory: a bare factory_cal.csv, the QR payloads and a label.
 
-Credentials are per board: the bench devkit, the product board and any
-replacement each carry their own provisioning password. There is no factory
-password, because a password printed in a public repository is not a password
-at all.
+The name is historical. Until ADR-0023 this tool generated a per-device
+provisioning password, computed the salt and verifier the device held for it,
+and wrote a label that was the only copy of that password. Since ADR-0023 the
+speaker is set up without a PIN: protocomm Security 1 with no proof of
+possession on both BLE and SoftAP, and an open setup network. There is no
+per-device secret any more, and the firmware reads nothing from `factory_cal`
+to open provisioning. The file keeps its name because the record, the bench
+procedures and the CI recipes refer to it by that name.
 
-The device never stores the password. Security 2 is SRP6a: the device holds a
-salt and a verifier, from which the password cannot be recovered, and proves
-knowledge of it without either side transmitting it. Reading the flash off a
-speaker therefore does not yield the credential. What this tool produces:
+What it produces, per device:
 
-  <out>/<id>/factory_cal.csv   NVS CSV, input to nvs_partition_gen.py
-  <out>/<id>/prov_salt.bin     the salt, referenced by the CSV
-  <out>/<id>/prov_verif.bin    the verifier, referenced by the CSV
-  <out>/<id>/label.txt         the password and QR payload, for the printed label
-  <out>/<id>/qr.txt            just the QR payload
+  <out>/<id>/factory_cal.csv   NVS CSV: the `cal` namespace and its schema row, nothing else
+  <out>/<id>/qr.txt            the two QR payloads (BLE, SoftAP), one per line
+  <out>/<id>/label.txt         the device name and the same two payloads, for a printed label
 
-The label file is the only place the password exists. It is written with
-owner-only permissions and must not be committed; keep it wherever the rest of
-the household's secrets live.
+None of it is secret. The files get default permissions, and the tool never
+asks for, generates or prints a password. The QR is optional: the stock
+Espressif apps list a device whose advertised name starts with `PROV_` without
+any QR, and the QR only spares the user reading the name off the list.
 
+The CSV is what gives a board a `factory_cal` image to flash: hk_storage
+expects the schema row, and `write_profile.py` merges the calibration profile
+into this same directory. `--image` builds and checks that image, and is the
+only step that needs ESP-IDF (`IDF_PATH`); a directory and a label need
+nothing.
+
+    python3 firmware/tools/provision_credentials.py --device A1B2 --out ~/hk-credentials
     python3 firmware/tools/provision_credentials.py --count 4
-    python3 firmware/tools/provision_credentials.py --device A1B2
-
-SRP6a comes from ESP-IDF's own tools/esp_prov/security/srp6a.py. Using the
-vendor implementation rather than a second one guarantees the tool and the
-device agree; a reimplementation that differed by one hash would fail only at
-provisioning time, on a device already in a box.
+    python3 firmware/tools/provision_credentials.py --device A1B2 --image --out ~/hk-credentials
 """
 
 from __future__ import annotations
 
 import argparse
-import importlib.util
 import json
 import os
-import secrets
-import string
 import subprocess
 import sys
 from pathlib import Path
 
-#: Shared by the tool, the QR payload and the verifier computation. Not a
-#: secret: it is printed in the QR, on the label and sent in the clear, and the
-#: password is what protects the session.
+#: The one setup name (hk_identity.h, ADR-0023): the BLE advertisement and the
+#: setup network's SSID are the same string. The `PROV_` prefix is the one the
+#: stock Espressif provisioning apps filter their device lists by, so the
+#: speaker is listed without a QR and without changing a setting in the app.
+#: The AirPlay and mDNS names are not this and do not carry the prefix.
+SETUP_NAME = "PROV_Merzarkabul-{device_id}"
+
+#: The security level the device advertises in `proto-ver`: hk_network starts
+#: the manager with WIFI_PROV_SECURITY_1 and no proof of possession, so the
+#: session key comes from the key exchange alone (ADR-0023).
 #:
-#: It is the ecosystem default rather than a product name on purpose (ADR-0014).
-#: The name goes into the verifier, so it has to match what the client sends.
-#: Over QR the app reads it from the payload below, but a user who picks the
-#: device out of a list and types the password gives the app no chance to know
-#: it, and every Espressif app defaults to this one. A custom name would buy no
-#: security and would break exactly that path.
-USERNAME = "wifiprov"
+#: It is written into the QR on purpose. ESP-IDF's own payload for a device
+#: without a proof of possession is just {ver, name, transport}, but both Espressif
+#: provisioning libraries take an absent `security` to mean 2 (read from their
+#: sources; the store builds are unverified). In the session the device's own
+#: `proto-ver` wins, so a wrong assumption would probably be corrected -- but a
+#: QR that says what the device does is the honest form, and it protects a
+#: client that trusts the QR first.
+SECURITY = 1
 
-#: Product surfaces, from docs/controls-and-provisioning-plan.md and ADR-0001.
-SOFTAP_NAME = "Merzarkabul-Setup-{device_id}"
-BLE_NAME = "Merzarkabul-{device_id}"
+TRANSPORTS = ("ble", "softap")
 
-#: Salt length requested from the generator, in bytes.
-#:
-#: What comes back may be one byte shorter. The generator derives the salt from
-#: a random integer and serialises it minimally, so a value with a zero top byte
-#: loses it — measured at roughly 1 in 256, for both the salt and the verifier.
-#: That is fine and must not be padded: the verifier is computed over the salt
-#: as a raw byte string, so padding would break the handshake. The firmware
-#: accepts a range and uses whatever length was stored.
-SALT_LEN = 16
+#: The schema version hk_storage expects in `factory_cal` (HK_SCHEMA_FACTORY_VERSION).
+FACTORY_SCHEMA = 1
 
-#: Password length. The alphabet below has 27 symbols, so 12 characters carry
-#: about 57 bits: far beyond anything a rate-limited provisioning session can be
-#: brute forced through, while still being typable off a printed label.
-#: It is also the setup network's WPA2 key (ADR-0015), which puts a hard floor
-#: of 8 under it -- WPA2 rejects anything shorter, and it would fail as a
-#: network that never appears rather than as a rejected password.
-PASSWORD_LEN = 12
-
-#: Ambiguous glyphs are left out. This gets read off a small label and typed
-#: into a phone, and 0/O or 1/l/I costs a support call every time.
-ALPHABET = "".join(c for c in (string.ascii_uppercase + string.digits)
-                   if c not in "O0I1LS5B8")
+#: The whole CSV. The namespace and key match hk_storage.h; the profile row is
+#: appended later by write_profile.py, into this same namespace.
+FACTORY_CAL_CSV = (
+    "key,type,encoding,value\n"
+    "cal,namespace,,\n"
+    f"schema,data,u32,{FACTORY_SCHEMA}\n"
+)
 
 
-def load_srp6a():
-    """Import ESP-IDF's SRP6a implementation."""
-    idf_path = os.environ.get("IDF_PATH")
-    if not idf_path:
-        raise SystemExit(
-            "IDF_PATH is not set. Run . $IDF_PATH/export.sh first; this tool uses "
-            "ESP-IDF's own SRP6a implementation rather than a second one.")
-    esp_prov = Path(idf_path) / "tools" / "esp_prov"
-    module_path = esp_prov / "security" / "srp6a.py"
-    if not module_path.is_file():
-        raise SystemExit(f"{module_path} not found; is IDF_PATH correct?")
-
-    # esp_prov goes on the path because srp6a imports its sibling utils module.
-    if str(esp_prov) not in sys.path:
-        sys.path.insert(0, str(esp_prov))
-
-    # The module is then loaded straight from its file rather than as
-    # security.srp6a: importing that package runs security/__init__.py, which
-    # pulls in esp_prov's protobuf stubs. This tool only needs to compute a
-    # verifier, and should not need a protobuf install to print a label.
-    spec = importlib.util.spec_from_file_location("hk_srp6a", module_path)
-    if spec is None or spec.loader is None:
-        raise SystemExit(f"could not load {module_path}")
-    srp6a = importlib.util.module_from_spec(spec)
-    try:
-        spec.loader.exec_module(srp6a)
-    except Exception as error:  # noqa: BLE001 - report whatever the import raised
-        raise SystemExit(f"could not load ESP-IDF's srp6a module: {error}") from error
-    return srp6a
+def setup_name(device_id: str) -> str:
+    return SETUP_NAME.format(device_id=device_id)
 
 
-def make_password() -> str:
-    return "".join(secrets.choice(ALPHABET) for _ in range(PASSWORD_LEN))
+def qr_payload(device_id: str, transport: str) -> str:
+    """The payload the Espressif provisioning apps read from a QR.
 
-
-def qr_payload(device_id: str, password: str, transport: str) -> str:
-    """The payload the Espressif provisioning apps expect for Security 2.
-
-    Field order and names follow ESP-IDF's own wifi_prov_print_qr().
+    Field names follow ESP-IDF's wifi_prov_print_qr(); there is no `pop`, no
+    `username` and no `password`, because the device asks for none of them.
     """
-    name = BLE_NAME if transport == "ble" else SOFTAP_NAME
+    if transport not in TRANSPORTS:
+        raise ValueError(f"transport must be one of {TRANSPORTS}, not {transport!r}")
     return json.dumps({
         "ver": "v1",
-        "name": name.format(device_id=device_id),
-        "username": USERNAME,
-        "pop": password,
+        "name": setup_name(device_id),
         "transport": transport,
+        "security": SECURITY,
     }, separators=(",", ":"))
+
+
+def label_text(device_id: str) -> str:
+    return (
+        f"Merzarkabul Airplay Speakers {device_id}\n"
+        f"\n"
+        f"setup name : {setup_name(device_id)}  (BLE, and the open setup network's SSID)\n"
+        f"\n"
+        f"QR (BLE):\n{qr_payload(device_id, 'ble')}\n"
+        f"\n"
+        f"QR (SoftAP):\n{qr_payload(device_id, 'softap')}\n"
+    )
 
 
 #: factory_cal size, from firmware/partitions.csv. Both boards use the same one.
@@ -144,13 +119,15 @@ class ImageError(Exception):
 def build_image(device_dir: Path) -> Path:
     """Generate the factory_cal image for one device, and prove it is usable.
 
-    Run from inside the device directory on purpose. The CSV names prov_salt.bin
-    and prov_verif.bin without a path, and nvs_partition_gen.py resolves those
-    against the working directory rather than against the CSV -- so invoking it
-    from the repository root silently fails to find the inputs. That is not a
-    harmless mistake: the tool still writes an output file, and a short file
-    flashed at the factory_cal offset erases the credentials that were there and
-    puts nothing in their place, leaving a device that can never be provisioned.
+    Run from inside the device directory on purpose. A CSV row of type `file`
+    (the profile row write_profile.py appends, or the legacy rows on a board
+    provisioned before ADR-0023) names its input without a path, and
+    nvs_partition_gen.py resolves that against the working directory rather
+    than against the CSV -- so invoking it from the repository root silently
+    fails to find the inputs. That is not a harmless mistake: the tool still
+    writes an output file, and a short file flashed at the factory_cal offset
+    erases the schema and the profile that were there and puts nothing in
+    their place, leaving a product that refuses audio for want of a profile.
 
     So the image is checked before anyone can flash it: exact size, and an NVS
     page header where an erased region would read 0xFF.
@@ -188,87 +165,40 @@ def build_image(device_dir: Path) -> Path:
     size = image.stat().st_size
     if size != IMAGE_SIZE:
         raise reject(f"image is {size} bytes, not {IMAGE_SIZE}; a short image flashed "
-                     f"at that offset erases the credentials and replaces nothing")
+                     f"at that offset erases the schema and the profile and replaces nothing")
     if image.read_bytes()[:4] == b"\xff\xff\xff\xff":
-        raise reject("image begins with erased flash, so it carries no NVS page: the "
-                     "inputs named in factory_cal.csv were not found")
+        raise reject("image begins with erased flash, so it carries no NVS page: an "
+                     "input named in factory_cal.csv was not found")
     return image
 
 
-def write_device(out_dir: Path, device_id: str, srp6a) -> str:
+def write_device(out_dir: Path, device_id: str) -> Path:
+    """Write the three files for one device and return its directory.
+
+    Nothing here is secret, so no file is restricted: a file with owner-only
+    permissions teaches the reader that it holds something, and these hold a
+    name.
+    """
     device_dir = out_dir / device_id
     device_dir.mkdir(parents=True, exist_ok=True)
 
-    password = make_password()
-    salt, verifier = srp6a.generate_salt_and_verifier(USERNAME, password, len_s=SALT_LEN)
-
-    # Not restricted, and deliberately: the salt crosses the wire in the clear and
-    # the verifier cannot be turned back into the password. Restricting them too
-    # would blur which files actually matter.
-    (device_dir / "prov_salt.bin").write_bytes(salt)
-    (device_dir / "prov_verif.bin").write_bytes(verifier)
-
-    # The same password again, this time as itself, because the setup network is
-    # WPA2 and WPA2 needs the key on both ends (ADR-0015). The verifier above
-    # cannot be turned back into it, which is the point of Security 2 -- and the
-    # reason a second copy has to exist for the app-less path to work at all.
-    #
-    # Written as bytes rather than as an NVS string so the firmware reads it
-    # back through the same read-only blob path as the other two: one opener of
-    # factory_cal is what keeps the PRD-008 wall in one place.
-    ap_pass = device_dir / "ap_pass.bin"
-    ap_pass.write_bytes(password.encode("ascii"))
-    # Plain text by necessity -- WPA2 needs the key itself -- so it is owner-only.
-    ap_pass.chmod(0o600)
-
-    # nvs_partition_gen.py CSV. The namespace and keys match hk_storage.h and
-    # the reader in hk_network.c.
-    (device_dir / "factory_cal.csv").write_text(
-        "key,type,encoding,value\n"
-        "cal,namespace,,\n"
-        "schema,data,u32,1\n"
-        "prov_salt,file,binary,prov_salt.bin\n"
-        "prov_verif,file,binary,prov_verif.bin\n"
-        "ap_pass,file,binary,ap_pass.bin\n",
+    # A directory that already holds a factory_cal.csv keeps it: a merged
+    # profile row (write_profile.py) or the legacy rows of a board set up
+    # before ADR-0023 must not be reset to the bare two rows under a
+    # --image that would then quietly flash a schema-only partition. Only the
+    # name files are rewritten.
+    csv_path = device_dir / "factory_cal.csv"
+    if csv_path.exists() and csv_path.read_text(encoding="utf-8") != FACTORY_CAL_CSV:
+        print(f"{device_id}: {csv_path} already exists with its own rows; left untouched")
+    else:
+        csv_path.write_text(FACTORY_CAL_CSV, encoding="utf-8")
+    (device_dir / "qr.txt").write_text(
+        qr_payload(device_id, "ble") + "\n" + qr_payload(device_id, "softap") + "\n",
         encoding="utf-8")
+    (device_dir / "label.txt").write_text(label_text(device_id), encoding="utf-8")
 
-    qr = device_dir / "qr.txt"
-    qr.write_text(qr_payload(device_id, password, "softap") + "\n", encoding="utf-8")
-    # The QR payload carries the password in its `pop` field, so this file is as
-    # sensitive as the label and gets the same permissions. It did not, and the
-    # reason is worth keeping: only label.txt was obviously "the secret one",
-    # while two other files quietly hold the same string.
-    qr.chmod(0o600)
-
-    label = device_dir / "label.txt"
-    label.write_text(
-        f"Merzarkabul Airplay Speakers {device_id}\n"
-        f"\n"
-        f"setup password : {password}\n"
-        f"username       : {USERNAME}\n"
-        f"softap ssid    : {SOFTAP_NAME.format(device_id=device_id)}\n"
-        f"softap password: {password}  (the same one; the setup network is WPA2)\n"
-        f"ble name       : {BLE_NAME.format(device_id=device_id)}\n"
-        f"\n"
-        f"QR (SoftAP, first setup):\n{qr_payload(device_id, password, 'softap')}\n"
-        f"\n"
-        f"QR (BLE, button-opened window):\n{qr_payload(device_id, password, 'ble')}\n"
-        f"\n"
-        f"Without an app: join the SoftAP above with this password and the setup\n"
-        f"page opens by itself. With an app: scan a QR.\n"
-        f"\n"
-        f"This file is the only copy of the password. Losing it means the device\n"
-        f"has to be re-flashed with new credentials. The speaker holds the SRP6a\n"
-        f"half as a salt and verifier it cannot reverse, but the WPA2 half is\n"
-        f"stored as itself, because an access point cannot work otherwise\n"
-        f"(ADR-0015).\n",
-        encoding="utf-8")
-    label.chmod(0o600)
-
-    # Lengths are printed because they legitimately vary; a short one is not a
-    # fault, and the firmware is written to accept it.
-    print(f"{device_id}: salt {len(salt)} B, verifier {len(verifier)} B -> {device_dir}")
-    return password
+    print(f"{device_id}: {setup_name(device_id)} -> {device_dir}")
+    return device_dir
 
 
 def main() -> int:
@@ -276,25 +206,24 @@ def main() -> int:
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--out", type=Path,
                         default=Path("build/provisioning"),
-                        help="output directory (keep it out of Git)")
+                        help="output directory (nothing in it is secret; keep it out of "
+                             "Git all the same, it is per-board output, not source)")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--device", action="append",
-                       help="device id, the XXXX suffix from the label; repeatable")
+                       help="device id, the XXXX suffix of the setup name; repeatable")
     parser.add_argument("--image", action="store_true",
                         help="also build and verify each factory_cal.bin "
-                             "(needs IDF_PATH)")
+                             "(the one step that needs IDF_PATH)")
     group.add_argument("--count", type=int,
                        help="generate this many devices with placeholder ids")
     args = parser.parse_args()
 
-    srp6a = load_srp6a()
-
     device_ids = args.device or [f"DEV{index + 1}" for index in range(args.count)]
     for device_id in device_ids:
-        write_device(args.out, device_id, srp6a)
+        write_device(args.out, device_id)
 
     print(f"\n{len(device_ids)} device(s) written under {args.out}")
-    print("The label files hold the only copy of each password. Do not commit them.")
+    print("No PIN: the label carries the setup name and the QR text, and nothing to keep secret.")
 
     if args.image:
         failures = 0
@@ -315,11 +244,12 @@ def main() -> int:
     print("  cd <out>/<id> && python3 \\")
     print("    $IDF_PATH/components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py \\")
     print(f"    generate factory_cal.csv factory_cal.bin 0x{IMAGE_SIZE:x}")
-    print("The `cd` is not optional: the CSV names its input files without a path and")
-    print("nvs_partition_gen.py resolves them against the working directory, not against")
-    print("the CSV. Run it from anywhere else and the inputs are not found -- and a")
-    print("truncated image flashed at that offset erases the credentials that were there.")
-    print("--image does the cd for you and checks the result, which is why it exists.")
+    print("The `cd` is not optional once the CSV names an input file (the profile row")
+    print("write_profile.py appends): nvs_partition_gen.py resolves those against the")
+    print("working directory, not against the CSV. Run it from anywhere else and the")
+    print("inputs are not found -- and a truncated image flashed at that offset erases")
+    print("the schema and the profile that were there. --image does the cd for you and")
+    print("checks the result, which is why it exists.")
     print(f"Check the result is exactly {IMAGE_SIZE} bytes before flashing it.")
     print(f"Then flash it at the factory_cal offset from {PARTITION_HINT}.")
     return 0

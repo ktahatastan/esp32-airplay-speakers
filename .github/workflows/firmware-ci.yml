@@ -104,10 +104,32 @@ jobs:
         # the device would print; the two image-build cases skip here (no
         # ESP-IDF in this job) and run in the firmware job below.
         run: python3 firmware/tools/test_write_profile.py
+      - name: test the device-directory generator
+        # Its two image cases skip here and run in the firmware job below.
+        run: python3 firmware/tools/test_provision_credentials.py
       - name: a user reset must not reach the calibration store (PRD-008)
         run: python3 firmware/tools/check_storage_isolation.py
       - name: no log statement may print a credential
         run: python3 firmware/tools/check_no_credential_logs.py
+      - name: setup opens without a proof of possession on an open network (ADR-0023)
+        # The decision lives in three call sites and one authmode, and nothing
+        # else would notice one of them quietly going back to Security 2 or to
+        # a keyed access point -- the build is green either way. A source grep
+        # is the whole check: the mode is a literal at each call, not a Kconfig
+        # symbol, so there is no sdkconfig line to pin the way ADR-0022's is.
+        run: |
+          SRC=firmware/components/hk_network/hk_network.c
+          # All three manager starts, not just one of them.
+          [ "$(grep -c 'WIFI_PROV_SECURITY_1, NULL' "$SRC")" = 3 ] \
+            || { echo "hk_network.c no longer starts provisioning with Security 1 and a NULL proof of possession at all three call sites (ADR-0023)"; exit 1; }
+          # The authmode assignment itself, not a comment that mentions it.
+          grep -q '\.authmode = WIFI_AUTH_OPEN,' "$SRC" \
+            || { echo "hk_network.c no longer brings the setup network up open (ADR-0023)"; exit 1; }
+          # Neither a stronger mode nor the plaintext one, and no keyed access point of any flavour.
+          if grep -q -e 'WIFI_PROV_SECURITY_0' -e 'WIFI_PROV_SECURITY_2' -e 'WIFI_AUTH_WPA' -e 'WIFI_AUTH_WEP' "$SRC"; then
+            echo "hk_network.c names Security 0 or 2 or a keyed setup network; a different mode returns only through an ADR that supersedes ADR-0023"
+            exit 1
+          fi
 
   drawings:
     name: generated drawings are in sync
@@ -162,11 +184,12 @@ jobs:
       - name: the profile writer builds a real factory_cal image
         shell: bash
         # The two image-build cases skip without ESP-IDF; here they run for
-        # real: credentials generated into a scratch directory, the profile
-        # merged in, the image read back with both intact.
+        # real: a device directory made in a scratch location, the profile
+        # merged in, the image read back with the profile intact.
         run: |
           . $IDF_PATH/export.sh
           python firmware/tools/test_write_profile.py
+          python firmware/tools/test_provision_credentials.py
       - name: the product build carries the DSP output backend (ADR-0022)
         shell: bash
         run: |

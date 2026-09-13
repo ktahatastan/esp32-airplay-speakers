@@ -67,6 +67,14 @@ CONFIG_MBEDTLS_CUSTOM_CERTIFICATE_BUNDLE_PATH="certs/isrg-root-yr.pem"
 # licence, which ADR-0007 accepted.
 CONFIG_HK_AIRPLAY=y
 
+# Provisioning runs protocomm Security 1 without a proof of possession
+# (ADR-0023). The plaintext level (0) and the possession-proof level (2) are
+# compiled out, not merely unused: a build that cannot link them cannot quietly
+# select one, the image loses the code it no longer calls, and the CI grep on
+# hk_network.c is then the second guard rather than the only one.
+CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0=n
+CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2=n
+
 # The part runs at 240 MHz, not the 160 MHz default.
 #
 # The DSP budget is what forces this. With the CONFIG_HK_AIRPLAY_OUTPUT_DSP

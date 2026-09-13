@@ -24,54 +24,34 @@
 #include "hk_identity.h"
 #include "hk_portal.h"
 #include "hk_provision.h"
-#include "hk_storage.h"
 
 static const char *TAG = "hk_net";
 
-/**
- * Where per-device provisioning credentials live.
- *
- * Read through hk_storage rather than opened here. That module owns the
- * factory_cal partition, opens it read-only, and is the single place the
- * PRD-008 wall is enforced; a second opener would be a second place to get it
- * wrong. An earlier version of this file called nvs_open("factory_cal", ...),
- * which opens a NAMESPACE of that name inside the DEFAULT partition — so the
- * credentials would have sat in the user-settings partition, where the
- * reformat-on-corruption path erases everything.
- */
-#define HK_PROV_NVS_SALT      "prov_salt"
-#define HK_PROV_NVS_VERIFIER  "prov_verif"
-/* The setup network's WPA2 key (ADR-0015). Same password as the SRP6a one and
- * the same label, but this one has to be stored as itself: WPA2 needs the key
- * on both ends, and a verifier cannot be turned back into it. */
-#define HK_PROV_NVS_AP_PASS   "ap_pass"
-
 /*
- * SRP6a salt and verifier sizes.
+ * Setup security, in one place (ADR-0023).
  *
- * These are UPPER BOUNDS, not fixed sizes, and the difference matters. The
- * generator derives both from big integers and serialises them with the minimal
- * number of bytes, so a value whose top byte happens to be zero comes out one
- * byte short. Measured over 600 generations: the salt was 15 bytes once and the
- * verifier 383 bytes four times, both close to the 1-in-256 the arithmetic
- * predicts.
+ * Both legs run protocomm Security 1 with no proof of possession: the manager
+ * is started with WIFI_PROV_SECURITY_1 and NULL security parameters, which
+ * ESP-IDF v5.5.1 accepts and answers by advertising `no_pop` in proto-ver
+ * (wifi_provisioning/src/manager.c, wifi_prov_mgr_start_provisioning). The
+ * session key is then the X25519 shared secret alone -- protocomm folds
+ * SHA256(pop) into it only when a pop exists (protocomm/src/security/
+ * security1.c) -- so the app path is AES-CTR encrypted against a passive
+ * listener and authenticated to nobody. Security 0 would remove the encryption
+ * too and, on a BLE link this project does not force-encrypt, put the home
+ * Wi-Fi password on the air in the clear; it also costs the user a setting in
+ * Espressif's stock apps, which refuse an unsecured device until told
+ * otherwise. Security 2 needs a per-device salt and verifier and refuses NULL
+ * parameters (protocomm/src/common/protocomm.c, protocomm_set_security, the
+ * ver == 2 branch), so there is no PIN-less Security 2 to keep.
  *
- * The bytes are used verbatim on both sides — the generator hashes the salt as
- * a raw byte string when computing the verifier — so padding a short one to a
- * fixed width here would silently break the handshake on roughly one device in
- * every 256. Whatever length was stored is the length that must be used.
+ * The setup network is OPEN: no WPA2 key, no per-device secret, nothing read
+ * from factory_cal before setup can start. Boards flashed before ADR-0023
+ * still carry the three legacy provisioning keys in that partition; this file
+ * never reads them (hk_storage.h names them and says why they are harmless).
+ * The owner's acceptance is for a home; what it costs is written in ADR-0023
+ * and in hk_portal.h, not repeated here.
  */
-#define HK_PROV_SALT_MAX 16
-#define HK_PROV_VERIFIER_MAX 384
-
-/* Below these, something other than a credential was stored. */
-#define HK_PROV_SALT_MIN 8
-#define HK_PROV_VERIFIER_MIN 256
-
-/* WPA2-PSK passphrase limits, from 802.11 rather than from us: shorter than
- * eight is not a passphrase the AP will accept, and 63 is the ceiling. */
-#define HK_AP_PASSWORD_MIN 8
-#define HK_AP_PASSWORD_MAX 63
 
 /** Consecutive join attempts before the policy module is told it failed. */
 #define HK_NET_RETRY_LIMIT 5
@@ -116,15 +96,6 @@ static hk_net_scheme_t    s_mgr_scheme;
  */
 static bool               s_ble_released;
 
-static uint8_t            s_salt[HK_PROV_SALT_MAX];
-static uint8_t            s_verifier[HK_PROV_VERIFIER_MAX];
-static size_t             s_salt_len;
-static size_t             s_verifier_len;
-static bool               s_have_security2;
-static char               s_ap_password[HK_AP_PASSWORD_MAX + 1];
-static size_t             s_ap_password_len;
-static bool               s_have_ap_password;
-
 /**
  * Release the provisioning manager, and record what that cost.
  *
@@ -148,77 +119,6 @@ static void publish_status(void)
     if (s_callback != NULL) {
         s_callback(&s_status, s_context);
     }
-}
-
-/**
- * Load the per-device SRP6a salt and verifier.
- *
- * These are written once at manufacturing time, together with the QR label.
- * The password itself is never stored on the device, which is the point of
- * Security 2: reading the flash does not yield the credential.
- */
-static esp_err_t load_security2_credentials(void)
-{
-    s_salt_len = sizeof(s_salt);
-    s_verifier_len = sizeof(s_verifier);
-
-    esp_err_t err = hk_storage_factory_get_blob(HK_PROV_NVS_SALT, s_salt, &s_salt_len);
-    if (err == ESP_OK) {
-        err = hk_storage_factory_get_blob(HK_PROV_NVS_VERIFIER, s_verifier, &s_verifier_len);
-    }
-    if (err != ESP_OK) {
-        return err;
-    }
-
-    /* A range, not an equality. See the note on HK_PROV_SALT_MAX: demanding an
-     * exact length would reject roughly one device in 256 for no reason. */
-    if (s_salt_len < HK_PROV_SALT_MIN || s_salt_len > HK_PROV_SALT_MAX ||
-        s_verifier_len < HK_PROV_VERIFIER_MIN || s_verifier_len > HK_PROV_VERIFIER_MAX) {
-        ESP_LOGE(TAG, "provisioning credentials are implausible: salt %u B, verifier %u B",
-                 (unsigned)s_salt_len, (unsigned)s_verifier_len);
-        return ESP_ERR_INVALID_SIZE;
-    }
-
-    ESP_LOGI(TAG, "provisioning credentials loaded: salt %u B, verifier %u B",
-             (unsigned)s_salt_len, (unsigned)s_verifier_len);
-    return ESP_OK;
-}
-
-/**
- * Load the setup network's WPA2 key.
- *
- * Stored as bytes rather than as an NVS string so it is read back through the
- * same read-only blob path as the salt and the verifier -- one opener of
- * factory_cal, which is what keeps the PRD-008 wall in one place.
- *
- * Absent is not fatal here. It decides only whether the SoftAP leg can open,
- * and that decision belongs where the leg is chosen; a device with a BLE
- * window and no AP key is perfectly usable.
- */
-static void load_ap_password(void)
-{
-    size_t length = HK_AP_PASSWORD_MAX;
-    s_have_ap_password = false;
-    s_ap_password_len = 0;
-    memset(s_ap_password, 0, sizeof(s_ap_password));
-
-    if (hk_storage_factory_get_blob(HK_PROV_NVS_AP_PASS, s_ap_password, &length) != ESP_OK) {
-        return;
-    }
-    /* The blob carries no terminator; the buffer is one byte longer so writing
-     * one cannot run past it. */
-    s_ap_password[length] = '\0';
-
-    if (length < HK_AP_PASSWORD_MIN || strlen(s_ap_password) != length) {
-        /* Too short for WPA2, or with a NUL inside it -- either way the AP
-         * would come up with a key nobody could type. The length is logged and
-         * the key never is. */
-        ESP_LOGE(TAG, "the stored setup network key is unusable (%u B)", (unsigned)length);
-        memset(s_ap_password, 0, sizeof(s_ap_password));
-        return;
-    }
-    s_ap_password_len = length;
-    s_have_ap_password = true;
 }
 
 /** Publish the device on the local network under its documented names. */
@@ -434,16 +334,18 @@ static esp_err_t start_setup_ap(void)
     wifi_config_t ap = {
         .ap = {
             .max_connection = 4,
-            /* WPA2 rather than the mixed WPA/WPA2 upstream uses. ADR-0015 chose
-             * WPA2 deliberately; every phone this product targets speaks it. */
-            .authmode = WIFI_AUTH_WPA2_PSK,
+            /* Open, on purpose (ADR-0023). Exactly the shape scheme_softap.c
+             * builds for an empty passphrase: no key, authmode open. The
+             * password field stays the zeros the initialiser left in it. What
+             * that costs the portal path is stated in hk_portal.h. */
+            .authmode = WIFI_AUTH_OPEN,
         },
     };
 
     /* An SSID is bytes with a length, not a C string -- 32 characters is legal
      * and would leave no room for a terminator. The bound is the SOURCE's size,
      * not the field's: bounding by the 32-byte destination lets the read run off
-     * a 24-byte identity, which is what the compiler objected to and it was
+     * a 22-byte identity, which is what the compiler objected to and it was
      * right. The clamp then keeps a longer name from overrunning the field. */
     size_t ssid_len = strnlen(s_identity.softap, sizeof(s_identity.softap));
     if (ssid_len > sizeof(ap.ap.ssid)) {
@@ -451,15 +353,11 @@ static esp_err_t start_setup_ap(void)
     }
     memcpy(ap.ap.ssid, s_identity.softap, ssid_len);
     ap.ap.ssid_len = (uint8_t)ssid_len;
-    strlcpy((char *)ap.ap.password, s_ap_password, sizeof(ap.ap.password));
 
     esp_err_t err = esp_wifi_set_mode(WIFI_MODE_APSTA);
     if (err == ESP_OK) {
         err = esp_wifi_set_config(WIFI_IF_AP, &ap);
     }
-    /* The key was on the stack. It goes before this frame does, rather than
-     * being left for whatever reuses the memory. */
-    memset(&ap, 0, sizeof(ap));
 
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "the setup network did not come up: %s", esp_err_to_name(err));
@@ -477,28 +375,22 @@ static esp_err_t start_setup_ap(void)
  * gone back to the heap (ADR-0016). Neither is a degraded window -- it is the
  * app-less route, whole.
  *
- * service_key is the setup network's Wi-Fi password, and it is not optional. It
- * used to be NULL, which left that network open and put the whole burden on
- * Security 2 -- fine for an app speaking protocomm, and no use at all to a
- * browser: a captive portal page cannot borrow the browser's crypto over
- * cleartext HTTP. ADR-0015 moves the secrecy down to WPA2 so the app-less path
- * can be an ordinary form.
+ * The service key is NULL, so the scheme brings the network up open: with an
+ * empty passphrase scheme_softap.c sets WIFI_AUTH_OPEN, the same choice
+ * start_setup_ap() makes for the dual window. ADR-0015 once keyed this network
+ * with a per-device WPA2 password so the portal's plain form had a secret
+ * link under it; ADR-0023 gives that up for a setup with nothing to type but
+ * the home password, and says what the trade costs. The app that speaks
+ * protocomm on this leg still gets Security 1's encryption; the browser on the
+ * portal gets none.
  *
  * Every failure path hands the radio back. The caller disconnected the station
  * before calling, so a leg that does not come up must not also leave setup
  * owning a radio it is not using: that flag is what suppresses the reconnect,
  * and stuck true it keeps the speaker off the network until the next reboot.
  */
-static esp_err_t start_softap_only(const wifi_prov_security2_params_t *security_params)
+static esp_err_t start_softap_only(void)
 {
-    if (!s_have_ap_password) {
-        ESP_LOGE(TAG, "no setup network key in the calibration store; refusing to "
-                      "open an unprotected setup network rather than accept a "
-                      "Wi-Fi password over one");
-        s_setup_owns_radio = false;
-        return ESP_ERR_NOT_FOUND;
-    }
-
     /* Before the manager starts, not after: protocomm publishes the app
      * path's endpoints on whatever server it is given here, and given none
      * it starts a second one on the same port. */
@@ -514,8 +406,8 @@ static esp_err_t start_softap_only(const wifi_prov_security2_params_t *security_
     wifi_prov_scheme_softap_set_httpd_handle(hk_portal_server_slot());
 
     const esp_err_t started =
-        wifi_prov_mgr_start_provisioning(WIFI_PROV_SECURITY_2, security_params,
-                                         s_identity.softap, s_ap_password);
+        wifi_prov_mgr_start_provisioning(WIFI_PROV_SECURITY_1, NULL,
+                                         s_identity.softap, NULL);
     if (started != ESP_OK) {
         hk_portal_stop();
         s_setup_owns_radio = false;
@@ -523,19 +415,17 @@ static esp_err_t start_softap_only(const wifi_prov_security2_params_t *security_
     return started;
 }
 
-/** Start provisioning with Security 2, or refuse. */
+/**
+ * Open setup on the transport(s) the situation calls for.
+ *
+ * Nothing is loaded and nothing can be missing: Security 1 with a NULL proof
+ * of possession needs no per-device material, and an open network needs no
+ * key. A blank factory_cal opens setup like any other board (ADR-0023). The
+ * refusal that used to live here -- no salt and verifier, no provisioning --
+ * guarded a property this design no longer has.
+ */
 static esp_err_t start_provisioning(void)
 {
-    if (!s_have_security2) {
-        /* Deliberately fatal to provisioning rather than a downgrade. Accepting
-         * a Wi-Fi password over a channel secured by a shared or absent
-         * credential is worse than refusing to accept one at all. */
-        ESP_LOGE(TAG, "no per-device provisioning credentials in the calibration store; "
-                      "refusing to open provisioning rather than fall back to a weaker "
-                      "security mode");
-        return ESP_ERR_NOT_FOUND;
-    }
-
     /* Setup takes the radio from here until WIFI_PROV_END.
      *
      * The station is put down deliberately instead of being knocked down by
@@ -548,20 +438,14 @@ static esp_err_t start_provisioning(void)
     s_setup_owns_radio = true;
     (void)esp_wifi_disconnect();
 
-    /* The stored lengths, not the buffer sizes. Passing sizeof() here would
-     * hand protocomm trailing zero bytes that were never part of the salt. */
-    wifi_prov_security2_params_t security_params = {
-        .salt = (const char *)s_salt,
-        .salt_len = (uint16_t)s_salt_len,
-        .verifier = (const char *)s_verifier,
-        .verifier_len = (uint16_t)s_verifier_len,
-    };
-
-    /* The service name is what the user has to find, and it differs per
-     * transport: a Wi-Fi SSID for SoftAP, a BLE advertised name for BLE. Both
-     * are also written into the QR codes the provisioning apps scan, so passing
-     * one where the other belongs does not fail loudly -- it produces a QR that
-     * searches for a device nobody is advertising. */
+    /* The service name is what the user has to find: the setup network's SSID
+     * on the SoftAP leg, the advertised name on BLE. Since ADR-0023 the two are
+     * one string -- hk_identity spells them the same, with the PROV_ prefix the
+     * stock apps filter by -- but each leg is still handed its own field, so
+     * the day they are allowed to differ nothing here has to change. Both also
+     * appear in the optional QR the apps scan, so a name passed to the wrong
+     * leg does not fail loudly; it produces a QR that searches for a device
+     * nobody is advertising. */
 #if CONFIG_HK_DUAL_TRANSPORT
     if (s_scheme != HK_NET_SCHEME_BLE) {
         /* The BLE stack went back to the heap when an earlier window closed, so
@@ -569,28 +453,19 @@ static esp_err_t start_provisioning(void)
          * one here is what turned a second button press into a speaker that had
          * left the network and opened nothing. */
         ESP_LOGI(TAG, "ble is gone for this boot; opening the app-less leg alone");
-        return start_softap_only(&security_params);
-    }
-
-    /* Both legs need their own credential, and neither is optional: the manager
-     * refuses without Security 2, and an access point without a key is the open
-     * network ADR-0015 exists to avoid. Refusing here names which one is
-     * missing, rather than half-opening a window. */
-    if (!s_have_ap_password) {
-        ESP_LOGE(TAG, "no setup network key in the calibration store; refusing to open "
-                      "an unprotected setup network rather than accept a Wi-Fi password "
-                      "over one");
-        s_setup_owns_radio = false;
-        return ESP_ERR_NOT_FOUND;
+        return start_softap_only();
     }
 
     /* What the manager is told to advertise is the BLE name. The access point
-     * carries the other name and is not the manager's business at all. */
+     * carries the SSID and is not the manager's business at all. */
     wifi_config_t saved_sta;
     const bool have_saved = (esp_wifi_get_config(WIFI_IF_STA, &saved_sta) == ESP_OK);
 
+    /* NULL where the proof of possession went: ESP-IDF answers by advertising
+     * `no_pop`, and the stock apps then open the session with an empty pop and
+     * no prompt. See the note at the top of this file. */
     const esp_err_t opened =
-        wifi_prov_mgr_start_provisioning(WIFI_PROV_SECURITY_2, &security_params,
+        wifi_prov_mgr_start_provisioning(WIFI_PROV_SECURITY_1, NULL,
                                          s_identity.ble, NULL);
     if (opened != ESP_OK) {
         s_setup_owns_radio = false;
@@ -636,13 +511,14 @@ static esp_err_t start_provisioning(void)
     return ESP_OK;
 #else
     if (s_scheme != HK_NET_SCHEME_BLE) {
-        return start_softap_only(&security_params);
+        return start_softap_only();
     }
 
-    /* BLE carries no service key: the pairing secret is the SRP6a proof of
-     * possession, not a Wi-Fi passphrase. */
+    /* BLE carries no service key (the scheme ignores it) and, since ADR-0023,
+     * no proof of possession either: NULL parameters make the manager
+     * advertise `no_pop`. */
     const esp_err_t started =
-        wifi_prov_mgr_start_provisioning(WIFI_PROV_SECURITY_2, &security_params,
+        wifi_prov_mgr_start_provisioning(WIFI_PROV_SECURITY_1, NULL,
                                          s_identity.ble, NULL);
     if (started != ESP_OK) {
         /* The station was put down for a window that did not open. Leaving the
@@ -827,30 +703,13 @@ esp_err_t hk_network_start(hk_net_status_cb_t callback, void *context)
     preload_bench_credentials();
 #endif
 
-    /* Named for what it holds, a status, not for what was being loaded. A
-     * variable called `credentials` reaching a log line is exactly the shape
-     * tools/check_no_credential_logs.py is looking for, and it was right to
-     * object even though nothing secret was printed. */
-    esp_err_t load_status = load_security2_credentials();
-    s_have_security2 = (load_status == ESP_OK);
-    if (!s_have_security2) {
-        ESP_LOGE(TAG, "provisioning credentials unavailable: %s. This device cannot be "
-                      "provisioned until they are written at manufacturing time.",
-                 esp_err_to_name(load_status));
-    }
-
-    /* The setup network's key. Its absence only closes the SoftAP leg, so it is
-     * reported at the point the leg is refused rather than shouted about here;
-     * a device provisioned over BLE never needs it. */
-    load_ap_password();
-    if (s_have_ap_password) {
-        /* The length, never the key -- the same rule the line above follows,
-         * and tools/check_no_credential_logs.py enforces it. */
-        ESP_LOGI(TAG, "setup network key loaded: %u B", (unsigned)s_ap_password_len);
-    } else {
-        ESP_LOGW(TAG, "no setup network key stored; the app-less setup path cannot open "
-                      "on this device");
-    }
+    /* Said once at boot so a log reads the same way the decision does. Until
+     * ADR-0023 this is where the per-device salt, verifier and setup key were
+     * loaded from factory_cal and their absence refused setup; there is
+     * nothing to load now, and a board with a blank calibration store opens
+     * setup like any other. */
+    ESP_LOGI(TAG, "setup security: protocomm security 1, no proof of possession; "
+                  "setup network open (ADR-0023)");
 
     /* The manager is needed just to answer "are we provisioned?", and the
      * answer decides the scheme. It is initialised with SoftAP for that query

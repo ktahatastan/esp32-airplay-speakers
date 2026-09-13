@@ -385,12 +385,11 @@ sürücünün 24 V'ta bağlanmamasını ister. `C3`'ün buradaki işi kazancı b
    `provenance.amp_gain_db.status`'u `placeholder`dan `measured`a çevir ve
    `source`'a `C3`'ün sonuç satırını yaz; başka hiçbir alana dokunma.
 2. `python3 firmware/tools/write_profile.py <değerler.json> --device-dir <dizin>`
-   — dizin, kartın kendi kimlik-bilgisi dizinidir (`provision_credentials.py`'nin
-   o kart için yazdığı, `factory_cal.csv`'nin durduğu dizin; `IDF_PATH` gerekir).
+   — dizin, kartın kendi cihaz dizinidir (`provision_credentials.py`'nin o kart
+   için yazdığı, `factory_cal.csv`'nin durduğu dizin; `IDF_PATH` gerekir).
    Araç `profile` satırını **o** CSV'ye ekler, `factory_cal.bin`'i yeniden üretir
-   ve flaş komutunu basar. Kimlik bilgilerini yeniden üretmez: kayıtlı PoP ve
-   AP parolası olduğu gibi kalır; onları yeniden üretmek kayıttaki PoP'u
-   geçersiz kılardı. Flaşlamaz.
+   ve flaş komutunu basar. ADR-0023 öncesi kartın dizinindeki eski kimlik
+   satırları varsa olduğu gibi kalır (firmware onları okumaz). Flaşlamaz.
 3. Basılan `esptool … write_flash 0x13000 …` komutunu **sen** çalıştırırsın:
    `factory_cal` bölümü `0x13000`'de, boyut `firmware/partitions.csv`'den
    (`0xd000`). Flaşlamadan önce imajın tam `0xd000` bayt olduğuna bak — kısa

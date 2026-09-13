@@ -40,7 +40,7 @@ build/host-tests/
 __pycache__/
 *.pyc
 
-# Generated provisioning credentials. The label files hold the only copy of
-# each password; they must never be committed.
+# Generated per-device setup directories (factory_cal.csv/.bin, QR text). Secret-free
+# since ADR-0023, still generated output: never committed.
 build/provisioning/
 hardware/kicad/.venv/

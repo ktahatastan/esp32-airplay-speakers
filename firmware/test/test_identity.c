@@ -14,9 +14,22 @@ void test_identity(void)
     HK_CHECK_EQ_INT(hk_identity_from_mac(mac, &id), HK_IDENTITY_OK);
     HK_CHECK_EQ_STR(id.suffix, "A1B2");
     HK_CHECK_EQ_STR(id.airplay, "Merzarkabul A1B2");
-    HK_CHECK_EQ_STR(id.ble, "Merzarkabul-A1B2");
-    HK_CHECK_EQ_STR(id.softap, "Merzarkabul-Setup-A1B2");
+    HK_CHECK_EQ_STR(id.ble, "PROV_Merzarkabul-A1B2");
+    HK_CHECK_EQ_STR(id.softap, "PROV_Merzarkabul-A1B2");
     HK_CHECK_EQ_STR(id.mdns, "merzarkabul-a1b2");
+
+    /* The two setup surfaces are one name (ADR-0023): the user must see the
+     * same string whichever transport the phone found the speaker on. */
+    HK_CHECK_EQ_STR(id.ble, id.softap);
+    /* And that name leads with the prefix Espressif's stock provisioning apps
+     * filter their device lists by. Without it the speaker is invisible to the
+     * app until the user edits a setting, which is the opposite of easy setup. */
+    HK_CHECK(strncmp(id.ble, "PROV_", 5) == 0);
+    HK_CHECK(strncmp(id.softap, "PROV_", 5) == 0);
+    /* The AirPlay and mDNS names carry no such prefix: the apps never see them,
+     * and a speaker called PROV_ in the AirPlay picker would be a bug. */
+    HK_CHECK(strncmp(id.airplay, "PROV_", 5) != 0);
+    HK_CHECK(strncmp(id.mdns, "prov_", 5) != 0);
 
     /* Low nibbles and zero bytes must still produce four characters. */
     const uint8_t mac_zeros[6] = {0x24, 0x6F, 0x28, 0x11, 0x00, 0x0F};

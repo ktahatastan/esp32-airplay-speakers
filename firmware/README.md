@@ -5,9 +5,12 @@ network (ADR-0021). Every user-visible name carries a suffix derived from the MA
 so it is unique on any network.
 
 **F0 is closed, and F4/F5 have run on real silicon.** On the N8R2 bring-up
-devkit (ADR-0012) this firmware joins Wi-Fi, answers mDNS, provisions over both
-SoftAP and BLE, drives the button and the LED, and runs the vendored AirPlay
-receiver: on 2026-09-05 an iPhone streamed to it and the audio was heard.
+devkit (ADR-0012) this firmware joins Wi-Fi, answers mDNS, opens its setup
+window over BLE and SoftAP, drives the button and the LED, and runs the
+vendored AirPlay receiver: on 2026-09-05 an iPhone streamed to it and the audio
+was heard. The setup that ran end to end that day went over BLE, with the PIN
+of the design in force then; since 2026-09-13 there is no PIN (ADR-0023,
+below), and the PIN-less path has run on no board yet.
 
 The product's own audio path has played too. On 2026-09-08 the bench build (the
 product profile plus `sdkconfig.bench`) carried AirPlay → I2S → PCM5102A →
@@ -170,8 +173,9 @@ only thing that catches a stale `build-bench/sdkconfig` (see the trap above).
 
 It announces itself twice in the boot report, because an exception nobody can
 see is indistinguishable from a defect — which is how this one started life:
-until 2026-09-08 writing provisioning credentials put a schema version into the
-calibration namespace, and that alone was read as "calibrated".
+until 2026-09-08 writing the setup directory's `factory_cal` put a schema
+version into the calibration namespace, and that alone was read as
+"calibrated".
 
 **Look at what is wired to the amplifier output before flashing this build.** It
 is defensible into a dummy load, a scope or nothing; the staging rule in
@@ -217,9 +221,9 @@ cause, as `esp_*.h` includes that cannot be found.
 paths named *inside* a CSV against the working directory, not against the CSV.
 Started from anywhere else it fails to find them and leaves a short or empty
 output behind, and that file flashed at the `factory_cal` offset erases the
-credentials and replaces nothing — leaving a device that behaves as if it
-had never been given any, which this firmware correctly refuses to provision.
-Run the tool from the directory the CSV's paths are written against.
+schema row and the calibration profile and replaces nothing — leaving a
+product that refuses audio for want of a profile. Run the tool from the
+directory the CSV's paths are written against, or let `--image` do it.
 
 **A hard configure error before anything compiles.** A file listed in
 `SDKCONFIG_DEFAULTS` that does not exist stops the configure step outright.
@@ -228,7 +232,7 @@ after `tools/set_bench_wifi.py` has been run.
 
 ## Verify
 
-Three checks run without any hardware, and all three run in CI.
+None of these needs hardware, and CI runs them on every change.
 
 ```bash
 # 1. Host unit tests: pure logic, no ESP-IDF needed
@@ -250,7 +254,12 @@ python3 firmware/tools/check_storage_isolation.py
 # 5. No log statement may print a credential
 python3 firmware/tools/check_no_credential_logs.py
 
-# 6. Documentation integrity
+# 6. The two factory_cal tools: the setup directory holds no secret, and the
+#    profile writer pins the wire format and every refusal name
+python3 firmware/tools/test_provision_credentials.py
+python3 firmware/tools/test_write_profile.py
+
+# 7. Documentation integrity
 python3 scripts/check_docs.py
 ```
 
@@ -265,30 +274,60 @@ Verified on real silicon on 2026-09-05, on the N8R2 bring-up devkit, with the
 image built from this repository. The record and its raw logs are in
 [docs/06-testing/devkit-bring-up.md](../docs/06-testing/devkit-bring-up.md):
 the boot report and PSRAM detection, the 8 MB partition table, a Wi-Fi join with
-DHCP and mDNS, provisioning end to end over both SoftAP and BLE, the short and
-5-second button presses, the LED, and the vendored AirPlay receiver carrying a
-real iPhone session whose audio was heard through the bench S/PDIF output.
+DHCP and mDNS, provisioning end to end over BLE (the SoftAP window opened, but
+no join was completed through it that day), the short and 5-second button
+presses, the LED, and the vendored AirPlay receiver carrying a real iPhone
+session whose audio was heard through the bench S/PDIF output. That
+provisioning ran under the design of the day — Security 2 with a per-device
+PIN over BLE; the WPA2 setup network came three days later with ADR-0015 and
+was never verified from a phone — and says nothing about the path below.
 
-Provisioning will not open on a device whose per-device credentials have not
-been written, and that is on purpose: the firmware refuses rather than falling
-back to a weaker security mode. Generate them with
+### Setup: no PIN, an open setup network (ADR-0023)
+
+Since 2026-09-13 the speaker is set up without a PIN, at the owner's request
+and for a home. Both transports run protocomm Security 1 with no proof of
+possession: the device advertises `no_pop`, the session key comes from the
+X25519 exchange alone and the payload is AES-CTR, so a passive listener on the
+app path learns nothing — but nothing proves to the phone that the peer is
+this speaker, and anyone in radio range while a window is open can provision
+it. The setup network is open, so the app-less portal form posts the home
+password in the clear over an unencrypted link during the window. The window
+is open on first boot until provisioned, and afterwards for 10 minutes after a
+button press. Nothing in `factory_cal` is needed for setup to open. The ADR
+holds the reasons, the rejected options and the accepted risks in plain words:
+[docs/07-decisions/ADR-0023-pinless-provisioning.md](../docs/07-decisions/ADR-0023-pinless-provisioning.md).
+
+The BLE advertisement and the setup network's SSID are one name,
+`PROV_Merzarkabul-XXXX`. The `PROV_` prefix is the one the stock Espressif
+provisioning apps filter their device lists by, so the speaker should be listed
+without a QR and without changing a setting in the app (read from the apps'
+sources; not yet tried on a phone — the bench item in TODO.md is what turns
+this into a measurement); the AirPlay and mDNS names do not carry it. The QR is optional and holds no secret — a name, a
+transport and `"security":1`:
 
 ```bash
 . $IDF_PATH/export.sh
 python3 firmware/tools/provision_credentials.py --device A1B2 --image --out ~/hk-credentials
 ```
 
-`--image` is not optional in practice: it builds the partition image from the
-directory the CSV's paths are written against, and checks the result. Doing it
-by hand is the trap described under ESP-IDF traps. `--out` belongs outside the
-repository — three of the files it writes hold the password.
+The tool's name is historical (it generated the PIN until ADR-0023); it now
+writes, per device, a `factory_cal.csv` holding the `cal` namespace and its
+schema row and nothing else, `qr.txt` with the two payloads, and `label.txt`
+with the device name and the same payloads. Nothing in that directory is
+secret and none of it is written owner-only. Only `--image` needs ESP-IDF: it
+builds the partition image from the directory the CSV's paths are written
+against and checks the result, which is the trap under ESP-IDF traps done for
+you. `~/hk-credentials` is where the owner's two existing device directories
+already live; the name is as historical as the tool's.
 
-The password is random and generated per board. The speaker stores only an SRP6a salt
-and verifier, from which the password cannot be recovered, so reading the flash
-off a speaker does not yield the credential. The generated `label.txt` is the
-only copy of the password; it is written owner-only and must not be committed. The transport is chosen by the situation, not by the caller: SoftAP with
-nothing stored, BLE from a button press on a configured device. ADR-0005
-option C, because ESP-IDF cannot run both in one session.
+A board provisioned before ADR-0023 carries two or three more rows in
+`factory_cal`: the salt and the verifier of the retired design, and on the
+product board the setup-network key too (product-board-bring-up.md:165; the
+devkit's 2026-09-05 record shows only the first two). They are dead data: the
+firmware no longer reads them, so such a board needs no reflash, and its device
+directory merges below exactly as before with those rows kept.
+
+### The calibration profile
 
 The calibration profile shares that partition, and since 2026-09-12 it can be
 written without a recompile. `firmware/tools/write_profile.py` reads a values
@@ -296,11 +335,14 @@ file — every `hk_profile_t` field by name, plus a provenance entry per number
 saying whether it is `measured`, `derived` or a `placeholder` and which record
 holds it — judges it with the same rules as `hk_profile_valid()` under the same
 one-word verdicts, packs the 116-byte schema-2 blob, and merges it into the
-device directory `provision_credentials.py` produced: one row appended to that
-directory's own `factory_cal.csv`, the image rebuilt through the same
-`build_image()`, then read back to confirm the credentials are still in it.
-The provenance is not packed; it is what stops a placeholder from being
-written up as a measurement. The values of the 2026-09-12 bench profile are in
+board's device directory: one row appended to that directory's own
+`factory_cal.csv`, the image rebuilt through the same `build_image()`, then
+read back to confirm that every row the CSV names — the schema, the legacy
+rows if the board has them, and the profile — is in it. What the directory
+must have is the CSV with the `cal` namespace and its schema row; that is the
+whole of what `provision_credentials.py` writes. The provenance is not packed;
+it is what stops a placeholder from being written up as a measurement. The
+values of the 2026-09-12 bench profile are in
 `docs/assets/measurements/drivers/profile-2026-09-12-provisional.json` (two
 numbers measured, the rest placeholders — the file says which; the 3500 Hz
 crossover is the owner's choice inside a measured range, not a derived number).
@@ -318,14 +360,16 @@ The tool prints the `esptool write_flash` command and never runs it. Writing
 this partition is what makes the product build play, so it is the owner's act,
 and it comes after bench item `C3` and only on the staged pair at low level
 (Safety, below). A bare `profile.bin` is not an image: flashed at the partition
-offset it would erase the credentials and replace nothing, which is why the
+offset it would erase the schema row and replace nothing, which is why the
 tool insists on the device directory.
 
 Verified on the PRODUCT board on 2026-09-08 — an N16R8 with 16 MB flash and
 8 MB octal PSRAM, the board ADR-0010 locks. Octal PSRAM comes up and passes its
 memory test, the 16 MB partition table loads, the identity derives from the MAC,
-and with no calibration written the device refuses audio and refuses to open
-provisioning rather than weaken it. Two boots were identical down to the free-heap
+and with no calibration written the device refused audio and, under the design
+of the day, refused to open provisioning rather than weaken it — a refusal
+ADR-0023 has since removed, so that sentence is a dated measurement, not a
+property of this firmware. Two boots were identical down to the free-heap
 byte. Record: [docs/06-testing/product-board-bring-up.md](../docs/06-testing/product-board-bring-up.md).
 
 **The GPIO assignment is still a *candidate*.** A board that boots has not proved
@@ -355,7 +399,8 @@ firmware/
     hk_button/          function button: debounce, hold levels, what commits
     hk_led/             which status wins the single LED, and how it looks
     hk_provision/       when the setup radios are open, and when they shut
-    hk_portal/          the app-less captive-portal setup path (ADR-0015)
+    hk_portal/          the app-less captive-portal setup path (ADR-0015; on an
+                        open network since ADR-0023)
     hk_ui/              button GPIO and RGB PWM, on its own low-priority task
     hk_network/         Wi-Fi, mDNS and the provisioning transport
     hk_airplay/         the vendored AirPlay 2 receiver and its output backends:
@@ -373,7 +418,8 @@ firmware/
     hk_gate/            when an update may start (the gate table)
     hk_health/          whether a freshly installed image has earned its place
   test/                 host unit tests, built with plain CMake
-  tools/                partition and size validation
+  tools/                partition and size validation; the two factory_cal writers
+                        (the setup directory, the calibration profile); recovery
 ```
 
 Components with no ESP-IDF dependency are deliberately pure C. That is what

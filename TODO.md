@@ -55,22 +55,26 @@ Kilitli kararlar `AGENTS.md` içindedir ve yalnız supersede eden ADR ile deği�
 - [ ] 12 sn fabrika sıfırlamayı **donanımda** doğrula; 2026-09-05'te basış olay üretmedi (köprü teması).
 - [x] Fabrika sürücü koruma/limiter kalibrasyonunu kullanıcı resetinden ayrı NVS alanında tut (ayrı partition; gerçek NVS ile test edildi).
 - [x] RGB LED durum sürücüsünü audio task'tan bağımsız düşük öncelikli görev olarak geliştir.
-- [x] Captive portalı yaz (ADR-0015: WPA2 kurulum ağı + `hk_portal`).
-- [ ] Portalı donanımda dene: iOS ve Android kurulum sayfasını kendiliğinden açıyor mu, ağ listesi doluyor mu, kimlik bilgisiyle katılıyor mu?
+- [x] Captive portalı yaz (ADR-0015, `hk_portal`; kurulum ağı o gün WPA2'ydi, ADR-0023 ile açık).
+- [x] Kurulumdan PIN'i kaldır (ADR-0023, 2026-09-13): BLE'de protocomm Security 1 ve sahiplik kanıtı yok, kurulum ağı açık, adlar `PROV_Merzarkabul-XXXX`, QR isteğe bağlı ve sırsız. Yalnız kod ve kayıt; **hiçbir telefonda denenmedi.**
+- [ ] **Tezgâh, PIN'siz yol (geliştirme kartı ve ürün kartı):** `esp_prov.py --transport ble --verbose` `proto-ver`'de `sec_ver 1` ve `cap [no_pop, wifi_scan]` basıyor mu, PIN sormuyor mu?
+- [ ] **Tezgâh, PIN'siz yol:** ESP BLE Provisioning (iOS ve Android) `PROV_Merzarkabul-XXXX`'i QR'sız ve önek ayarı değişmeden listeliyor mu, PIN sormadan kurulumu bitiriyor mu?
+- [ ] **Tezgâh, PIN'siz yol:** telefonun Wi-Fi listesinde `PROV_Merzarkabul-XXXX` kilitsiz görünüyor mu, portal sayfası kendiliğinden açılıyor mu, sayfa ağın açık olduğunu söyleyen cümleyi gösteriyor mu, ağ listesi doluyor mu, katılıyor mu?
 - [x] İki taşımayı aynı anda aç (ADR-0016). Ürün kartında ölçüldü: tek pencerede BLE advertise + SoftAP + portal, 148.007 B dahili boş.
 - [ ] Her iki taşımayla ayrı ayrı kurulumu tamamla, diğeri ayaktayken.
 - [ ] Pencere kapandıktan sonra dahili belleğin geri geldiğini ölç (`FREE_BTDM`).
 - [ ] Pencere kapanıp yeniden açıldığında yalnız SoftAP sunulduğunu ve logun BLE iddia etmediğini doğrula.
-- [ ] WPA2 kurulum ağının BLE + Security 2 yolunu bozmadığını donanımda doğrula.
-- [x] ESP-IDF Unified Provisioning BLE transport ve Security 2 / benzersiz PoP ekle.
-- [x] SRP6a kullanıcı adına karar ver — ADR-0014: `wifiprov`, çünkü ad sır değil ve özel bir ad yalnız QR'sız yolu kırıyor.
-- [ ] Verifier değiştiği için QR'lı BLE kurulumunu donanımda **tekrar** doğrula.
-- [ ] QR'sız kurulumu (listeden seç + parolayı yaz) ilk kez dene; ADR-0014 bu yolu denenebilir hâle getirdi.
-- [x] Provisioning ve Wi-Fi QR kodu üret (`tools/provision_credentials.py`).
+- [x] ~~WPA2 kurulum ağının BLE + Security 2 yolunu bozmadığını donanımda doğrula.~~ Konu kapandı: ne WPA2 var, ne Security 2 (ADR-0023).
+- [x] ESP-IDF Unified Provisioning BLE transport ve Security 2 / cihaz başına sahiplik kanıtı ekle (2026-08-31). ADR-0023 ile Security 1'e, kanıtsız hâle çekildi.
+- [x] Security 2 kullanıcı adına karar verildi (ADR-0014, 2026-09-08). ADR-0023 ile tümüyle aşıldı: Security 2 gidince kullanıcı adı diye bir şey kalmadı.
+- [x] ~~Verifier değiştiği için QR'lı BLE kurulumunu donanımda tekrar doğrula.~~ Verifier yok artık; yerine yukarıdaki PIN'siz tezgâh maddeleri (ADR-0023).
+- [x] ~~QR'sız kurulumu (listeden seç + parolayı yaz) ilk kez dene.~~ Parola yok; listeden seçme `PROV_` önekiyle yukarıdaki tezgâh maddesinde (ADR-0023).
+- [x] Provisioning ve Wi-Fi QR kodu üret (`tools/provision_credentials.py`; 2026-09-13'ten beri sır içermez: ad, taşıma, güvenlik sürümü).
 - [x] Provisioning tamamlanınca BLE belleğinin serbest bırakıldığını doğrula (`BTDM memory released`, geliştirme kartı).
-- [x] iOS'ta Espressif BLE Provisioning uygulamasıyla kurulum testi yap — uçtan uca çalıştı.
+- [x] iOS'ta Espressif BLE Provisioning uygulamasıyla kurulum testi yap — 2026-09-05'te Security 2 ile uçtan uca çalıştı; PIN'siz hâli yukarıdaki tezgâh maddesi.
 - [ ] Android'de BLE kurulum testi yap; hiç denenmedi.
-- [ ] Uygulamasız iOS/Android akışını test et — **önce portalın var olması gerekiyor**. Espressif'in SoftAP uygulaması ayrıca AES-GCM katmanında düşüyor (`mbedtls_gcm_auth_decrypt : -18`); ESP-IDF'in kendi istemcisi aynı cihaza bağlanıyor, yani kusur o uygulamada.
+- [ ] Uygulamasız iOS/Android akışını test et — portal 2026-09-08'den beri var, ağ 2026-09-13'ten beri açık; yukarıdaki tezgâh maddesi. Espressif'in SoftAP uygulaması 2026-09-03'te Security 2'nin AES-GCM katmanında düşüyordu (`mbedtls_gcm_auth_decrypt : -18`); Security 1'de (AES-CTR) ne yaptığı bilinmiyor — BLE serbest bırakıldıktan sonraki yeniden açılışta dene, ESP-IDF'in kendi istemcisi kıyas noktası.
+- [ ] `hk_provision`'ın bağlantı olaylarına karar ver: `hk_main` politikaya `CONNECT_OK` / `CONNECT_FAIL` / `CREDENTIALS` vermiyor, üç başarısız katılımın açtığı geri dönüş penceresi host'ta testli ama cihazda erişilemez (ADR-0023 kaydı, risk kaydı). Ya olaylar bağlanır ve pencerenin sınırlı mı sınırsız mı olacağı o gün kararlaştırılır, ya dal başlığı ve host testiyle birlikte silinir.
 - [ ] Özel mobil uygulama kararı verilirse iOS AccessorySetupKit ve Android Companion Device Manager prototipi hazırla.
 - [ ] Provisioning timeout, tekrar deneme, parola gizliliği ve NVS encryption testlerini yap.
 - [ ] Açılırken/kapanırken pop ve ESP32 reset testlerini yap.
@@ -87,7 +91,7 @@ Ayrıntı, önkoşul ve kabul ölçütleri: [[docs/03-firmware/firmware-plan|fir
 - [ ] `F1` kalan: **akış sırasındaki** kaynak kullanımını (PSRAM, CPU) ölç.
 - [ ] `F2` I2S/DAC/bi-amp ses yolu bring-up (G1 sonrası).
 - [ ] `F3` HPF, crossover ve limiter zinciri: ürün çıkış arka ucu (ADR-0022); dördüncü derece subsonic, dal başına limiter zamanlaması, delay/polarite alanları ve besleme bütçesi katı kodda (şema 2), profil açılışta yargılanıyor, blok süresi telemetrisi var; sayılar G0/G1/G2 — her biri yer tutucu, profil yokken ürün susar.
-- [x] `F4` Wi-Fi, mDNS ve BLE/SoftAP Unified Provisioning — geliştirme kartında uçtan uca. Portal kısmı hariç (yukarıya bakın).
+- [x] `F4` Wi-Fi, mDNS ve BLE/SoftAP Unified Provisioning — geliştirme kartında uçtan uca, Security 2 ile. Portal kısmı ve ADR-0023'ün PIN'siz yolu hariç (yukarıya bakın).
 - [x] `F5` buton durum makinesi ve RGB LED animatörü — 12 sn senaryosu ve LED'in ses zamanlamasına etkisi hariç.
 - [ ] `F7` imzalı A/B OTA, release hattı ve recovery (G6).
 - [ ] `F8` soak (G8).
@@ -95,14 +99,14 @@ Ayrıntı, önkoşul ve kabul ölçütleri: [[docs/03-firmware/firmware-plan|fir
 ## P6b - Firmware güvenliği ve kurtarma
 
 - [x] `factory_cal` ile `user_settings` NVS şemasını ve migration testlerini yaz.
-- [ ] Benzersiz PoP/QR üretimi, seri eşleme ve güvenli yedekleme prosedürünü tanımla.
+- [ ] Etiket/QR üretimi (`tools/provision_credentials.py`, sır içermez) ve seri eşleme prosedürünü tanımla; yedekleme gerekmez, kaybolan etikette kaybolacak bir şey yok (ADR-0023).
 - [x] ESP-IDF sürümünü kilitle (`v5.5.1`); `esp_ghota` spike'ı tamamlandı ve aday reddedildi (ADR-0008).
 - [x] `otadata`, `ota_0`, `ota_1` ve kalibrasyon/NVS alanlarını içeren partition CSV ve size budget oluştur (iki kart için ayrı tablo, CI'da denetleniyor).
 - [x] SemVer `v*.*.*` tag ile test/build/sign/checksum/GitHub Release üreten GitHub Actions hattını kur. **Hiç sürüm yayımlanmadı.**
 - [x] Release manifest target/donanım/sürüm/hash doğrulamasını ve stable update state machine'ini geliştir (`hk_manifest`, `hk_ota`; üretici/doğrulayıcı CI'da çapraz denetimli).
 - [x] Ses çalarken, Wi-Fi yokken ve eşzamanlı güncellemede OTA erteleme kapılarını uygula (`hk_gate`, `hk_sched`).
 - [ ] İlk-boot health check, A/B rollback, canary/stable dağıtım ve güç kesintisi G6 testlerini tamamla.
-- [x] Wi-Fi parolası/PoP/anahtarların loglarda görünmediğini otomatik taramayla doğrula (`tools/check_no_credential_logs.py`, CI'da).
+- [x] Wi-Fi parolası ve anahtarların loglarda görünmediğini otomatik taramayla doğrula (`tools/check_no_credential_logs.py`, CI'da).
 - [x] USB/UART recovery ve boot prosedürünü saha servis dokümanına ekle ([[docs/03-firmware/usb-recovery|usb-recovery]]). Donanımda çalıştırılmadı.
 
 ## P7 - Agentic süreç ve proje hafızası

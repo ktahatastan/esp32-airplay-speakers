@@ -1,7 +1,7 @@
 ---
 status: active
 owner: orchestrator
-updated: 2026-08-31
+updated: 2026-09-13
 tags: [credentials, security, moc, rule]
 ---
 
@@ -50,7 +50,7 @@ Yerine geçen anahtar çevrimdışı üretildi, depoya hiç girmedi, açık yar�
 
 - Sürüm imzalama anahtarının özel yarısı — ortam secret'ında olmalı.
 - Wi-Fi parolaları.
-- Provisioning parolaları ve PoP değerleri (cihaz zaten yalnız salt/verifier saklar).
+- Provisioning parolaları ve sahiplik kanıtı (proof-of-possession) değerleri. [[../07-decisions/ADR-0023-pinless-provisioning|ADR-0023]]'ten beri tasarımda böyle bir değer yok — kurulum PIN'siz, kurulum ağı açık, cihaz `factory_cal`'da provisioning sırrı taşımıyor, etiket ve QR sırsız. Yasak yine de durur: bir gün geri gelirse yeri burası değildir.
 - API tokenları.
 
 ## İçerik

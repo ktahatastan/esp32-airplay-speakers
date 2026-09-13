@@ -214,6 +214,44 @@ DRIFT_RULES = (
               "it. Write 'the vendored passthrough' where the stage is meant."),
         scope="repo",
     ),
+    Drift(
+        label="provisioning-pop",
+        # Setup has no proof of possession since ADR-0023: protocomm Security 1
+        # with a NULL PoP on BLE and SoftAP, an open setup network, and no
+        # provisioning secret in factory_cal. The retired vocabulary is the
+        # SRP6a machinery, its three factory_cal keys and its username.
+        # `PoP` is matched with its exact casing: the lowercase word is the
+        # power-on/off pop the audio notes measure in G1 and must stay
+        # writable. The identifiers are matched as whole words so the vendored
+        # `ap_password` parameter is not read as `ap_pass`. Allowed: the dated
+        # records, the ADRs that made and retired the design, the ADR index,
+        # hk_storage and write_profile.py with its test (they document the
+        # legacy keys a board flashed before ADR-0023 still carries, inert),
+        # the label tool's test (it asserts the retired words are absent from
+        # the tool's own source) and this file. The list is what the tree
+        # reports, no wider; a new history note goes under a dated directory.
+        pattern=r"\bPoP\b|(?i:\bSRP6a\b|\bprov_verif\b|\bprov_salt\b|\bap_pass\b|\bwifiprov\b)",
+        allowed=(
+            "docs/06-testing/",
+            "docs/07-decisions/ADR-0014-",
+            "docs/07-decisions/ADR-0015-",
+            "docs/07-decisions/ADR-0023-",
+            "docs/07-decisions/README.md",
+            "docs/08-development-log/",
+            "firmware/components/hk_storage/",
+            "firmware/tools/test_provision_credentials.py",
+            "firmware/tools/test_write_profile.py",
+            "firmware/tools/write_profile.py",
+            "scripts/check_docs.py",
+        ),
+        hint=("Provisioning has no proof of possession, no SRP6a and no setup-network "
+              "key since ADR-0023 (protocomm Security 1 with a NULL PoP, open setup "
+              "network, PROV_-prefixed setup names). Only the dated records, "
+              "ADR-0014/0015/0023 and the tools that list the legacy factory_cal "
+              "keys may name them; write 'sahiplik kanıtı' or 'proof of possession' "
+              "where the retired mechanism is meant."),
+        scope="repo",
+    ),
 )
 
 # Claims the contract forbids stating as fact.

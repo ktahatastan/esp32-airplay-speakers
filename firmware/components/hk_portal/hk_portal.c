@@ -34,6 +34,20 @@ static char                s_address[16];
 /* view, and "the setup page needs a real browser" is not an instruction any */
 /* owner should have to follow. JavaScript only fills the network list in.   */
 /* ------------------------------------------------------------------------ */
+
+/**
+ * What the page tells the user about the link under it (ADR-0023).
+ *
+ * The setup network is open and this form is plain HTTP, so the password typed
+ * into it crosses the air unencrypted. The sentence limits what should be typed
+ * (the home Wi-Fi password, nothing else) and when (only while the speaker is
+ * in setup). A macro rather than a literal inside the page so the sentence can
+ * be found, quoted and changed in one place.
+ */
+#define HK_PORTAL_OPEN_NETWORK_NOTE \
+    "Bu kurulum ağı açıktır ve bu form şifrelenmeden gider: buraya yalnız ev " \
+    "Wi-Fi parolanızı, yalnız hoparlör kurulumdayken yazın."
+
 static const char HK_PORTAL_PAGE[] =
 "<!doctype html><html lang=tr><head><meta charset=utf-8>"
 "<meta name=viewport content=\"width=device-width,initial-scale=1\">"
@@ -49,6 +63,11 @@ static const char HK_PORTAL_PAGE[] =
 "</style></head><body><main>"
 "<h1>" HK_PORTAL_TITLE "</h1>"
 "<p class=note>Bu hoparlörün katılacağı ağı seçin.</p>"
+/* The one sentence ADR-0023 owes the person typing: the network under this page
+ * is open and the form is not encrypted, so only the home Wi-Fi password goes
+ * here, and only while the speaker is in setup. Kept in the page, not only in
+ * a header comment, because the page is the only surface that user sees. */
+"<p class=note>" HK_PORTAL_OPEN_NETWORK_NOTE "</p>"
 "<form method=post action=/apply>"
 "<label for=ssid>Wi-Fi ağı</label>"
 "<input id=ssid name=ssid list=nets autocapitalize=none autocorrect=off required>"

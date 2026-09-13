@@ -111,7 +111,7 @@ bool hk_ui_recovery_requested(void);
  * The UI task is deliberately small: it reads one pin and drives three PWM
  * channels. Anything heavier belongs on the main task, and that is a rule
  * rather than a preference because the button callback used to open
- * provisioning inline -- NimBLE, protocomm and an SRP6a handshake on a stack
+ * provisioning inline -- NimBLE, protocomm and its key exchange on a stack
  * sized for debouncing -- and took the device down with it.
  *
  * Reported rather than assumed, so the margin is a number in the boot log and a

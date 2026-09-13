@@ -2,17 +2,22 @@
 """Tests for write_profile.py.
 
 The tool exists so that a profile reaches `factory_cal` without a recompile and
-without losing the credentials that share the partition, and so that a blob the
-device would refuse is refused here first, by the same name. So the cases are:
-the wire format is the one hk_profile.h declares (offsets computed by hand, not
-by the tool); every refusal hk_profile_valid() makes is made here under the
-same word; and the merge into a device directory adds one row, once, and never
-touches the credential files.
+without losing the rows that share the partition -- the schema row, and on a
+board provisioned before ADR-0023 the legacy provisioning rows -- and so that
+a blob the device would refuse is refused here first, by the same name. So the
+cases are: the wire format is the one hk_profile.h declares (offsets computed
+by hand, not by the tool); every refusal hk_profile_valid() makes is made here
+under the same word; the merge into a device directory adds one row, once,
+accepts exactly what provision_credentials.py writes, and keeps a legacy
+directory's rows and files untouched.
 
-The image build needs ESP-IDF's nvs_partition_gen.py, so that case runs only
-when IDF_PATH is set and is skipped with a message otherwise; the NVS reader
-that --dump uses is tested without it, on a page assembled here by hand.
+The image build needs ESP-IDF's nvs_partition_gen.py, so those cases run only
+under the IDF python env (IDF_PATH set and its NVS generator importable) and
+are skipped with a message otherwise; the NVS reader that --dump uses is
+tested without it, on a page assembled here by hand.
 """
+import contextlib
+import importlib.util
 import json
 import os
 import struct
@@ -24,6 +29,7 @@ import zlib
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import provision_credentials  # noqa: E402
 import write_profile  # noqa: E402
 
 TOOL = Path(__file__).resolve().parent / "write_profile.py"
@@ -283,9 +289,27 @@ class TestPartitionTable(unittest.TestCase):
         self.assertEqual(size, write_profile.provision_credentials.IMAGE_SIZE)
 
 
+LEGACY_FILES = ("prov_salt.bin", "prov_verif.bin", "ap_pass.bin")
+
+
 def fake_device_dir(root: Path) -> Path:
-    """The shape provision_credentials.write_device() leaves, with fake bytes."""
+    """The shape provision_credentials.write_device() leaves since ADR-0023:
+    a CSV with the namespace and the schema row, and nothing the CSV names."""
     device = root / "FAKE"
+    device.mkdir()
+    (device / "factory_cal.csv").write_text(
+        "key,type,encoding,value\n"
+        "cal,namespace,,\n"
+        "schema,data,u32,1\n",
+        encoding="utf-8")
+    return device
+
+
+def legacy_device_dir(root: Path) -> Path:
+    """The shape a board provisioned before ADR-0023 left behind (the product
+    board and the devkit both have one): the three rows of the retired
+    Security 2 design and the files they name, with fake bytes."""
+    device = root / "LEGACY"
     device.mkdir()
     (device / "prov_salt.bin").write_bytes(b"s" * 16)
     (device / "prov_verif.bin").write_bytes(b"v" * 384)
@@ -305,16 +329,15 @@ class TestDeviceDirMerge(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.device = fake_device_dir(Path(self.tmp.name))
+        self.root = Path(self.tmp.name)
+        self.device = fake_device_dir(self.root)
         self.blob = write_profile.pack(sample())
 
-    def _rows(self):
-        return (self.device / "factory_cal.csv").read_text(encoding="utf-8").splitlines()
+    def _rows(self, device=None):
+        return ((device or self.device) / "factory_cal.csv").read_text(encoding="utf-8").splitlines()
 
-    def test_the_row_is_appended_once_and_the_credentials_are_untouched(self):
+    def test_the_row_is_appended_once(self):
         before = self._rows()
-        credentials = {name: (self.device / name).read_bytes()
-                       for name in ("prov_salt.bin", "prov_verif.bin", "ap_pass.bin")}
 
         self.assertTrue(write_profile.merge_into_device_dir(self.device, self.blob))
         self.assertEqual(self._rows(), before + ["profile,file,binary,profile.bin"])
@@ -324,16 +347,68 @@ class TestDeviceDirMerge(unittest.TestCase):
         self.assertFalse(write_profile.merge_into_device_dir(self.device, self.blob))
         self.assertEqual(self._rows(), before + ["profile,file,binary,profile.bin"])
 
-        for name, content in credentials.items():
-            self.assertEqual((self.device / name).read_bytes(), content, name)
+        # And nothing but the blob was added to the directory.
+        self.assertEqual(sorted(path.name for path in self.device.iterdir()),
+                         ["factory_cal.csv", "profile.bin"])
 
-    def test_a_directory_without_credentials_is_refused(self):
-        (self.device / "prov_verif.bin").unlink()
+    def test_what_provision_credentials_writes_is_what_this_tool_accepts(self):
+        """The contract between the two tools, checked on the real output rather
+        than on a fixture: a directory written by provision_credentials.py today
+        merges without any file the fixture might have invented."""
+        with contextlib.redirect_stdout(None):
+            device = provision_credentials.write_device(self.root, "A1B2")
+        self.assertTrue(write_profile.merge_into_device_dir(device, self.blob))
+        self.assertEqual(self._rows(device)[-1], "profile,file,binary,profile.bin")
+        self.assertEqual(sorted(path.name for path in device.iterdir()),
+                         ["factory_cal.csv", "label.txt", "profile.bin", "qr.txt"])
+
+    def test_a_legacy_directory_merges_and_keeps_its_rows_and_files(self):
+        """The product board (932C) and the devkit (06C4) were provisioned before
+        ADR-0023; their directories carry the three rows and files, and a merge
+        must leave them exactly as they were. The firmware no longer reads
+        them, but the merge is not the place to decide that."""
+        device = legacy_device_dir(self.root)
+        before = self._rows(device)
+        legacy = {name: (device / name).read_bytes() for name in LEGACY_FILES}
+
+        self.assertTrue(write_profile.merge_into_device_dir(device, self.blob))
+        self.assertEqual(self._rows(device), before + ["profile,file,binary,profile.bin"])
+        self.assertFalse(write_profile.merge_into_device_dir(device, self.blob))
+        self.assertEqual(self._rows(device), before + ["profile,file,binary,profile.bin"])
+
+        for name, content in legacy.items():
+            self.assertEqual((device / name).read_bytes(), content, name)
+
+    def test_a_directory_without_a_csv_is_refused(self):
+        empty = self.root / "EMPTY"
+        empty.mkdir()
+        with self.assertRaises(write_profile.DeviceDirError) as caught:
+            write_profile.merge_into_device_dir(empty, self.blob)
+        self.assertIn("factory_cal.csv", str(caught.exception))
+        self.assertIn("provision_credentials.py", str(caught.exception))
+        self.assertEqual(list(empty.iterdir()), [])
+
+    def test_a_csv_without_a_schema_row_is_refused(self):
+        """Without the schema row hk_storage refuses the whole store, profile
+        included; an image built from such a CSV would look complete."""
+        (self.device / "factory_cal.csv").write_text(
+            "key,type,encoding,value\ncal,namespace,,\n", encoding="utf-8")
         with self.assertRaises(write_profile.DeviceDirError) as caught:
             write_profile.merge_into_device_dir(self.device, self.blob)
-        self.assertIn("prov_verif.bin", str(caught.exception))
+        self.assertIn("schema", str(caught.exception))
         self.assertFalse((self.device / "profile.bin").exists())
-        self.assertNotIn("profile,file,binary,profile.bin", self._rows())
+
+    def test_a_legacy_csv_whose_input_file_is_missing_is_refused(self):
+        """A row that names a file the directory lacks would fail inside
+        nvs_partition_gen.py, and that failure used to surface as an image with
+        nothing in it. It is refused here, by name, before anything is written."""
+        device = legacy_device_dir(self.root)
+        (device / "prov_verif.bin").unlink()
+        with self.assertRaises(write_profile.DeviceDirError) as caught:
+            write_profile.merge_into_device_dir(device, self.blob)
+        self.assertIn("prov_verif.bin", str(caught.exception))
+        self.assertFalse((device / "profile.bin").exists())
+        self.assertNotIn("profile,file,binary,profile.bin", self._rows(device))
 
     def test_a_different_profile_row_is_refused_rather_than_guessed(self):
         csv_path = self.device / "factory_cal.csv"
@@ -350,11 +425,15 @@ class TestDeviceDirMerge(unittest.TestCase):
             write_profile.merge_into_device_dir(self.device, self.blob)
         self.assertIn("cal", str(caught.exception))
 
-    def test_the_file_scope_is_exactly_the_credential_files(self):
-        """provision_credentials.py writes these three; a rename there must fail here."""
-        source = write_profile.provision_credentials.write_device.__code__.co_consts
-        for name in write_profile.CREDENTIAL_FILES:
-            self.assertIn(name, source, f"{name} is not what provision_credentials.py writes")
+    def test_namespace_rows_files_each_row_under_the_namespace_declared_before_it(self):
+        text = ("key,type,encoding,value\n"
+                "cal,namespace,,\n"
+                "schema,data,u32,1\n"
+                "other,namespace,,\n"
+                "x,data,u32,1\n")
+        self.assertEqual([row[0] for row in write_profile.namespace_rows(text, "cal")], ["schema"])
+        self.assertEqual([row[0] for row in write_profile.namespace_rows(text, "other")], ["x"])
+        self.assertEqual(write_profile.namespace_rows(text, "none"), [])
 
 
 # ---------------------------------------------------------------- an NVS page by hand
@@ -384,10 +463,14 @@ def nvs_page_with(entries: list[bytes]) -> bytes:
     return bytes(page)
 
 
-def nvs_image_with_profile(blob: bytes, with_credentials=True, corrupt=False) -> bytes:
+def nvs_image_with_profile(blob: bytes, with_legacy_rows=False, corrupt=False) -> bytes:
+    """A page with the `cal` namespace, its schema row (a u32, as
+    nvs_partition_gen.py stores one), the profile, and -- for a board
+    provisioned before ADR-0023 -- the three legacy blobs."""
     ns = 1
-    rows = [nvs_entry(0, 0x01, 1, 0xFF, "cal", bytes([ns]) + b"\xff" * 7)]
-    if with_credentials:
+    rows = [nvs_entry(0, 0x01, 1, 0xFF, "cal", bytes([ns]) + b"\xff" * 7),
+            nvs_entry(ns, 0x04, 1, 0xFF, "schema", struct.pack("<I", 1) + b"\xff" * 4)]
+    if with_legacy_rows:
         for key in ("prov_salt", "prov_verif", "ap_pass"):
             payload = b"x" * 16
             rows.append(nvs_entry(ns, 0x42, 2, 0, key,
@@ -410,21 +493,29 @@ class TestNvsReader(unittest.TestCase):
         blob = write_profile.pack(sample())
         image = nvs_image_with_profile(blob)
         self.assertEqual(write_profile.extract_blob(image, "cal", "profile"), blob)
+        self.assertEqual(sorted(write_profile.namespace_keys(image, "cal")), ["profile", "schema"])
+
+    def test_a_legacy_image_lists_its_rows_too(self):
+        """What the product board's readback shows today: the reader names the
+        legacy keys like any other, and --dump says what they are."""
+        blob = write_profile.pack(sample())
+        image = nvs_image_with_profile(blob, with_legacy_rows=True)
         self.assertEqual(sorted(write_profile.namespace_keys(image, "cal")),
-                         ["ap_pass", "profile", "prov_salt", "prov_verif"])
+                         ["ap_pass", "profile", "prov_salt", "prov_verif", "schema"])
+        self.assertEqual(write_profile.extract_blob(image, "cal", "profile"), blob)
 
     def test_payload_rows_are_not_mistaken_for_keys(self):
         """A blob's data rows follow its header; a data row whose first byte
         happens to equal the namespace index must not be listed as a key."""
         source = "x" * 24 + "\x01" + "y" * 6         # byte 24 of the source is 0x01, ns index 1
         blob = write_profile.pack({**sample(), "source": source})
-        image = nvs_image_with_profile(blob)
+        image = nvs_image_with_profile(blob, with_legacy_rows=True)
         self.assertEqual(sorted(write_profile.namespace_keys(image, "cal")),
-                         ["ap_pass", "profile", "prov_salt", "prov_verif"])
+                         ["ap_pass", "profile", "prov_salt", "prov_verif", "schema"])
         self.assertEqual(write_profile.extract_blob(image, "cal", "profile"), blob)
 
     def test_no_profile_is_none_not_garbage(self):
-        image = nvs_image_with_profile(write_profile.pack(sample()), with_credentials=True)
+        image = nvs_image_with_profile(write_profile.pack(sample()))
         self.assertIsNone(write_profile.extract_blob(image, "cal", "nothing"))
         self.assertIsNone(write_profile.extract_blob(image, "other", "profile"))
 
@@ -496,6 +587,28 @@ class TestCommandLine(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn("erased", result.stderr)
 
+    def test_dump_of_a_legacy_image_names_the_rows_as_dead_data(self):
+        """A readback from the product board lists the three legacy keys; the
+        dump must say they are the retired design's rows, not warn about them
+        and not treat their absence elsewhere as a fault."""
+        image = self.root / "readback.bin"
+        image.write_bytes(nvs_image_with_profile(write_profile.pack(sample()), with_legacy_rows=True))
+        result = self._run("--dump", str(image))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("legacy rows", result.stdout)
+        self.assertIn("ADR-0023", result.stdout)
+        self.assertIn("verdict: ok", result.stdout)
+        self.assertEqual(result.stderr, "")
+
+    def test_dump_of_a_fresh_image_warns_about_nothing(self):
+        image = self.root / "readback.bin"
+        image.write_bytes(nvs_image_with_profile(write_profile.pack(sample())))
+        result = self._run("--dump", str(image))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("profile, schema", result.stdout)
+        self.assertNotIn("legacy", result.stdout)
+        self.assertEqual(result.stderr, "")
+
     def test_device_dir_without_idf_refuses_before_touching_the_directory(self):
         device = fake_device_dir(self.root)
         before = (device / "factory_cal.csv").read_text()
@@ -515,40 +628,97 @@ class TestCommandLine(unittest.TestCase):
         self.assertNotIn("subprocess", source)
 
 
-@unittest.skipUnless(os.environ.get("IDF_PATH"),
-                     "IDF_PATH not set: the image build needs ESP-IDF's nvs_partition_gen.py")
+def idf_nvs_generator_available() -> bool:
+    """nvs_partition_gen.py in ESP-IDF v5.5 wraps a pip package that lives only
+    in the IDF python env; IDF_PATH alone does not make it runnable."""
+    return bool(os.environ.get("IDF_PATH")) and importlib.util.find_spec("esp_idf_nvs_partition_gen") is not None
+
+
+@unittest.skipUnless(idf_nvs_generator_available(),
+                     "not under the IDF python env (IDF_PATH set and esp_idf_nvs_partition_gen "
+                     "importable): the image build needs ESP-IDF's nvs_partition_gen.py")
 class TestImageBuild(unittest.TestCase):
     """The merge through provision_credentials.build_image(), and the image read
-    back through the same reader --dump uses. Runs only with ESP-IDF present."""
+    back through the same reader --dump uses. Runs only under the IDF python env."""
 
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.device = fake_device_dir(Path(self.tmp.name))
+        self.root = Path(self.tmp.name)
+        self.device = fake_device_dir(self.root)
+        self.blob = write_profile.pack(sample())
 
-    def test_the_built_image_carries_the_credentials_and_the_profile(self):
-        blob = write_profile.pack(sample())
-        write_profile.merge_into_device_dir(self.device, blob)
-        image = write_profile.build_device_image(self.device, blob)
+    def test_the_built_image_carries_the_schema_and_the_profile_and_nothing_else(self):
+        write_profile.merge_into_device_dir(self.device, self.blob)
+        image = write_profile.build_device_image(self.device, self.blob)
         raw = image.read_bytes()
         self.assertEqual(len(raw), write_profile.provision_credentials.IMAGE_SIZE)
-        keys = write_profile.namespace_keys(raw, "cal")
-        for key in ("schema", "prov_salt", "prov_verif", "ap_pass", "profile"):
-            self.assertIn(key, keys)
-        self.assertEqual(write_profile.extract_blob(raw, "cal", "profile"), blob)
+        self.assertEqual(sorted(write_profile.namespace_keys(raw, "cal")), ["profile", "schema"])
+        self.assertEqual(write_profile.extract_blob(raw, "cal", "profile"), self.blob)
         self.assertEqual(write_profile.unpack(write_profile.extract_blob(raw, "cal", "profile"))["crossover_hz"],
                          write_profile.float32(sample()["crossover_hz"]))
 
+    def test_a_legacy_directory_keeps_its_rows_in_the_built_image(self):
+        device = legacy_device_dir(self.root)
+        write_profile.merge_into_device_dir(device, self.blob)
+        image = write_profile.build_device_image(device, self.blob)
+        raw = image.read_bytes()
+        self.assertEqual(sorted(write_profile.namespace_keys(raw, "cal")),
+                         ["ap_pass", "profile", "prov_salt", "prov_verif", "schema"])
+        self.assertEqual(write_profile.extract_blob(raw, "cal", "profile"), self.blob)
+
     def test_dump_reads_the_built_image(self):
-        blob = write_profile.pack(sample())
-        write_profile.merge_into_device_dir(self.device, blob)
-        image = write_profile.build_device_image(self.device, blob)
+        write_profile.merge_into_device_dir(self.device, self.blob)
+        image = write_profile.build_device_image(self.device, self.blob)
         result = subprocess.run([sys.executable, str(TOOL), "--dump", str(image)],
                                 capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("an NVS image", result.stdout)
-        self.assertIn("prov_verif", result.stdout)
+        self.assertIn("profile, schema", result.stdout)
         self.assertIn("verdict: ok", result.stdout)
+        self.assertNotIn("legacy", result.stdout)
+
+    def test_end_to_end_from_provision_credentials_writes_no_secret(self):
+        """The whole path an operator runs: provision_credentials.py writes the
+        device directory and its image, this tool merges the record's own
+        values file through the command line, and --dump reads the result. On
+        the way, nothing that looks like a secret may appear in the directory:
+        no .bin but the profile and the image, no restricted file, and no
+        password or PoP word in any text file."""
+        out = self.root / "devices"
+        gen = subprocess.run([sys.executable, str(TOOL.parent / "provision_credentials.py"),
+                              "--device", "E2E1", "--image", "--out", str(out)],
+                             capture_output=True, text=True)
+        self.assertEqual(gen.returncode, 0, gen.stderr)
+        device = out / "E2E1"
+        self.assertEqual(sorted(path.name for path in device.iterdir()),
+                         ["factory_cal.bin", "factory_cal.csv", "label.txt", "qr.txt"])
+
+        result = subprocess.run([sys.executable, str(TOOL), str(TONIGHT), "--device-dir", str(device)],
+                                capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("every row kept", result.stdout)
+        self.assertNotIn("legacy", result.stdout)
+        self.assertIn("write_flash", result.stdout)
+
+        self.assertEqual(sorted(path.name for path in device.iterdir()),
+                         ["factory_cal.bin", "factory_cal.csv", "label.txt", "profile.bin", "qr.txt"])
+        for path in device.iterdir():
+            self.assertNotEqual(path.stat().st_mode & 0o777, 0o600, f"{path.name} is restricted, so it claims a secret")
+        for name in ("factory_cal.csv", "label.txt", "qr.txt"):
+            text = (device / name).read_text(encoding="utf-8").lower()
+            for word in ("password", "pop", "username", "salt", "verif"):
+                self.assertNotIn(word, text, f"{name} carries {word!r}")
+
+        raw = (device / "factory_cal.bin").read_bytes()
+        self.assertEqual(len(raw), write_profile.provision_credentials.IMAGE_SIZE)
+        self.assertEqual(sorted(write_profile.namespace_keys(raw, "cal")), ["profile", "schema"])
+
+        dumped = subprocess.run([sys.executable, str(TOOL), "--dump", str(device / "factory_cal.bin")],
+                                capture_output=True, text=True)
+        self.assertEqual(dumped.returncode, 0, dumped.stderr)
+        self.assertIn("'provisional-2026-09-12'", dumped.stdout)
+        self.assertIn("verdict: ok", dumped.stdout)
 
 
 if __name__ == "__main__":

@@ -712,7 +712,7 @@ static bool         s_prov_ready;
  *
  * The UI task exists to read one GPIO and drive three PWM channels, and it is
  * sized for that. Opening provisioning is the opposite kind of work: it brings
- * up NimBLE, protocomm and an SRP6a handshake, none of which fit in a stack
+ * up NimBLE, protocomm and its key exchange, none of which fit in a stack
  * measured for debouncing. Calling it from the button callback put that whole
  * stack on the UI task and overflowed it -- a press while the speaker was
  * playing took the device down. The other two actions are lighter but the same
@@ -966,10 +966,11 @@ static void on_network_status(const hk_net_status_t *network, void *context)
 /**
  * Bring up the network.
  *
- * A failure here is reported and survived rather than fatal. The most likely
- * one on a fresh board is that the per-device provisioning credentials have
- * never been written, and a device that reboots forever cannot tell anyone
- * that. It stays up, lights the error state, and says why.
+ * A failure here is reported and survived rather than fatal: a device that
+ * reboots forever cannot tell anyone why. It stays up, lights the error state,
+ * and says what went wrong. (Until ADR-0023 the likeliest failure on a fresh
+ * board was a calibration store with no provisioning credentials in it; setup
+ * needs none now, so a blank store is not a failure any more.)
  */
 static void start_network(void)
 {

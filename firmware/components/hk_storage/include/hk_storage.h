@@ -2,11 +2,23 @@
  * @file hk_storage.h
  * @brief The two stores, and the wall between them.
  *
- * User settings live in the default `nvs` partition. Driver calibration and the
- * per-device provisioning credentials live in `factory_cal`, a partition of
- * their own. They are separate partitions rather than two namespaces in one,
- * because PRD-008 requires that a user reset cannot reach the calibration, and
- * a partition boundary is a guarantee where a naming convention is a promise.
+ * User settings live in the default `nvs` partition. Driver calibration lives
+ * in `factory_cal`, a partition of its own. They are separate partitions rather
+ * than two namespaces in one, because PRD-008 requires that a user reset cannot
+ * reach the calibration, and a partition boundary is a guarantee where a naming
+ * convention is a promise.
+ *
+ * Legacy keys. Until ADR-0023 the same `cal` namespace also carried three
+ * per-device provisioning secrets written at manufacturing time: `prov_salt`
+ * and `prov_verif` (the SRP6a pair behind protocomm Security 2) and `ap_pass`
+ * (the setup network's WPA2 key). Setup no longer uses any of them -- both legs
+ * run Security 1 with no proof of possession and the setup network is open --
+ * and no code in this firmware reads them any more. A board flashed before that
+ * decision still holds them; they are dead data, harmless, and need no reflash:
+ * the partition is opened read-only here, so nothing will ever clear them
+ * either. The names stay documented so a factory_cal dump from such a board
+ * (write_profile.py --dump lists them) reads as history rather than as a
+ * mystery.
  *
  * This firmware opens factory_cal READ ONLY and never formats or erases it.
  * There is no calibration writer yet — that arrives with G2 — so nothing here
@@ -24,7 +36,7 @@
 #include "esp_err.h"
 #include "hk_schema.h"
 
-/** Partition holding calibration and provisioning credentials. */
+/** Partition holding calibration (and, on pre-ADR-0023 boards, the legacy keys above). */
 #define HK_STORAGE_FACTORY_PARTITION "factory_cal"
 
 /** Namespaces inside each partition. */

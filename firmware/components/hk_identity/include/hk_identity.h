@@ -25,10 +25,22 @@
  * Each spelling is defined exactly once and the size macros below are derived
  * from the same literal the formatter prints, so a rename cannot leave a
  * buffer one byte short of the string that goes into it.
+ *
+ * The two setup surfaces -- the BLE advertisement and the setup network's SSID
+ * -- share ONE name, and it starts with "PROV_" (ADR-0023). The prefix is not
+ * decoration: Espressif's stock provisioning apps filter the device list by
+ * that prefix by default (Android app/build.gradle: ble_device_name_prefix and
+ * wifi_device_name_prefix "PROV_"; iOS Example Utility.swift: deviceNamePrefix
+ * "PROV_"), so a device named any other way is not listed until the user finds
+ * the setting and changes it. Carrying the prefix is what lets the speaker be
+ * picked from the list with no QR and no app configuration -- the whole point
+ * of removing the PIN. One name rather than two because the user should see
+ * the same string on the phone whichever transport it found the speaker on.
  */
 #define HK_NAME_PREFIX        "Merzarkabul"
-#define HK_NAME_PREFIX_BLE    HK_NAME_PREFIX "-"
-#define HK_NAME_PREFIX_SOFTAP HK_NAME_PREFIX "-Setup-"
+#define HK_NAME_PREFIX_SETUP  "PROV_" HK_NAME_PREFIX "-"
+#define HK_NAME_PREFIX_BLE    HK_NAME_PREFIX_SETUP
+#define HK_NAME_PREFIX_SOFTAP HK_NAME_PREFIX_SETUP
 #define HK_NAME_PREFIX_MDNS   "merzarkabul-"
 
 /**
@@ -80,12 +92,20 @@ _Static_assert(HK_NAME_BLE_SIZE - 1 <= 29, "BLE local name would not fit one adv
 /** A single DNS label is limited to 63 octets. */
 _Static_assert(HK_NAME_MDNS_SIZE - 1 <= 63, "mDNS host label exceeds one DNS label");
 
-/** Every name this device answers to. */
+/**
+ * Every name this device answers to.
+ *
+ * `ble` and `softap` hold the same string by construction (see
+ * HK_NAME_PREFIX_SETUP). They stay two fields because they are two surfaces
+ * -- a BLE advertisement and an SSID -- with two protocol limits, two callers
+ * and two lines in the boot report; a reader of either should not have to know
+ * that the other one happens to be spelled the same way today.
+ */
 typedef struct {
     char suffix[HK_SUFFIX_LEN + 1];        /**< Uppercase, e.g. "A1B2" */
     char airplay[HK_NAME_AIRPLAY_SIZE];    /**< "Merzarkabul A1B2" */
-    char ble[HK_NAME_BLE_SIZE];            /**< "Merzarkabul-A1B2" */
-    char softap[HK_NAME_SOFTAP_SIZE];      /**< "Merzarkabul-Setup-A1B2" */
+    char ble[HK_NAME_BLE_SIZE];            /**< "PROV_Merzarkabul-A1B2" */
+    char softap[HK_NAME_SOFTAP_SIZE];      /**< "PROV_Merzarkabul-A1B2", the setup SSID */
     char mdns[HK_NAME_MDNS_SIZE];          /**< "merzarkabul-a1b2", lowercase */
 } hk_identity_t;
 

@@ -307,6 +307,12 @@ config HK_DUAL_TRANSPORT
         phone picks. The manager runs BLE; the access point and the portal are
         brought up alongside it by hk_network.
 
+        Neither leg asks for a PIN and the access point is open (ADR-0023):
+        BLE runs protocomm Security 1 without a proof of possession, the
+        setup network has no key, and both advertise one name with the PROV_
+        prefix the stock Espressif apps list by default. Nothing stored on the
+        board is needed for setup to open.
+
         One honest limit: WIFI_PROV_SCHEME_BLE_EVENT_HANDLER_FREE_BTDM releases
         the Bluetooth stack when the window closes, and that release cannot be
         undone without a reboot. The product statement is therefore "both at

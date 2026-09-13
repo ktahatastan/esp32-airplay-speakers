@@ -45,13 +45,18 @@ What this tool never does
 -------------------------
 It never flashes. It prints the `esptool` command and stops, because writing
 this partition is what makes the product build play, and that is the owner's
-act. And it never generates credentials: `--device-dir` takes the directory
-`provision_credentials.py` produced, appends one row to that directory's own
-`factory_cal.csv`, and rebuilds the image through
-`provision_credentials.build_image()` so the salt, verifier and setup password
-that were there are still there. A directory without them is refused. A bare
-`profile.bin` is 116 bytes and is NOT an image: flashed at the partition offset
-it would erase the credentials and replace nothing.
+act. And it never writes a `factory_cal.csv` of its own: `--device-dir` takes
+the board's directory as `provision_credentials.py` produced it -- a
+`factory_cal.csv` with the `cal` namespace and its `schema` row -- appends one
+row to that CSV, and rebuilds the image through
+`provision_credentials.build_image()` so every row that was there is still
+there. A board provisioned before ADR-0023 has three more rows (the salt,
+verifier and setup-network key of the retired Security 2 design) and the
+`.bin` files they name; such a directory merges exactly as before and the rows
+survive, though the firmware has not read them since ADR-0023 -- they are dead
+data, and reflashing to remove them buys nothing. A bare `profile.bin` is 116
+bytes and is NOT an image: flashed at the partition offset it would erase the
+schema and any profile there and replace nothing.
 """
 
 from __future__ import annotations
@@ -152,7 +157,7 @@ class ProfileRefused(Exception):
 
 
 class DeviceDirError(Exception):
-    """The device directory is not one provision_credentials.py produced, or the merge cannot be done safely."""
+    """The device directory has no usable factory_cal.csv, or the merge cannot be done safely."""
 
 
 # ---------------------------------------------------------------- numbers
@@ -510,31 +515,67 @@ def read_partition(name: str, partitions: Path = PARTITIONS) -> tuple[int, int]:
 
 # ---------------------------------------------------------------- the device directory
 
-CREDENTIAL_FILES = ("prov_salt.bin", "prov_verif.bin", "ap_pass.bin")
 CSV_NAME = "factory_cal.csv"
 BLOB_NAME = "profile.bin"
+SCHEMA_KEY = "schema"        # HK_STORAGE_VERSION_KEY; hk_storage refuses a store without it
 PROFILE_ROW = f"{PROFILE_KEY},file,binary,{BLOB_NAME}"
 NAMESPACE_ROW = f"{FACTORY_NAMESPACE},namespace,,"
 
+#: The rows of the retired Security 2 design (ADR-0014/0015, superseded by
+#: ADR-0023). A board provisioned before 2026-09-13 carries them in
+#: factory_cal and its directory carries the .bin files they name. They are
+#: kept through a merge -- the CSV is only appended to -- and they are dead
+#: data: the firmware has not read them since ADR-0023. Named here only so the
+#: dump and the merge can say what they are.
+LEGACY_KEYS = ("prov_salt", "prov_verif", "ap_pass")
+
+
+def _csv_rows(text: str) -> list[list[str]]:
+    """The CSV as rows of four fields; blank lines dropped, cells stripped."""
+    rows = []
+    for line in text.splitlines():
+        if not line.strip():
+            continue
+        rows.append([cell.strip() for cell in line.split(",")])
+    return rows
+
+
+def namespace_rows(text: str, namespace: str) -> list[list[str]]:
+    """Every data row that nvs_partition_gen.py would file under `namespace`."""
+    current = None
+    found = []
+    for row in _csv_rows(text)[1:]:
+        if row[1:2] == ["namespace"]:
+            current = row[0]
+        elif current == namespace:
+            found.append(row)
+    return found
+
 
 def merge_into_device_dir(device_dir: Path, blob: bytes) -> bool:
-    """Put the blob and its CSV row into a provisioned device directory.
+    """Put the blob and its CSV row into a device directory.
 
     Returns True when the row was appended, False when it was already there.
     Idempotent: a second run with the same blob changes nothing. The CSV is
-    only ever appended to, so the credential rows stay exactly as
-    provision_credentials.py wrote them.
+    only ever appended to, so whatever rows were there -- the schema row, and
+    on a board provisioned before ADR-0023 the legacy rows too -- stay exactly
+    as they were.
+
+    What is required is the CSV itself, with the `cal` namespace and its
+    `schema` row: that is the whole of what provision_credentials.py writes
+    since ADR-0023, and without the schema row the device would refuse the
+    store. Any input file a row names must exist, whichever design wrote the
+    row, because nvs_partition_gen.py fails to find it later and that failure
+    used to surface as an image with nothing in it.
     """
     if not device_dir.is_dir():
         raise DeviceDirError(f"{device_dir} is not a directory")
-    missing = [name for name in (CSV_NAME, *CREDENTIAL_FILES) if not (device_dir / name).is_file()]
-    if missing:
-        raise DeviceDirError(
-            f"{device_dir} lacks {', '.join(missing)}: not a directory provision_credentials.py "
-            f"produced. This tool never generates credentials; run provision_credentials.py "
-            f"first, then merge the profile into its output.")
-
     csv_path = device_dir / CSV_NAME
+    if not csv_path.is_file():
+        raise DeviceDirError(
+            f"{device_dir} has no {CSV_NAME}: not a device directory. Run "
+            f"provision_credentials.py --device <id> first, then merge the profile into its output.")
+
     text = csv_path.read_text(encoding="utf-8")
     rows = [line.strip() for line in text.splitlines() if line.strip()]
     if not rows or rows[0] != "key,type,encoding,value":
@@ -544,6 +585,19 @@ def merge_into_device_dir(device_dir: Path, blob: bytes) -> bool:
         # An appended row lands in the LAST namespace declared; if that is not
         # `cal`, the firmware would look for the profile in the wrong place.
         raise DeviceDirError(f"{csv_path}: the last namespace must be 'cal' for an appended row to land in it")
+
+    cal_rows = namespace_rows(text, FACTORY_NAMESPACE)
+    if not any(row[0] == SCHEMA_KEY for row in cal_rows):
+        raise DeviceDirError(
+            f"{csv_path} has no '{SCHEMA_KEY}' row in the '{FACTORY_NAMESPACE}' namespace; the device "
+            f"would refuse the store. provision_credentials.py writes that row.")
+    missing = [row[3] for row in cal_rows
+               if len(row) >= 4 and row[1] == "file" and row[0] != PROFILE_KEY
+               and not (device_dir / row[3]).is_file()]
+    if missing:
+        raise DeviceDirError(
+            f"{csv_path} names {', '.join(missing)} but {device_dir} has no such file; the image "
+            f"build would fail to find it. Restore the file, or drop the row if the board never carried it.")
 
     existing = [row for row in rows if row.split(",")[0] == PROFILE_KEY]
     if existing and existing != [PROFILE_ROW]:
@@ -562,24 +616,24 @@ def merge_into_device_dir(device_dir: Path, blob: bytes) -> bool:
     return True
 
 
-CREDENTIAL_KEYS = ("prov_salt", "prov_verif", "ap_pass")
-
-
 def build_device_image(device_dir: Path, blob: bytes) -> Path:
     """Rebuild factory_cal.bin with provision_credentials' own builder and checks.
 
-    Then read the image back the way --dump does: the credential keys must
-    still be in it and the profile stored must be the blob that was merged.
-    "Credentials kept" is checked against the image, not inferred from the CSV.
+    Then read the image back the way --dump does: every key the CSV files under
+    `cal` must be in it -- the schema, the legacy rows if the board has them,
+    and the profile -- and the profile stored must be the blob that was merged.
+    "Nothing lost" is checked against the image, not inferred from the CSV.
     """
     try:
         image = provision_credentials.build_image(device_dir)
     except provision_credentials.ImageError as error:
         raise DeviceDirError(f"image not built: {error}") from error
 
+    expected = [row[0] for row in namespace_rows((device_dir / CSV_NAME).read_text(encoding="utf-8"),
+                                                 FACTORY_NAMESPACE)]
     raw = image.read_bytes()
     keys = namespace_keys(raw, FACTORY_NAMESPACE)
-    lost = [key for key in CREDENTIAL_KEYS if key not in keys]
+    lost = [key for key in expected if key not in keys]
     if lost:
         image.unlink(missing_ok=True)
         raise DeviceDirError(f"the built image lost {', '.join(lost)}; removed it rather than "
@@ -622,16 +676,19 @@ def dump(path: Path) -> int:
         print(f"{path}: a bare profile blob ({BLOB_SIZE} bytes)")
     else:
         if raw[:4] == b"\xff\xff\xff\xff":
-            print(f"ERROR: {path} begins with erased flash: no NVS page, no profile, "
-                  f"and no credentials either", file=sys.stderr)
+            print(f"ERROR: {path} begins with erased flash: no NVS page, no schema, "
+                  f"and no profile either", file=sys.stderr)
             return 1
         keys = namespace_keys(raw, FACTORY_NAMESPACE)
         print(f"{path}: an NVS image ({len(raw)} bytes); keys in namespace '{FACTORY_NAMESPACE}': "
               f"{', '.join(sorted(keys)) or 'none'}")
-        absent = [name for name in ("prov_salt", "prov_verif", "ap_pass") if name not in keys]
-        if absent:
-            print(f"WARNING: credentials missing from this image: {', '.join(absent)}. A device "
-                  f"flashed with it cannot be provisioned.", file=sys.stderr)
+        if SCHEMA_KEY not in keys:
+            print(f"WARNING: no '{SCHEMA_KEY}' key in this image; the device would refuse the "
+                  f"whole store, profile included.", file=sys.stderr)
+        legacy = [name for name in LEGACY_KEYS if name in keys]
+        if legacy:
+            print(f"  legacy rows {', '.join(legacy)}: provisioning material of the design ADR-0023 "
+                  f"retired; the firmware does not read them, and they need no reflash to remove")
         try:
             blob = extract_blob(raw, FACTORY_NAMESPACE, PROFILE_KEY)
         except ValuesError as error:
@@ -680,12 +737,12 @@ def write(values: Path, out: Path | None, device_dir: Path | None) -> int:
         offset, _ = read_partition("factory_cal")
         print(f"\nwrote {blob_path} ({len(blob)} bytes)")
         print(f"This is the blob, NOT a partition image: never flash it at {offset:#x}, it would "
-              f"erase the credentials there and replace nothing. Merge it into a provisioned "
-              f"device directory with --device-dir to get a factory_cal.bin.")
+              f"erase the schema and any profile there and replace nothing. Merge it into the "
+              f"board's device directory with --device-dir to get a factory_cal.bin.")
         return 0
 
     # Everything that can refuse is asked before the directory is touched, so a
-    # run either merges and builds or leaves the credentials directory as it was.
+    # run either merges and builds or leaves the device directory as it was.
     offset, size = read_partition("factory_cal")
     if size != provision_credentials.IMAGE_SIZE:
         raise DeviceDirError(
@@ -705,7 +762,13 @@ def write(values: Path, out: Path | None, device_dir: Path | None) -> int:
     print(f"\n{device_dir / CSV_NAME}: profile row {'appended' if appended else 'already present'}; "
           f"{device_dir / BLOB_NAME} written")
     image = build_device_image(device_dir, blob)
-    print(f"{image}: {image.stat().st_size} bytes; read back: credentials kept, profile merged")
+    keys = namespace_keys(image.read_bytes(), FACTORY_NAMESPACE)
+    print(f"{image}: {image.stat().st_size} bytes; read back: every row kept, profile merged; "
+          f"keys {', '.join(sorted(keys))}")
+    legacy = [name for name in LEGACY_KEYS if name in keys]
+    if legacy:
+        print(f"  legacy rows {', '.join(legacy)} kept: provisioning material of the design "
+              f"ADR-0023 retired; the firmware does not read them")
     print(flash_instructions(image, offset, size))
     return 0
 
@@ -719,8 +782,9 @@ def main(argv: list[str] | None = None) -> int:
                         help="where to write profile.bin without a device directory "
                              "(default build/profile; keep it out of Git)")
     parser.add_argument("--device-dir", type=Path,
-                        help="a directory provision_credentials.py produced: merge the profile "
-                             "into its factory_cal.csv and rebuild factory_cal.bin (needs IDF_PATH)")
+                        help="the board's device directory (provision_credentials.py writes one: a "
+                             "factory_cal.csv with the cal namespace and its schema row): merge the "
+                             "profile into that CSV and rebuild factory_cal.bin (needs IDF_PATH)")
     parser.add_argument("--dump", type=Path, metavar="FILE",
                         help="print a profile back as a table: a bare profile.bin, or a whole "
                              "factory_cal partition read with esptool read_flash")

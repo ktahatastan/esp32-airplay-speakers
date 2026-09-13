@@ -75,6 +75,7 @@ jobs:
           python3 firmware/tools/test_check_partitions.py
           python3 firmware/tools/test_make_manifest.py
           python3 firmware/tools/test_write_profile.py
+          python3 firmware/tools/test_provision_credentials.py
       - name: repository invariants
         run: |
           python3 firmware/tools/check_partitions.py

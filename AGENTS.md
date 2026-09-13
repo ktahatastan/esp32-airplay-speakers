@@ -23,7 +23,7 @@ Before work, read `docs/Home.md`, the relevant accepted ADRs under `docs/07-deci
 - An architectural, safety, product-identity or protocol decision requires an ADR.
 - Update `docs/08-development-log/` for material work and `docs/06-testing/` for evidence.
 - Use current primary documentation for unstable APIs/protocols; procurement links are candidates until rechecked on purchase day.
-- Credential files live in `docs/credentials/` and nowhere else. That folder is public by construction, because this repository is public, so everything in it is treated as burned: it holds development material and the record of what exists — which key, its public fingerprint, which release it signed, what to do if it is lost. Never put a user's own secrets there: no Wi-Fi credentials, provisioning passwords or PoP values, no API tokens. The location rule is enforced by `scripts/check_no_private_keys.py`, which inspects file contents rather than names and runs in CI and as a pre-commit hook (`git config core.hooksPath .githooks`). A key committed there can never sign a release: the publish job refuses it. See `docs/credentials/README.md` for what must change before a real release is signed.
+- Credential files live in `docs/credentials/` and nowhere else. That folder is public by construction, because this repository is public, so everything in it is treated as burned: it holds development material and the record of what exists — which key, its public fingerprint, which release it signed, what to do if it is lost. Never put a user's own secrets there: no Wi-Fi credentials, no API tokens. The design has had no provisioning password or proof-of-possession value since ADR-0023; should a superseding ADR bring one back, it falls under the same rule. The location rule is enforced by `scripts/check_no_private_keys.py`, which inspects file contents rather than names and runs in CI and as a pre-commit hook (`git config core.hooksPath .githooks`). A key committed there can never sign a release: the publish job refuses it. See `docs/credentials/README.md` for what must change before a real release is signed.
 
 ## Hardware safety
 
@@ -58,6 +58,7 @@ These are the open `Kritik` risks from `docs/01-planning/risk-register.md` that 
 - Power: a 24 V / 2.9 A DC desktop adapter through a 5.5 x 2.1 mm centre-positive barrel jack feeds all four XH-A232 (8-26 V input) directly as `VIN`; two MP1584-class bucks from `VIN`, one 5 V for the ESP32-S3 and one 5 V for the PCM5102A, kept separate because a shared buck put audible hiss into the DAC. No power switch (ADR-0020).
 - One cabinet, eight drivers, one mono programme, one device on the network; stereo and multi-device playback are out of scope. The cabinet is a reflex alignment by the Nova's own passive radiators (ADR-0021).
 - AirPlay receiver: `rbouteiller/airplay-esp32`, vendored at a pinned commit (ADR-0007). Its licence permits non-commercial use only, which binds the whole project.
+- Provisioning: protocomm Security 1 without proof of possession on BLE and SoftAP, open setup network, PROV_-prefixed setup names (ADR-0023); a stronger mode returns only through a superseding ADR.
 
 ## Documentation integrity
 

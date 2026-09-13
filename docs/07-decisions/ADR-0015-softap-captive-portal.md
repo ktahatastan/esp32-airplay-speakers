@@ -3,7 +3,7 @@ status: superseded
 decision: superseded
 owner: firmware-engineer
 reviewers: [orchestrator, verifier]
-updated: 2026-09-08
+updated: 2026-09-13
 supersedes: ADR-0005
 superseded_by: ADR-0016
 tags: [adr, provisioning, softap, captive-portal, security, wpa2]
@@ -12,7 +12,10 @@ tags: [adr, provisioning, softap, captive-portal, security, wpa2]
 # ADR-0015: Kurulum ağı WPA2 olur ve portalı kendimiz sunarız
 
 > [!warning] Taşıma kuralı [[ADR-0016-simultaneous-dual-transport|ADR-0016]] ile aşıldı.
-> WPA2 kurulum ağı, `hk_portal` ve `wifi_prov_mgr_configure_sta()` seçimleri aynen geçerlidir. Aşılan tek şey "hangi taşıma ne zaman açılır" sorusudur: ikisi artık birlikte açılıyor. İronik olan, bunu mümkün kılanın bu kararın kendisi olması — portalı protocomm'dan çıkarmak, tek-scheme sınırını SoftAP ayağının üstünden kaldırdı.
+> `hk_portal` ve `wifi_prov_mgr_configure_sta()` seçimleri aynen geçerlidir; WPA2 kurulum ağı için aşağıdaki 2026-09-13 notuna bakın. O gün aşılan tek şey "hangi taşıma ne zaman açılır" sorusudur: ikisi artık birlikte açılıyor. İronik olan, bunu mümkün kılanın bu kararın kendisi olması — portalı protocomm'dan çıkarmak, tek-scheme sınırını SoftAP ayağının üstünden kaldırdı.
+
+> [!warning] 2026-09-13: Güvenlik seçimi de [[ADR-0023-pinless-provisioning|ADR-0023]] ile aşıldı.
+> Kurulum ağı artık WPA2 değil **açık**, etikette cihaz başına parola yok, ve portal "etiketi elinde tutan" kimseye güvenmiyor: ağa katılan herkes forma ulaşır ve ev Wi-Fi parolası açık ağda düz HTTP ile gider — sahibin evde kullanım kabulüyle; sayfa bunu kullanıcıya söyler. Geçerli kalanlar `hk_portal`, `wifi_prov_mgr_configure_sta()` ve "portal ikinci bir kurulum yolu değil" seçimi. Aşağıdaki reddedilen "Açık SoftAP + düz form" satırı, ADR-0023'ün sahibin gerekçesiyle geri aldığı seçenektir; tarih olarak duruyor. Bir de düzeltme: aşağıdaki "Espressif'in QR biçiminde kurulum ağının parolası için alan yok" cümlesi bugünkü Espressif kütüphaneleri için yanlış — ikisi de isteğe bağlı bir `password` anahtarı okur (Android README QR tablosu; iOS `ESPScanResult.swift:58`). Kayda geçti, metin yeniden yazılmadı.
 
 [[ADR-0005-dual-provisioning|ADR-0005]]'in yerine geçer. Onun **taşıma seçimi** aynen korunur; değişen, SoftAP ayağının içinin ne olduğudur.
 

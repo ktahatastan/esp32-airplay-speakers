@@ -1,11 +1,21 @@
 /**
  * The app-less setup path: a captive portal on the speaker's own setup network.
  *
- * ADR-0015. The setup network is WPA2 and its key is the per-device setup
- * password, so whoever reaches this server has already proved they hold the
- * label. That is what lets the page below be a plain form: the secrecy comes
- * from the link, not from cryptography written in JavaScript and served over
- * cleartext HTTP.
+ * ADR-0015 made it a plain HTML form and ADR-0023 made the network it sits on
+ * OPEN. Read together, that means exactly this: the page is served over
+ * cleartext HTTP on an unencrypted 802.11 link, so the home Wi-Fi password the
+ * user types travels in the clear during the POST, readable by anyone in radio
+ * range with a monitor-mode adapter, and an evil twin advertising the same SSID
+ * would collect it just as easily. There is no proof of possession; whoever
+ * joins the setup network reaches this page. The page says so in one sentence
+ * above the form, because the person typing the password is the one taking
+ * the risk. The portal cannot do better on its own: a browser at
+ * http://192.168.4.1 has no crypto it can lend to a plain page, and a soft-AP
+ * on this chip offers no OWE. The alternatives were a key on the network --
+ * which is the PIN the owner asked to remove -- or dropping this path; the
+ * owner chose neither, for a home, and ADR-0023 records the acceptance and its
+ * limit. The BLE path does not share this exposure: it runs protocomm Security
+ * 1 and is encrypted against a listener even without a proof of possession.
  *
  * The portal is not a second way to provision. It hands what the user typed to
  * ESP-IDF's provisioning manager through wifi_prov_mgr_configure_sta(), so the

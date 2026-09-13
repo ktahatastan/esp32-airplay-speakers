@@ -1,13 +1,17 @@
 ---
-status: accepted
-decision: accepted
+status: superseded
+decision: superseded
 owner: firmware-engineer
 reviewers: [orchestrator, verifier]
-updated: 2026-09-08
+updated: 2026-09-13
+superseded_by: ADR-0023
 tags: [adr, provisioning, security, srp6a, compatibility]
 ---
 
 # ADR-0014: SRP6a kullanıcı adı `wifiprov` olur
+
+> [!warning] Bu karar [[ADR-0023-pinless-provisioning|ADR-0023]] ile tümüyle aşıldı (2026-09-13).
+> Provisioning artık Security 2 kullanmıyor; SRP6a olmayınca kullanıcı adı diye bir şey de yok. Metin, adın verifier'a nasıl girdiğinin ve o gün neden `wifiprov` seçildiğinin kaydı olarak duruyor. "Doğrulama" bölümündeki "tekrarlanmalıdır" maddesi düştü: tekrarlanacak akış artık yok.
 
 ## Bağlam
 

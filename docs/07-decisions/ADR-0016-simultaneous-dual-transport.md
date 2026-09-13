@@ -3,12 +3,14 @@ status: accepted
 decision: accepted
 owner: firmware-engineer
 reviewers: [orchestrator, verifier]
-updated: 2026-09-08
+updated: 2026-09-13
 supersedes: ADR-0015
 tags: [adr, provisioning, ble, softap, transport]
 ---
 
 # ADR-0016: İki taşıma aynı anda açılır
+
+> [!note] 2026-09-13: Aşağıdaki "WPA2 kurulum ağı … aynen geçerlidir" ve "Uygulama yolu, Security 2'si … olduğu gibi kalır" cümleleri [[ADR-0023-pinless-provisioning|ADR-0023]] ile aşıldı — kurulum ağı açık, yönetici Security 1 ile ve sahiplik kanıtı olmadan başlıyor. Bu kararın konusu olan taşıma kuralı aynen geçerlidir ve durum `accepted` kalır.
 
 [[ADR-0015-softap-captive-portal|ADR-0015]]'in **taşıma kuralının** yerine geçer. O kararın WPA2 kurulum ağı, `hk_portal` ve `wifi_prov_mgr_configure_sta()` seçimleri aynen geçerlidir — değişen, hangi taşımanın ne zaman açıldığıdır.
 

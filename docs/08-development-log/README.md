@@ -1,7 +1,7 @@
 ---
 status: active
 owner: orchestrator
-updated: 2026-09-12
+updated: 2026-09-13
 tags: [development-log, moc]
 ---
 
@@ -9,6 +9,7 @@ tags: [development-log, moc]
 
 Günlükler yapılan işi, nedenini, doğrulamayı ve açık riskleri kalıcı tutar. Yeni kayıt için [[../templates/development-log|şablonu]] kullanın. Liste yeniden eskiye sıralıdır.
 
+- [[2026-09-13-pinless-provisioning|2026-09-13 — Kurulumdan PIN kalktı: Security 1, açık kurulum ağı, PROV_ öneki; telefonda henüz denenmedi]]
 - [[2026-09-12-fs-bench-session|2026-09-12 — Tarama modu ilk kez tezgâhta: woofer 50 Hz dedi, tweeter bir aralık verdi]]
 - [[2026-09-12-dsp-product-output|2026-09-12 — DSP zinciri ürünün çıkış arka ucu oldu; sayıları hâlâ tezgâhın]]
 - [[2026-09-12-single-cabinet|2026-09-12 — Dört kutu tek kabine indi, ve amfide susturma hattı yok]]

@@ -7,53 +7,53 @@
  * and publishes the device on the local network under the names hk_identity
  * derives.
  *
- * NOT YET VERIFIED ON HARDWARE. This compiles against ESP-IDF v5.5.1, but no
- * board has run it, and no iOS or Android client has been near it.
+ * What has and has not run on hardware: the Security 2 / WPA2 design this file
+ * carried until 2026-09-13 was set up end to end over BLE on the devkit
+ * (2026-09-05) and brought its window up on the product board (2026-09-08).
+ * The design below -- Security 1 without a proof of possession, an open setup
+ * network -- has NOT been exercised on any board, and no iOS or Android client
+ * has been near it. It compiles against ESP-IDF v5.5.1 and its pure parts are
+ * host-tested; everything else is a claim for a bench (ADR-0023).
  *
- * One transport at a time
- * -----------------------
+ * Transports
+ * ----------
  * ESP-IDF's provisioning manager keeps a single static context and takes one
- * scheme, so BLE and SoftAP cannot both be live in one session: scheme_ble
- * puts Wi-Fi in station mode while scheme_softap needs AP+station.
+ * scheme, so the MANAGER can drive BLE or SoftAP, not both. ADR-0005 answered
+ * that by offering one transport at a time; ADR-0016 supersedes it: since
+ * ADR-0015 the app-less leg no longer needs the manager at all (hk_portal hands
+ * credentials over with wifi_prov_mgr_configure_sta()), so with
+ * CONFIG_HK_DUAL_TRANSPORT both legs open together at first boot -- the manager
+ * runs BLE, and this file raises the access point and the portal beside it.
+ * One honest limit: closing a BLE window releases the Bluetooth controller's
+ * memory for the rest of the boot (FREE_BTDM), so a window reopened later this
+ * boot offers SoftAP only. hk_network_scheme_for() says the same in code.
  *
- * ADR-0005 resolves this by offering them in sequence, and which one opens is
- * decided by how provisioning was entered, never by the caller:
- *
- *   no stored credentials -> SoftAP
- *   button on a configured device -> BLE
- *
- * The reasoning is that the app-less path must always be reachable. Someone
- * setting a speaker up for the first time may have no app at all, so first boot
- * gets SoftAP. Someone pressing the button on a working speaker already has a
- * network, and a SoftAP would push their phone off it, so that path gets BLE. A
- * user who needs the app-less route on a configured device holds the button for
- * 5 s to clear the credentials, which lands them back in the first case.
+ * Without dual transport the ADR-0005 rule applies, which transport opens
+ * being decided by how provisioning was entered, never by the caller: nothing
+ * stored opens SoftAP, a button on a configured device opens BLE.
+ * CONFIG_HK_FIRST_BOOT_BLE flips the first row.
  *
  * The app-less half was a promise with nothing behind it until ADR-0015, and
  * hardware showed it on 2026-09-05: joining the SoftAP opened nothing, because
  * wifi_prov_scheme_softap serves protocomm endpoints at 192.168.4.1 and not a
  * web page. The portal is now ours -- hk_portal serves the page and answers
- * every DNS query so a phone opens it by itself -- and the setup network is
- * WPA2 rather than open, which is what lets that page be a plain form instead
- * of hand-written cryptography running in a browser over cleartext HTTP.
- *
- * NOT YET MEASURED: none of that has been exercised on a board. It compiles and
- * its parsing is tested; that a phone opens the sheet is a claim for a bench.
- *
- * CONFIG_HK_FIRST_BOOT_BLE overrides that first row and opens BLE on a device
- * with nothing stored. It is INTERIM: the owner sets this speaker up over BLE
- * with a QR, so BLE is what a new device should offer -- but whether the two
- * transports can be open at once, and which one a new device leads with, is a
- * decision, and the ADR that supersedes ADR-0005/0015 on this point is not
- * written yet.
+ * every DNS query so a phone opens it by itself. That a phone actually opens
+ * the sheet has still not been measured on any board.
  *
  * Security
  * --------
- * Provisioning runs with Security 2 (SRP6a). The salt and verifier are
- * per-device and read from the factory_cal namespace; the device never stores
- * the password itself. If they are missing, provisioning does NOT start and
- * does NOT fall back to a weaker mode. A shared or absent credential on a
- * device that accepts Wi-Fi passwords is worse than no provisioning at all.
+ * Both legs run protocomm Security 1 with a NULL proof of possession
+ * (ADR-0023). The device advertises `no_pop`; the session key is the X25519
+ * shared secret alone and the payload is AES-CTR. That hides the home Wi-Fi
+ * password from a passive listener on the app path and authenticates neither
+ * side: anyone in radio range while a window is open can provision the
+ * speaker, and nothing proves to the phone that the peer is this speaker. The
+ * setup network is open (WIFI_AUTH_OPEN), so the app-less portal form posts
+ * the home password in the clear over an unencrypted link -- see hk_portal.h.
+ * Nothing in factory_cal is needed for setup to open; the three legacy keys a
+ * pre-ADR-0023 board carries there are never read (hk_storage.h). The owner
+ * accepted this for a home, and only for a home. A stronger mode comes back
+ * only through an ADR that supersedes ADR-0023.
  */
 #ifndef HK_NETWORK_H
 #define HK_NETWORK_H
@@ -69,8 +69,9 @@
  * logged and reasoned about.
  */
 typedef enum {
-    HK_NET_SCHEME_SOFTAP = 0, /**< App-less: WPA2 SoftAP plus hk_portal's own
-                                   captive portal (ADR-0015). */
+    HK_NET_SCHEME_SOFTAP = 0, /**< App-less: an OPEN SoftAP plus hk_portal's own
+                                   captive portal (ADR-0015 for the portal,
+                                   ADR-0023 for the open network). */
     HK_NET_SCHEME_BLE,        /**< Espressif provisioning apps over BLE.
                                    Needs CONFIG_BT_ENABLED; without it the call
                                    fails with ESP_ERR_NOT_SUPPORTED rather than

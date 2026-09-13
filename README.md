@@ -29,8 +29,8 @@ Kilitli kararlar: [N16R8 kartı](docs/07-decisions/ADR-0010-esp32-s3-n16r8-board
 |---|---|
 | Ürün ailesi | `Merzarkabul Airplay Speakers` |
 | AirPlay | `Merzarkabul XXXX` |
-| BLE provisioning | `Merzarkabul-XXXX` |
-| Kurulum Wi-Fi ağı | `Merzarkabul-Setup-XXXX` |
+| BLE provisioning | `PROV_Merzarkabul-XXXX` (öneki Espressif uygulamalarının liste filtresi ister, ADR-0023) |
+| Kurulum Wi-Fi ağı | `PROV_Merzarkabul-XXXX`, açık ağ |
 | mDNS | `merzarkabul-xxxx.local` |
 
 `XXXX`, cihaz kimliğinden türetilen kısa benzersiz ektir.
